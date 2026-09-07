@@ -11,6 +11,7 @@ from unittest.mock import patch, MagicMock
 
 # Add project root to path
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from ccea.guardrails.phrase_guard import (
@@ -115,7 +116,11 @@ class TestPhraseGuardDetection:
         We are a software vendor, not a broker.
         """
         violations = guard.check_content(content, "test.md")
-        critical_high = [v for v in violations if v.phrase.severity in {ViolationSeverity.CRITICAL, ViolationSeverity.HIGH}]
+        critical_high = [
+            v
+            for v in violations
+            if v.phrase.severity in {ViolationSeverity.CRITICAL, ViolationSeverity.HIGH}
+        ]
         assert len(critical_high) == 0, f"False positives: {critical_high}"
 
     def test_skips_code_blocks(self, guard):
@@ -157,59 +162,65 @@ class TestPhraseGuardResult:
 
     def test_passed_with_only_warnings(self):
         """Test passed property with only warnings."""
-        result = PhraseGuardResult(violations=[
-            PhraseViolation(
-                phrase=ProhibitedPhrase(
-                    pattern="test",
-                    category=PhraseCategory.CREDENTIAL_STORAGE,
-                    severity=ViolationSeverity.WARNING,
-                    description="Test",
-                    fix_suggestion="Test",
-                ),
-                file_path="test.md",
-                line_number=1,
-                matched_text="test",
-                line_content="test content",
-            )
-        ])
+        result = PhraseGuardResult(
+            violations=[
+                PhraseViolation(
+                    phrase=ProhibitedPhrase(
+                        pattern="test",
+                        category=PhraseCategory.CREDENTIAL_STORAGE,
+                        severity=ViolationSeverity.WARNING,
+                        description="Test",
+                        fix_suggestion="Test",
+                    ),
+                    file_path="test.md",
+                    line_number=1,
+                    matched_text="test",
+                    line_content="test content",
+                )
+            ]
+        )
         assert result.passed is True
 
     def test_failed_with_critical_violation(self):
         """Test passed property with critical violation."""
-        result = PhraseGuardResult(violations=[
-            PhraseViolation(
-                phrase=ProhibitedPhrase(
-                    pattern="test",
-                    category=PhraseCategory.CREDENTIAL_STORAGE,
-                    severity=ViolationSeverity.CRITICAL,
-                    description="Test",
-                    fix_suggestion="Test",
-                ),
-                file_path="test.md",
-                line_number=1,
-                matched_text="test",
-                line_content="test content",
-            )
-        ])
+        result = PhraseGuardResult(
+            violations=[
+                PhraseViolation(
+                    phrase=ProhibitedPhrase(
+                        pattern="test",
+                        category=PhraseCategory.CREDENTIAL_STORAGE,
+                        severity=ViolationSeverity.CRITICAL,
+                        description="Test",
+                        fix_suggestion="Test",
+                    ),
+                    file_path="test.md",
+                    line_number=1,
+                    matched_text="test",
+                    line_content="test content",
+                )
+            ]
+        )
         assert result.passed is False
 
     def test_failed_with_high_violation(self):
         """Test passed property with high violation."""
-        result = PhraseGuardResult(violations=[
-            PhraseViolation(
-                phrase=ProhibitedPhrase(
-                    pattern="test",
-                    category=PhraseCategory.CREDENTIAL_STORAGE,
-                    severity=ViolationSeverity.HIGH,
-                    description="Test",
-                    fix_suggestion="Test",
-                ),
-                file_path="test.md",
-                line_number=1,
-                matched_text="test",
-                line_content="test content",
-            )
-        ])
+        result = PhraseGuardResult(
+            violations=[
+                PhraseViolation(
+                    phrase=ProhibitedPhrase(
+                        pattern="test",
+                        category=PhraseCategory.CREDENTIAL_STORAGE,
+                        severity=ViolationSeverity.HIGH,
+                        description="Test",
+                        fix_suggestion="Test",
+                    ),
+                    file_path="test.md",
+                    line_number=1,
+                    matched_text="test",
+                    line_content="test content",
+                )
+            ]
+        )
         assert result.passed is False
 
     def test_counts(self):
@@ -228,8 +239,12 @@ class TestPhraseGuardResult:
                 matched_text="test",
                 line_content="test content",
             )
-            for severity in [ViolationSeverity.CRITICAL, ViolationSeverity.CRITICAL,
-                           ViolationSeverity.HIGH, ViolationSeverity.MEDIUM]
+            for severity in [
+                ViolationSeverity.CRITICAL,
+                ViolationSeverity.CRITICAL,
+                ViolationSeverity.HIGH,
+                ViolationSeverity.MEDIUM,
+            ]
         ]
         result = PhraseGuardResult(violations=violations)
         assert result.critical_count == 2
@@ -254,7 +269,9 @@ class TestPhraseGuardIntegration:
 
         guard = PhraseGuard(root_path=project_root)
         violations = guard.check_file(tos_path)
-        critical_violations = [v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL]
+        critical_violations = [
+            v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL
+        ]
         assert len(critical_violations) == 0, f"Critical violations in ToS: {critical_violations}"
 
     def test_privacy_policy_compliant(self, project_root):
@@ -265,8 +282,12 @@ class TestPhraseGuardIntegration:
 
         guard = PhraseGuard(root_path=project_root)
         violations = guard.check_file(pp_path)
-        critical_violations = [v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL]
-        assert len(critical_violations) == 0, f"Critical violations in Privacy Policy: {critical_violations}"
+        critical_violations = [
+            v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL
+        ]
+        assert (
+            len(critical_violations) == 0
+        ), f"Critical violations in Privacy Policy: {critical_violations}"
 
     def test_dpa_template_compliant(self, project_root):
         """Test that DPA Template is CCEA-compliant."""
@@ -276,7 +297,9 @@ class TestPhraseGuardIntegration:
 
         guard = PhraseGuard(root_path=project_root)
         violations = guard.check_file(dpa_path)
-        critical_violations = [v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL]
+        critical_violations = [
+            v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL
+        ]
         assert len(critical_violations) == 0, f"Critical violations in DPA: {critical_violations}"
 
     def test_aup_compliant(self, project_root):
@@ -287,7 +310,9 @@ class TestPhraseGuardIntegration:
 
         guard = PhraseGuard(root_path=project_root)
         violations = guard.check_file(aup_path)
-        critical_violations = [v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL]
+        critical_violations = [
+            v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL
+        ]
         assert len(critical_violations) == 0, f"Critical violations in AUP: {critical_violations}"
 
     def test_readme_compliant(self, project_root):
@@ -298,8 +323,12 @@ class TestPhraseGuardIntegration:
 
         guard = PhraseGuard(root_path=project_root)
         violations = guard.check_file(readme_path)
-        critical_violations = [v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL]
-        assert len(critical_violations) == 0, f"Critical violations in README: {critical_violations}"
+        critical_violations = [
+            v for v in violations if v.phrase.severity == ViolationSeverity.CRITICAL
+        ]
+        assert (
+            len(critical_violations) == 0
+        ), f"Critical violations in README: {critical_violations}"
 
     def test_full_docs_scan(self, project_root):
         """Test full documentation scan passes."""
@@ -315,7 +344,9 @@ class TestPhraseGuardIntegration:
         print(f"  Medium: {result.medium_count}")
         print(f"  Warning: {result.warning_count}")
 
-        assert result.passed, f"Phrase guard failed with {result.critical_count} critical, {result.high_count} high violations"
+        assert (
+            result.passed
+        ), f"Phrase guard failed with {result.critical_count} critical, {result.high_count} high violations"
 
 
 class TestViolationFormatting:

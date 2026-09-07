@@ -12,7 +12,9 @@ class SimpleOrder:
     meta: dict | None = None
 
 
-def _make_guard(config: PortfolioLimitConfig, positions: dict[str, float], prices: dict[str, float]) -> PortfolioLimitGuard:
+def _make_guard(
+    config: PortfolioLimitConfig, positions: dict[str, float], prices: dict[str, float]
+) -> PortfolioLimitGuard:
     return PortfolioLimitGuard(
         config=config,
         get_positions=lambda: positions,

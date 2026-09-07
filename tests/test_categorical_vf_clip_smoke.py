@@ -4,6 +4,7 @@ This can be run without pytest to verify basic functionality.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 from distributional_ppo import DistributionalPPO
 
@@ -29,8 +30,9 @@ def test_projection_basic():
     assert projected.shape == probs.shape, f"Shape mismatch: {projected.shape} != {probs.shape}"
 
     total_prob = projected.sum(dim=1)
-    assert torch.allclose(total_prob, torch.ones(batch_size), atol=1e-4), \
-        f"Probability doesn't sum to 1: {total_prob}"
+    assert torch.allclose(
+        total_prob, torch.ones(batch_size), atol=1e-4
+    ), f"Probability doesn't sum to 1: {total_prob}"
 
     assert torch.all(projected >= 0.0), "Negative probabilities detected"
 
@@ -42,8 +44,9 @@ def test_projection_basic():
     print(f"  Projected mean: {projected_mean}")
     print(f"  Difference: {torch.abs(original_mean - projected_mean)}")
 
-    assert torch.allclose(original_mean, projected_mean, atol=0.3), \
-        f"Mean not preserved: {original_mean} vs {projected_mean}"
+    assert torch.allclose(
+        original_mean, projected_mean, atol=0.3
+    ), f"Mean not preserved: {original_mean} vs {projected_mean}"
 
     print("  ✓ Projection test passed!")
 
@@ -70,8 +73,9 @@ def test_projection_identity():
     diff = torch.abs(projected - probs).max()
     print(f"  Max difference from identity: {diff}")
 
-    assert torch.allclose(projected, probs, atol=1e-3), \
-        f"Identity projection failed, max diff: {diff}"
+    assert torch.allclose(
+        projected, probs, atol=1e-3
+    ), f"Identity projection failed, max diff: {diff}"
 
     print("  ✓ Identity test passed!")
 
@@ -99,8 +103,9 @@ def test_projection_edge_cases():
         probs=probs_two, source_atoms=source_two, target_atoms=atoms_two
     )
     assert projected.shape == probs_two.shape, "Two atoms shape mismatch"
-    assert torch.allclose(projected.sum(dim=1), torch.ones(1), atol=1e-5), \
-        "Two atoms probability sum failed"
+    assert torch.allclose(
+        projected.sum(dim=1), torch.ones(1), atol=1e-5
+    ), "Two atoms probability sum failed"
     print("  ✓ Two atoms test passed!")
 
 
@@ -115,7 +120,8 @@ def test_code_has_vf_clipping():
 
     # Check for VF clipping keywords
     checks = {
-        "critic_loss_unclipped in categorical section": "critic_loss_unclipped_per_sample" in source,
+        "critic_loss_unclipped in categorical section": "critic_loss_unclipped_per_sample"
+        in source,
         "critic_loss_clipped in categorical section": "critic_loss_clipped_per_sample" in source,
         "max(loss_unclipped, loss_clipped)": "torch.max(" in source,
         "_project_categorical_distribution call": "_project_categorical_distribution" in source,
@@ -149,11 +155,13 @@ def main():
     except AssertionError as e:
         print(f"\n✗ TEST FAILED: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
     except Exception as e:
         print(f"\n✗ UNEXPECTED ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

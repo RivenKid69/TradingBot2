@@ -219,7 +219,9 @@ class TestForexExecutionIntegrationInit:
     def test_initialization_with_profiles(self) -> None:
         """Test initialization with different profiles."""
         retail = ForexExecutionIntegration(tca_profile="retail", dealer_profile="retail")
-        inst = ForexExecutionIntegration(tca_profile="institutional", dealer_profile="institutional")
+        inst = ForexExecutionIntegration(
+            tca_profile="institutional", dealer_profile="institutional"
+        )
 
         # Institutional should have tighter spreads
         assert retail is not None
@@ -350,7 +352,10 @@ class TestForexExecutionIntegrationEstimate:
             mid_price=1.0850,
         )
         assert small_est.recommended_execution in [
-            "immediate", "wait_for_better_liquidity", "split_order", "use_limit_orders"
+            "immediate",
+            "wait_for_better_liquidity",
+            "split_order",
+            "use_limit_orders",
         ]
 
         # Very large order should suggest splitting
@@ -362,7 +367,9 @@ class TestForexExecutionIntegrationEstimate:
         )
         # Large orders often get split recommendation
         assert large_est.recommended_execution in [
-            "immediate", "split_order", "wait_for_better_liquidity"
+            "immediate",
+            "split_order",
+            "wait_for_better_liquidity",
         ]
 
 
@@ -677,7 +684,9 @@ class TestEdgeCases:
         assert report.execution_result is not None
         # Large order should have recommendation
         assert report.pre_trade_estimate.recommended_execution in [
-            "split_order", "wait_for_better_liquidity", "immediate"
+            "split_order",
+            "wait_for_better_liquidity",
+            "immediate",
         ]
 
     def test_weekend_session(self, integration: ForexExecutionIntegration) -> None:

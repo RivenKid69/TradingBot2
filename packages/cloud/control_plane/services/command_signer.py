@@ -52,12 +52,14 @@ ENV_CLOUD_KEY_ID = "CCEA_CLOUD_KEY_ID"
 
 class CloudKeyNotConfiguredError(RuntimeError):
     """Cloud signing key is not configured."""
+
     pass
 
 
 @dataclass
 class CloudKeyInfo:
     """Information about Cloud's signing key."""
+
     key_id: str
     algorithm: str
     public_key_pem: str

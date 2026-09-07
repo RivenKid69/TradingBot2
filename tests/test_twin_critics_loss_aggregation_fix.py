@@ -17,6 +17,7 @@ Test Coverage:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -50,8 +51,9 @@ class TestTwinCriticsLossAggregationFix:
         # Expected: (max(10,5) + max(5,10)) / 2 = (10 + 10) / 2 = 10.0
         expected = torch.tensor(10.0)
 
-        assert torch.allclose(critic_loss_fixed, expected, atol=1e-6), \
-            f"Expected {expected:.4f}, got {critic_loss_fixed:.4f}"
+        assert torch.allclose(
+            critic_loss_fixed, expected, atol=1e-6
+        ), f"Expected {expected:.4f}, got {critic_loss_fixed:.4f}"
 
         # Verify buggy implementation would give different result
         clipped_loss_avg = (loss_c1_clipped + loss_c2_clipped) / 2.0
@@ -61,14 +63,18 @@ class TestTwinCriticsLossAggregationFix:
         # Buggy: max((10+5)/2, (5+10)/2) = max(7.5, 7.5) = 7.5
         expected_buggy = torch.tensor(7.5)
 
-        assert torch.allclose(critic_loss_buggy, expected_buggy, atol=1e-6), \
-            f"Buggy implementation should give {expected_buggy:.4f}, got {critic_loss_buggy:.4f}"
+        assert torch.allclose(
+            critic_loss_buggy, expected_buggy, atol=1e-6
+        ), f"Buggy implementation should give {expected_buggy:.4f}, got {critic_loss_buggy:.4f}"
 
         # Verify fix != buggy
-        assert not torch.allclose(critic_loss_fixed, critic_loss_buggy), \
-            "Fixed and buggy implementations should differ in mixed cases!"
+        assert not torch.allclose(
+            critic_loss_fixed, critic_loss_buggy
+        ), "Fixed and buggy implementations should differ in mixed cases!"
 
-        print(f"[PASS] Mixed clipping: Fixed={critic_loss_fixed:.4f}, Buggy={critic_loss_buggy:.4f}")
+        print(
+            f"[PASS] Mixed clipping: Fixed={critic_loss_fixed:.4f}, Buggy={critic_loss_buggy:.4f}"
+        )
 
     def test_both_clipping_equivalence(self):
         """
@@ -92,8 +98,9 @@ class TestTwinCriticsLossAggregationFix:
         loss_unclipped_avg = (loss_c1_unclipped + loss_c2_unclipped) / 2.0
         critic_loss_buggy = torch.mean(torch.max(loss_unclipped_avg, clipped_loss_avg))
 
-        assert torch.allclose(critic_loss_fixed, critic_loss_buggy, atol=1e-6), \
-            f"Both implementations should be equal when both critics clip"
+        assert torch.allclose(
+            critic_loss_fixed, critic_loss_buggy, atol=1e-6
+        ), f"Both implementations should be equal when both critics clip"
 
         print(f"[PASS] Both clipping: Fixed={critic_loss_fixed:.4f}, Buggy={critic_loss_buggy:.4f}")
 
@@ -116,8 +123,9 @@ class TestTwinCriticsLossAggregationFix:
         loss_unclipped_avg = (loss_c1_unclipped + loss_c2_unclipped) / 2.0
         critic_loss_buggy = torch.mean(torch.max(loss_unclipped_avg, clipped_loss_avg))
 
-        assert torch.allclose(critic_loss_fixed, critic_loss_buggy, atol=1e-6), \
-            f"Both implementations should be equal when no critic clips"
+        assert torch.allclose(
+            critic_loss_fixed, critic_loss_buggy, atol=1e-6
+        ), f"Both implementations should be equal when no critic clips"
 
         print(f"[PASS] No clipping: Fixed={critic_loss_fixed:.4f}, Buggy={critic_loss_buggy:.4f}")
 
@@ -148,12 +156,14 @@ class TestTwinCriticsLossAggregationFix:
         critic_loss_buggy = torch.mean(torch.max(loss_unclipped_avg, clipped_loss_avg))
 
         # Verify they differ
-        assert not torch.allclose(critic_loss_fixed, critic_loss_buggy, atol=1e-6), \
-            f"Fixed and buggy should differ in batch with mixed clipping"
+        assert not torch.allclose(
+            critic_loss_fixed, critic_loss_buggy, atol=1e-6
+        ), f"Fixed and buggy should differ in batch with mixed clipping"
 
         # Verify fixed > buggy (buggy underestimates)
-        assert critic_loss_fixed > critic_loss_buggy, \
-            f"Fixed ({critic_loss_fixed:.4f}) should be > buggy ({critic_loss_buggy:.4f})"
+        assert (
+            critic_loss_fixed > critic_loss_buggy
+        ), f"Fixed ({critic_loss_fixed:.4f}) should be > buggy ({critic_loss_buggy:.4f})"
 
         print(f"[PASS] Batch mixed: Fixed={critic_loss_fixed:.4f}, Buggy={critic_loss_buggy:.4f}")
 
@@ -190,8 +200,9 @@ class TestTwinCriticsLossAggregationFix:
         critic_loss_fixed = torch.mean((loss_c1_final + loss_c2_final) / 2.0)
 
         expected = torch.tensor(0.0)
-        assert torch.allclose(critic_loss_fixed, expected), \
-            f"Expected {expected:.4f}, got {critic_loss_fixed:.4f}"
+        assert torch.allclose(
+            critic_loss_fixed, expected
+        ), f"Expected {expected:.4f}, got {critic_loss_fixed:.4f}"
 
         print(f"[PASS] Zero losses: Fixed={critic_loss_fixed:.4f}")
 
@@ -255,9 +266,9 @@ if __name__ == "__main__":
     # Run tests
     test_class = TestTwinCriticsLossAggregationFix()
 
-    print("="*80)
+    print("=" * 80)
     print("Twin Critics Loss Aggregation Fix - Comprehensive Tests")
-    print("="*80)
+    print("=" * 80)
     print()
 
     try:
@@ -271,13 +282,13 @@ if __name__ == "__main__":
         test_return_signature_unchanged()
 
         print()
-        print("="*80)
+        print("=" * 80)
         print("[SUCCESS] All tests passed!")
-        print("="*80)
+        print("=" * 80)
 
     except AssertionError as e:
         print()
-        print("="*80)
+        print("=" * 80)
         print(f"[FAILED] Test failed: {e}")
-        print("="*80)
+        print("=" * 80)
         raise

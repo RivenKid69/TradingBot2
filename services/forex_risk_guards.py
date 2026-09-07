@@ -64,11 +64,11 @@ logger = logging.getLogger(__name__)
 
 # Standard forex leverage limits by jurisdiction
 LEVERAGE_LIMITS = {
-    "retail_us": 50,       # CFTC 50:1 for majors
-    "retail_eu": 30,       # ESMA 30:1 for majors
-    "retail_uk": 30,       # FCA 30:1 for majors
-    "retail_au": 30,       # ASIC 30:1 for majors
-    "professional": 100,   # Professional clients
+    "retail_us": 50,  # CFTC 50:1 for majors
+    "retail_eu": 30,  # ESMA 30:1 for majors
+    "retail_uk": 30,  # FCA 30:1 for majors
+    "retail_au": 30,  # ASIC 30:1 for majors
+    "professional": 100,  # Professional clients
     "institutional": 500,  # Institutional
 }
 
@@ -82,16 +82,16 @@ LEVERAGE_BY_CATEGORY = {
 
 # Standard margin requirements (inverse of leverage)
 MARGIN_REQUIREMENTS = {
-    "retail_50": 0.02,     # 2% = 50:1 leverage
-    "retail_30": 0.0333,   # 3.33% = 30:1 leverage
-    "retail_20": 0.05,     # 5% = 20:1 leverage
-    "retail_10": 0.10,     # 10% = 10:1 leverage
+    "retail_50": 0.02,  # 2% = 50:1 leverage
+    "retail_30": 0.0333,  # 3.33% = 30:1 leverage
+    "retail_20": 0.05,  # 5% = 20:1 leverage
+    "retail_10": 0.10,  # 10% = 10:1 leverage
     "professional": 0.01,  # 1% = 100:1 leverage
 }
 
 # Margin call levels
-MARGIN_CALL_LEVEL = 0.50    # 50% margin level triggers warning
-STOP_OUT_LEVEL = 0.20       # 20% margin level triggers forced liquidation
+MARGIN_CALL_LEVEL = 0.50  # 50% margin level triggers warning
+STOP_OUT_LEVEL = 0.20  # 20% margin level triggers forced liquidation
 
 # Swap day multipliers (Wednesday = 3x for weekend rollover)
 SWAP_DAY_MULTIPLIERS = {
@@ -117,27 +117,27 @@ class ForexMarginCallType(str, Enum):
     """Types of forex margin calls."""
 
     NONE = "none"
-    WARNING = "warning"             # Below margin warning level (50%)
-    MARGIN_CALL = "margin_call"     # Below margin call level
-    STOP_OUT = "stop_out"           # At stop-out level (forced liquidation)
+    WARNING = "warning"  # Below margin warning level (50%)
+    MARGIN_CALL = "margin_call"  # Below margin call level
+    STOP_OUT = "stop_out"  # At stop-out level (forced liquidation)
 
 
 class LeverageViolationType(str, Enum):
     """Types of leverage violations."""
 
     NONE = "none"
-    EXCEEDED_MAX = "exceeded_max"           # Over maximum allowed leverage
-    NEAR_LIMIT = "near_limit"               # Within 90% of max leverage
-    CONCENTRATION = "concentration"          # Single pair concentration
-    CORRELATED_EXPOSURE = "correlated"       # Correlated pairs exposure
+    EXCEEDED_MAX = "exceeded_max"  # Over maximum allowed leverage
+    NEAR_LIMIT = "near_limit"  # Within 90% of max leverage
+    CONCENTRATION = "concentration"  # Single pair concentration
+    CORRELATED_EXPOSURE = "correlated"  # Correlated pairs exposure
 
 
 class SwapDirection(str, Enum):
     """Direction of swap payment."""
 
-    CREDIT = "credit"   # Receive swap
-    DEBIT = "debit"     # Pay swap
-    ZERO = "zero"       # No swap
+    CREDIT = "credit"  # Receive swap
+    DEBIT = "debit"  # Pay swap
+    ZERO = "zero"  # No swap
 
 
 # =============================================================================
@@ -158,6 +158,7 @@ class ForexMarginRequirement:
         jurisdiction: Applicable jurisdiction
         is_hedged: Whether position is hedged
     """
+
     symbol: str
     margin_pct: float = 0.02  # 2% = 50:1
     leverage: int = 50
@@ -187,11 +188,12 @@ class ForexMarginStatus:
         used_leverage: Current effective leverage
         positions_at_risk: Positions that may be liquidated
     """
+
     equity: float = 0.0
     balance: float = 0.0
     margin_used: float = 0.0
     margin_available: float = 0.0
-    margin_level: float = float('inf')  # 100% = fully utilized
+    margin_level: float = float("inf")  # 100% = fully utilized
     margin_call_type: ForexMarginCallType = ForexMarginCallType.NONE
     unrealized_pnl: float = 0.0
     used_leverage: float = 0.0
@@ -222,6 +224,7 @@ class SwapRate:
         timestamp_ms: Rate timestamp
         source: Rate source (e.g., "oanda", "cache")
     """
+
     symbol: str
     long_rate: float = 0.0
     short_rate: float = 0.0
@@ -257,6 +260,7 @@ class SwapCost:
         rate_used: Swap rate used for calculation
         timestamp_ms: Calculation timestamp
     """
+
     symbol: str
     units: float
     is_long: bool
@@ -285,6 +289,7 @@ class LeverageCheck:
         utilization_pct: Leverage utilization percentage
         message: Human-readable message
     """
+
     is_allowed: bool = True
     violation_type: LeverageViolationType = LeverageViolationType.NONE
     current_leverage: float = 0.0
@@ -413,10 +418,7 @@ class SwapCostTracker:
         # Check cache
         now = time.time()
         with self._lock:
-            if (
-                symbol in self._swap_cache
-                and now - self._cache_timestamp < self._cache_ttl_sec
-            ):
+            if symbol in self._swap_cache and now - self._cache_timestamp < self._cache_ttl_sec:
                 return self._swap_cache[symbol]
 
         # Try provider
@@ -518,9 +520,7 @@ class SwapCostTracker:
         # Record in history
         with self._lock:
             self._swap_history.append(cost)
-            self._cumulative_swap[symbol] = (
-                self._cumulative_swap.get(symbol, 0.0) + total_cost
-            )
+            self._cumulative_swap[symbol] = self._cumulative_swap.get(symbol, 0.0) + total_cost
 
         return cost
 
@@ -723,14 +723,18 @@ class ForexMarginGuard:
             if margin_used > 0:
                 margin_level = equity / margin_used
             else:
-                margin_level = float('inf')
+                margin_level = float("inf")
 
             # Calculate effective leverage
             positions = self._provider.get_positions()
-            total_notional = sum(
-                abs(float(p.get("units", 0)) * float(p.get("price", 1)))
-                for p in positions.values()
-            ) if positions else 0.0
+            total_notional = (
+                sum(
+                    abs(float(p.get("units", 0)) * float(p.get("price", 1)))
+                    for p in positions.values()
+                )
+                if positions
+                else 0.0
+            )
 
             used_leverage = total_notional / equity if equity > 0 else 0.0
 
@@ -808,7 +812,7 @@ class ForexMarginGuard:
         if new_margin_used > 0:
             new_margin_level = current.equity / new_margin_used
         else:
-            new_margin_level = float('inf')
+            new_margin_level = float("inf")
 
         # Determine call type
         call_type = ForexMarginCallType.NONE
@@ -825,7 +829,7 @@ class ForexMarginGuard:
         # Calculate new leverage
         new_notional = notional
         # Add existing notional if available
-        new_leverage = new_notional / current.equity if current.equity > 0 else float('inf')
+        new_leverage = new_notional / current.equity if current.equity > 0 else float("inf")
 
         return ForexMarginStatus(
             equity=current.equity,
@@ -848,9 +852,9 @@ class ForexMarginGuard:
         Returns:
             ForexMarginRequirement
         """
-        leverage = LEVERAGE_BY_CATEGORY.get(
-            category, {}
-        ).get(self._jurisdiction, self._max_leverage)
+        leverage = LEVERAGE_BY_CATEGORY.get(category, {}).get(
+            self._jurisdiction, self._max_leverage
+        )
 
         leverage = min(leverage, self._max_leverage)
         margin_pct = 1.0 / leverage if leverage > 0 else 1.0

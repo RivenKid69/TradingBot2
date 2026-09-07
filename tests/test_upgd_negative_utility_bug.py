@@ -7,6 +7,7 @@ receive smaller updates, which is opposite to the intended behavior.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import sys
 import os
@@ -27,9 +28,9 @@ def test_negative_utility_inversion():
 
     Bug: When global_max_util < 0, this relationship inverts.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Negative Utility Inversion Bug")
-    print("="*80)
+    print("=" * 80)
 
     # Create two simple parameters with different magnitudes
     # We'll engineer the gradients to create negative utilities
@@ -53,8 +54,12 @@ def test_negative_utility_inversion():
     print(f"  param1 = {param1_initial.item():.4f}, grad1 = {param1.grad.item():.4f}")
     print(f"  param2 = {param2_initial.item():.4f}, grad2 = {param2.grad.item():.4f}")
     print(f"\nExpected utilities (utility = -grad * param):")
-    print(f"  utility1 = -{param1.grad.item():.4f} * {param1_initial.item():.4f} = {(-param1.grad * param1_initial).item():.4f}")
-    print(f"  utility2 = -{param2.grad.item():.4f} * {param2_initial.item():.4f} = {(-param2.grad * param2_initial).item():.4f}")
+    print(
+        f"  utility1 = -{param1.grad.item():.4f} * {param1_initial.item():.4f} = {(-param1.grad * param1_initial).item():.4f}"
+    )
+    print(
+        f"  utility2 = -{param2.grad.item():.4f} * {param2_initial.item():.4f} = {(-param2.grad * param2_initial).item():.4f}"
+    )
 
     # First step: utilities will be initialized
     optimizer.step()
@@ -83,12 +88,20 @@ def test_negative_utility_inversion():
     update_factor2 = 1 - scaled_utility2
 
     print(f"\nScaling computation (CURRENT BUGGY LOGIC):")
-    print(f"  param1: utility/max = {utility1:.4f}/{global_max:.4f} = {utility1/(global_max+epsilon):.4f}")
+    print(
+        f"  param1: utility/max = {utility1:.4f}/{global_max:.4f} = {utility1/(global_max+epsilon):.4f}"
+    )
     print(f"          sigmoid({utility1/(global_max+epsilon):.4f}) = {scaled_utility1.item():.4f}")
-    print(f"          update_factor = 1 - {scaled_utility1.item():.4f} = {update_factor1.item():.4f}")
-    print(f"\n  param2: utility/max = {utility2:.4f}/{global_max:.4f} = {utility2/(global_max+epsilon):.4f}")
+    print(
+        f"          update_factor = 1 - {scaled_utility1.item():.4f} = {update_factor1.item():.4f}"
+    )
+    print(
+        f"\n  param2: utility/max = {utility2:.4f}/{global_max:.4f} = {utility2/(global_max+epsilon):.4f}"
+    )
     print(f"          sigmoid({utility2/(global_max+epsilon):.4f}) = {scaled_utility2.item():.4f}")
-    print(f"          update_factor = 1 - {scaled_utility2.item():.4f} = {update_factor2.item():.4f}")
+    print(
+        f"          update_factor = 1 - {scaled_utility2.item():.4f} = {update_factor2.item():.4f}"
+    )
 
     # Compute actual updates
     update1 = param1_initial - param1.data
@@ -99,21 +112,29 @@ def test_negative_utility_inversion():
     print(f"  param2 change = {update2.item():.6f}")
 
     # Analysis
-    print(f"\n" + "-"*80)
+    print(f"\n" + "-" * 80)
     print("ANALYSIS:")
-    print("-"*80)
+    print("-" * 80)
 
     if update_factor1 < update_factor2:
         print("[FAIL] BUG CONFIRMED!")
-        print(f"\n  param1 (MORE negative utility = 'worse') got SMALLER update factor ({update_factor1.item():.4f})")
-        print(f"  param2 (LESS negative utility = 'better') got LARGER update factor ({update_factor2.item():.4f})")
+        print(
+            f"\n  param1 (MORE negative utility = 'worse') got SMALLER update factor ({update_factor1.item():.4f})"
+        )
+        print(
+            f"  param2 (LESS negative utility = 'better') got LARGER update factor ({update_factor2.item():.4f})"
+        )
         print("\n  Expected behavior: 'worse' parameters should get LARGER updates (exploration)")
         print("  Actual behavior: 'worse' parameters got SMALLER updates (inverted logic!)")
 
         print("\n  ROOT CAUSE:")
         print("  When global_max < 0, dividing by negative number inverts the relationship:")
-        print(f"    More negative utility ({utility1:.4f}) / negative max ({global_max:.4f}) = {utility1/global_max:.4f} (LARGER)")
-        print(f"    Less negative utility ({utility2:.4f}) / negative max ({global_max:.4f}) = {utility2/global_max:.4f} (SMALLER)")
+        print(
+            f"    More negative utility ({utility1:.4f}) / negative max ({global_max:.4f}) = {utility1/global_max:.4f} (LARGER)"
+        )
+        print(
+            f"    Less negative utility ({utility2:.4f}) / negative max ({global_max:.4f}) = {utility2/global_max:.4f} (SMALLER)"
+        )
         print("  This causes sigmoid to produce inverted outputs!")
 
         return False
@@ -126,9 +147,9 @@ def test_positive_utility_normal_case():
     """
     Test that the logic works correctly when utilities are positive (normal case).
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Positive Utility (Normal Case)")
-    print("="*80)
+    print("=" * 80)
 
     # Create two simple parameters
     param1 = torch.tensor([2.0], requires_grad=True)  # Will have high positive utility
@@ -147,8 +168,12 @@ def test_positive_utility_normal_case():
     print(f"  param1 = {param1.data.item():.4f}, grad1 = {param1.grad.item():.4f}")
     print(f"  param2 = {param2.data.item():.4f}, grad2 = {param2.grad.item():.4f}")
     print(f"\nExpected utilities:")
-    print(f"  utility1 = -{param1.grad.item():.4f} * {param1.data.item():.4f} = {(-param1.grad * param1.data).item():.4f} (high)")
-    print(f"  utility2 = -{param2.grad.item():.4f} * {param2.data.item():.4f} = {(-param2.grad * param2.data).item():.4f} (low)")
+    print(
+        f"  utility1 = -{param1.grad.item():.4f} * {param1.data.item():.4f} = {(-param1.grad * param1.data).item():.4f} (high)"
+    )
+    print(
+        f"  utility2 = -{param2.grad.item():.4f} * {param2.data.item():.4f} = {(-param2.grad * param2.data).item():.4f} (low)"
+    )
 
     # First step
     optimizer.step()
@@ -174,17 +199,23 @@ def test_positive_utility_normal_case():
     update_factor2 = 1 - scaled_utility2
 
     print(f"\nUpdate factors:")
-    print(f"  param1 (high utility): update_factor = {update_factor1.item():.4f} (should be SMALLER)")
+    print(
+        f"  param1 (high utility): update_factor = {update_factor1.item():.4f} (should be SMALLER)"
+    )
     print(f"  param2 (low utility): update_factor = {update_factor2.item():.4f} (should be LARGER)")
 
-    print(f"\n" + "-"*80)
+    print(f"\n" + "-" * 80)
     print("ANALYSIS:")
-    print("-"*80)
+    print("-" * 80)
 
     if update_factor1 < update_factor2:
         print("[PASS] CORRECT BEHAVIOR!")
-        print(f"\n  param1 (HIGH utility) got SMALLER update factor ({update_factor1.item():.4f}) - PROTECTED")
-        print(f"  param2 (LOW utility) got LARGER update factor ({update_factor2.item():.4f}) - EXPLORED")
+        print(
+            f"\n  param1 (HIGH utility) got SMALLER update factor ({update_factor1.item():.4f}) - PROTECTED"
+        )
+        print(
+            f"  param2 (LOW utility) got LARGER update factor ({update_factor2.item():.4f}) - EXPLORED"
+        )
         return True
     else:
         print("[FAIL] UNEXPECTED: Logic is inverted even for positive utilities!")
@@ -195,13 +226,13 @@ def test_mixed_utility_case():
     """
     Test behavior when utilities are mixed (some positive, some negative).
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST: Mixed Utility (Positive and Negative)")
-    print("="*80)
+    print("=" * 80)
 
-    param1 = torch.tensor([2.0], requires_grad=True)   # Will have positive utility
-    param2 = torch.tensor([1.0], requires_grad=True)   # Will have negative utility
-    param3 = torch.tensor([1.5], requires_grad=True)   # Will have near-zero utility
+    param1 = torch.tensor([2.0], requires_grad=True)  # Will have positive utility
+    param2 = torch.tensor([1.0], requires_grad=True)  # Will have negative utility
+    param3 = torch.tensor([1.5], requires_grad=True)  # Will have near-zero utility
 
     optimizer = UPGD([param1, param2, param3], lr=0.1, sigma=0.0)
 
@@ -245,9 +276,9 @@ def test_mixed_utility_case():
     print(f"  param2 (negative utility): {update_factor2.item():.4f}")
     print(f"  param3 (near-zero utility): {update_factor3.item():.4f}")
 
-    print(f"\n" + "-"*80)
+    print(f"\n" + "-" * 80)
     print("ANALYSIS:")
-    print("-"*80)
+    print("-" * 80)
     print(f"  When global_max is positive, negative utilities get very small sigmoid inputs")
     print(f"  This gives them larger update factors, which may be unexpected.")
     print(f"  Question: Should negative utility parameters be treated differently?")
@@ -256,26 +287,26 @@ def test_mixed_utility_case():
 
 
 if __name__ == "__main__":
-    print("\n" + "#"*80)
+    print("\n" + "#" * 80)
     print("# UPGD Optimizer: Negative Utility Scaling Bug Verification")
-    print("#"*80)
+    print("#" * 80)
 
     test1_pass = test_positive_utility_normal_case()
     test2_pass = test_negative_utility_inversion()
     test3_pass = test_mixed_utility_case()
 
-    print("\n" + "#"*80)
+    print("\n" + "#" * 80)
     print("# SUMMARY")
-    print("#"*80)
+    print("#" * 80)
     print(f"\n  Test 1 (Positive Utility): {'PASS' if test1_pass else 'FAIL'}")
     print(f"  Test 2 (Negative Utility): {'BUG CONFIRMED' if not test2_pass else 'PASS'}")
     print(f"  Test 3 (Mixed Utility): {'PASS' if test3_pass else 'FAIL'}")
 
     if not test2_pass:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("CONCLUSION: BUG CONFIRMED!")
-        print("="*80)
+        print("=" * 80)
         print("\nThe UPGD optimizer has inverted scaling logic when all utilities are negative.")
         print("This occurs when gradients and parameters are co-directional (grad * param > 0).")
         print("\nRecommended fix: Use min-max normalization instead of division by global_max.")
-        print("="*80)
+        print("=" * 80)

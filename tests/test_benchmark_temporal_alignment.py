@@ -34,6 +34,7 @@ from stock_features import (
 # TEST FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def stock_df_2022():
     """Stock DataFrame starting from 2022-01-01."""
@@ -44,15 +45,17 @@ def stock_df_2022():
         1641254400,  # 2022-01-04
         1641340800,  # 2022-01-05
     ]
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": ["AAPL"] * 5,
-        "open": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "high": [105.0, 106.0, 107.0, 108.0, 109.0],
-        "low": [99.0, 100.0, 101.0, 102.0, 103.0],
-        "close": [104.0, 105.0, 106.0, 107.0, 108.0],
-        "volume": [1000.0] * 5,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": ["AAPL"] * 5,
+            "open": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "high": [105.0, 106.0, 107.0, 108.0, 109.0],
+            "low": [99.0, 100.0, 101.0, 102.0, 103.0],
+            "close": [104.0, 105.0, 106.0, 107.0, 108.0],
+            "volume": [1000.0] * 5,
+        }
+    )
 
 
 @pytest.fixture
@@ -68,10 +71,12 @@ def vix_df_2020():
         1641254400,  # 2022-01-04
         1641340800,  # 2022-01-05
     ]
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "close": [20.0, 21.0, 22.0, 15.0, 16.0, 17.0, 18.0, 19.0],
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "close": [20.0, 21.0, 22.0, 15.0, 16.0, 17.0, 18.0, 19.0],
+        }
+    )
 
 
 @pytest.fixture
@@ -84,10 +89,12 @@ def spy_df_aligned():
         1641254400,  # 2022-01-04
         1641340800,  # 2022-01-05
     ]
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "close": [400.0, 401.0, 402.0, 403.0, 404.0],
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "close": [400.0, 401.0, 402.0, 403.0, 404.0],
+        }
+    )
 
 
 @pytest.fixture
@@ -98,15 +105,18 @@ def spy_df_with_gaps():
         1641168000,  # 2022-01-03 (gap: 01-02 missing)
         1641340800,  # 2022-01-05 (gap: 01-04 missing)
     ]
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "close": [400.0, 402.0, 404.0],
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "close": [400.0, 402.0, 404.0],
+        }
+    )
 
 
 # =============================================================================
 # TESTS FOR _align_benchmark_by_timestamp
 # =============================================================================
+
 
 class TestAlignBenchmarkByTimestamp:
     """Tests for the _align_benchmark_by_timestamp helper function."""
@@ -168,10 +178,12 @@ class TestAlignBenchmarkByTimestamp:
     def test_benchmark_after_stock_returns_nones_for_early_rows(self, stock_df_2022):
         """When benchmark starts after stock, early rows should get None."""
         # Benchmark only has data for 2022-01-04 and 2022-01-05
-        late_benchmark = pd.DataFrame({
-            "timestamp": [1641254400, 1641340800],  # 2022-01-04, 2022-01-05
-            "close": [403.0, 404.0],
-        })
+        late_benchmark = pd.DataFrame(
+            {
+                "timestamp": [1641254400, 1641340800],  # 2022-01-04, 2022-01-05
+                "close": [403.0, 404.0],
+            }
+        )
         aligned = _align_benchmark_by_timestamp(stock_df_2022, late_benchmark, "close")
 
         assert len(aligned) == len(stock_df_2022)
@@ -201,6 +213,7 @@ class TestAlignBenchmarkByTimestamp:
 # TESTS FOR add_stock_features_to_dataframe TEMPORAL ALIGNMENT
 # =============================================================================
 
+
 class TestStockFeaturesTemporalAlignment:
     """Tests for add_stock_features_to_dataframe using aligned data."""
 
@@ -222,18 +235,20 @@ class TestStockFeaturesTemporalAlignment:
     def test_relative_strength_with_misaligned_spy(self, stock_df_2022):
         """Relative strength should handle misaligned SPY data correctly."""
         # SPY data starts from 2020 (like VIX)
-        spy_2020 = pd.DataFrame({
-            "timestamp": [
-                1577836800,  # 2020-01-01
-                1577923200,  # 2020-01-02
-                1640995200,  # 2022-01-01
-                1641081600,  # 2022-01-02
-                1641168000,  # 2022-01-03
-                1641254400,  # 2022-01-04
-                1641340800,  # 2022-01-05
-            ],
-            "close": [300.0, 301.0, 400.0, 401.0, 402.0, 403.0, 404.0],
-        })
+        spy_2020 = pd.DataFrame(
+            {
+                "timestamp": [
+                    1577836800,  # 2020-01-01
+                    1577923200,  # 2020-01-02
+                    1640995200,  # 2022-01-01
+                    1641081600,  # 2022-01-02
+                    1641168000,  # 2022-01-03
+                    1641254400,  # 2022-01-04
+                    1641340800,  # 2022-01-05
+                ],
+                "close": [300.0, 301.0, 400.0, 401.0, 402.0, 403.0, 404.0],
+            }
+        )
 
         result = add_stock_features_to_dataframe(
             df=stock_df_2022,
@@ -248,14 +263,16 @@ class TestStockFeaturesTemporalAlignment:
     def test_no_look_ahead_bias(self, stock_df_2022):
         """Ensure benchmark data from the future is not used (no look-ahead)."""
         # Benchmark with future data (after stock's last timestamp)
-        future_benchmark = pd.DataFrame({
-            "timestamp": [
-                1641340800,  # 2022-01-05 (last stock row)
-                1641427200,  # 2022-01-06 (future)
-                1641513600,  # 2022-01-07 (future)
-            ],
-            "close": [404.0, 999.0, 1000.0],  # Future values are very different
-        })
+        future_benchmark = pd.DataFrame(
+            {
+                "timestamp": [
+                    1641340800,  # 2022-01-05 (last stock row)
+                    1641427200,  # 2022-01-06 (future)
+                    1641513600,  # 2022-01-07 (future)
+                ],
+                "close": [404.0, 999.0, 1000.0],  # Future values are very different
+            }
+        )
 
         aligned = _align_benchmark_by_timestamp(stock_df_2022, future_benchmark, "close")
 
@@ -287,6 +304,7 @@ class TestStockFeaturesTemporalAlignment:
 # REGRESSION TESTS
 # =============================================================================
 
+
 class TestRegressionNoPositionalIndexing:
     """
     Regression tests to ensure positional indexing bug doesn't return.
@@ -315,16 +333,20 @@ class TestRegressionNoPositionalIndexing:
         Note: In production, data pipelines should ensure adequate overlap.
         """
         # Long benchmark: 100 days starting 2020-01-01 (ends ~2020-04-10)
-        long_benchmark = pd.DataFrame({
-            "timestamp": [1577836800 + i * 86400 for i in range(100)],
-            "close": [100.0 + i for i in range(100)],  # 100, 101, 102...199
-        })
+        long_benchmark = pd.DataFrame(
+            {
+                "timestamp": [1577836800 + i * 86400 for i in range(100)],
+                "close": [100.0 + i for i in range(100)],  # 100, 101, 102...199
+            }
+        )
 
         # Short stock: 5 days starting 2022-01-01 (after benchmark ends)
-        short_stock = pd.DataFrame({
-            "timestamp": [1640995200 + i * 86400 for i in range(5)],
-            "close": [200.0 + i for i in range(5)],
-        })
+        short_stock = pd.DataFrame(
+            {
+                "timestamp": [1640995200 + i * 86400 for i in range(5)],
+                "close": [200.0 + i for i in range(5)],
+            }
+        )
 
         aligned = _align_benchmark_by_timestamp(short_stock, long_benchmark, "close")
 
@@ -338,22 +360,26 @@ class TestRegressionNoPositionalIndexing:
     def test_overlapping_ranges_uses_correct_values(self):
         """When ranges overlap, should use temporally correct values."""
         # Benchmark: 2021-12-30 to 2022-01-05
-        benchmark = pd.DataFrame({
-            "timestamp": [
-                1640822400,  # 2021-12-30
-                1640908800,  # 2021-12-31
-                1640995200,  # 2022-01-01
-                1641081600,  # 2022-01-02
-                1641168000,  # 2022-01-03
-            ],
-            "close": [10.0, 11.0, 12.0, 13.0, 14.0],  # Different values each day
-        })
+        benchmark = pd.DataFrame(
+            {
+                "timestamp": [
+                    1640822400,  # 2021-12-30
+                    1640908800,  # 2021-12-31
+                    1640995200,  # 2022-01-01
+                    1641081600,  # 2022-01-02
+                    1641168000,  # 2022-01-03
+                ],
+                "close": [10.0, 11.0, 12.0, 13.0, 14.0],  # Different values each day
+            }
+        )
 
         # Stock: 2022-01-01 to 2022-01-03
-        stock = pd.DataFrame({
-            "timestamp": [1640995200, 1641081600, 1641168000],
-            "close": [100.0, 101.0, 102.0],
-        })
+        stock = pd.DataFrame(
+            {
+                "timestamp": [1640995200, 1641081600, 1641168000],
+                "close": [100.0, 101.0, 102.0],
+            }
+        )
 
         aligned = _align_benchmark_by_timestamp(stock, benchmark, "close")
 
@@ -370,19 +396,24 @@ class TestRegressionNoPositionalIndexing:
 # EDGE CASE TESTS
 # =============================================================================
 
+
 class TestEdgeCases:
     """Edge case tests for temporal alignment."""
 
     def test_single_row_dataframe(self):
         """Should handle single-row DataFrames."""
-        single_stock = pd.DataFrame({
-            "timestamp": [1640995200],
-            "close": [100.0],
-        })
-        single_benchmark = pd.DataFrame({
-            "timestamp": [1640995200],
-            "close": [50.0],
-        })
+        single_stock = pd.DataFrame(
+            {
+                "timestamp": [1640995200],
+                "close": [100.0],
+            }
+        )
+        single_benchmark = pd.DataFrame(
+            {
+                "timestamp": [1640995200],
+                "close": [50.0],
+            }
+        )
 
         aligned = _align_benchmark_by_timestamp(single_stock, single_benchmark, "close")
 
@@ -391,15 +422,19 @@ class TestEdgeCases:
 
     def test_duplicate_timestamps_in_benchmark(self):
         """Should handle duplicate timestamps (uses first/last depending on sort)."""
-        stock = pd.DataFrame({
-            "timestamp": [1640995200, 1641081600],
-            "close": [100.0, 101.0],
-        })
+        stock = pd.DataFrame(
+            {
+                "timestamp": [1640995200, 1641081600],
+                "close": [100.0, 101.0],
+            }
+        )
         # Benchmark has duplicate timestamp
-        benchmark = pd.DataFrame({
-            "timestamp": [1640995200, 1640995200, 1641081600],
-            "close": [50.0, 51.0, 52.0],  # Two values for same timestamp
-        })
+        benchmark = pd.DataFrame(
+            {
+                "timestamp": [1640995200, 1640995200, 1641081600],
+                "close": [50.0, 51.0, 52.0],  # Two values for same timestamp
+            }
+        )
 
         aligned = _align_benchmark_by_timestamp(stock, benchmark, "close")
 
@@ -410,14 +445,18 @@ class TestEdgeCases:
 
     def test_nan_values_in_benchmark(self):
         """Should handle NaN values in benchmark data."""
-        stock = pd.DataFrame({
-            "timestamp": [1640995200, 1641081600, 1641168000],
-            "close": [100.0, 101.0, 102.0],
-        })
-        benchmark = pd.DataFrame({
-            "timestamp": [1640995200, 1641081600, 1641168000],
-            "close": [50.0, np.nan, 52.0],  # NaN in middle
-        })
+        stock = pd.DataFrame(
+            {
+                "timestamp": [1640995200, 1641081600, 1641168000],
+                "close": [100.0, 101.0, 102.0],
+            }
+        )
+        benchmark = pd.DataFrame(
+            {
+                "timestamp": [1640995200, 1641081600, 1641168000],
+                "close": [50.0, np.nan, 52.0],  # NaN in middle
+            }
+        )
 
         aligned = _align_benchmark_by_timestamp(stock, benchmark, "close")
 

@@ -60,9 +60,7 @@ def check_model_security(path: Path) -> Tuple[bool, Optional[str]]:
         return False, str(e)
 
 
-def convert_model(
-    path: Path, backup: bool = True, dry_run: bool = False
-) -> Tuple[bool, str]:
+def convert_model(path: Path, backup: bool = True, dry_run: bool = False) -> Tuple[bool, str]:
     """Convert legacy model to secure format.
 
     Returns:
@@ -131,9 +129,7 @@ def convert_model(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Convert legacy PyTorch models to secure format"
-    )
+    parser = argparse.ArgumentParser(description="Convert legacy PyTorch models to secure format")
     parser.add_argument(
         "--models-dir",
         type=Path,
@@ -208,9 +204,7 @@ def main():
         sys.exit(1)
 
     if results["converted"] > 0 and not args.dry_run:
-        logger.info(
-            "Conversion complete. Verify models work correctly before deploying."
-        )
+        logger.info("Conversion complete. Verify models work correctly before deploying.")
 
 
 if __name__ == "__main__":

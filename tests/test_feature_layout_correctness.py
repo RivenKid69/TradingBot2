@@ -33,29 +33,29 @@ def test_feature_layout_matches_obs_builder():
     # Set distinctive values for verification
     # Phase 5: Added signal_pos and enable_validity_flags parameters
     build_observation_vector(
-        price=50000.0,           # Will be at index 0
-        prev_price=49900.0,      # Used for ret_bar at index 21
-        log_volume_norm=0.5,     # Will be at index 1
-        rel_volume=0.5,          # Will be at index 2
-        ma5=50100.0,             # Will be at index 3
-        ma20=50200.0,            # Will be at index 5
-        rsi14=50.0,              # Will be at index 7
-        macd=10.0,               # Will be at index 9
-        macd_signal=8.0,         # Will be at index 11
-        momentum=15.0,           # Will be at index 13
-        atr=100.0,               # Will be at index 15
-        cci=5.0,                 # Will be at index 17
-        obv=1000.0,              # Will be at index 19
-        bb_lower=49000.0,        # Used for bb_position at index 33
-        bb_upper=51000.0,        # Used for bb_position at index 33
+        price=50000.0,  # Will be at index 0
+        prev_price=49900.0,  # Used for ret_bar at index 21
+        log_volume_norm=0.5,  # Will be at index 1
+        rel_volume=0.5,  # Will be at index 2
+        ma5=50100.0,  # Will be at index 3
+        ma20=50200.0,  # Will be at index 5
+        rsi14=50.0,  # Will be at index 7
+        macd=10.0,  # Will be at index 9
+        macd_signal=8.0,  # Will be at index 11
+        momentum=15.0,  # Will be at index 13
+        atr=100.0,  # Will be at index 15
+        cci=5.0,  # Will be at index 17
+        obv=1000.0,  # Will be at index 19
+        bb_lower=49000.0,  # Used for bb_position at index 33
+        bb_upper=51000.0,  # Used for bb_position at index 33
         is_high_importance=1.0,  # Will be at index 35
-        time_since_event=5.0,    # Will be at index 36
-        fear_greed_value=50.0,   # Will be at index 38
+        time_since_event=5.0,  # Will be at index 36
+        fear_greed_value=50.0,  # Will be at index 38
         has_fear_greed=True,
         risk_off_flag=False,
-        cash=10000.0,            # Will be at index 23
+        cash=10000.0,  # Will be at index 23
         units=0.0,
-        signal_pos=0.0,          # Will be at index 29
+        signal_pos=0.0,  # Will be at index 29
         last_vol_imbalance=0.0,
         last_trade_intensity=0.0,
         last_realized_spread=0.0,
@@ -144,7 +144,9 @@ def test_feature_layout_matches_obs_builder():
 
     # Block 15: Metadata (5) - indices 35-39 (shifted +1)
     assert out[35] == 1.0, "is_high_importance at index 35"
-    assert abs(out[36] - np.tanh(5.0 / 24.0)) < 0.01, f"time_since_event at index 36 (got {out[36]})"
+    assert (
+        abs(out[36] - np.tanh(5.0 / 24.0)) < 0.01
+    ), f"time_since_event at index 36 (got {out[36]})"
     assert out[37] == 0.0, "risk_off_flag at index 37"
     assert abs(out[38] - 0.5) < 0.01, f"fear_greed_value at index 38 (50/100 = 0.5, got {out[38]})"
     assert out[39] == 1.0, "fear_greed_indicator at index 39"
@@ -153,8 +155,9 @@ def test_feature_layout_matches_obs_builder():
     # norm_cols go through tanh(value) then clip to [-3, 3]
     for i in range(28):
         expected_val = np.tanh(100.0 + i)
-        assert abs(out[40 + i] - expected_val) < 0.01, \
-            f"external[{i}] at index {40+i} (expected {expected_val}, got {out[40+i]})"
+        assert (
+            abs(out[40 + i] - expected_val) < 0.01
+        ), f"external[{i}] at index {40+i} (expected {expected_val}, got {out[40+i]})"
 
     # Block 17: Token metadata (2) - indices 68-69 (Phase 5: shifted due to expanded external)
     assert abs(out[68] - 1.0) < 0.01, f"num_tokens_norm at index 68 (got {out[68]})"
@@ -180,7 +183,7 @@ def test_feature_config_has_correct_total_size():
     """
     from feature_config import FEATURES_LAYOUT, N_FEATURES
 
-    total = sum(block['size'] for block in FEATURES_LAYOUT)
+    total = sum(block["size"] for block in FEATURES_LAYOUT)
 
     # Phase 6 (2025-11-28): Expanded EXT_NORM_DIM from 28 to 35
     # New total: 3+2+2+14+2+7+3+2+5+35+35+2+1 = 113
@@ -204,23 +207,23 @@ def test_feature_config_block_order_documentation():
     # - external_validity: 21 → 35
     # - Total: 99 → 113
     expected_order = [
-        ("bar", 3),              # 0-2
-        ("ma5", 2),              # 3-4
-        ("ma20", 2),             # 5-6
-        ("indicators", 14),      # 7-20 (rsi, macd, momentum, atr, cci, obv + flags)
-        ("derived", 2),          # 21-22 (ret_bar, vol_proxy)
-        ("agent", 7),            # 23-29 (added signal_pos at index 29)
-        ("microstructure", 3),   # 30-32
-        ("bb_context", 2),       # 33-34
-        ("metadata", 5),         # 35-39
-        ("external", 35),        # 40-74 (21 crypto + 7 stock + 7 macro/corp features)
+        ("bar", 3),  # 0-2
+        ("ma5", 2),  # 3-4
+        ("ma20", 2),  # 5-6
+        ("indicators", 14),  # 7-20 (rsi, macd, momentum, atr, cci, obv + flags)
+        ("derived", 2),  # 21-22 (ret_bar, vol_proxy)
+        ("agent", 7),  # 23-29 (added signal_pos at index 29)
+        ("microstructure", 3),  # 30-32
+        ("bb_context", 2),  # 33-34
+        ("metadata", 5),  # 35-39
+        ("external", 35),  # 40-74 (21 crypto + 7 stock + 7 macro/corp features)
         ("external_validity", 35),  # 75-109 (validity flags for external features)
-        ("token_meta", 2),       # 110-111
-        ("token", 1),            # 112
+        ("token_meta", 2),  # 110-111
+        ("token", 1),  # 112
     ]
 
     # Current feature_config.py order
-    actual_order = [(block['name'], block['size']) for block in FEATURES_LAYOUT]
+    actual_order = [(block["name"], block["size"]) for block in FEATURES_LAYOUT]
 
     # Check if order matches
     if actual_order == expected_order:
@@ -248,8 +251,9 @@ def test_feature_config_block_order_documentation():
 
         # Note: Feature count updated from 63 to 84 in latest version
         # This test is for documentation only, so we just verify totals match
-        assert total_expected == total_actual, \
-            f"Total size mismatch: expected {total_expected}, actual {total_actual}"
+        assert (
+            total_expected == total_actual
+        ), f"Total size mismatch: expected {total_expected}, actual {total_actual}"
 
         print(f"\nOK: Total size is correct ({total_expected})")
         print("OK: Runtime behavior is unaffected (order not used for indexing)")

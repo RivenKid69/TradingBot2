@@ -203,7 +203,11 @@ def test_real_world_scenario():
     trend_increasing = ratios[-1] > ratios[0]
     print(f"\nTrend verification:")
     print(f"  First ratio: {ratios[0]:.4f}, Last ratio: {ratios[-1]:.4f}")
-    print(f"  Trend increasing: {trend_increasing} ✅" if trend_increasing else f"  Trend increasing: {trend_increasing} ❌")
+    print(
+        f"  Trend increasing: {trend_increasing} ✅"
+        if trend_increasing
+        else f"  Trend increasing: {trend_increasing} ❌"
+    )
 
     print("\n" + "=" * 70)
     print("✅ TEST 5 PASSED: Real-world scenario calculations correct")

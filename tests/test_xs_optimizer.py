@@ -22,7 +22,9 @@ SYMS = ["A", "B", "C"]
 
 
 def _cov(diag):
-    return pd.DataFrame(np.diag(diag).astype("float64"), index=SYMS[: len(diag)], columns=SYMS[: len(diag)])
+    return pd.DataFrame(
+        np.diag(diag).astype("float64"), index=SYMS[: len(diag)], columns=SYMS[: len(diag)]
+    )
 
 
 def _mu(vals, syms=SYMS):
@@ -81,8 +83,10 @@ def test_black_litterman_no_views_equals_mvo():
     mu, cov = _mu([1, 2, 3]), _cov([1, 1, 1])
     w_mvo = _opt("mean_variance", net_target=1.0).solve(mu, cov)
     bl = PortfolioOptimizer(
-        objective="black_litterman", use_cvxpy="never",
-        constraints=OptimizerConstraints(net_target=1.0), bl_views={},
+        objective="black_litterman",
+        use_cvxpy="never",
+        constraints=OptimizerConstraints(net_target=1.0),
+        bl_views={},
     )
     w_bl = bl.solve(mu, cov)
     assert np.allclose(w_mvo.to_numpy(), w_bl.to_numpy(), atol=1e-10)

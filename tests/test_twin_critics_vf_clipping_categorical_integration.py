@@ -13,6 +13,7 @@ Test Coverage:
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
@@ -155,9 +156,10 @@ class TestCategoricalPolicyConfiguration:
         )
 
         # Verify policy has correct flag
-        assert hasattr(model.policy, '_use_quantile_value_head')
-        assert model.policy._use_quantile_value_head is False, \
-            "Categorical critic should have _use_quantile_value_head=False"
+        assert hasattr(model.policy, "_use_quantile_value_head")
+        assert (
+            model.policy._use_quantile_value_head is False
+        ), "Categorical critic should have _use_quantile_value_head=False"
 
     def test_quantile_flag_sets_use_quantile_true(self, simple_env, quantile_policy_config):
         """Test that quantile critic (no categorical flag) sets _use_quantile_value_head=True."""
@@ -170,9 +172,10 @@ class TestCategoricalPolicyConfiguration:
         )
 
         # Verify policy has correct flag
-        assert hasattr(model.policy, '_use_quantile_value_head')
-        assert model.policy._use_quantile_value_head is True, \
-            "Quantile critic should have _use_quantile_value_head=True"
+        assert hasattr(model.policy, "_use_quantile_value_head")
+        assert (
+            model.policy._use_quantile_value_head is True
+        ), "Quantile critic should have _use_quantile_value_head=True"
 
     def test_categorical_has_atoms_buffer(self, simple_env, categorical_policy_config):
         """Test that categorical critic has atoms buffer."""
@@ -185,8 +188,10 @@ class TestCategoricalPolicyConfiguration:
         )
 
         # Verify policy has atoms buffer
-        assert hasattr(model.policy, 'atoms')
-        assert model.policy.atoms.numel() > 0, "Categorical critic should have non-empty atoms buffer"
+        assert hasattr(model.policy, "atoms")
+        assert (
+            model.policy.atoms.numel() > 0
+        ), "Categorical critic should have non-empty atoms buffer"
         assert model.policy.atoms.shape[0] == 51, "Should have 51 atoms as configured"
 
 
@@ -204,11 +209,11 @@ class TestCategoricalTwinCriticsVFClipping:
         )
 
         # Verify Twin Critics is enabled
-        assert hasattr(model.policy, '_use_twin_critics')
+        assert hasattr(model.policy, "_use_twin_critics")
         assert model.policy._use_twin_critics is True
 
         # Verify second critic head exists
-        assert hasattr(model.policy, 'dist_head_2')
+        assert hasattr(model.policy, "dist_head_2")
         assert model.policy.dist_head_2 is not None
 
     def test_vf_clipping_with_different_ranges(self, simple_env, categorical_policy_config):

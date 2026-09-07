@@ -20,6 +20,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import yaml
 

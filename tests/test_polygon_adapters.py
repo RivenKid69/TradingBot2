@@ -38,6 +38,7 @@ from adapters.models import ExchangeVendor, MarketType
 # Timeframe Utilities Tests
 # =============================================================================
 
+
 class TestTimeframeUtilities:
     """Tests for timeframe conversion utilities."""
 
@@ -93,6 +94,7 @@ class TestTimeframeUtilities:
 # =============================================================================
 # PolygonMarketDataAdapter Tests
 # =============================================================================
+
 
 class TestPolygonMarketDataAdapter:
     """Tests for Polygon market data adapter."""
@@ -275,6 +277,7 @@ class TestPolygonMarketDataAdapter:
 # PolygonTradingHoursAdapter Tests
 # =============================================================================
 
+
 class TestPolygonTradingHoursAdapter:
     """Tests for Polygon trading hours adapter."""
 
@@ -325,9 +328,7 @@ class TestPolygonTradingHoursAdapter:
 
     def test_extended_hours(self, adapter):
         """Test extended hours configuration."""
-        adapter_extended = PolygonTradingHoursAdapter(
-            config={"extended_hours": True}
-        )
+        adapter_extended = PolygonTradingHoursAdapter(config={"extended_hours": True})
 
         assert adapter_extended._extended_hours is True
 
@@ -364,6 +365,7 @@ class TestPolygonTradingHoursAdapter:
 # =============================================================================
 # PolygonExchangeInfoAdapter Tests
 # =============================================================================
+
 
 class TestPolygonExchangeInfoAdapter:
     """Tests for Polygon exchange info adapter."""
@@ -538,6 +540,7 @@ class TestPolygonExchangeInfoAdapter:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestPolygonIntegration:
     """Integration tests for Polygon adapters."""

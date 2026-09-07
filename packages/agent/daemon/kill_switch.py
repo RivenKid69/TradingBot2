@@ -33,6 +33,7 @@ class HaltReasonType(Enum):
 
     Design Doc 9.4: Categorized halt triggers.
     """
+
     MAX_DAILY_LOSS = auto()
     MAX_DRAWDOWN = auto()
     BROKER_ERROR_BURST = auto()
@@ -54,6 +55,7 @@ class HaltReasonType(Enum):
 
 class HaltSeverity(Enum):
     """Severity levels for halt events."""
+
     CRITICAL = "critical"  # Immediate halt, cancel all orders
     HIGH = "high"  # Halt after current orders complete
     MEDIUM = "medium"  # Pause, require manual intervention
@@ -62,6 +64,7 @@ class HaltSeverity(Enum):
 
 class HaltAction(Enum):
     """Actions to take on halt."""
+
     HALT_ONLY = "halt_only"  # Stop trading, keep positions
     CANCEL_ORDERS = "cancel_orders"  # Cancel open orders, keep positions
     FLATTEN_LOCAL = "flatten_local"  # Flatten if local policy allows
@@ -75,6 +78,7 @@ class HaltReason:
 
     Contains all information about why a halt occurred.
     """
+
     reason_id: str = field(default_factory=lambda: str(uuid4()))
     reason_type: HaltReasonType = HaltReasonType.MANUAL_TRIGGER
     severity: HaltSeverity = HaltSeverity.CRITICAL
@@ -141,6 +145,7 @@ class HaltEvent:
 
     Stored for audit and evidence purposes.
     """
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     halt_reason: HaltReason = field(default_factory=HaltReason)
     action_taken: HaltAction = HaltAction.HALT_ONLY
@@ -176,7 +181,9 @@ class HaltEvent:
             "action_taken": self.action_taken.value,
             "orders_cancelled": self.orders_cancelled,
             "positions_flattened": self.positions_flattened,
-            "recovery_timestamp": self.recovery_timestamp.isoformat() if self.recovery_timestamp else None,
+            "recovery_timestamp": (
+                self.recovery_timestamp.isoformat() if self.recovery_timestamp else None
+            ),
             "recovery_approval_code": self.recovery_approval_code,
             "acknowledged_by": self.acknowledged_by,
             "acknowledged_at": self.acknowledged_at.isoformat() if self.acknowledged_at else None,
@@ -191,6 +198,7 @@ class KillSwitchConfig:
 
     Defines thresholds and behaviors.
     """
+
     # Loss thresholds
     max_daily_loss_pct: Decimal = Decimal("0.30")  # 30%
     max_drawdown_pct: Decimal = Decimal("0.50")  # 50%
@@ -350,7 +358,11 @@ class KillSwitchManager:
             orders_cancelled = 0
             positions_flattened = False
 
-            if action in (HaltAction.CANCEL_ORDERS, HaltAction.FLATTEN_LOCAL, HaltAction.FLATTEN_EMERGENCY):
+            if action in (
+                HaltAction.CANCEL_ORDERS,
+                HaltAction.FLATTEN_LOCAL,
+                HaltAction.FLATTEN_EMERGENCY,
+            ):
                 if self._cancel_orders_fn:
                     try:
                         orders_cancelled = self._cancel_orders_fn()
@@ -438,7 +450,9 @@ class KillSwitchManager:
 
             # Check cooldown
             if self._last_trigger_time:
-                cooldown_end = self._last_trigger_time + timedelta(seconds=self.config.cooldown_seconds)
+                cooldown_end = self._last_trigger_time + timedelta(
+                    seconds=self.config.cooldown_seconds
+                )
                 if datetime.utcnow() < cooldown_end:
                     return False
 

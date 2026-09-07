@@ -33,18 +33,22 @@ def main(argv=None) -> int:
 
     df = build_pit_fundamentals_frame(a.symbols)
     if not len(df):
-        print("No fundamentals fetched (check tickers / SEC_EDGAR_USER_AGENT / network).",
-              file=sys.stderr)
+        print(
+            "No fundamentals fetched (check tickers / SEC_EDGAR_USER_AGENT / network).",
+            file=sys.stderr,
+        )
         return 1
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     df.to_parquet(a.out, index=False)
     print(f"Wrote {len(df)} rows for {df['symbol'].nunique()} symbols -> {a.out}")
     print("Per-symbol filings:")
     print(df.groupby("symbol")["publish_ts"].count().to_string())
-    print("\nDate range:",
-          str(__import__('pandas').to_datetime(df['publish_ts'].min(), unit='ms').date()),
-          "->",
-          str(__import__('pandas').to_datetime(df['publish_ts'].max(), unit='ms').date()))
+    print(
+        "\nDate range:",
+        str(__import__("pandas").to_datetime(df["publish_ts"].min(), unit="ms").date()),
+        "->",
+        str(__import__("pandas").to_datetime(df["publish_ts"].max(), unit="ms").date()),
+    )
     return 0
 
 

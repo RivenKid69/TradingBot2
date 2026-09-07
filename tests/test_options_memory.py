@@ -28,6 +28,7 @@ from typing import Dict, List, Optional, Set
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 # Import Phase 0.5 components
@@ -69,6 +70,7 @@ from lob.data_structures import Side, OrderType, LimitOrder
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def temp_dir():
     """Create a temporary directory for disk persistence tests."""
@@ -106,6 +108,7 @@ def event_coordinator():
 # =============================================================================
 # LazyMultiSeriesLOBManager Tests (20 tests)
 # =============================================================================
+
 
 class TestLazyMultiSeriesLOBManager:
     """Tests for LazyMultiSeriesLOBManager."""
@@ -443,6 +446,7 @@ class TestLazyMultiSeriesLOBManager:
 # RingBufferOrderBook Tests (15 tests)
 # =============================================================================
 
+
 class TestRingBufferOrderBook:
     """Tests for RingBufferOrderBook."""
 
@@ -737,6 +741,7 @@ class TestRingBufferOrderBook:
 # EventDrivenLOBCoordinator Tests (15 tests)
 # =============================================================================
 
+
 class TestEventDrivenLOBCoordinator:
     """Tests for EventDrivenLOBCoordinator."""
 
@@ -1000,6 +1005,7 @@ class TestEventDrivenLOBCoordinator:
 # Memory Benchmark Tests (10 tests)
 # =============================================================================
 
+
 class TestMemoryBenchmarks:
     """Tests for memory usage and benchmarks."""
 
@@ -1256,6 +1262,7 @@ class TestMemoryBenchmarks:
 # Disk Persistence Tests (10 tests)
 # =============================================================================
 
+
 class TestDiskPersistence:
     """Tests for disk persistence functionality."""
 
@@ -1308,7 +1315,7 @@ class TestDiskPersistence:
         assert os.path.exists(compressed_file)
 
         # Should be valid gzip (binary pickle content)
-        with gzip.open(compressed_file, 'rb') as f:
+        with gzip.open(compressed_file, "rb") as f:
             content = f.read()
             assert len(content) > 0
 
@@ -1393,7 +1400,7 @@ class TestDiskPersistence:
 
         # Create corrupted file
         corrupt_file = os.path.join(temp_dir, f"{key}.lob.gz")
-        with open(corrupt_file, 'wb') as f:
+        with open(corrupt_file, "wb") as f:
             f.write(b"corrupted data")
 
         manager = create_lazy_lob_manager(
@@ -1428,7 +1435,7 @@ class TestDiskPersistence:
 
         # File should be complete (no temp files)
         files = os.listdir(temp_dir)
-        temp_files = [f for f in files if f.endswith('.tmp')]
+        temp_files = [f for f in files if f.endswith(".tmp")]
         assert len(temp_files) == 0
 
     def test_cleanup_old_files(self, temp_dir):
@@ -1476,10 +1483,7 @@ class TestDiskPersistence:
                 errors.append(e)
 
         threads = [
-            threading.Thread(
-                target=persist_worker,
-                args=(f"AAPL_241220_C_{190 + i * 5}",)
-            )
+            threading.Thread(target=persist_worker, args=(f"AAPL_241220_C_{190 + i * 5}",))
             for i in range(5)
         ]
 
@@ -1511,15 +1515,16 @@ class TestDiskPersistence:
 
         # Read and verify version info (pickle format with gzip compression)
         persist_file = os.path.join(temp_dir, f"{key}.lob.gz")
-        with gzip.open(persist_file, 'rb') as f:
+        with gzip.open(persist_file, "rb") as f:
             data = pickle.load(f)
-            assert 'version' in data
-            assert data['version'] >= 1
+            assert "version" in data
+            assert data["version"] >= 1
 
 
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for Phase 0.5 components."""

@@ -62,6 +62,7 @@ from lob.dark_pool import (
 @dataclass
 class SimulationResult:
     """Result from a simulation run."""
+
     orders_processed: int
     fills_executed: int
     elapsed_sec: float
@@ -75,6 +76,7 @@ class SimulationResult:
 @dataclass
 class BenchmarkResult:
     """Aggregated benchmark result."""
+
     name: str
     runs: int
     avg_throughput: float
@@ -102,26 +104,30 @@ def create_deep_orderbook(
         # Bids - decreasing prices, increasing qty (typical market structure)
         bid_price = mid_price - half_spread - i * 0.01
         bid_qty = qty_per_level * (1.0 + 0.05 * i)  # Deeper levels have more liquidity
-        book.add_limit_order(LimitOrder(
-            order_id=f"bid_{i}",
-            price=bid_price,
-            qty=bid_qty,
-            remaining_qty=bid_qty,
-            timestamp_ns=1000 + i,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id=f"bid_{i}",
+                price=bid_price,
+                qty=bid_qty,
+                remaining_qty=bid_qty,
+                timestamp_ns=1000 + i,
+                side=Side.BUY,
+            )
+        )
 
         # Asks - increasing prices, increasing qty
         ask_price = mid_price + half_spread + i * 0.01
         ask_qty = qty_per_level * (1.0 + 0.05 * i)
-        book.add_limit_order(LimitOrder(
-            order_id=f"ask_{i}",
-            price=ask_price,
-            qty=ask_qty,
-            remaining_qty=ask_qty,
-            timestamp_ns=1000 + i,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id=f"ask_{i}",
+                price=ask_price,
+                qty=ask_qty,
+                remaining_qty=ask_qty,
+                timestamp_ns=1000 + i,
+                side=Side.SELL,
+            )
+        )
 
     return book
 
@@ -259,7 +265,9 @@ class FullSimulationBenchmark:
                 # Fill probability
                 if include_fill_prob:
                     _ = self.fill_model.compute_fill_probability(
-                        queue_position=state.estimated_position if state.estimated_position >= 0 else 1,
+                        queue_position=(
+                            state.estimated_position if state.estimated_position >= 0 else 1
+                        ),
                         qty_ahead=state.qty_ahead,
                         order_qty=qty,
                         time_horizon_sec=60.0,
@@ -412,11 +420,15 @@ def print_results(results: List[BenchmarkResult]) -> None:
     print("\n" + "=" * 90)
     print("FULL L3 SIMULATION BENCHMARKS")
     print("=" * 90)
-    print(f"{'Scenario':<25} {'Throughput (ord/s)':<20} {'Avg Latency (us)':<18} {'P95 (us)':<15} {'Memory (MB)':<12}")
+    print(
+        f"{'Scenario':<25} {'Throughput (ord/s)':<20} {'Avg Latency (us)':<18} {'P95 (us)':<15} {'Memory (MB)':<12}"
+    )
     print("-" * 90)
 
     for r in results:
-        print(f"{r.name:<25} {r.avg_throughput:<20.0f} {r.avg_latency_us:<18.1f} {r.avg_p95_latency_us:<15.1f} {r.memory_mb:<12.1f}")
+        print(
+            f"{r.name:<25} {r.avg_throughput:<20.0f} {r.avg_latency_us:<18.1f} {r.avg_p95_latency_us:<15.1f} {r.memory_mb:<12.1f}"
+        )
 
     print("=" * 90)
 
@@ -442,12 +454,16 @@ def main():
     full = next(r for r in results if r.name == "full_pipeline")
     passed = full.avg_throughput > 10000
     status = "PASS" if passed else "WARN"
-    print(f"  Full pipeline throughput: {full.avg_throughput:.0f} ord/s (target: >10,000) [{status}]")
+    print(
+        f"  Full pipeline throughput: {full.avg_throughput:.0f} ord/s (target: >10,000) [{status}]"
+    )
 
     # Latency target: <1ms (1000us)
     passed = full.avg_p95_latency_us < 1000
     status = "PASS" if passed else "WARN"
-    print(f"  Full pipeline P95 latency: {full.avg_p95_latency_us:.1f}us (target: <1000us) [{status}]")
+    print(
+        f"  Full pipeline P95 latency: {full.avg_p95_latency_us:.1f}us (target: <1000us) [{status}]"
+    )
 
     # Memory target: <100MB
     passed = full.memory_mb < 100
@@ -479,8 +495,9 @@ class TestFullSimulationBenchmarks:
         result = sim.run_simulation(n_orders=5000)
 
         # Allow some slack for CI environments
-        assert result.throughput_per_sec > 5000, \
-            f"Throughput {result.throughput_per_sec:.0f} below minimum"
+        assert (
+            result.throughput_per_sec > 5000
+        ), f"Throughput {result.throughput_per_sec:.0f} below minimum"
 
     def test_latency_target(self):
         """Test simulation meets latency target (P95 <1ms)."""
@@ -488,8 +505,9 @@ class TestFullSimulationBenchmarks:
         result = sim.run_simulation(n_orders=1000)
 
         # P95 should be <1ms (1000us), allow 2ms for Python overhead
-        assert result.p95_latency_us < 2000, \
-            f"P95 latency {result.p95_latency_us:.0f}us exceeds target"
+        assert (
+            result.p95_latency_us < 2000
+        ), f"P95 latency {result.p95_latency_us:.0f}us exceeds target"
 
     def test_memory_target(self):
         """Test simulation meets memory target (<100MB)."""
@@ -497,8 +515,7 @@ class TestFullSimulationBenchmarks:
         result = sim.run_simulation(n_orders=10000)
 
         # Memory should be under 100MB
-        assert result.memory_peak_mb < 200, \
-            f"Memory {result.memory_peak_mb:.1f}MB exceeds target"
+        assert result.memory_peak_mb < 200, f"Memory {result.memory_peak_mb:.1f}MB exceeds target"
 
     def test_fills_occur(self):
         """Test that fills actually happen in simulation."""

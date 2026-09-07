@@ -16,6 +16,7 @@ class TestMathematicalFoundation(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_statistical_mean_principle(self):
@@ -84,7 +85,7 @@ class TestMathematicalFoundation(unittest.TestCase):
         # Пример выборочной дисперсии
         sample = [10, 20, 30, 40, 50]
         mean = sum(sample) / len(sample)
-        variance = sum((x - mean)**2 for x in sample) / (len(sample) - 1)
+        variance = sum((x - mean) ** 2 for x in sample) / (len(sample) - 1)
 
         print(f"\nВыборочная дисперсия для {sample}:")
         print(f"  Среднее: {mean}")
@@ -117,9 +118,7 @@ class TestMathematicalFoundation(unittest.TestCase):
 
         # Вычисляем сумму
         sum_sq = sum(
-            math.log(bar["high"] / bar["low"]) ** 2
-            for bar in ohlc_bars
-            if bar["high"] > 0
+            math.log(bar["high"] / bar["low"]) ** 2 for bar in ohlc_bars if bar["high"] > 0
         )
 
         print(f"\nДанные: окно n={n_window}, валидных={n_valid}")
@@ -152,6 +151,7 @@ class TestNumericalEquivalence(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def parkinson_reference_implementation(self, high_low_ratios):
@@ -191,8 +191,9 @@ class TestNumericalEquivalence(unittest.TestCase):
             our_vol = self.calc_parkinson(ohlc_bars, len(hl_ratios))
 
             # Сравниваем
-            self.assertAlmostEqual(our_vol, reference_vol, places=10,
-                                  msg=f"Тест-кейс {i}: должен совпадать с эталоном")
+            self.assertAlmostEqual(
+                our_vol, reference_vol, places=10, msg=f"Тест-кейс {i}: должен совпадать с эталоном"
+            )
 
             print(f"\nТест-кейс {i}: {len(hl_ratios)} наблюдений")
             print(f"  Эталон: {reference_vol:.10f}")
@@ -217,10 +218,7 @@ class TestNumericalEquivalence(unittest.TestCase):
 
         vols = []
         for base_price in base_prices:
-            ohlc_bars = [
-                {"high": base_price * hl_ratio, "low": base_price}
-                for _ in range(10)
-            ]
+            ohlc_bars = [{"high": base_price * hl_ratio, "low": base_price} for _ in range(10)]
             vol = self.calc_parkinson(ohlc_bars, 10)
             vols.append(vol)
 
@@ -236,17 +234,16 @@ class TestNumericalEquivalence(unittest.TestCase):
         vols = []
 
         for hl_ratio in ranges:
-            ohlc_bars = [
-                {"high": 100.0 * hl_ratio, "low": 100.0}
-                for _ in range(10)
-            ]
+            ohlc_bars = [{"high": 100.0 * hl_ratio, "low": 100.0} for _ in range(10)]
             vol = self.calc_parkinson(ohlc_bars, 10)
             vols.append(vol)
 
         for i in range(len(vols) - 1):
-            self.assertLess(vols[i], vols[i+1])
-            print(f"  Диапазон {(ranges[i]-1)*100:4.0f}%: σ = {vols[i]:.6f} < "
-                  f"{vols[i+1]:.6f} (диапазон {(ranges[i+1]-1)*100:4.0f}%) ✓")
+            self.assertLess(vols[i], vols[i + 1])
+            print(
+                f"  Диапазон {(ranges[i]-1)*100:4.0f}%: σ = {vols[i]:.6f} < "
+                f"{vols[i+1]:.6f} (диапазон {(ranges[i+1]-1)*100:4.0f}%) ✓"
+            )
 
 
 class TestFormulaDerivation(unittest.TestCase):
@@ -296,6 +293,7 @@ class TestFormulaDerivation(unittest.TestCase):
 
         # Проверяем нашу реализацию
         from transformers import calculate_parkinson_volatility
+
         our_result = calculate_parkinson_volatility(observations, n_obs)
 
         self.assertAlmostEqual(our_result, volatility_paper, places=10)
@@ -334,6 +332,7 @@ class TestEdgeCaseMathematics(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_zero_volatility_limit(self):
@@ -347,10 +346,7 @@ class TestEdgeCaseMathematics(unittest.TestCase):
 
         print("\nПроверка lim(H→L) σ = 0:")
         for eps in epsilons:
-            ohlc_bars = [
-                {"high": 100.0 * (1 + eps), "low": 100.0}
-                for _ in range(10)
-            ]
+            ohlc_bars = [{"high": 100.0 * (1 + eps), "low": 100.0} for _ in range(10)]
             vol = self.calc_parkinson(ohlc_bars, 10)
             print(f"  H/L = 1 + {eps:.5f}: σ = {vol:.10f}")
 

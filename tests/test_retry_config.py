@@ -18,15 +18,20 @@ class _Guards:
 
 def _make_stub_module() -> None:
     mod = types.ModuleType("stub_comp")
+
     class MarketData:  # noqa: D401 - simple stub
         pass
+
     class FeaturePipe:
         def warmup(self):
             pass
+
     class Policy:  # noqa: D401 - simple stub
         pass
+
     class Executor:  # noqa: D401 - simple stub
         pass
+
     mod.MarketData = MarketData
     mod.FeaturePipe = FeaturePipe
     mod.Policy = Policy
@@ -40,13 +45,15 @@ def test_retry_config_override(tmp_path, monkeypatch):
     configs_dir = tmp_path / "configs"
     configs_dir.mkdir()
     (configs_dir / "ops.json").write_text(
-        json.dumps({
-            "retry": {
-                "max_attempts": 7,
-                "backoff_base_s": 0.5,
-                "max_backoff_s": 5.0,
+        json.dumps(
+            {
+                "retry": {
+                    "max_attempts": 7,
+                    "backoff_base_s": 0.5,
+                    "max_backoff_s": 5.0,
+                }
             }
-        })
+        )
     )
 
     comps = Components(

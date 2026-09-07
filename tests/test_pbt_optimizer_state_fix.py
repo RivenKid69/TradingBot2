@@ -14,6 +14,7 @@ import tempfile
 from typing import Dict, Any
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -32,9 +33,7 @@ class SimpleModel(nn.Module):
     def __init__(self, input_dim: int = 10, hidden_dim: int = 64, output_dim: int = 1):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim)
+            nn.Linear(input_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, output_dim)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -72,10 +71,12 @@ class TestPBTOptimizerStateReset:
         scheduler = PBTScheduler(config, seed=42)
 
         # Initialize population
-        population = scheduler.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = scheduler.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create two agents
         model1 = SimpleModel()
@@ -100,8 +101,8 @@ class TestPBTOptimizerStateReset:
 
         # Save Agent 2 checkpoint WITH optimizer state
         agent2_parameters = {
-            'policy': model2.state_dict(),
-            'optimizer_state': optimizer2.state_dict(),  # Include optimizer state
+            "policy": model2.state_dict(),
+            "optimizer_state": optimizer2.state_dict(),  # Include optimizer state
         }
 
         member1 = population[0]  # Worse performer
@@ -123,8 +124,9 @@ class TestPBTOptimizerStateReset:
         assert new_parameters is not None, "Exploit should have occurred"
 
         # CRITICAL CHECK: Optimizer state should be REMOVED with reset strategy
-        assert 'optimizer_state' not in new_parameters, \
-            "RESET strategy should REMOVE optimizer_state from parameters"
+        assert (
+            "optimizer_state" not in new_parameters
+        ), "RESET strategy should REMOVE optimizer_state from parameters"
 
         print("[OK] RESET strategy correctly removes optimizer state")
         print("     Caller can now reset optimizer with fresh state")
@@ -147,10 +149,12 @@ class TestPBTOptimizerStateReset:
             optimizer_exploit_strategy="reset",
         )
         scheduler = PBTScheduler(config, seed=42)
-        population = scheduler.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = scheduler.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Setup agents
         model1 = SimpleModel()
@@ -176,8 +180,8 @@ class TestPBTOptimizerStateReset:
 
         # Save checkpoint
         agent2_parameters = {
-            'policy': model2.state_dict(),
-            'optimizer_state': optimizer2.state_dict(),
+            "policy": model2.state_dict(),
+            "optimizer_state": optimizer2.state_dict(),
         }
 
         member1, member2 = population[0], population[1]
@@ -191,14 +195,14 @@ class TestPBTOptimizerStateReset:
         new_parameters, new_hyperparams, _ = scheduler.exploit_and_explore(member1)
 
         # Load new weights
-        model1.load_state_dict(new_parameters['policy'])
+        model1.load_state_dict(new_parameters["policy"])
 
         # RESET OPTIMIZER (recommended pattern)
-        new_lr = new_hyperparams['learning_rate']
+        new_lr = new_hyperparams["learning_rate"]
         optimizer1 = torch.optim.Adam(model1.parameters(), lr=new_lr)
 
         # Verify optimizer has fresh state (no momentum)
-        optimizer_state = optimizer1.state_dict()['state']
+        optimizer_state = optimizer1.state_dict()["state"]
         assert len(optimizer_state) == 0, "Fresh optimizer should have empty state"
 
         print("[OK] RESET strategy allows fresh optimizer creation")
@@ -235,10 +239,12 @@ class TestPBTOptimizerStateCopy:
         scheduler = PBTScheduler(config, seed=42)
 
         # Initialize population
-        population = scheduler.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = scheduler.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create agents
         model1 = SimpleModel()
@@ -264,8 +270,8 @@ class TestPBTOptimizerStateCopy:
 
         # Save Agent 2 checkpoint WITH optimizer state
         agent2_parameters = {
-            'policy': model2.state_dict(),
-            'optimizer_state': optimizer2.state_dict(),
+            "policy": model2.state_dict(),
+            "optimizer_state": optimizer2.state_dict(),
         }
 
         member1, member2 = population[0], population[1]
@@ -281,8 +287,9 @@ class TestPBTOptimizerStateCopy:
         assert new_parameters is not None, "Exploit should have occurred"
 
         # CRITICAL CHECK: Optimizer state should be PRESERVED with copy strategy
-        assert 'optimizer_state' in new_parameters, \
-            "COPY strategy should PRESERVE optimizer_state in parameters"
+        assert (
+            "optimizer_state" in new_parameters
+        ), "COPY strategy should PRESERVE optimizer_state in parameters"
 
         print("[OK] COPY strategy correctly preserves optimizer state")
         print("     Optimizer state can be loaded from source agent")
@@ -305,10 +312,12 @@ class TestPBTOptimizerStateCopy:
             optimizer_exploit_strategy="copy",
         )
         scheduler = PBTScheduler(config, seed=42)
-        population = scheduler.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = scheduler.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create agents
         model1 = SimpleModel()
@@ -333,13 +342,13 @@ class TestPBTOptimizerStateCopy:
             optimizer2.step()
 
         # Capture Agent 2 optimizer state before saving
-        agent2_optimizer_state_before = optimizer2.state_dict()['state'][0]
-        agent2_momentum_before = agent2_optimizer_state_before['exp_avg'].clone()
+        agent2_optimizer_state_before = optimizer2.state_dict()["state"][0]
+        agent2_momentum_before = agent2_optimizer_state_before["exp_avg"].clone()
 
         # Save checkpoint
         agent2_parameters = {
-            'policy': model2.state_dict(),
-            'optimizer_state': optimizer2.state_dict(),
+            "policy": model2.state_dict(),
+            "optimizer_state": optimizer2.state_dict(),
         }
 
         member1, member2 = population[0], population[1]
@@ -353,17 +362,18 @@ class TestPBTOptimizerStateCopy:
         new_parameters, new_hyperparams, _ = scheduler.exploit_and_explore(member1)
 
         # Load new weights AND optimizer state
-        model1.load_state_dict(new_parameters['policy'])
-        optimizer1.load_state_dict(new_parameters['optimizer_state'])
+        model1.load_state_dict(new_parameters["policy"])
+        optimizer1.load_state_dict(new_parameters["optimizer_state"])
 
         # Verify optimizer momentum was transferred
-        agent1_optimizer_state_after = optimizer1.state_dict()['state'][0]
-        agent1_momentum_after = agent1_optimizer_state_after['exp_avg']
+        agent1_optimizer_state_after = optimizer1.state_dict()["state"][0]
+        agent1_momentum_after = agent1_optimizer_state_after["exp_avg"]
 
         # Momentum should match Agent 2's momentum
         momentum_diff = torch.norm(agent1_momentum_after - agent2_momentum_before).item()
-        assert momentum_diff < 1e-6, \
-            f"Momentum should be transferred from source agent, but diff={momentum_diff}"
+        assert (
+            momentum_diff < 1e-6
+        ), f"Momentum should be transferred from source agent, but diff={momentum_diff}"
 
         print("[OK] COPY strategy successfully transfers momentum")
         print(f"     Momentum difference: {momentum_diff:.2e} (< 1e-6)")
@@ -397,10 +407,12 @@ class TestPBTOptimizerStateFix:
             optimizer_exploit_strategy="reset",
         )
         scheduler = PBTScheduler(config, seed=42)
-        population = scheduler.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = scheduler.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create agents
         model1 = SimpleModel()
@@ -426,8 +438,8 @@ class TestPBTOptimizerStateFix:
 
         # Save checkpoint
         agent2_parameters = {
-            'policy': model2.state_dict(),
-            'optimizer_state': optimizer2.state_dict(),
+            "policy": model2.state_dict(),
+            "optimizer_state": optimizer2.state_dict(),
         }
 
         member1, member2 = population[0], population[1]
@@ -441,10 +453,10 @@ class TestPBTOptimizerStateFix:
         new_parameters, new_hyperparams, _ = scheduler.exploit_and_explore(member1)
 
         # Load new weights
-        model1.load_state_dict(new_parameters['policy'])
+        model1.load_state_dict(new_parameters["policy"])
 
         # RESET optimizer (FIX!)
-        optimizer1 = torch.optim.Adam(model1.parameters(), lr=new_hyperparams['learning_rate'])
+        optimizer1 = torch.optim.Adam(model1.parameters(), lr=new_hyperparams["learning_rate"])
 
         # Test performance after exploit
         x_test = torch.randn(32, 10)
@@ -460,33 +472,27 @@ class TestPBTOptimizerStateFix:
             losses_after_exploit.append(loss.item())
 
         # Loss should decrease (no performance drop)
-        assert losses_after_exploit[-1] < losses_after_exploit[0], \
-            "Loss should decrease after exploit (no performance drop)"
+        assert (
+            losses_after_exploit[-1] < losses_after_exploit[0]
+        ), "Loss should decrease after exploit (no performance drop)"
 
         print("[OK] RESET strategy prevents performance drops")
-        print(f"     Loss decreased from {losses_after_exploit[0]:.6f} to {losses_after_exploit[-1]:.6f}")
+        print(
+            f"     Loss decreased from {losses_after_exploit[0]:.6f} to {losses_after_exploit[-1]:.6f}"
+        )
 
     def test_config_validation(self):
         """Test that PBTConfig validates optimizer_exploit_strategy."""
         # Valid strategies
-        config_reset = PBTConfig(
-            population_size=2,
-            optimizer_exploit_strategy="reset"
-        )
+        config_reset = PBTConfig(population_size=2, optimizer_exploit_strategy="reset")
         assert config_reset.optimizer_exploit_strategy == "reset"
 
-        config_copy = PBTConfig(
-            population_size=2,
-            optimizer_exploit_strategy="copy"
-        )
+        config_copy = PBTConfig(population_size=2, optimizer_exploit_strategy="copy")
         assert config_copy.optimizer_exploit_strategy == "copy"
 
         # Invalid strategy should raise ValueError
         with pytest.raises(ValueError, match="optimizer_exploit_strategy must be"):
-            PBTConfig(
-                population_size=2,
-                optimizer_exploit_strategy="invalid"
-            )
+            PBTConfig(population_size=2, optimizer_exploit_strategy="invalid")
 
         print("[OK] Config validation works correctly")
 

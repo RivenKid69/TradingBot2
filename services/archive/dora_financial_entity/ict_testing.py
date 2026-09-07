@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ICTSystemType(Enum):
     """Types of ICT systems per DORA."""
+
     TRADING_SYSTEM = "trading_system"
     MARKET_DATA = "market_data"
     ORDER_MANAGEMENT = "order_management"
@@ -67,44 +69,49 @@ class ICTSystemType(Enum):
 
 class SystemCriticality(Enum):
     """System criticality levels per Article 25(1)."""
-    CRITICAL = "critical"      # Supports critical functions
-    IMPORTANT = "important"    # Supports important functions
-    STANDARD = "standard"      # Standard business functions
-    SUPPORT = "support"        # Support/administrative functions
+
+    CRITICAL = "critical"  # Supports critical functions
+    IMPORTANT = "important"  # Supports important functions
+    STANDARD = "standard"  # Standard business functions
+    SUPPORT = "support"  # Support/administrative functions
 
 
 class TestingPriority(Enum):
     """Testing priority based on risk assessment."""
-    P1_IMMEDIATE = "P1"    # Test immediately
-    P2_HIGH = "P2"         # Test within 1 month
-    P3_MEDIUM = "P3"       # Test within quarter
-    P4_LOW = "P4"          # Test within year
-    P5_MINIMAL = "P5"      # As resources permit
+
+    P1_IMMEDIATE = "P1"  # Test immediately
+    P2_HIGH = "P2"  # Test within 1 month
+    P3_MEDIUM = "P3"  # Test within quarter
+    P4_LOW = "P4"  # Test within year
+    P5_MINIMAL = "P5"  # As resources permit
 
 
 class VulnerabilitySeverity(Enum):
     """Vulnerability severity levels."""
-    CRITICAL = "critical"     # CVSS 9.0-10.0
-    HIGH = "high"             # CVSS 7.0-8.9
-    MEDIUM = "medium"         # CVSS 4.0-6.9
-    LOW = "low"               # CVSS 0.1-3.9
-    INFORMATIONAL = "info"    # CVSS 0.0
+
+    CRITICAL = "critical"  # CVSS 9.0-10.0
+    HIGH = "high"  # CVSS 7.0-8.9
+    MEDIUM = "medium"  # CVSS 4.0-6.9
+    LOW = "low"  # CVSS 0.1-3.9
+    INFORMATIONAL = "info"  # CVSS 0.0
 
 
 class VulnerabilityStatus(Enum):
     """Vulnerability remediation status."""
+
     IDENTIFIED = "identified"
     CONFIRMED = "confirmed"
     IN_REMEDIATION = "in_remediation"
     REMEDIATED = "remediated"
     VERIFIED = "verified"
-    ACCEPTED = "accepted"       # Risk accepted
+    ACCEPTED = "accepted"  # Risk accepted
     FALSE_POSITIVE = "false_positive"
     DEFERRED = "deferred"
 
 
 class TestType(Enum):
     """Types of ICT system tests per Article 25."""
+
     VULNERABILITY_SCAN = "vulnerability_scan"
     PENETRATION_TEST = "penetration_test"
     CONFIGURATION_REVIEW = "configuration_review"
@@ -123,6 +130,7 @@ class TestType(Enum):
 
 class TestStatus(Enum):
     """Test execution status."""
+
     PLANNED = "planned"
     SCHEDULED = "scheduled"
     IN_PROGRESS = "in_progress"
@@ -133,6 +141,7 @@ class TestStatus(Enum):
 
 class TestResult(Enum):
     """Test result outcomes."""
+
     PASSED = "passed"
     PASSED_WITH_FINDINGS = "passed_with_findings"
     FAILED = "failed"
@@ -141,6 +150,7 @@ class TestResult(Enum):
 
 class RemediationStatus(Enum):
     """Remediation plan status."""
+
     DRAFT = "draft"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
@@ -154,11 +164,13 @@ class RemediationStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ICTSystemProfile:
     """
     ICT System profile for testing per Article 25(1).
     """
+
     system_id: str = ""
     system_name: str = ""
     system_type: ICTSystemType = ICTSystemType.OTHER
@@ -176,7 +188,7 @@ class ICTSystemProfile:
     # Technical details
     technology_stack: List[str] = field(default_factory=list)
     hosting_type: str = ""  # on_premise, cloud, hybrid
-    environment: str = ""   # production, staging, development
+    environment: str = ""  # production, staging, development
 
     # Interfaces
     internal_interfaces: List[str] = field(default_factory=list)
@@ -226,6 +238,7 @@ class SystemTestPlan:
     """
     Test plan for an ICT system per Article 25(1).
     """
+
     plan_id: str = ""
     system_id: str = ""
     system_name: str = ""
@@ -278,6 +291,7 @@ class SystemTest:
     """
     Individual system test execution per Article 25.
     """
+
     test_id: str = ""
     plan_id: str = ""
     system_id: str = ""
@@ -351,6 +365,7 @@ class Vulnerability:
     """
     Vulnerability identified during testing per Article 25(3).
     """
+
     vulnerability_id: str = ""
     test_id: str = ""
     system_id: str = ""
@@ -380,15 +395,15 @@ class Vulnerability:
 
     # Impact
     confidentiality_impact: str = ""  # none, low, high
-    integrity_impact: str = ""        # none, low, high
-    availability_impact: str = ""     # none, low, high
+    integrity_impact: str = ""  # none, low, high
+    availability_impact: str = ""  # none, low, high
     business_impact: str = ""
 
     # Exploitation
     exploit_available: bool = False
-    exploit_complexity: str = ""      # low, high
-    privileges_required: str = ""     # none, low, high
-    user_interaction: str = ""        # none, required
+    exploit_complexity: str = ""  # low, high
+    privileges_required: str = ""  # none, low, high
+    user_interaction: str = ""  # none, required
 
     # Evidence
     evidence: str = ""
@@ -427,6 +442,7 @@ class RemediationPlan:
     """
     Remediation plan per Article 25(3).
     """
+
     plan_id: str = ""
     vulnerability_id: str = ""
     system_id: str = ""
@@ -488,6 +504,7 @@ class ThirdPartyInterfaceTest:
     """
     Testing of third-party provider interfaces per Article 25.
     """
+
     test_id: str = ""
     system_id: str = ""
     provider_name: str = ""
@@ -540,14 +557,16 @@ class ThirdPartyInterfaceTest:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ICTTestingConfig:
     """Configuration for ICT System Testing."""
+
     # Testing frequencies (days)
-    critical_system_test_frequency: int = 365    # At least yearly
-    important_system_test_frequency: int = 365   # At least yearly
+    critical_system_test_frequency: int = 365  # At least yearly
+    important_system_test_frequency: int = 365  # At least yearly
     standard_system_test_frequency: int = 365
-    support_system_test_frequency: int = 730     # Every 2 years
+    support_system_test_frequency: int = 730  # Every 2 years
 
     # Vulnerability SLA (days)
     critical_vuln_sla_days: int = 7
@@ -557,13 +576,15 @@ class ICTTestingConfig:
 
     # Risk scoring
     enable_risk_scoring: bool = True
-    risk_score_weights: Dict[str, float] = field(default_factory=lambda: {
-        "criticality": 0.3,
-        "exposure": 0.2,
-        "vulnerability_history": 0.2,
-        "change_frequency": 0.15,
-        "third_party_dependency": 0.15,
-    })
+    risk_score_weights: Dict[str, float] = field(
+        default_factory=lambda: {
+            "criticality": 0.3,
+            "exposure": 0.2,
+            "vulnerability_history": 0.2,
+            "change_frequency": 0.15,
+            "third_party_dependency": 0.15,
+        }
+    )
 
     # Independence requirements
     require_independent_testing: bool = True
@@ -585,6 +606,7 @@ class ICTTestingConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class DORAICTSystemTesting:
     """
@@ -717,9 +739,7 @@ class DORAICTSystemTesting:
 
         # Calculate next test due
         freq_days = self._frequency_to_days(system.minimum_test_frequency)
-        system.next_test_due = (
-            datetime.now(timezone.utc) + timedelta(days=freq_days)
-        ).isoformat()
+        system.next_test_due = (datetime.now(timezone.utc) + timedelta(days=freq_days)).isoformat()
 
         # Calculate risk score
         if self.config.enable_risk_scoring:
@@ -727,11 +747,14 @@ class DORAICTSystemTesting:
 
         self._systems[system.system_id] = system
 
-        self._log_event("system_registered", {
-            "system_id": system.system_id,
-            "system_name": system_name,
-            "criticality": criticality.value,
-        })
+        self._log_event(
+            "system_registered",
+            {
+                "system_id": system.system_id,
+                "system_name": system_name,
+                "criticality": criticality.value,
+            },
+        )
 
         logger.info(f"System registered: {system.system_id} - {system_name}")
         return system
@@ -758,19 +781,23 @@ class DORAICTSystemTesting:
         required_tests = [TestType.VULNERABILITY_SCAN]
 
         if system.criticality in (SystemCriticality.CRITICAL, SystemCriticality.IMPORTANT):
-            required_tests.extend([
-                TestType.PENETRATION_TEST,
-                TestType.CONFIGURATION_REVIEW,
-                TestType.ACCESS_CONTROL_TEST,
-            ])
+            required_tests.extend(
+                [
+                    TestType.PENETRATION_TEST,
+                    TestType.CONFIGURATION_REVIEW,
+                    TestType.ACCESS_CONTROL_TEST,
+                ]
+            )
 
         if system.criticality == SystemCriticality.CRITICAL:
-            required_tests.extend([
-                TestType.CODE_REVIEW,
-                TestType.ARCHITECTURE_REVIEW,
-                TestType.FAILOVER_TEST,
-                TestType.RECOVERY_TEST,
-            ])
+            required_tests.extend(
+                [
+                    TestType.CODE_REVIEW,
+                    TestType.ARCHITECTURE_REVIEW,
+                    TestType.FAILOVER_TEST,
+                    TestType.RECOVERY_TEST,
+                ]
+            )
 
         if system.third_party_providers:
             required_tests.append(TestType.INTERFACE_TEST)
@@ -842,10 +869,7 @@ class DORAICTSystemTesting:
         criticality: SystemCriticality,
     ) -> List[ICTSystemProfile]:
         """Get systems by criticality level."""
-        return [
-            s for s in self._systems.values()
-            if s.criticality == criticality and s.is_active
-        ]
+        return [s for s in self._systems.values() if s.criticality == criticality and s.is_active]
 
     def get_critical_systems(self) -> List[ICTSystemProfile]:
         """Get all critical systems requiring testing."""
@@ -861,9 +885,7 @@ class DORAICTSystemTesting:
                 continue
 
             if system.next_test_due:
-                due_date = datetime.fromisoformat(
-                    system.next_test_due.replace("Z", "+00:00")
-                )
+                due_date = datetime.fromisoformat(system.next_test_due.replace("Z", "+00:00"))
                 # Include if due within alert threshold
                 threshold = now + timedelta(days=self.config.alert_threshold_days)
                 if due_date <= threshold:
@@ -957,11 +979,14 @@ class DORAICTSystemTesting:
 
         self._test_plans[plan.plan_id] = plan
 
-        self._log_event("test_plan_created", {
-            "plan_id": plan.plan_id,
-            "system_id": system_id,
-            "test_types": [t.value for t in test_types],
-        })
+        self._log_event(
+            "test_plan_created",
+            {
+                "plan_id": plan.plan_id,
+                "system_id": system_id,
+                "test_types": [t.value for t in test_types],
+            },
+        )
 
         return plan
 
@@ -979,10 +1004,13 @@ class DORAICTSystemTesting:
         plan.approved_by = approved_by
         plan.approval_date = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("test_plan_approved", {
-            "plan_id": plan_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "test_plan_approved",
+            {
+                "plan_id": plan_id,
+                "approved_by": approved_by,
+            },
+        )
 
         return plan
 
@@ -1044,7 +1072,11 @@ class DORAICTSystemTesting:
 
         # Set tester type based on configuration
         system = self._systems.get(plan.system_id)
-        if system and system.criticality == SystemCriticality.CRITICAL and self.config.external_testing_for_critical:
+        if (
+            system
+            and system.criticality == SystemCriticality.CRITICAL
+            and self.config.external_testing_for_critical
+        ):
             test.tester_type = "external"
         elif tester_organization:
             test.tester_type = "external"
@@ -1053,11 +1085,14 @@ class DORAICTSystemTesting:
 
         self._tests[test.test_id] = test
 
-        self._log_event("test_scheduled", {
-            "test_id": test.test_id,
-            "plan_id": plan_id,
-            "test_type": test_type.value,
-        })
+        self._log_event(
+            "test_scheduled",
+            {
+                "test_id": test.test_id,
+                "plan_id": plan_id,
+                "test_type": test_type.value,
+            },
+        )
 
         return test
 
@@ -1079,10 +1114,13 @@ class DORAICTSystemTesting:
 
         test.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("test_started", {
-            "test_id": test_id,
-            "started_at": test.actual_start,
-        })
+        self._log_event(
+            "test_started",
+            {
+                "test_id": test_id,
+                "started_at": test.actual_start,
+            },
+        )
 
         return test
 
@@ -1142,10 +1180,18 @@ class DORAICTSystemTesting:
         # Update vulnerability counts
         vulnerabilities = self.get_vulnerabilities_for_test(test_id)
         test.vulnerabilities_found = len(vulnerabilities)
-        test.critical_vulnerabilities = sum(1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.CRITICAL)
-        test.high_vulnerabilities = sum(1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.HIGH)
-        test.medium_vulnerabilities = sum(1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.MEDIUM)
-        test.low_vulnerabilities = sum(1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.LOW)
+        test.critical_vulnerabilities = sum(
+            1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.CRITICAL
+        )
+        test.high_vulnerabilities = sum(
+            1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.HIGH
+        )
+        test.medium_vulnerabilities = sum(
+            1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.MEDIUM
+        )
+        test.low_vulnerabilities = sum(
+            1 for v in vulnerabilities if v.severity == VulnerabilitySeverity.LOW
+        )
 
         # Update system last test date
         system = self._systems.get(test.system_id)
@@ -1157,11 +1203,14 @@ class DORAICTSystemTesting:
                 datetime.now(timezone.utc) + timedelta(days=freq_days)
             ).isoformat()
 
-        self._log_event("test_completed", {
-            "test_id": test_id,
-            "result": result.value,
-            "vulnerabilities_found": test.vulnerabilities_found,
-        })
+        self._log_event(
+            "test_completed",
+            {
+                "test_id": test_id,
+                "result": result.value,
+                "vulnerabilities_found": test.vulnerabilities_found,
+            },
+        )
 
         logger.info(f"Test completed: {test_id} - Result: {result.value}")
         return test
@@ -1258,15 +1307,21 @@ class DORAICTSystemTesting:
 
         self._vulnerabilities[vulnerability.vulnerability_id] = vulnerability
 
-        self._log_event("vulnerability_recorded", {
-            "vulnerability_id": vulnerability.vulnerability_id,
-            "test_id": test_id,
-            "severity": severity.value,
-            "title": title,
-        })
+        self._log_event(
+            "vulnerability_recorded",
+            {
+                "vulnerability_id": vulnerability.vulnerability_id,
+                "test_id": test_id,
+                "severity": severity.value,
+                "title": title,
+            },
+        )
 
         # Alert on critical vulnerabilities
-        if severity == VulnerabilitySeverity.CRITICAL and self.config.alert_on_critical_vulnerability:
+        if (
+            severity == VulnerabilitySeverity.CRITICAL
+            and self.config.alert_on_critical_vulnerability
+        ):
             logger.critical(f"CRITICAL vulnerability: {vulnerability.vulnerability_id} - {title}")
 
         return vulnerability
@@ -1308,11 +1363,14 @@ class DORAICTSystemTesting:
         vuln.status = status
         vuln.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("vulnerability_status_updated", {
-            "vulnerability_id": vulnerability_id,
-            "status": status.value,
-            "updated_by": updated_by,
-        })
+        self._log_event(
+            "vulnerability_status_updated",
+            {
+                "vulnerability_id": vulnerability_id,
+                "status": status.value,
+                "updated_by": updated_by,
+            },
+        )
 
         return vuln
 
@@ -1335,10 +1393,13 @@ class DORAICTSystemTesting:
         vuln.resolved_by = resolved_by
         vuln.updated_at = now
 
-        self._log_event("vulnerability_resolved", {
-            "vulnerability_id": vulnerability_id,
-            "resolved_by": resolved_by,
-        })
+        self._log_event(
+            "vulnerability_resolved",
+            {
+                "vulnerability_id": vulnerability_id,
+                "resolved_by": resolved_by,
+            },
+        )
 
         return vuln
 
@@ -1361,11 +1422,14 @@ class DORAICTSystemTesting:
         vuln.verified_by = verified_by
         vuln.updated_at = now
 
-        self._log_event("vulnerability_verified", {
-            "vulnerability_id": vulnerability_id,
-            "verification_test_id": verification_test_id,
-            "verified_by": verified_by,
-        })
+        self._log_event(
+            "vulnerability_verified",
+            {
+                "vulnerability_id": vulnerability_id,
+                "verification_test_id": verification_test_id,
+                "verified_by": verified_by,
+            },
+        )
 
         return vuln
 
@@ -1403,15 +1467,16 @@ class DORAICTSystemTesting:
         overdue = []
 
         for vuln in self._vulnerabilities.values():
-            if vuln.status in (VulnerabilityStatus.VERIFIED, VulnerabilityStatus.ACCEPTED,
-                              VulnerabilityStatus.FALSE_POSITIVE):
+            if vuln.status in (
+                VulnerabilityStatus.VERIFIED,
+                VulnerabilityStatus.ACCEPTED,
+                VulnerabilityStatus.FALSE_POSITIVE,
+            ):
                 continue
             if not vuln.remediation_deadline:
                 continue
 
-            deadline = datetime.fromisoformat(
-                vuln.remediation_deadline.replace("Z", "+00:00")
-            )
+            deadline = datetime.fromisoformat(vuln.remediation_deadline.replace("Z", "+00:00"))
             if now > deadline:
                 overdue.append(vuln)
 
@@ -1474,11 +1539,14 @@ class DORAICTSystemTesting:
         vuln.status = VulnerabilityStatus.IN_REMEDIATION
         vuln.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("remediation_plan_created", {
-            "plan_id": plan.plan_id,
-            "vulnerability_id": vulnerability_id,
-            "approach": remediation_approach,
-        })
+        self._log_event(
+            "remediation_plan_created",
+            {
+                "plan_id": plan.plan_id,
+                "vulnerability_id": vulnerability_id,
+                "approach": remediation_approach,
+            },
+        )
 
         return plan
 
@@ -1591,11 +1659,14 @@ class DORAICTSystemTesting:
 
         self._interface_tests[test.test_id] = test
 
-        self._log_event("interface_test_created", {
-            "test_id": test.test_id,
-            "system_id": system_id,
-            "provider_name": provider_name,
-        })
+        self._log_event(
+            "interface_test_created",
+            {
+                "test_id": test.test_id,
+                "system_id": system_id,
+                "provider_name": provider_name,
+            },
+        )
 
         return test
 
@@ -1653,12 +1724,15 @@ class DORAICTSystemTesting:
         else:
             test.result = TestResult.INCONCLUSIVE
 
-        self._log_event("interface_test_executed", {
-            "test_id": test_id,
-            "result": test.result.value,
-            "passed_cases": passed_cases,
-            "total_cases": total_cases,
-        })
+        self._log_event(
+            "interface_test_executed",
+            {
+                "test_id": test_id,
+                "result": test.result.value,
+                "passed_cases": passed_cases,
+                "total_cases": total_cases,
+            },
+        )
 
         return test
 
@@ -1695,9 +1769,7 @@ class DORAICTSystemTesting:
                 continue
 
             if system.next_test_due:
-                due_date = datetime.fromisoformat(
-                    system.next_test_due.replace("Z", "+00:00")
-                )
+                due_date = datetime.fromisoformat(system.next_test_due.replace("Z", "+00:00"))
                 if now > due_date:
                     systems_overdue.append(system.system_id)
                 else:
@@ -1708,9 +1780,10 @@ class DORAICTSystemTesting:
         # Critical systems
         critical_systems = self.get_critical_systems()
         critical_tested = [
-            s for s in critical_systems
-            if s.last_test_date and
-            (now - datetime.fromisoformat(s.last_test_date.replace("Z", "+00:00"))).days <= 365
+            s
+            for s in critical_systems
+            if s.last_test_date
+            and (now - datetime.fromisoformat(s.last_test_date.replace("Z", "+00:00"))).days <= 365
         ]
 
         # Vulnerability metrics
@@ -1727,22 +1800,24 @@ class DORAICTSystemTesting:
                 "systems_overdue": len(systems_overdue),
                 "compliance_rate": (
                     len(systems_compliant) / (len(systems_compliant) + len(systems_overdue)) * 100
-                    if (systems_compliant or systems_overdue) else 100
+                    if (systems_compliant or systems_overdue)
+                    else 100
                 ),
             },
             "critical_systems": {
                 "total": len(critical_systems),
                 "tested_within_year": len(critical_tested),
                 "compliance_rate": (
-                    len(critical_tested) / len(critical_systems) * 100
-                    if critical_systems else 100
+                    len(critical_tested) / len(critical_systems) * 100 if critical_systems else 100
                 ),
             },
             "vulnerabilities": {
                 "total_identified": len(self._vulnerabilities),
                 "open": len(open_vulns),
                 "overdue": len(overdue_vulns),
-                "critical_open": len(self.get_vulnerabilities_by_severity(VulnerabilitySeverity.CRITICAL)),
+                "critical_open": len(
+                    self.get_vulnerabilities_by_severity(VulnerabilitySeverity.CRITICAL)
+                ),
                 "high_open": len(self.get_vulnerabilities_by_severity(VulnerabilitySeverity.HIGH)),
             },
             "overall_compliant": len(systems_overdue) == 0 and len(overdue_vulns) == 0,
@@ -1775,9 +1850,10 @@ class DORAICTSystemTesting:
 
         # Filter tests
         period_tests = [
-            t for t in self._tests.values()
-            if t.created_at and
-            start_dt <= datetime.fromisoformat(t.created_at.replace("Z", "+00:00")) <= end_dt
+            t
+            for t in self._tests.values()
+            if t.created_at
+            and start_dt <= datetime.fromisoformat(t.created_at.replace("Z", "+00:00")) <= end_dt
         ]
 
         if system_id:
@@ -1785,7 +1861,11 @@ class DORAICTSystemTesting:
 
         # Calculate metrics
         completed_tests = [t for t in period_tests if t.status == TestStatus.COMPLETED]
-        passed_tests = [t for t in completed_tests if t.result in (TestResult.PASSED, TestResult.PASSED_WITH_FINDINGS)]
+        passed_tests = [
+            t
+            for t in completed_tests
+            if t.result in (TestResult.PASSED, TestResult.PASSED_WITH_FINDINGS)
+        ]
 
         # Aggregate vulnerabilities
         period_vulns = []
@@ -1803,18 +1883,28 @@ class DORAICTSystemTesting:
                 "total_tests": len(period_tests),
                 "completed_tests": len(completed_tests),
                 "passed_tests": len(passed_tests),
-                "pass_rate": (len(passed_tests) / len(completed_tests) * 100) if completed_tests else 0,
+                "pass_rate": (
+                    (len(passed_tests) / len(completed_tests) * 100) if completed_tests else 0
+                ),
                 "tests_by_type": self._count_tests_by_type(completed_tests),
             },
             "vulnerability_summary": {
                 "total_found": len(period_vulns),
                 "by_severity": {
-                    "critical": sum(1 for v in period_vulns if v.severity == VulnerabilitySeverity.CRITICAL),
-                    "high": sum(1 for v in period_vulns if v.severity == VulnerabilitySeverity.HIGH),
-                    "medium": sum(1 for v in period_vulns if v.severity == VulnerabilitySeverity.MEDIUM),
+                    "critical": sum(
+                        1 for v in period_vulns if v.severity == VulnerabilitySeverity.CRITICAL
+                    ),
+                    "high": sum(
+                        1 for v in period_vulns if v.severity == VulnerabilitySeverity.HIGH
+                    ),
+                    "medium": sum(
+                        1 for v in period_vulns if v.severity == VulnerabilitySeverity.MEDIUM
+                    ),
                     "low": sum(1 for v in period_vulns if v.severity == VulnerabilitySeverity.LOW),
                 },
-                "resolved": sum(1 for v in period_vulns if v.status == VulnerabilityStatus.VERIFIED),
+                "resolved": sum(
+                    1 for v in period_vulns if v.status == VulnerabilityStatus.VERIFIED
+                ),
             },
             "compliance_status": self.get_compliance_status(),
         }
@@ -1881,6 +1971,7 @@ class DORAICTSystemTesting:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ict_system_testing(
     config: Optional[ICTTestingConfig] = None,

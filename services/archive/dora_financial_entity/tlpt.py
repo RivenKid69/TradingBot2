@@ -49,8 +49,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class TLPTPhase(Enum):
     """TLPT phases per TIBER-EU framework."""
+
     PREPARATION = "preparation"
     THREAT_INTELLIGENCE = "threat_intelligence"
     RED_TEAM_TESTING = "red_team_testing"
@@ -59,6 +61,7 @@ class TLPTPhase(Enum):
 
 class TLPTStatus(Enum):
     """TLPT engagement status."""
+
     DRAFT = "draft"
     PLANNING = "planning"
     SCOPING = "scoping"
@@ -73,6 +76,7 @@ class TLPTStatus(Enum):
 
 class ThreatActorType(Enum):
     """Threat actor types for threat intelligence."""
+
     NATION_STATE = "nation_state"
     ORGANIZED_CRIME = "organized_crime"
     HACKTIVIST = "hacktivist"
@@ -84,14 +88,16 @@ class ThreatActorType(Enum):
 
 class ThreatActorCapability(Enum):
     """Threat actor capability levels."""
-    ADVANCED = "advanced"         # APT-level
-    MODERATE = "moderate"         # Organized groups
-    BASIC = "basic"              # Opportunistic
+
+    ADVANCED = "advanced"  # APT-level
+    MODERATE = "moderate"  # Organized groups
+    BASIC = "basic"  # Opportunistic
     UNSOPHISTICATED = "unsophisticated"
 
 
 class AttackTechnique(Enum):
     """Attack techniques (MITRE ATT&CK aligned)."""
+
     INITIAL_ACCESS = "initial_access"
     EXECUTION = "execution"
     PERSISTENCE = "persistence"
@@ -108,6 +114,7 @@ class AttackTechnique(Enum):
 
 class AttackOutcome(Enum):
     """Outcomes of attack attempts."""
+
     SUCCESS = "success"
     PARTIAL_SUCCESS = "partial_success"
     DETECTED_BUT_SUCCESSFUL = "detected_but_successful"
@@ -117,6 +124,7 @@ class AttackOutcome(Enum):
 
 class TLPTFindingSeverity(Enum):
     """TLPT finding severity levels."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -126,6 +134,7 @@ class TLPTFindingSeverity(Enum):
 
 class FindingCategory(Enum):
     """Categories of TLPT findings."""
+
     TECHNICAL_VULNERABILITY = "technical_vulnerability"
     CONFIGURATION_WEAKNESS = "configuration_weakness"
     PROCESS_DEFICIENCY = "process_deficiency"
@@ -139,11 +148,13 @@ class FindingCategory(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class TLPTScope:
     """
     TLPT scope definition per Article 26(1).
     """
+
     scope_id: str = ""
     name: str = ""
     description: str = ""
@@ -197,6 +208,7 @@ class ThreatIntelligenceReport:
     """
     Targeted Threat Intelligence (TTI) report per TIBER-EU.
     """
+
     report_id: str = ""
     engagement_id: str = ""
     ti_provider: str = ""
@@ -260,6 +272,7 @@ class RedTeamScenario:
     """
     Red team attack scenario.
     """
+
     scenario_id: str = ""
     engagement_id: str = ""
     name: str = ""
@@ -310,6 +323,7 @@ class AttackAction:
     """
     Individual attack action during red team testing.
     """
+
     action_id: str = ""
     scenario_id: str = ""
     engagement_id: str = ""
@@ -366,6 +380,7 @@ class TLPTFinding:
     """
     Finding from TLPT engagement.
     """
+
     finding_id: str = ""
     engagement_id: str = ""
     scenario_id: str = ""
@@ -433,6 +448,7 @@ class PurpleTeamSession:
     """
     Purple teaming session per Article 26(5).
     """
+
     session_id: str = ""
     engagement_id: str = ""
 
@@ -484,6 +500,7 @@ class TLPTEngagement:
     """
     TLPT engagement per Article 26.
     """
+
     engagement_id: str = ""
     name: str = ""
     description: str = ""
@@ -575,7 +592,9 @@ class TLPTEngagement:
 
     def __post_init__(self):
         if not self.engagement_id:
-            self.engagement_id = f"TLPT-{datetime.now().strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
+            self.engagement_id = (
+                f"TLPT-{datetime.now().strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -585,6 +604,7 @@ class TLPTAttestation:
     """
     TLPT attestation per Article 26(6).
     """
+
     attestation_id: str = ""
     engagement_id: str = ""
 
@@ -649,9 +669,11 @@ class TLPTAttestation:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class TLPTConfig:
     """Configuration for TLPT."""
+
     # Frequency per Article 26(1)
     tlpt_minimum_frequency_years: int = 3
 
@@ -685,6 +707,7 @@ class TLPTConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class DORAThreadLedPenetrationTesting:
     """
@@ -815,21 +838,24 @@ class DORAThreadLedPenetrationTesting:
         # Calculate planned timeline
         start = datetime.fromisoformat(engagement.planned_start_date.replace("Z", "+00:00"))
         total_weeks = (
-            self.config.preparation_duration_weeks +
-            self.config.ti_phase_duration_weeks +
-            self.config.rt_phase_duration_weeks +
-            self.config.closure_duration_weeks
+            self.config.preparation_duration_weeks
+            + self.config.ti_phase_duration_weeks
+            + self.config.rt_phase_duration_weeks
+            + self.config.closure_duration_weeks
         )
         engagement.planned_end_date = (start + timedelta(weeks=total_weeks)).isoformat()
 
         self._engagements[engagement.engagement_id] = engagement
 
-        self._log_event("engagement_created", {
-            "engagement_id": engagement.engagement_id,
-            "entity_name": entity_name,
-            "ti_provider": ti_provider,
-            "rt_provider": rt_provider,
-        })
+        self._log_event(
+            "engagement_created",
+            {
+                "engagement_id": engagement.engagement_id,
+                "entity_name": entity_name,
+                "ti_provider": ti_provider,
+                "rt_provider": rt_provider,
+            },
+        )
 
         logger.info(f"TLPT engagement created: {engagement.engagement_id}")
         return engagement
@@ -853,10 +879,13 @@ class DORAThreadLedPenetrationTesting:
         engagement.approval_date = datetime.now(timezone.utc).isoformat()
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("engagement_approved", {
-            "engagement_id": engagement_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "engagement_approved",
+            {
+                "engagement_id": engagement_id,
+                "approved_by": approved_by,
+            },
+        )
 
         return engagement
 
@@ -893,10 +922,13 @@ class DORAThreadLedPenetrationTesting:
 
         engagement.updated_at = now
 
-        self._log_event("engagement_phase_updated", {
-            "engagement_id": engagement_id,
-            "phase": phase.value,
-        })
+        self._log_event(
+            "engagement_phase_updated",
+            {
+                "engagement_id": engagement_id,
+                "phase": phase.value,
+            },
+        )
 
         return engagement
 
@@ -922,15 +954,24 @@ class DORAThreadLedPenetrationTesting:
 
         # Count findings
         findings = self.get_findings_for_engagement(engagement_id)
-        engagement.critical_findings = sum(1 for f in findings if f.severity == TLPTFindingSeverity.CRITICAL)
-        engagement.high_findings = sum(1 for f in findings if f.severity == TLPTFindingSeverity.HIGH)
-        engagement.medium_findings = sum(1 for f in findings if f.severity == TLPTFindingSeverity.MEDIUM)
+        engagement.critical_findings = sum(
+            1 for f in findings if f.severity == TLPTFindingSeverity.CRITICAL
+        )
+        engagement.high_findings = sum(
+            1 for f in findings if f.severity == TLPTFindingSeverity.HIGH
+        )
+        engagement.medium_findings = sum(
+            1 for f in findings if f.severity == TLPTFindingSeverity.MEDIUM
+        )
         engagement.low_findings = sum(1 for f in findings if f.severity == TLPTFindingSeverity.LOW)
 
-        self._log_event("engagement_completed", {
-            "engagement_id": engagement_id,
-            "total_findings": len(findings),
-        })
+        self._log_event(
+            "engagement_completed",
+            {
+                "engagement_id": engagement_id,
+                "total_findings": len(findings),
+            },
+        )
 
         logger.info(f"TLPT engagement completed: {engagement_id}")
         return engagement
@@ -1018,7 +1059,8 @@ class DORAThreadLedPenetrationTesting:
             testing_window_start=testing_window_start or engagement.planned_start_date,
             testing_window_end=testing_window_end or engagement.planned_end_date,
             production_environment=True,  # Per Article 26(1)
-            production_safeguards=production_safeguards or [
+            production_safeguards=production_safeguards
+            or [
                 "Backup systems ready",
                 "Rollback procedures documented",
                 "Emergency contacts available 24/7",
@@ -1032,12 +1074,15 @@ class DORAThreadLedPenetrationTesting:
         engagement.scope_id = scope.scope_id
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("scope_created", {
-            "scope_id": scope.scope_id,
-            "engagement_id": engagement_id,
-            "critical_functions": critical_functions,
-            "third_party_providers": third_party_providers,
-        })
+        self._log_event(
+            "scope_created",
+            {
+                "scope_id": scope.scope_id,
+                "engagement_id": engagement_id,
+                "critical_functions": critical_functions,
+                "third_party_providers": third_party_providers,
+            },
+        )
 
         return scope
 
@@ -1122,12 +1167,15 @@ class DORAThreadLedPenetrationTesting:
         engagement.ti_report_id = report.report_id
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("ti_report_submitted", {
-            "report_id": report.report_id,
-            "engagement_id": engagement_id,
-            "threat_actors_count": len(threat_actors),
-            "scenarios_count": len(attack_scenarios),
-        })
+        self._log_event(
+            "ti_report_submitted",
+            {
+                "report_id": report.report_id,
+                "engagement_id": engagement_id,
+                "threat_actors_count": len(threat_actors),
+                "scenarios_count": len(attack_scenarios),
+            },
+        )
 
         return report
 
@@ -1183,7 +1231,8 @@ class DORAThreadLedPenetrationTesting:
             primary_objectives=primary_objectives or [],
             techniques=techniques or [],
             tools_authorized=tools_authorized or [],
-            rules_of_engagement=rules_of_engagement or [
+            rules_of_engagement=rules_of_engagement
+            or [
                 "No destructive actions without approval",
                 "Stop immediately if safety incident",
                 "Document all actions",
@@ -1199,11 +1248,14 @@ class DORAThreadLedPenetrationTesting:
         engagement.selected_scenarios.append(scenario.scenario_id)
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("scenario_created", {
-            "scenario_id": scenario.scenario_id,
-            "engagement_id": engagement_id,
-            "threat_actor": emulated_threat_actor,
-        })
+        self._log_event(
+            "scenario_created",
+            {
+                "scenario_id": scenario.scenario_id,
+                "engagement_id": engagement_id,
+                "threat_actor": emulated_threat_actor,
+            },
+        )
 
         return scenario
 
@@ -1297,13 +1349,16 @@ class DORAThreadLedPenetrationTesting:
 
         self._actions[action.action_id] = action
 
-        self._log_event("attack_action_recorded", {
-            "action_id": action.action_id,
-            "scenario_id": scenario_id,
-            "technique": technique.value,
-            "outcome": outcome.value,
-            "detected": was_detected,
-        })
+        self._log_event(
+            "attack_action_recorded",
+            {
+                "action_id": action.action_id,
+                "scenario_id": scenario_id,
+                "technique": technique.value,
+                "outcome": outcome.value,
+                "detected": was_detected,
+            },
+        )
 
         return action
 
@@ -1392,12 +1447,15 @@ class DORAThreadLedPenetrationTesting:
         engagement.findings.append(finding.finding_id)
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("finding_recorded", {
-            "finding_id": finding.finding_id,
-            "engagement_id": engagement_id,
-            "severity": severity.value,
-            "category": category.value,
-        })
+        self._log_event(
+            "finding_recorded",
+            {
+                "finding_id": finding.finding_id,
+                "engagement_id": engagement_id,
+                "severity": severity.value,
+                "category": category.value,
+            },
+        )
 
         if severity == TLPTFindingSeverity.CRITICAL:
             logger.critical(f"CRITICAL TLPT finding: {finding.finding_id} - {title}")
@@ -1514,12 +1572,15 @@ class DORAThreadLedPenetrationTesting:
 
         engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("purple_team_session", {
-            "session_id": session.session_id,
-            "engagement_id": engagement_id,
-            "scenarios_reviewed": scenarios_reviewed,
-            "gaps_identified": len(detection_gaps_identified or []),
-        })
+        self._log_event(
+            "purple_team_session",
+            {
+                "session_id": session.session_id,
+                "engagement_id": engagement_id,
+                "scenarios_reviewed": scenarios_reviewed,
+                "gaps_identified": len(detection_gaps_identified or []),
+            },
+        )
 
         logger.info(f"Purple team session completed: {session.session_id}")
         return session
@@ -1619,11 +1680,14 @@ class DORAThreadLedPenetrationTesting:
 
         self._attestations[attestation.attestation_id] = attestation
 
-        self._log_event("attestation_generated", {
-            "attestation_id": attestation.attestation_id,
-            "engagement_id": engagement_id,
-            "competent_authority": competent_authority,
-        })
+        self._log_event(
+            "attestation_generated",
+            {
+                "attestation_id": attestation.attestation_id,
+                "engagement_id": engagement_id,
+                "competent_authority": competent_authority,
+            },
+        )
 
         return attestation
 
@@ -1657,10 +1721,13 @@ class DORAThreadLedPenetrationTesting:
             engagement.attestation_reference = submission_reference
             engagement.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("attestation_submitted", {
-            "attestation_id": attestation_id,
-            "submission_reference": submission_reference,
-        })
+        self._log_event(
+            "attestation_submitted",
+            {
+                "attestation_id": attestation_id,
+                "submission_reference": submission_reference,
+            },
+        )
 
         logger.info(f"TLPT attestation submitted: {attestation_id}")
         return attestation
@@ -1690,8 +1757,7 @@ class DORAThreadLedPenetrationTesting:
     def get_compliance_status(self) -> Dict[str, Any]:
         """Get Article 26 compliance status."""
         completed_engagements = [
-            e for e in self._engagements.values()
-            if e.status == TLPTStatus.COMPLETED
+            e for e in self._engagements.values() if e.status == TLPTStatus.COMPLETED
         ]
 
         # Check 3-year requirement
@@ -1708,10 +1774,7 @@ class DORAThreadLedPenetrationTesting:
         attestations_submitted = sum(1 for a in self._attestations.values() if a.submission_date)
 
         # Check purple teaming
-        purple_team_compliant = sum(
-            1 for e in completed_engagements
-            if e.purple_team_completed
-        )
+        purple_team_compliant = sum(1 for e in completed_engagements if e.purple_team_completed)
 
         return {
             "article_reference": "Article 26",
@@ -1724,8 +1787,16 @@ class DORAThreadLedPenetrationTesting:
             "compliance_requirements": {
                 "three_year_cycle": len(entities_compliant) > 0,
                 "production_testing": True,  # Framework enforces this
-                "purple_teaming": purple_team_compliant == len(completed_engagements) if completed_engagements else True,
-                "attestation": attestations_submitted == len(completed_engagements) if completed_engagements else True,
+                "purple_teaming": (
+                    purple_team_compliant == len(completed_engagements)
+                    if completed_engagements
+                    else True
+                ),
+                "attestation": (
+                    attestations_submitted == len(completed_engagements)
+                    if completed_engagements
+                    else True
+                ),
             },
         }
 
@@ -1753,15 +1824,17 @@ class DORAThreadLedPenetrationTesting:
             scenario = self._scenarios.get(scenario_id)
             if scenario:
                 actions = self.get_actions_for_scenario(scenario_id)
-                scenarios.append({
-                    "scenario_id": scenario_id,
-                    "name": scenario.name,
-                    "threat_actor": scenario.emulated_threat_actor,
-                    "status": scenario.status,
-                    "objectives_achieved": scenario.objectives_achieved,
-                    "actions_count": len(actions),
-                    "detected_actions": sum(1 for a in actions if a.was_detected),
-                })
+                scenarios.append(
+                    {
+                        "scenario_id": scenario_id,
+                        "name": scenario.name,
+                        "threat_actor": scenario.emulated_threat_actor,
+                        "status": scenario.status,
+                        "objectives_achieved": scenario.objectives_achieved,
+                        "actions_count": len(actions),
+                        "detected_actions": sum(1 for a in actions if a.was_detected),
+                    }
+                )
 
         return {
             "report_type": "tlpt_engagement_report",
@@ -1799,7 +1872,9 @@ class DORAThreadLedPenetrationTesting:
             "findings": {
                 "total": len(findings),
                 "by_severity": {
-                    "critical": sum(1 for f in findings if f.severity == TLPTFindingSeverity.CRITICAL),
+                    "critical": sum(
+                        1 for f in findings if f.severity == TLPTFindingSeverity.CRITICAL
+                    ),
                     "high": sum(1 for f in findings if f.severity == TLPTFindingSeverity.HIGH),
                     "medium": sum(1 for f in findings if f.severity == TLPTFindingSeverity.MEDIUM),
                     "low": sum(1 for f in findings if f.severity == TLPTFindingSeverity.LOW),
@@ -1811,12 +1886,10 @@ class DORAThreadLedPenetrationTesting:
                 "sessions_conducted": len(purple_sessions),
                 "completed": engagement.purple_team_completed,
                 "detection_gaps_identified": sum(
-                    len(s.detection_gaps_identified)
-                    for s in purple_sessions
+                    len(s.detection_gaps_identified) for s in purple_sessions
                 ),
                 "improvements_recommended": sum(
-                    len(s.strategic_improvements) + len(s.quick_wins)
-                    for s in purple_sessions
+                    len(s.strategic_improvements) + len(s.quick_wins) for s in purple_sessions
                 ),
             },
             "attestation": {
@@ -1851,9 +1924,21 @@ class DORAThreadLedPenetrationTesting:
             "export_date": datetime.now(timezone.utc).isoformat(),
             "article_reference": "Article 26",
             "engagement": asdict(engagement),
-            "scope": asdict(self._scopes[engagement.scope_id]) if engagement.scope_id in self._scopes else None,
-            "ti_report": asdict(self._ti_reports[engagement.ti_report_id]) if engagement.ti_report_id in self._ti_reports else None,
-            "scenarios": [asdict(self._scenarios[sid]) for sid in engagement.rt_scenarios if sid in self._scenarios],
+            "scope": (
+                asdict(self._scopes[engagement.scope_id])
+                if engagement.scope_id in self._scopes
+                else None
+            ),
+            "ti_report": (
+                asdict(self._ti_reports[engagement.ti_report_id])
+                if engagement.ti_report_id in self._ti_reports
+                else None
+            ),
+            "scenarios": [
+                asdict(self._scenarios[sid])
+                for sid in engagement.rt_scenarios
+                if sid in self._scenarios
+            ],
             "findings": [asdict(f) for f in self.get_findings_for_engagement(engagement_id)],
             "purple_sessions": [
                 asdict(self._purple_sessions[sid])
@@ -1861,8 +1946,12 @@ class DORAThreadLedPenetrationTesting:
                 if sid in self._purple_sessions
             ],
             "attestation": next(
-                (asdict(a) for a in self._attestations.values() if a.engagement_id == engagement_id),
-                None
+                (
+                    asdict(a)
+                    for a in self._attestations.values()
+                    if a.engagement_id == engagement_id
+                ),
+                None,
             ),
         }
 
@@ -1889,6 +1978,7 @@ class DORAThreadLedPenetrationTesting:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_tlpt(
     config: Optional[TLPTConfig] = None,

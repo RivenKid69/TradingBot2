@@ -8,6 +8,7 @@ Reference: docs/PLATFORM_REFERENCE.md "НЕ БАГИ" #52
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -43,7 +44,7 @@ class TestVGSStateSerialization:
         assert "warmup_steps" in state
         assert "step_count" in state
         assert "param_grad_mean_ema" in state  # E[μ]
-        assert "param_grad_sq_ema" in state    # E[g²] - FIXED in v3.1
+        assert "param_grad_sq_ema" in state  # E[g²] - FIXED in v3.1
         assert "vgs_version" in state
 
         # Verify step count was tracked
@@ -72,7 +73,7 @@ class TestVGSStateSerialization:
             model2.parameters(),
             enabled=True,
             warmup_steps=100,  # Different!
-            alpha=0.5  # Different!
+            alpha=0.5,  # Different!
         )
 
         # Verify target has different state before load
@@ -219,6 +220,7 @@ class TestVGSVersionMigration:
 
         # Should load without warning
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("error")  # Treat warnings as errors
             try:
@@ -232,6 +234,7 @@ class TestUPGDSigmoidScaling:
 
     def test_sigmoid_scaling_range(self):
         """Verify sigmoid scaling maps [0, 1] → [0.27, 0.73]."""
+
         # Test the exact formula from UPGD
         def scaled_utility(normalized: float) -> float:
             return float(torch.sigmoid(torch.tensor(2.0 * (normalized - 0.5))))

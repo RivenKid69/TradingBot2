@@ -133,6 +133,7 @@ class TestEvidencePackSigning:
         """Test that legacy signature formats are handled."""
         # Legacy format (base64 encoded string)
         import base64
+
         legacy_sig = base64.b64encode(b"CCEA-EVIDENCE-SIG::test::2025-01-01").decode()
 
         # Should not crash, may return True for legacy
@@ -246,6 +247,7 @@ class TestSignaturePayload:
 
         # The payload digest should be SHA-256 of the checksum bytes
         import hashlib
+
         expected_digest = f"sha256:{hashlib.sha256(checksum.encode()).hexdigest()}"
         assert sig_data["payload_digest"] == expected_digest
 
@@ -260,12 +262,13 @@ class TestCryptoFallback:
         exporter = EvidencePackExporter(config)
 
         # Mock CRYPTO_AVAILABLE to False
-        with patch('packages.cloud.enterprise.evidence_pack.CRYPTO_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.evidence_pack.CRYPTO_AVAILABLE", False):
             signature = await exporter._sign_pack("sha256:test")
 
         # Should return base64-encoded placeholder
         assert signature is not None
         import base64
+
         decoded = base64.b64decode(signature).decode()
         assert "CCEA-EVIDENCE-SIG::" in decoded
 
@@ -275,7 +278,7 @@ class TestCryptoFallback:
         config = EvidencePackConfig(output_path=temp_dir)
         exporter = EvidencePackExporter(config)
 
-        with patch('packages.cloud.enterprise.evidence_pack.CRYPTO_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.evidence_pack.CRYPTO_AVAILABLE", False):
             # Verification should return True when crypto unavailable
             is_valid = await exporter._verify_signature("test", "anything")
             assert is_valid is True

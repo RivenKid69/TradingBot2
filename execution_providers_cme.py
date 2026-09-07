@@ -72,20 +72,23 @@ logger = logging.getLogger(__name__)
 # Constants and Configuration
 # =============================================================================
 
+
 class CMETradingSession(str, Enum):
     """CME trading session types."""
-    RTH = "RTH"          # Regular Trading Hours
-    ETH = "ETH"          # Electronic Trading Hours (overnight)
+
+    RTH = "RTH"  # Regular Trading Hours
+    ETH = "ETH"  # Electronic Trading Hours (overnight)
     PRE_OPEN = "PRE_OPEN"  # Pre-open auction period
-    CLOSE = "CLOSE"      # Closing period
+    CLOSE = "CLOSE"  # Closing period
 
 
 class CircuitBreakerState(str, Enum):
     """Circuit breaker state."""
+
     NORMAL = "NORMAL"
-    LEVEL_1 = "LEVEL_1"   # -7% for equity index
-    LEVEL_2 = "LEVEL_2"   # -13% for equity index
-    LEVEL_3 = "LEVEL_3"   # -20% for equity index (day halt)
+    LEVEL_1 = "LEVEL_1"  # -7% for equity index
+    LEVEL_2 = "LEVEL_2"  # -13% for equity index
+    LEVEL_3 = "LEVEL_3"  # -20% for equity index (day halt)
     LIMIT_UP = "LIMIT_UP"
     LIMIT_DOWN = "LIMIT_DOWN"
     VELOCITY_PAUSE = "VELOCITY_PAUSE"
@@ -94,31 +97,31 @@ class CircuitBreakerState(str, Enum):
 # Default tick sizes by product
 TICK_SIZES: Dict[str, Decimal] = {
     # Equity Index
-    "ES": Decimal("0.25"),    # $12.50 per tick
-    "NQ": Decimal("0.25"),    # $5.00 per tick
-    "YM": Decimal("1.0"),     # $5.00 per tick
-    "RTY": Decimal("0.10"),   # $5.00 per tick
-    "MES": Decimal("0.25"),   # $1.25 per tick
-    "MNQ": Decimal("0.25"),   # $0.50 per tick
+    "ES": Decimal("0.25"),  # $12.50 per tick
+    "NQ": Decimal("0.25"),  # $5.00 per tick
+    "YM": Decimal("1.0"),  # $5.00 per tick
+    "RTY": Decimal("0.10"),  # $5.00 per tick
+    "MES": Decimal("0.25"),  # $1.25 per tick
+    "MNQ": Decimal("0.25"),  # $0.50 per tick
     # Metals
-    "GC": Decimal("0.10"),    # $10.00 per tick
-    "SI": Decimal("0.005"),   # $25.00 per tick
+    "GC": Decimal("0.10"),  # $10.00 per tick
+    "SI": Decimal("0.005"),  # $25.00 per tick
     "HG": Decimal("0.0005"),  # $12.50 per tick
-    "MGC": Decimal("0.10"),   # $1.00 per tick
+    "MGC": Decimal("0.10"),  # $1.00 per tick
     # Energy
-    "CL": Decimal("0.01"),    # $10.00 per tick
-    "NG": Decimal("0.001"),   # $10.00 per tick
-    "MCL": Decimal("0.01"),   # $1.00 per tick
+    "CL": Decimal("0.01"),  # $10.00 per tick
+    "NG": Decimal("0.001"),  # $10.00 per tick
+    "MCL": Decimal("0.01"),  # $1.00 per tick
     # Currencies
-    "6E": Decimal("0.00005"), # $6.25 per tick
+    "6E": Decimal("0.00005"),  # $6.25 per tick
     "6J": Decimal("0.0000005"),  # $6.25 per tick
     "6B": Decimal("0.0001"),  # $6.25 per tick
     "6A": Decimal("0.0001"),  # $10.00 per tick
     # Bonds
-    "ZB": Decimal("0.03125"), # $31.25 per tick (1/32nd)
+    "ZB": Decimal("0.03125"),  # $31.25 per tick (1/32nd)
     "ZN": Decimal("0.015625"),  # $15.625 per tick (1/64th)
-    "ZF": Decimal("0.0078125"), # $7.8125 per tick
-    "ZT": Decimal("0.0078125"), # $15.625 per tick
+    "ZF": Decimal("0.0078125"),  # $7.8125 per tick
+    "ZT": Decimal("0.0078125"),  # $15.625 per tick
 }
 
 DEFAULT_TICK_SIZE = Decimal("0.01")
@@ -127,6 +130,7 @@ DEFAULT_TICK_SIZE = Decimal("0.01")
 # =============================================================================
 # CME Slippage Configuration
 # =============================================================================
+
 
 @dataclass
 class CMESlippageConfig:
@@ -145,71 +149,76 @@ class CMESlippageConfig:
         min_slippage_bps: Minimum slippage floor
         max_slippage_bps: Maximum slippage cap
     """
+
     # Default spreads in ticks
-    symbol_spreads: Dict[str, Decimal] = field(default_factory=lambda: {
-        # Equity Index (very liquid)
-        "ES": Decimal("0.25"),    # 1 tick
-        "NQ": Decimal("0.25"),    # 1 tick
-        "YM": Decimal("1.0"),     # 1 tick
-        "RTY": Decimal("0.20"),   # 2 ticks
-        "MES": Decimal("0.25"),   # 1 tick
-        "MNQ": Decimal("0.25"),   # 1 tick
-        # Metals
-        "GC": Decimal("0.10"),    # 1 tick
-        "SI": Decimal("0.005"),   # 1 tick
-        "HG": Decimal("0.0005"),  # 1 tick
-        "MGC": Decimal("0.10"),   # 1 tick
-        # Energy (can widen)
-        "CL": Decimal("0.01"),    # 1 tick
-        "NG": Decimal("0.002"),   # 2 ticks (more volatile)
-        "MCL": Decimal("0.01"),   # 1 tick
-        # Currencies
-        "6E": Decimal("0.00005"), # 1 tick
-        "6J": Decimal("0.0000010"),  # 2 ticks
-        "6B": Decimal("0.0001"),  # 1 tick
-        # Bonds
-        "ZB": Decimal("0.03125"), # 1 tick
-        "ZN": Decimal("0.015625"),  # 1 tick
-        "ZF": Decimal("0.0078125"), # 1 tick
-    })
+    symbol_spreads: Dict[str, Decimal] = field(
+        default_factory=lambda: {
+            # Equity Index (very liquid)
+            "ES": Decimal("0.25"),  # 1 tick
+            "NQ": Decimal("0.25"),  # 1 tick
+            "YM": Decimal("1.0"),  # 1 tick
+            "RTY": Decimal("0.20"),  # 2 ticks
+            "MES": Decimal("0.25"),  # 1 tick
+            "MNQ": Decimal("0.25"),  # 1 tick
+            # Metals
+            "GC": Decimal("0.10"),  # 1 tick
+            "SI": Decimal("0.005"),  # 1 tick
+            "HG": Decimal("0.0005"),  # 1 tick
+            "MGC": Decimal("0.10"),  # 1 tick
+            # Energy (can widen)
+            "CL": Decimal("0.01"),  # 1 tick
+            "NG": Decimal("0.002"),  # 2 ticks (more volatile)
+            "MCL": Decimal("0.01"),  # 1 tick
+            # Currencies
+            "6E": Decimal("0.00005"),  # 1 tick
+            "6J": Decimal("0.0000010"),  # 2 ticks
+            "6B": Decimal("0.0001"),  # 1 tick
+            # Bonds
+            "ZB": Decimal("0.03125"),  # 1 tick
+            "ZN": Decimal("0.015625"),  # 1 tick
+            "ZF": Decimal("0.0078125"),  # 1 tick
+        }
+    )
 
     # Impact coefficients (lower = more liquid)
-    symbol_impacts: Dict[str, float] = field(default_factory=lambda: {
-        # Equity Index (very liquid)
-        "ES": 0.03,    # E-mini S&P 500 - highest liquidity
-        "NQ": 0.04,    # E-mini NASDAQ
-        "YM": 0.05,    # E-mini Dow
-        "RTY": 0.06,   # E-mini Russell 2000
-        "MES": 0.035,  # Micro E-mini (slightly wider)
-        "MNQ": 0.045,
-        # Metals
-        "GC": 0.05,    # Gold - moderate liquidity
-        "SI": 0.07,    # Silver - less liquid
-        "HG": 0.06,    # Copper
-        "MGC": 0.055,  # Micro Gold
-        # Energy
-        "CL": 0.04,    # Crude Oil - very liquid
-        "NG": 0.08,    # Natural Gas - more volatile
-        "MCL": 0.045,  # Micro Crude
-        # Currencies
-        "6E": 0.04,    # Euro FX - very liquid
-        "6J": 0.05,    # Japanese Yen
-        "6B": 0.05,    # British Pound
-        "6A": 0.06,    # Australian Dollar
-        # Bonds
-        "ZB": 0.03,    # 30-Year Bond - very liquid
-        "ZN": 0.025,   # 10-Year Note - most liquid
-        "ZF": 0.03,    # 5-Year Note
-        "ZT": 0.04,    # 2-Year Note
-    })
+    symbol_impacts: Dict[str, float] = field(
+        default_factory=lambda: {
+            # Equity Index (very liquid)
+            "ES": 0.03,  # E-mini S&P 500 - highest liquidity
+            "NQ": 0.04,  # E-mini NASDAQ
+            "YM": 0.05,  # E-mini Dow
+            "RTY": 0.06,  # E-mini Russell 2000
+            "MES": 0.035,  # Micro E-mini (slightly wider)
+            "MNQ": 0.045,
+            # Metals
+            "GC": 0.05,  # Gold - moderate liquidity
+            "SI": 0.07,  # Silver - less liquid
+            "HG": 0.06,  # Copper
+            "MGC": 0.055,  # Micro Gold
+            # Energy
+            "CL": 0.04,  # Crude Oil - very liquid
+            "NG": 0.08,  # Natural Gas - more volatile
+            "MCL": 0.045,  # Micro Crude
+            # Currencies
+            "6E": 0.04,  # Euro FX - very liquid
+            "6J": 0.05,  # Japanese Yen
+            "6B": 0.05,  # British Pound
+            "6A": 0.06,  # Australian Dollar
+            # Bonds
+            "ZB": 0.03,  # 30-Year Bond - very liquid
+            "ZN": 0.025,  # 10-Year Note - most liquid
+            "ZF": 0.03,  # 5-Year Note
+            "ZT": 0.04,  # 2-Year Note
+        }
+    )
 
     # Session multipliers
     rth_spread_multiplier: float = 1.0
-    eth_spread_multiplier: float = 1.5   # 50% wider in ETH
+    eth_spread_multiplier: float = 1.5  # 50% wider in ETH
 
     # Settlement effects
     settlement_premium_max: float = 0.30  # Up to 30% increase
-    settlement_window_minutes: int = 30    # 30 min before settlement
+    settlement_window_minutes: int = 30  # 30 min before settlement
 
     # Circuit breaker
     circuit_breaker_multiplier: float = 5.0  # 5x spread when near limit
@@ -249,8 +258,14 @@ CME_SLIPPAGE_PROFILES: Dict[str, CMESlippageConfig] = {
     ),
     "equity_index": CMESlippageConfig(
         symbol_impacts={
-            "ES": 0.025, "NQ": 0.03, "YM": 0.04, "RTY": 0.05,
-            "MES": 0.03, "MNQ": 0.035, "MYM": 0.045, "M2K": 0.055,
+            "ES": 0.025,
+            "NQ": 0.03,
+            "YM": 0.04,
+            "RTY": 0.05,
+            "MES": 0.03,
+            "MNQ": 0.035,
+            "MYM": 0.045,
+            "M2K": 0.055,
         },
         min_slippage_bps=0.3,
     ),
@@ -268,6 +283,7 @@ CME_SLIPPAGE_PROFILES: Dict[str, CMESlippageConfig] = {
 # =============================================================================
 # CME Slippage Provider
 # =============================================================================
+
 
 class CMESlippageProvider:
     """
@@ -434,10 +450,9 @@ class CMESlippageProvider:
         total_slippage = base_slippage * session_mult * settlement_mult * roll_mult * cb_mult
 
         # Apply bounds
-        return float(max(
-            self._config.min_slippage_bps,
-            min(self._config.max_slippage_bps, total_slippage)
-        ))
+        return float(
+            max(self._config.min_slippage_bps, min(self._config.max_slippage_bps, total_slippage))
+        )
 
     def set_circuit_breaker_state(self, state: CircuitBreakerState) -> None:
         """
@@ -525,6 +540,7 @@ class CMESlippageProvider:
 # CME Fee Provider
 # =============================================================================
 
+
 @dataclass
 class CMEFeeConfig:
     """
@@ -544,34 +560,37 @@ class CMEFeeConfig:
         nfa_fee: NFA regulatory fee per contract
         tech_fee: Technology/platform fee per contract
     """
+
     # Exchange fees per contract (2024 approximations)
-    exchange_fees: Dict[str, Decimal] = field(default_factory=lambda: {
-        # Equity Index (CME)
-        "ES": Decimal("1.18"),
-        "NQ": Decimal("1.18"),
-        "YM": Decimal("1.18"),
-        "RTY": Decimal("1.18"),
-        "MES": Decimal("0.20"),
-        "MNQ": Decimal("0.20"),
-        # Metals (COMEX)
-        "GC": Decimal("1.50"),
-        "SI": Decimal("1.50"),
-        "HG": Decimal("1.50"),
-        "MGC": Decimal("0.50"),
-        # Energy (NYMEX)
-        "CL": Decimal("1.45"),
-        "NG": Decimal("1.45"),
-        "MCL": Decimal("0.25"),
-        # Currencies (CME)
-        "6E": Decimal("0.85"),
-        "6J": Decimal("0.85"),
-        "6B": Decimal("0.85"),
-        # Bonds (CBOT)
-        "ZB": Decimal("0.85"),
-        "ZN": Decimal("0.85"),
-        "ZF": Decimal("0.85"),
-        "ZT": Decimal("0.85"),
-    })
+    exchange_fees: Dict[str, Decimal] = field(
+        default_factory=lambda: {
+            # Equity Index (CME)
+            "ES": Decimal("1.18"),
+            "NQ": Decimal("1.18"),
+            "YM": Decimal("1.18"),
+            "RTY": Decimal("1.18"),
+            "MES": Decimal("0.20"),
+            "MNQ": Decimal("0.20"),
+            # Metals (COMEX)
+            "GC": Decimal("1.50"),
+            "SI": Decimal("1.50"),
+            "HG": Decimal("1.50"),
+            "MGC": Decimal("0.50"),
+            # Energy (NYMEX)
+            "CL": Decimal("1.45"),
+            "NG": Decimal("1.45"),
+            "MCL": Decimal("0.25"),
+            # Currencies (CME)
+            "6E": Decimal("0.85"),
+            "6J": Decimal("0.85"),
+            "6B": Decimal("0.85"),
+            # Bonds (CBOT)
+            "ZB": Decimal("0.85"),
+            "ZN": Decimal("0.85"),
+            "ZF": Decimal("0.85"),
+            "ZT": Decimal("0.85"),
+        }
+    )
 
     # Clearing fee per contract
     clearing_fee: Decimal = Decimal("0.10")
@@ -591,12 +610,7 @@ class CMEFeeConfig:
 
     def get_total_fee_per_contract(self, symbol: str) -> Decimal:
         """Get total fee per contract."""
-        return (
-            self.get_exchange_fee(symbol)
-            + self.clearing_fee
-            + self.nfa_fee
-            + self.tech_fee
-        )
+        return self.get_exchange_fee(symbol) + self.clearing_fee + self.nfa_fee + self.tech_fee
 
 
 class CMEFeeProvider:
@@ -688,6 +702,7 @@ class CMEFeeProvider:
 # =============================================================================
 # CME L2 Execution Provider
 # =============================================================================
+
 
 class CMEL2ExecutionProvider:
     """
@@ -909,6 +924,7 @@ class CMEL2ExecutionProvider:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_cme_slippage_provider(
     profile: str = "default",

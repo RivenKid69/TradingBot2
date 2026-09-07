@@ -79,6 +79,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # =========================
 
+
 @dataclass
 class RateDownloadConfig:
     """Configuration for interest rate download."""
@@ -175,6 +176,7 @@ RATE_SERIES_ALT: Dict[str, str] = {
 # FRED API Functions
 # =========================
 
+
 def fetch_fred_series(
     series_id: str,
     start_date: str,
@@ -240,10 +242,12 @@ def fetch_fred_series(
                 continue  # Missing value
 
             try:
-                records.append({
-                    "date": obs["date"],
-                    "rate": float(value),
-                })
+                records.append(
+                    {
+                        "date": obs["date"],
+                        "rate": float(value),
+                    }
+                )
             except (ValueError, KeyError):
                 continue
 
@@ -306,6 +310,7 @@ def fetch_fred_series_pandas(
 # =========================
 # Download Functions
 # =========================
+
 
 def download_rate_for_currency(
     currency: str,
@@ -420,6 +425,7 @@ def _fill_rate_gaps(
 # Differential Calculation
 # =========================
 
+
 def calculate_rate_differentials(
     rate_dataframes: Dict[str, pd.DataFrame],
     base_currency: str = "USD",
@@ -442,8 +448,10 @@ def calculate_rate_differentials(
         logger.warning(f"Base currency {base_currency} not in rate data")
         return pd.DataFrame()
 
-    base_df = rate_dataframes[base_currency].set_index("date")[["rate"]].rename(
-        columns={"rate": f"{base_currency}_rate"}
+    base_df = (
+        rate_dataframes[base_currency]
+        .set_index("date")[["rate"]]
+        .rename(columns={"rate": f"{base_currency}_rate"})
     )
 
     differentials = []
@@ -453,9 +461,7 @@ def calculate_rate_differentials(
             continue
 
         # Merge with base rate
-        curr_df = df.set_index("date")[["rate"]].rename(
-            columns={"rate": f"{currency}_rate"}
-        )
+        curr_df = df.set_index("date")[["rate"]].rename(columns={"rate": f"{currency}_rate"})
 
         merged = base_df.join(curr_df, how="outer").ffill()
 
@@ -477,6 +483,7 @@ def calculate_rate_differentials(
 # =========================
 # File I/O
 # =========================
+
 
 def save_rates(
     df: pd.DataFrame,
@@ -518,6 +525,7 @@ def save_differentials(
 # =========================
 # Main Runner
 # =========================
+
 
 def download_all_rates(config: RateDownloadConfig) -> Dict[str, Any]:
     """
@@ -587,6 +595,7 @@ def download_all_rates(config: RateDownloadConfig) -> Dict[str, Any]:
 # CLI
 # =========================
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download central bank interest rates from FRED",
@@ -639,7 +648,8 @@ def parse_args() -> argparse.Namespace:
         help="Redownload even if files exist",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose logging",
     )

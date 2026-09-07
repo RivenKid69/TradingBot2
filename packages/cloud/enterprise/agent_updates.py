@@ -49,6 +49,7 @@ MIN_SUPPORTED_VERSION: Final[str] = "0.9.0"
 
 class UpdateChannel(Enum):
     """Update channel for agent updates."""
+
     STABLE = "stable"
     BETA = "beta"
     CANARY = "canary"
@@ -57,6 +58,7 @@ class UpdateChannel(Enum):
 
 class UpdateState(Enum):
     """State of an update for an agent."""
+
     AVAILABLE = "available"
     DOWNLOADING = "downloading"
     DOWNLOADED = "downloaded"
@@ -71,6 +73,7 @@ class UpdateState(Enum):
 
 class UpdatePriority(Enum):
     """Update priority level."""
+
     CRITICAL = "critical"  # Security fix, immediate
     HIGH = "high"  # Important bug fix
     NORMAL = "normal"  # Standard update
@@ -80,6 +83,7 @@ class UpdatePriority(Enum):
 @dataclass
 class AgentUpdate:
     """Represents an agent software update."""
+
     id: UUID = field(default_factory=uuid4)
     version: str = ""
     channel: UpdateChannel = UpdateChannel.STABLE
@@ -155,6 +159,7 @@ class AgentUpdate:
 @dataclass
 class AgentUpdateStatus:
     """Status of an update for a specific agent."""
+
     agent_id: UUID
     update_id: UUID
     state: UpdateState = UpdateState.AVAILABLE
@@ -208,6 +213,7 @@ class AgentUpdateStatus:
 @dataclass
 class AgentUpdateConfig:
     """Configuration for agent update manager."""
+
     # Channels
     default_channel: UpdateChannel = UpdateChannel.STABLE
     allowed_channels: List[UpdateChannel] = field(
@@ -707,9 +713,7 @@ class AgentUpdateManager:
         status.approved_at = datetime.utcnow()
         status.evidence_hash = evidence_hash
 
-        logger.info(
-            f"Update {update_id} approved for agent {agent_id} by {approved_by}"
-        )
+        logger.info(f"Update {update_id} approved for agent {agent_id} by {approved_by}")
         return True, None
 
     async def install_update(
@@ -796,9 +800,7 @@ class AgentUpdateManager:
             status.error_message = error_message
             status.retry_count += 1
 
-            logger.error(
-                f"Agent {agent_id} update failed: {error_message}"
-            )
+            logger.error(f"Agent {agent_id} update failed: {error_message}")
 
             # Notify
             if self._on_update_failed and update:
@@ -940,9 +942,7 @@ class AgentUpdateManager:
         """Get update statistics."""
         total_updates = len(self._updates)
         active_updates = sum(1 for u in self._updates.values() if u.is_active)
-        released_updates = sum(
-            1 for u in self._updates.values() if u.released_at
-        )
+        released_updates = sum(1 for u in self._updates.values() if u.released_at)
 
         # Status breakdown
         status_counts: Dict[str, int] = {}
@@ -1004,6 +1004,7 @@ class AgentUpdateManager:
                 "NOT suitable for production use."
             )
             import base64
+
             digest = hashlib.sha256(payload).hexdigest()
             return base64.b64encode(f"CCEA-AGENT-UPDATE-SIG::{digest}".encode()).decode()
 
@@ -1070,15 +1071,14 @@ class AgentUpdateManager:
                     # Use provided public key or trusted keys
                     if public_key:
                         key = signer.import_public_key(
-                            public_key,
-                            key_id=sig_obj.key_id,
-                            format="raw"
+                            public_key, key_id=sig_obj.key_id, format="raw"
                         )
                         signer.add_trusted_key(key)
                     elif self.config.trusted_signing_keys:
                         # Add trusted keys from config
                         for key_b64 in self.config.trusted_signing_keys:
                             import base64
+
                             key_bytes = base64.b64decode(key_b64)
                             key = signer.import_public_key(key_bytes, format="raw")
                             signer.add_trusted_key(key)
@@ -1153,9 +1153,7 @@ class AgentUpdateManager:
 
         # Check hour
         if not (
-            self.config.change_window_start_hour
-            <= now.hour
-            < self.config.change_window_end_hour
+            self.config.change_window_start_hour <= now.hour < self.config.change_window_end_hour
         ):
             return False
 

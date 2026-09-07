@@ -10,6 +10,7 @@ All tests follow research-backed approaches and best practices.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from pathlib import Path
@@ -49,8 +50,10 @@ class TestSAPPOEpsilonSchedule:
             class Policy:
                 def get_distribution(self, obs):
                     pass
+
                 def predict_values(self, obs):
                     return torch.zeros(obs.size(0))
+
             policy = Policy()
 
         sa_ppo = StateAdversarialPPO(
@@ -60,9 +63,9 @@ class TestSAPPOEpsilonSchedule:
 
         # Verify epsilon progresses correctly with hardcoded max_updates=1000
         test_cases = [
-            (0, 0.10),      # 0% progress: epsilon_init
-            (500, 0.075),   # 50% progress: (0.1 + 0.05) / 2
-            (1000, 0.05),   # 100% progress: epsilon_final
+            (0, 0.10),  # 0% progress: epsilon_init
+            (500, 0.075),  # 50% progress: (0.1 + 0.05) / 2
+            (1000, 0.05),  # 100% progress: epsilon_final
         ]
 
         for update_count, expected_epsilon in test_cases:
@@ -88,20 +91,22 @@ class TestSAPPOEpsilonSchedule:
             class Policy:
                 def get_distribution(self, obs):
                     pass
+
                 def predict_values(self, obs):
                     return torch.zeros(obs.size(0))
+
             policy = Policy()
 
         sa_ppo = StateAdversarialPPO(config=config, model=MockModel())
 
         # Test epsilon at different progress points (hardcoded max_updates=1000)
         test_cases = [
-            (0, 0.10),      # Start: epsilon_init
+            (0, 0.10),  # Start: epsilon_init
             (250, 0.0875),  # 25%: 0.1 + (0.05 - 0.1) * 0.25
-            (500, 0.075),   # 50%: 0.1 + (0.05 - 0.1) * 0.5
+            (500, 0.075),  # 50%: 0.1 + (0.05 - 0.1) * 0.5
             (750, 0.0625),  # 75%: 0.1 + (0.05 - 0.1) * 0.75
-            (1000, 0.05),   # End: epsilon_final
-            (1500, 0.05),   # After max_updates: should clamp to epsilon_final
+            (1000, 0.05),  # End: epsilon_final
+            (1500, 0.05),  # After max_updates: should clamp to epsilon_final
         ]
 
         for update_count, expected_epsilon in test_cases:
@@ -127,8 +132,10 @@ class TestSAPPOEpsilonSchedule:
             class Policy:
                 def get_distribution(self, obs):
                     pass
+
                 def predict_values(self, obs):
                     return torch.zeros(obs.size(0))
+
             policy = Policy()
 
         sa_ppo = StateAdversarialPPO(config=config, model=MockModel())
@@ -168,7 +175,7 @@ class TestPBTDeadlockPrevention:
                 HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3, is_log_scale=True)
             ],
             ready_percentage=0.8,  # Requires 8/10 members ready
-            min_ready_members=2,   # Fallback: allow PBT with >= 2 members
+            min_ready_members=2,  # Fallback: allow PBT with >= 2 members
             ready_check_max_wait=10,  # Fallback after 10 consecutive failures
             checkpoint_dir=temp_checkpoint_dir,
         )
@@ -187,7 +194,9 @@ class TestPBTDeadlockPrevention:
             result = scheduler.exploit_and_explore(population[0])
             new_params, new_hyperparams, checkpoint_format = result
 
-            assert new_params is None, f"Attempt {attempt + 1}: Should skip PBT (not enough ready members)"
+            assert (
+                new_params is None
+            ), f"Attempt {attempt + 1}: Should skip PBT (not enough ready members)"
             assert scheduler._failed_ready_checks == attempt + 1
 
         # 10th call should trigger fallback (3 members >= min_ready_members=2)
@@ -196,18 +205,18 @@ class TestPBTDeadlockPrevention:
 
         # Fallback activated: should proceed with exploration (even without exploitation)
         assert new_hyperparams is not None, "Fallback should allow exploration to proceed"
-        assert scheduler._failed_ready_checks == 0, "Failed checks counter should reset after fallback"
+        assert (
+            scheduler._failed_ready_checks == 0
+        ), "Failed checks counter should reset after fallback"
 
     def test_pbt_no_fallback_if_insufficient_min_members(self, temp_checkpoint_dir):
         """Verify fallback does NOT activate if ready_count < min_ready_members."""
         config = PBTConfig(
             population_size=10,
             perturbation_interval=5,
-            hyperparams=[
-                HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-            ],
+            hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)],
             ready_percentage=0.8,  # Requires 8/10
-            min_ready_members=3,   # Minimum 3 members
+            min_ready_members=3,  # Minimum 3 members
             ready_check_max_wait=5,
             checkpoint_dir=temp_checkpoint_dir,
         )
@@ -225,16 +234,16 @@ class TestPBTDeadlockPrevention:
             result = scheduler.exploit_and_explore(population[0])
             new_params, new_hyperparams, checkpoint_format = result
 
-            assert new_params is None, f"Attempt {attempt + 1}: Should skip PBT (insufficient min_ready_members)"
+            assert (
+                new_params is None
+            ), f"Attempt {attempt + 1}: Should skip PBT (insufficient min_ready_members)"
 
     def test_pbt_failed_checks_reset_when_sufficient_members_ready(self, temp_checkpoint_dir):
         """Verify failed_ready_checks counter resets when sufficient members become ready."""
         config = PBTConfig(
             population_size=10,
             perturbation_interval=5,
-            hyperparams=[
-                HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-            ],
+            hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)],
             ready_percentage=0.8,
             min_ready_members=2,
             ready_check_max_wait=10,
@@ -250,7 +259,9 @@ class TestPBTDeadlockPrevention:
             population[i].step = 5
             population[i].checkpoint_path = Path(temp_checkpoint_dir) / f"member_{i}.pt"
             # Save dummy checkpoint
-            torch.save({"format_version": "v2_full_parameters", "data": {}}, population[i].checkpoint_path)
+            torch.save(
+                {"format_version": "v2_full_parameters", "data": {}}, population[i].checkpoint_path
+            )
 
         # Accumulate 5 failed checks
         for _ in range(5):
@@ -262,11 +273,15 @@ class TestPBTDeadlockPrevention:
             population[i].performance = float(i)
             population[i].step = 5
             population[i].checkpoint_path = Path(temp_checkpoint_dir) / f"member_{i}.pt"
-            torch.save({"format_version": "v2_full_parameters", "data": {}}, population[i].checkpoint_path)
+            torch.save(
+                {"format_version": "v2_full_parameters", "data": {}}, population[i].checkpoint_path
+            )
 
         # Next call should reset counter
         scheduler.exploit_and_explore(population[0])
-        assert scheduler._failed_ready_checks == 0, "Counter should reset when sufficient members ready"
+        assert (
+            scheduler._failed_ready_checks == 0
+        ), "Counter should reset when sufficient members ready"
 
     def test_pbt_stats_include_failed_ready_checks(self, temp_checkpoint_dir):
         """Verify get_stats() includes failed_ready_checks metric."""
@@ -317,9 +332,9 @@ class TestQuantileMonotonicity:
 
         # Should NOT be sorted (monotonicity not enforced)
         expected = torch.tensor([[5.0, 2.0, 8.0, 1.0, 9.0]])
-        assert torch.allclose(quantiles, expected), (
-            f"Without monotonicity: expected {expected}, got {quantiles}"
-        )
+        assert torch.allclose(
+            quantiles, expected
+        ), f"Without monotonicity: expected {expected}, got {quantiles}"
 
     def test_quantile_head_with_monotonicity(self):
         """Verify QuantileValueHead with monotonicity enforces sorted outputs."""
@@ -340,9 +355,9 @@ class TestQuantileMonotonicity:
 
         # Should be sorted: [1, 2, 5, 8, 9]
         expected_sorted = torch.tensor([[1.0, 2.0, 5.0, 8.0, 9.0]])
-        assert torch.allclose(quantiles, expected_sorted), (
-            f"With monotonicity: expected sorted {expected_sorted}, got {quantiles}"
-        )
+        assert torch.allclose(
+            quantiles, expected_sorted
+        ), f"With monotonicity: expected sorted {expected_sorted}, got {quantiles}"
 
     def test_quantile_monotonicity_preserves_gradients(self):
         """Verify monotonicity enforcement is differentiable (gradients flow)."""
@@ -359,9 +374,9 @@ class TestQuantileMonotonicity:
         # Verify monotonicity
         for i in range(quantiles.size(0)):
             sorted_quantiles, _ = torch.sort(quantiles[i])
-            assert torch.allclose(quantiles[i], sorted_quantiles), (
-                f"Sample {i}: quantiles not sorted"
-            )
+            assert torch.allclose(
+                quantiles[i], sorted_quantiles
+            ), f"Sample {i}: quantiles not sorted"
 
         # Verify gradients flow
         loss = quantiles.sum()
@@ -387,9 +402,9 @@ class TestQuantileMonotonicity:
         # Check each sample is monotonic
         for i in range(batch_size):
             for j in range(quantiles.size(1) - 1):
-                assert quantiles[i, j] <= quantiles[i, j + 1], (
-                    f"Sample {i}: Q[{j}]={quantiles[i, j]:.4f} > Q[{j + 1}]={quantiles[i, j + 1]:.4f}"
-                )
+                assert (
+                    quantiles[i, j] <= quantiles[i, j + 1]
+                ), f"Sample {i}: Q[{j}]={quantiles[i, j]:.4f} > Q[{j + 1}]={quantiles[i, j + 1]:.4f}"
 
     def test_quantile_monotonicity_preserves_tau_alignment(self):
         """Verify monotonicity doesn't break tau (quantile level) alignment."""
@@ -403,9 +418,9 @@ class TestQuantileMonotonicity:
 
         # Verify tau values are still correct (midpoint formula)
         expected_taus = torch.tensor([(i + 0.5) / num_quantiles for i in range(num_quantiles)])
-        assert torch.allclose(head.taus, expected_taus, atol=1e-6), (
-            "Monotonicity enforcement should not change tau values"
-        )
+        assert torch.allclose(
+            head.taus, expected_taus, atol=1e-6
+        ), "Monotonicity enforcement should not change tau values"
 
     def test_quantile_monotonicity_default_is_false(self):
         """Verify default behavior is enforce_monotonicity=False (backward compatibility)."""
@@ -416,9 +431,9 @@ class TestQuantileMonotonicity:
             # enforce_monotonicity not specified - should default to False
         )
 
-        assert head.enforce_monotonicity is False, (
-            "Default enforce_monotonicity should be False for backward compatibility"
-        )
+        assert (
+            head.enforce_monotonicity is False
+        ), "Default enforce_monotonicity should be False for backward compatibility"
 
 
 # ============================================================================
@@ -452,10 +467,12 @@ class TestBugFixesIntegration:
             population_size=4,
             perturbation_interval=10,
             hyperparams=[
-                HyperparamConfig(name="learning_rate", min_value=1e-5, max_value=1e-3, is_log_scale=True),
+                HyperparamConfig(
+                    name="learning_rate", min_value=1e-5, max_value=1e-3, is_log_scale=True
+                ),
             ],
             ready_percentage=0.75,  # 3/4 required
-            min_ready_members=2,    # Fallback to 2
+            min_ready_members=2,  # Fallback to 2
             ready_check_max_wait=5,
             checkpoint_dir=temp_checkpoint_dir,
         )
@@ -470,9 +487,9 @@ class TestBugFixesIntegration:
         # Verify monotonicity enforced
         for i in range(quantiles.size(0)):
             for j in range(quantiles.size(1) - 1):
-                assert quantiles[i, j] <= quantiles[i, j + 1], (
-                    f"Integration test: quantiles not monotonic at sample {i}, position {j}"
-                )
+                assert (
+                    quantiles[i, j] <= quantiles[i, j + 1]
+                ), f"Integration test: quantiles not monotonic at sample {i}, position {j}"
 
         # Verify PBT can handle partial population (deadlock prevention)
         # Only 2 members ready (< 75% = 3, but >= min_ready_members = 2)
@@ -482,10 +499,13 @@ class TestBugFixesIntegration:
             checkpoint_path = Path(temp_checkpoint_dir) / f"member_{i}.pt"
             population[i].checkpoint_path = str(checkpoint_path)
             # Save checkpoint with quantile head state
-            torch.save({
-                "format_version": "v2_full_parameters",
-                "data": {"quantile_head": critic_head.state_dict()}
-            }, checkpoint_path)
+            torch.save(
+                {
+                    "format_version": "v2_full_parameters",
+                    "data": {"quantile_head": critic_head.state_dict()},
+                },
+                checkpoint_path,
+            )
 
         # Trigger fallback after max_wait
         for _ in range(4):

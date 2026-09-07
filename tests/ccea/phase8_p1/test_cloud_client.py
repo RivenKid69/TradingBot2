@@ -92,4 +92,3 @@ def test_cloud_client_heartbeat_includes_bearer_auth_and_signature():
     hb = client.heartbeat(agent_version="1.0.0", current_state="RUNNING")
     assert called["ok"] is True
     assert hb.trust_state == "enrolled"
-

@@ -25,6 +25,7 @@ in all loss and explained variance computations.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
@@ -214,9 +215,9 @@ class TestPPOTargetUnclipped:
         """
         # Simulated values
         V_pred = torch.tensor([8.0])  # Current prediction
-        V_old = torch.tensor([5.0])   # Old prediction
+        V_old = torch.tensor([5.0])  # Old prediction
         V_targ_unclipped = torch.tensor([10.0])  # True target (unclipped)
-        V_targ_clipped = torch.tensor([5.0])     # Wrongly clipped target
+        V_targ_clipped = torch.tensor([5.0])  # Wrongly clipped target
         epsilon = 2.0
 
         # Correct implementation

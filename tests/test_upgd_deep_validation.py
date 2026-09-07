@@ -11,6 +11,7 @@ These tests perform in-depth validation of UPGD optimizer mechanics:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -50,15 +51,16 @@ class TestUPGDUtilityComputation:
 
         # Check utility was computed correctly
         state = optimizer.state[model.weight]
-        avg_utility = state['avg_utility']
+        avg_utility = state["avg_utility"]
 
         # With beta=0.9 and first step:
         # avg_utility = beta * 0 + (1-beta) * (-grad * param)
         # avg_utility = 0.1 * (-grad * param)
         expected_avg_utility = 0.1 * expected_utility
 
-        assert torch.allclose(avg_utility, expected_avg_utility, atol=1e-6), \
-            f"Utility mismatch: {avg_utility} vs {expected_avg_utility}"
+        assert torch.allclose(
+            avg_utility, expected_avg_utility, atol=1e-6
+        ), f"Utility mismatch: {avg_utility} vs {expected_avg_utility}"
 
     def test_utility_ema_convergence(self):
         """Test that utility EMA converges to stable values."""
@@ -80,7 +82,7 @@ class TestUPGDUtilityComputation:
 
             # Track utility for first parameter
             if model.weight in optimizer.state:
-                avg_utility = optimizer.state[model.weight]['avg_utility'].clone()
+                avg_utility = optimizer.state[model.weight]["avg_utility"].clone()
                 utilities_history.append(avg_utility.abs().mean().item())
 
         # Utility should stabilize (variance in later steps should be lower)
@@ -117,10 +119,10 @@ class TestUPGDUtilityComputation:
         state = optimizer.state[model.weight]
 
         # Check step counter
-        assert state['step'] == 1
+        assert state["step"] == 1
 
         # Bias correction factor: 1 - beta^step
-        bias_correction = 1 - 0.9 ** 1
+        bias_correction = 1 - 0.9**1
         assert abs(bias_correction - 0.1) < 1e-6
 
         # The utility should be scaled by bias correction when used
@@ -130,10 +132,7 @@ class TestUPGDUtilityComputation:
 
     def test_global_max_utility_tracking(self):
         """Test that global maximum utility is tracked correctly across parameters."""
-        model = nn.Sequential(
-            nn.Linear(4, 8, bias=False),
-            nn.Linear(8, 2, bias=False)
-        )
+        model = nn.Sequential(nn.Linear(4, 8, bias=False), nn.Linear(8, 2, bias=False))
         optimizer = UPGD(model.parameters(), lr=1e-3, beta_utility=0.99)
 
         # Create scenario with different utility magnitudes
@@ -152,7 +151,7 @@ class TestUPGDUtilityComputation:
         utilities = []
         for param in model.parameters():
             if param in optimizer.state:
-                avg_utility = optimizer.state[param]['avg_utility']
+                avg_utility = optimizer.state[param]["avg_utility"]
                 utilities.append(avg_utility.max().item())
 
         # Global max should be the maximum across all parameters
@@ -216,8 +215,9 @@ class TestUPGDPerturbationBehavior:
         # (this is probabilistic, but with sigma=0.1 it should almost always differ)
         # If they're identical, something is wrong
         # Allow very small tolerance for numerical precision
-        assert weight_diff > 1e-6 or weight_diff == 0, \
-            f"Noise should affect weights (diff={weight_diff})"
+        assert (
+            weight_diff > 1e-6 or weight_diff == 0
+        ), f"Noise should affect weights (diff={weight_diff})"
 
     def test_sigma_magnitude_effect(self):
         """Test that larger sigma produces larger perturbations."""
@@ -280,7 +280,7 @@ class TestUPGDWeightProtection:
         with torch.no_grad():
             # Set some weights to large values
             model.weight.data[0, :] = 10.0  # First neuron has large weights
-            model.weight.data[1, :] = 0.1   # Second neuron has small weights
+            model.weight.data[1, :] = 0.1  # Second neuron has small weights
 
         x = torch.randn(8, 4)
         target = torch.zeros(8, 2)
@@ -328,8 +328,8 @@ class TestUPGDWeightProtection:
         # We can't directly access scaled_utility, but we can verify
         # that the algorithm ran without errors
         state = optimizer.state[model.weight]
-        assert 'avg_utility' in state
-        assert state['step'] > 0
+        assert "avg_utility" in state
+        assert state["step"] > 0
 
 
 class TestAdaptiveUPGDMoments:
@@ -357,7 +357,7 @@ class TestAdaptiveUPGDMoments:
         optimizer.step()
 
         state = optimizer.state[model.weight]
-        first_moment = state['first_moment']
+        first_moment = state["first_moment"]
 
         # First step: m = beta1 * 0 + (1 - beta1) * grad
         expected_first_moment = 0.1 * grad_1
@@ -385,23 +385,17 @@ class TestAdaptiveUPGDMoments:
         optimizer.step()
 
         state = optimizer.state[model.weight]
-        sec_moment = state['sec_moment']
+        sec_moment = state["sec_moment"]
 
         # First step: v = beta2 * 0 + (1 - beta2) * grad^2
-        expected_sec_moment = 0.001 * (grad ** 2)
+        expected_sec_moment = 0.001 * (grad**2)
 
         assert torch.allclose(sec_moment, expected_sec_moment, atol=1e-6)
 
     def test_adaptive_learning_rate_scaling(self):
         """Test that adaptive learning rate is computed correctly."""
         model = nn.Linear(4, 2)
-        optimizer = AdaptiveUPGD(
-            model.parameters(),
-            lr=1e-3,
-            beta1=0.9,
-            beta2=0.999,
-            eps=1e-8
-        )
+        optimizer = AdaptiveUPGD(model.parameters(), lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8)
 
         x = torch.randn(8, 4)
         target = torch.randint(0, 2, (8,))
@@ -418,13 +412,13 @@ class TestAdaptiveUPGDMoments:
         for param in model.parameters():
             if param in optimizer.state:
                 state = optimizer.state[param]
-                assert 'first_moment' in state
-                assert 'sec_moment' in state
-                assert state['step'] > 0
+                assert "first_moment" in state
+                assert "sec_moment" in state
+                assert state["step"] > 0
 
                 # Moments should be finite
-                assert torch.all(torch.isfinite(state['first_moment']))
-                assert torch.all(torch.isfinite(state['sec_moment']))
+                assert torch.all(torch.isfinite(state["first_moment"]))
+                assert torch.all(torch.isfinite(state["sec_moment"]))
 
 
 class TestUPGDWWeightDecay:
@@ -454,8 +448,9 @@ class TestUPGDWWeightDecay:
         final_weight_norm = model.weight.data.norm().item()
 
         # Weight norm should decrease due to weight decay
-        assert final_weight_norm < initial_weight_norm, \
-            f"Weight decay should reduce norms: {initial_weight_norm} -> {final_weight_norm}"
+        assert (
+            final_weight_norm < initial_weight_norm
+        ), f"Weight decay should reduce norms: {initial_weight_norm} -> {final_weight_norm}"
 
     def test_weight_decay_rate(self):
         """Test weight decay rate is correct."""
@@ -539,7 +534,7 @@ class TestUPGDEdgeCases:
         optimizer = UPGD([param], lr=1e-3)
 
         # Create gradient
-        loss = param ** 2
+        loss = param**2
         optimizer.zero_grad()
         loss.backward()
 
@@ -578,24 +573,19 @@ class TestUPGDEdgeCases:
             optimizer.step()
 
             # Check parameters stay finite
-            assert torch.all(torch.isfinite(model.weight.data)), \
-                "Parameters should stay finite (or gradient computation should fail first)"
+            assert torch.all(
+                torch.isfinite(model.weight.data)
+            ), "Parameters should stay finite (or gradient computation should fail first)"
 
     def test_mixed_requires_grad(self):
         """Test with some parameters not requiring gradients."""
-        model = nn.Sequential(
-            nn.Linear(4, 8),
-            nn.Linear(8, 2)
-        )
+        model = nn.Sequential(nn.Linear(4, 8), nn.Linear(8, 2))
 
         # Freeze first layer
         for param in model[0].parameters():
             param.requires_grad = False
 
-        optimizer = AdaptiveUPGD(
-            filter(lambda p: p.requires_grad, model.parameters()),
-            lr=1e-3
-        )
+        optimizer = AdaptiveUPGD(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-3)
 
         x = torch.randn(8, 4)
         target = torch.randint(0, 2, (8,))

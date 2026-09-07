@@ -73,7 +73,7 @@ warnings.warn(
     "ccea.agent is deprecated. Use packages.agent instead. "
     "See packages/agent/daemon/agentd.py for canonical implementation.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 from ccea.agent.daemon import (

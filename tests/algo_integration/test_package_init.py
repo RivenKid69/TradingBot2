@@ -14,6 +14,7 @@ class TestAlgoIntegrationPackageExports:
     def test_version_exported(self):
         """Test version is exported."""
         from services.algo_integration import __version__
+
         assert __version__ == "1.0.0"
 
     def test_config_exports(self):
@@ -29,6 +30,7 @@ class TestAlgoIntegrationPackageExports:
             AlgoIntegrationConfig,
             load_algo_integration_config,
         )
+
         assert hasattr(AlgorithmType, "MARKET_MAKING")
         assert callable(load_algo_integration_config)
 
@@ -50,6 +52,7 @@ class TestAlgoIntegrationPackageExports:
             create_best_execution_analyzer,
             get_standard_eu_venues,
         )
+
         assert hasattr(ExecutionFactor, "PRICE")
         assert hasattr(AssetClass, "EQUITY")
         assert callable(create_best_execution_analyzer)
@@ -70,6 +73,7 @@ class TestAlgoIntegrationPackageExports:
             TCAComplianceWrapper,
             create_tca_wrapper,
         )
+
         assert hasattr(TCAMetricType, "VWAP_SLIPPAGE")
         assert hasattr(TCABenchmark, "VWAP")
         assert callable(create_tca_wrapper)
@@ -89,6 +93,7 @@ class TestAlgoIntegrationPackageExports:
             create_venue_analyzer,
             create_smart_order_router,
         )
+
         assert hasattr(VenueMetricType, "FILL_RATE")
         assert hasattr(VenueStatus, "ACTIVE")
         assert callable(create_venue_analyzer)
@@ -108,6 +113,7 @@ class TestAlgoIntegrationPackageExports:
             ExecutionQualityReportGenerator,
             create_report_generator,
         )
+
         assert hasattr(ReportPeriod, "QUARTERLY")
         assert hasattr(ReportFormat, "JSON")
         assert callable(create_report_generator)
@@ -126,6 +132,7 @@ class TestAlgoIntegrationPackageExports:
             OTRMonitor,
             create_otr_monitor,
         )
+
         assert hasattr(OTRLevel, "WARNING")
         assert callable(create_otr_monitor)
 
@@ -140,6 +147,7 @@ class TestAlgoIntegrationPackageExports:
             create_algorithm_registry,
             get_default_algorithm_types,
         )
+
         assert hasattr(AlgorithmStatus, "PRODUCTION")
         assert callable(create_algorithm_registry)
         assert callable(get_default_algorithm_types)
@@ -162,6 +170,7 @@ class TestAlgoIntegrationPackageExports:
             create_test_runner,
             get_standard_conformance_tests,
         )
+
         assert hasattr(TestResult, "PASS")
         assert hasattr(TestCategory, "KILL_SWITCH")
         assert callable(create_test_runner)
@@ -185,6 +194,7 @@ class TestAlgoIntegrationPackageExports:
             get_business_continuity_scenarios,
             get_all_standard_scenarios,
         )
+
         assert hasattr(ScenarioType, "FUNCTIONAL")
         assert hasattr(ScenarioSeverity, "CRITICAL")
         assert callable(create_scenario_executor)
@@ -202,6 +212,7 @@ class TestAlgoIntegrationPackageExports:
             create_certificate,
             create_certificate_manager,
         )
+
         assert hasattr(CertificateStatus, "APPROVED")
         assert hasattr(CertificateType, "INITIAL")
         assert callable(create_certificate)
@@ -210,6 +221,7 @@ class TestAlgoIntegrationPackageExports:
     def test_all_exports_in_dunder_all(self):
         """Test that all exports are listed in __all__."""
         import services.algo_integration as algo
+
         assert hasattr(algo, "__all__")
         # Verify some key exports are in __all__
         expected_exports = [
@@ -230,7 +242,11 @@ class TestAlgoIntegrationPackageUsability:
 
     def test_create_best_execution_analyzer(self):
         """Test creating best execution analyzer."""
-        from services.algo_integration import create_best_execution_analyzer, create_best_execution_policy
+        from services.algo_integration import (
+            create_best_execution_analyzer,
+            create_best_execution_policy,
+        )
+
         policy = create_best_execution_policy()
         analyzer = create_best_execution_analyzer(policy=policy)
         assert analyzer is not None
@@ -238,40 +254,47 @@ class TestAlgoIntegrationPackageUsability:
     def test_create_otr_monitor(self):
         """Test creating OTR monitor."""
         from services.algo_integration import create_otr_monitor
+
         monitor = create_otr_monitor()
         assert monitor is not None
 
     def test_create_algorithm_registry(self):
         """Test creating algorithm registry."""
         from services.algo_integration import create_algorithm_registry
+
         registry = create_algorithm_registry()
         assert registry is not None
 
     def test_create_test_runner(self):
         """Test creating conformance test runner."""
         from services.algo_integration import create_test_runner
+
         runner = create_test_runner()
         assert runner is not None
 
     def test_create_certificate_manager(self):
         """Test creating certificate manager."""
         from services.algo_integration import create_certificate_manager
+
         manager = create_certificate_manager()
         assert manager is not None
 
     def test_get_standard_scenarios(self):
         """Test getting standard scenarios."""
         from services.algo_integration import get_all_standard_scenarios
+
         scenarios = get_all_standard_scenarios()
         assert len(scenarios) > 0
 
     def test_no_deprecation_warning(self):
         """Test that algo_integration does NOT emit deprecation warning."""
         import warnings
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             import importlib
             import services.algo_integration
+
             importlib.reload(services.algo_integration)
             # Should not have deprecation warnings
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]

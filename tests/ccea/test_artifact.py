@@ -92,7 +92,9 @@ class TestManifestBuilder:
             .set_name("Test Strategy")
             .set_entrypoint("test.module", "TestClass")
             .set_runtime("3.11")
-            .set_deps_lock_digest("sha256:0000000000000000000000000000000000000000000000000000000000000000")
+            .set_deps_lock_digest(
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+            )
             .build()
         )
 
@@ -108,7 +110,9 @@ class TestManifestBuilder:
             .set_type(ArtifactType.MODEL)
             .set_entrypoint("model.module", "Model")
             .set_runtime("3.11")
-            .set_deps_lock_digest("sha256:1111111111111111111111111111111111111111111111111111111111111111")
+            .set_deps_lock_digest(
+                "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            )
             .set_provenance(
                 git_sha="a" * 40,
                 git_branch="main",
@@ -133,7 +137,9 @@ class TestManifestValidator:
             .set_type(ArtifactType.STRATEGY)
             .set_entrypoint("module", "Class")
             .set_runtime("3.11")
-            .set_deps_lock_digest("sha256:2222222222222222222222222222222222222222222222222222222222222222")
+            .set_deps_lock_digest(
+                "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+            )
             .build()
         )
 
@@ -165,10 +171,12 @@ class TestManifestValidator:
 
         # Simulate a manifest with prohibited field
         # (Real manifests prevent this, but we test the validator logic)
-        prohibited = validator._find_prohibited_fields({
-            "normal": "data",
-            "side": "BUY",  # Prohibited
-        })
+        prohibited = validator._find_prohibited_fields(
+            {
+                "normal": "data",
+                "side": "BUY",  # Prohibited
+            }
+        )
 
         assert "side" in prohibited
 
@@ -323,7 +331,7 @@ class TestArtifactRegistry:
             artifact_path.write_bytes(b"Content")
 
             manifest_path = Path(tmpdir) / "manifest.json"
-            manifest_path.write_text('{}')
+            manifest_path.write_text("{}")
 
             registry.push(
                 artifact_path=artifact_path,
@@ -347,7 +355,7 @@ class TestArtifactRegistry:
             artifact_path.write_bytes(b"Exists test")
 
             manifest_path = Path(tmpdir) / "manifest.json"
-            manifest_path.write_text('{}')
+            manifest_path.write_text("{}")
 
             entry = registry.push(
                 artifact_path=artifact_path,
@@ -369,7 +377,7 @@ class TestArtifactRegistry:
                 artifact_path.write_bytes(f"Content {i}".encode())
 
                 manifest_path = Path(tmpdir) / f"manifest_{i}.json"
-                manifest_path.write_text('{}')
+                manifest_path.write_text("{}")
 
                 registry.push(
                     artifact_path=artifact_path,
@@ -392,7 +400,7 @@ class TestArtifactRegistry:
             artifact_path.write_bytes(b"Deletable")
 
             manifest_path = Path(tmpdir) / "manifest.json"
-            manifest_path.write_text('{}')
+            manifest_path.write_text("{}")
 
             registry.push(
                 artifact_path=artifact_path,

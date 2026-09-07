@@ -8,12 +8,12 @@ def test_all_combinations():
 
     # Test data: (avg_gain, avg_loss, expected_condition_hit, expected_rsi)
     test_cases = [
-        (0.0, 0.0, "condition_3", 50.0),      # Both zero
-        (0.0, 50.0, "condition_2", 0.0),      # Only loss
-        (100.0, 0.0, "condition_1", 100.0),   # Only gain (THE CRITICAL BUG)
-        (50.0, 50.0, "else", 50.0),           # Equal (RS=1)
-        (90.0, 10.0, "else", 90.0),           # Overbought
-        (10.0, 90.0, "else", 10.0),           # Oversold
+        (0.0, 0.0, "condition_3", 50.0),  # Both zero
+        (0.0, 50.0, "condition_2", 0.0),  # Only loss
+        (100.0, 0.0, "condition_1", 100.0),  # Only gain (THE CRITICAL BUG)
+        (50.0, 50.0, "else", 50.0),  # Equal (RS=1)
+        (90.0, 10.0, "else", 90.0),  # Overbought
+        (10.0, 90.0, "else", 10.0),  # Oversold
     ]
 
     print("=" * 80)

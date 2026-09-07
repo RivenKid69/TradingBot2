@@ -15,6 +15,7 @@ Simple Prometheus metrics are emitted via :mod:`services.monitoring`:
 
 ``dropped_bp`` -- events dropped because of backpressure
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -166,4 +167,3 @@ class EventBus:
 
 
 __all__ = ["EventBus"]
-

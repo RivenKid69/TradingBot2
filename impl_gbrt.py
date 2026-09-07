@@ -39,8 +39,13 @@ class _Node:
 class _RegressionTree:
     """Minimal CART regression tree (squared error, variance-reduction splits)."""
 
-    def __init__(self, max_depth: int = 3, min_samples_split: int = 8,
-                 max_features: Optional[int] = None, rng: Optional[np.random.Generator] = None) -> None:
+    def __init__(
+        self,
+        max_depth: int = 3,
+        min_samples_split: int = 8,
+        max_features: Optional[int] = None,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
         self.max_depth = int(max_depth)
         self.min_samples_split = int(min_samples_split)
         self.max_features = max_features
@@ -131,9 +136,12 @@ class GradientBoostingRegressor:
                 idx = rng.choice(n, size=max(1, int(self.subsample * n)), replace=False)
             else:
                 idx = np.arange(n)
-            tree = _RegressionTree(max_depth=self.max_depth,
-                                   min_samples_split=self.min_samples_split,
-                                   max_features=self.max_features, rng=rng)
+            tree = _RegressionTree(
+                max_depth=self.max_depth,
+                min_samples_split=self.min_samples_split,
+                max_features=self.max_features,
+                rng=rng,
+            )
             tree.fit(X[idx], residual[idx])
             pred += self.learning_rate * tree.predict(X)
             self.trees_.append(tree)

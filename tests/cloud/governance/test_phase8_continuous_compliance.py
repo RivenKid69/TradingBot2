@@ -88,6 +88,7 @@ from ccea.guardrails.privacy_by_design_check import (
 # Test: Data Inventory Registry
 # ============================================================================
 
+
 class TestDataInventoryRegistry:
     """Tests for DataInventoryRegistry."""
 
@@ -326,7 +327,9 @@ class TestDataInventoryRegistry:
             created_by="test@example.com",
         )
 
-        updated = registry.reject(entry.id, rejected_by="dpo@example.com", reason="Insufficient documentation")
+        updated = registry.reject(
+            entry.id, rejected_by="dpo@example.com", reason="Insufficient documentation"
+        )
 
         assert updated.review_status == ReviewStatus.REJECTED
         assert updated.review_notes == "Insufficient documentation"
@@ -364,7 +367,9 @@ class TestDataInventoryRegistry:
             created_by="test@example.com",
         )
 
-        updated = registry.deprecate(entry.id, deprecated_by="admin@example.com", reason="No longer needed")
+        updated = registry.deprecate(
+            entry.id, deprecated_by="admin@example.com", reason="No longer needed"
+        )
 
         assert updated.review_status == ReviewStatus.DEPRECATED
 
@@ -409,7 +414,9 @@ class TestDataInventoryRegistry:
             created_by="test@example.com",
         )
 
-        result = registry.delete(entry.id, deleted_by="admin@example.com", reason="No longer needed")
+        result = registry.delete(
+            entry.id, deleted_by="admin@example.com", reason="No longer needed"
+        )
         assert result is True
         assert registry.get(entry.id) is None
 
@@ -689,6 +696,7 @@ class TestDataInventoryRegistry:
 # Test: CI Privacy-by-Design Check
 # ============================================================================
 
+
 class TestPrivacyByDesignCheck:
     """Tests for PrivacyByDesignCheck."""
 
@@ -704,7 +712,8 @@ class TestPrivacyByDesignCheck:
         # Create temp file with telemetry
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "test_module.py"
-            test_file.write_text('''
+            test_file.write_text(
+                """
 # Test module
 def send_telemetry():
     data = {
@@ -712,7 +721,8 @@ def send_telemetry():
         "new_field": telemetry.value,
     }
     emit_telemetry("custom_event")
-''')
+"""
+            )
 
             declarations = scanner.scan_file(test_file)
             # Should detect telemetry patterns
@@ -724,12 +734,14 @@ def send_telemetry():
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "schema.sql"
-            test_file.write_text('''
+            test_file.write_text(
+                """
 CREATE TABLE IF NOT EXISTS new_data_table (
     id SERIAL PRIMARY KEY,
     data TEXT
 );
-''')
+"""
+            )
 
             declarations = scanner.scan_file(test_file)
             # Should detect CREATE TABLE
@@ -812,18 +824,20 @@ CREATE TABLE IF NOT EXISTS new_data_table (
         assert report.should_fail_ci is False
 
         # Add critical violation
-        report.violations.append(CheckViolation(
-            declaration=DataDeclaration(
-                name="test",
-                declaration_type="field",
-                file_path="test.py",
-                line_number=1,
-                context="",
-                pattern_matched="test",
-            ),
-            severity=CheckSeverity.CRITICAL,
-            message="Test violation",
-        ))
+        report.violations.append(
+            CheckViolation(
+                declaration=DataDeclaration(
+                    name="test",
+                    declaration_type="field",
+                    file_path="test.py",
+                    line_number=1,
+                    context="",
+                    pattern_matched="test",
+                ),
+                severity=CheckSeverity.CRITICAL,
+                message="Test violation",
+            )
+        )
 
         assert report.should_fail_ci is True
 
@@ -909,6 +923,7 @@ CREATE TABLE IF NOT EXISTS new_data_table (
 # Test: Compliance Dashboard Service
 # ============================================================================
 
+
 class TestComplianceDashboardService:
     """Tests for ComplianceDashboardService."""
 
@@ -986,9 +1001,7 @@ class TestComplianceDashboardService:
     def test_alert_creation(self):
         """Test alert creation."""
         alerts = []
-        service = ComplianceDashboardService(
-            on_alert=lambda a: alerts.append(a)
-        )
+        service = ComplianceDashboardService(on_alert=lambda a: alerts.append(a))
 
         # Force an alert by setting overdue DSAR
         service._check_dsar_alerts(
@@ -1150,6 +1163,7 @@ class TestComplianceDashboardService:
 # Test: Quarterly Review Service
 # ============================================================================
 
+
 class TestQuarterlyReviewService:
     """Tests for QuarterlyReviewService."""
 
@@ -1229,12 +1243,15 @@ class TestQuarterlyReviewService:
         review = service.schedule_review(review_type=ReviewType.FULL_QUARTERLY)
         service.start_review(review.id, started_by="dpo@example.com")
 
-        finding = service.add_finding(review.id, ReviewFinding(
-            title="Missing documentation",
-            severity=FindingSeverity.HIGH,
-            description="Retention policy documentation incomplete",
-            recommendation="Update documentation",
-        ))
+        finding = service.add_finding(
+            review.id,
+            ReviewFinding(
+                title="Missing documentation",
+                severity=FindingSeverity.HIGH,
+                description="Retention policy documentation incomplete",
+                recommendation="Update documentation",
+            ),
+        )
 
         assert finding is not None
         assert finding.review_id == review.id
@@ -1251,10 +1268,13 @@ class TestQuarterlyReviewService:
         review = service.schedule_review(review_type=ReviewType.FULL_QUARTERLY)
         service.start_review(review.id, started_by="dpo@example.com")
 
-        finding = service.add_finding(review.id, ReviewFinding(
-            title="Test finding",
-            severity=FindingSeverity.MEDIUM,
-        ))
+        finding = service.add_finding(
+            review.id,
+            ReviewFinding(
+                title="Test finding",
+                severity=FindingSeverity.MEDIUM,
+            ),
+        )
 
         updated = service.update_finding(
             finding.id,
@@ -1269,14 +1289,16 @@ class TestQuarterlyReviewService:
         """Test adding subprocessor."""
         service = QuarterlyReviewService()
 
-        sub = service.add_subprocessor(Subprocessor(
-            name="AWS",
-            description="Cloud provider",
-            category="cloud",
-            processing_location="EU",
-            eu_compliant=True,
-            dpa_signed=True,
-        ))
+        sub = service.add_subprocessor(
+            Subprocessor(
+                name="AWS",
+                description="Cloud provider",
+                category="cloud",
+                processing_location="EU",
+                eu_compliant=True,
+                dpa_signed=True,
+            )
+        )
 
         assert sub is not None
         assert sub.name == "AWS"
@@ -1285,10 +1307,12 @@ class TestQuarterlyReviewService:
         """Test updating/reviewing subprocessor."""
         service = QuarterlyReviewService()
 
-        sub = service.add_subprocessor(Subprocessor(
-            name="Test Provider",
-            eu_compliant=True,
-        ))
+        sub = service.add_subprocessor(
+            Subprocessor(
+                name="Test Provider",
+                eu_compliant=True,
+            )
+        )
 
         updated = service.update_subprocessor(
             sub.id,
@@ -1317,12 +1341,14 @@ class TestQuarterlyReviewService:
         """Test subprocessor summary."""
         service = QuarterlyReviewService()
 
-        service.add_subprocessor(Subprocessor(
-            name="Sub1",
-            category="cloud",
-            eu_compliant=True,
-            dpa_signed=True,
-        ))
+        service.add_subprocessor(
+            Subprocessor(
+                name="Sub1",
+                category="cloud",
+                eu_compliant=True,
+                dpa_signed=True,
+            )
+        )
 
         summary = service.get_subprocessor_summary()
         assert summary["total"] == 1
@@ -1333,13 +1359,15 @@ class TestQuarterlyReviewService:
         """Test adding incident learning."""
         service = QuarterlyReviewService()
 
-        incident = service.add_incident_learning(IncidentLearning(
-            incident_id="INC-001",
-            incident_type="access_violation",
-            severity="P2",
-            description="Unauthorized access attempt",
-            root_cause="Misconfigured RBAC",
-        ))
+        incident = service.add_incident_learning(
+            IncidentLearning(
+                incident_id="INC-001",
+                incident_type="access_violation",
+                severity="P2",
+                description="Unauthorized access attempt",
+                root_cause="Misconfigured RBAC",
+            )
+        )
 
         assert incident is not None
         assert incident.incident_id == "INC-001"
@@ -1348,10 +1376,12 @@ class TestQuarterlyReviewService:
         """Test reviewing incident."""
         service = QuarterlyReviewService()
 
-        incident = service.add_incident_learning(IncidentLearning(
-            incident_id="INC-002",
-            incident_type="data_breach",
-        ))
+        incident = service.add_incident_learning(
+            IncidentLearning(
+                incident_id="INC-002",
+                incident_type="data_breach",
+            )
+        )
 
         reviewed = service.review_incident(
             incident.id,
@@ -1500,6 +1530,7 @@ class TestQuarterlyReviewService:
 # Test: Constants Validation
 # ============================================================================
 
+
 class TestConstants:
     """Tests for module constants."""
 
@@ -1525,6 +1556,7 @@ class TestConstants:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestPhase8Integration:
     """Integration tests for Phase 8 components."""

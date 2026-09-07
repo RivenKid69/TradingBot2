@@ -20,11 +20,13 @@ import pandas as pd
 
 from transformers import FeatureSpec, apply_offline_features
 
-RAW_DIR = os.path.join("data","candles")  # дефолт; ниже добавим data/klines_4h в список по умолчанию
-FNG = os.path.join("data","fear_greed.csv")
-EVENTS = os.path.join("data","economic_events.csv")
+RAW_DIR = os.path.join(
+    "data", "candles"
+)  # дефолт; ниже добавим data/klines_4h в список по умолчанию
+FNG = os.path.join("data", "fear_greed.csv")
+EVENTS = os.path.join("data", "economic_events.csv")
 EVENT_HORIZON_HOURS = 96
-OUT_DIR = os.path.join("data","processed")
+OUT_DIR = os.path.join("data", "processed")
 os.makedirs(OUT_DIR, exist_ok=True)
 
 
@@ -43,7 +45,7 @@ def _read_raw(path: str) -> pd.DataFrame:
     """
     df = pd.read_csv(path)
     # Convert open/close time to seconds
-    for c in ["open_time","close_time"]:
+    for c in ["open_time", "close_time"]:
         if df[c].max() > 10_000_000_000:
             df[c] = (df[c] // 1000).astype("int64")
         else:
@@ -63,8 +65,19 @@ def _read_raw(path: str) -> pd.DataFrame:
     if "quote_asset_volume" not in df.columns:
         df["quote_asset_volume"] = df["close"].astype(float) * df["volume"].astype(float)
     # Minimal schema
-    keep = ["timestamp","symbol","open","high","low","close","volume","quote_asset_volume",
-            "number_of_trades","taker_buy_base_asset_volume","taker_buy_quote_asset_volume"]
+    keep = [
+        "timestamp",
+        "symbol",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_asset_volume",
+        "number_of_trades",
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume",
+    ]
     for c in keep:
         if c not in df.columns:
             df[c] = 0 if c in ["number_of_trades"] else 0.0
@@ -116,18 +129,28 @@ def _normalize_ohlcv(df: pd.DataFrame, path: str) -> pd.DataFrame:
 
     # EXPLICIT close_time candidates (removed generic "timestamp" to avoid ambiguity)
     close_time_cands = [
-        "closetime", "close_time", "klineclosetime", "endtime", "barend",
-        "closetimet", "ts_close", "close_ts"
+        "closetime",
+        "close_time",
+        "klineclosetime",
+        "endtime",
+        "barend",
+        "closetimet",
+        "ts_close",
+        "close_ts",
     ]
     # EXPLICIT open_time candidates
     open_time_cands = [
-        "opentime", "open_time", "klineopentime", "starttime", "barstart",
-        "opentimet", "ts_open", "open_ts"
+        "opentime",
+        "open_time",
+        "klineopentime",
+        "starttime",
+        "barstart",
+        "opentimet",
+        "ts_open",
+        "open_ts",
     ]
     # GENERIC time candidates (used only as fallback with warning)
-    generic_time_cands = [
-        "timestamp", "time", "t", "ts", "tsms", "ts_ms"
-    ]
+    generic_time_cands = ["timestamp", "time", "t", "ts", "tsms", "ts_ms"]
 
     ts = None
     ts_source = None
@@ -146,7 +169,9 @@ def _normalize_ohlcv(df: pd.DataFrame, path: str) -> pd.DataFrame:
                 # Для 4h интервала: 4 часа = 14400 секунд
                 # Используем BAR_DURATION из конфига, по умолчанию 14400 (4h)
                 bar_duration_sec = int(os.environ.get("BAR_DURATION_SEC", "14400"))
-                ts = _to_seconds_any(df[cols[key]]) + bar_duration_sec  # 4h бар → сместим к закрытию
+                ts = (
+                    _to_seconds_any(df[cols[key]]) + bar_duration_sec
+                )  # 4h бар → сместим к закрытию
                 ts_source = f"open_time+duration:{cols[key]}"
                 break
 
@@ -157,11 +182,12 @@ def _normalize_ohlcv(df: pd.DataFrame, path: str) -> pd.DataFrame:
                 ts = _to_seconds_any(df[cols[key]])
                 ts_source = f"generic_time:{cols[key]}"
                 import warnings
+
                 warnings.warn(
                     f"{path}: Using generic time column '{cols[key]}' - ambiguous whether open or close time. "
                     f"Treating as close_time. For clarity, use explicit column names: "
                     f"'open_time'/'close_time' or 'opentime'/'closetime'.",
-                    UserWarning
+                    UserWarning,
                 )
                 break
 
@@ -175,10 +201,11 @@ def _normalize_ohlcv(df: pd.DataFrame, path: str) -> pd.DataFrame:
                     ts = cand
                     ts_source = f"fallback:{c}"
                     import warnings
+
                     warnings.warn(
                         f"{path}: Using fallback time column '{c}' - ambiguous semantics. "
                         f"Treating as close_time. Consider renaming to explicit 'open_time' or 'close_time'.",
-                        UserWarning
+                        UserWarning,
                     )
                     break
     if ts is None:
@@ -205,43 +232,49 @@ def _normalize_ohlcv(df: pd.DataFrame, path: str) -> pd.DataFrame:
     if qvol.isna().all():
         qvol = close_.astype(float) * vol.astype(float)
     ntr = pick(["numberoftrades", "num_trades", "n", "trades"], as_int=True)
-    tb_base = pick([
-        "taker_buy_base_asset_volume",
-        "takerbuybaseassetvolume",
-        "takerbuybase",
-        "taker_buy_base",
-        "takerbuybase",
-        "v_buy",
-        "vbuy",
-        "tb_base",
-    ])
-    tb_quote = pick([
-        "taker_buy_quote_asset_volume",
-        "takerbuyquoteassetvolume",
-        "takerbuyquote",
-        "taker_buy_quote",
-        "takerbuyquote",
-        "q_buy",
-        "qbuy",
-        "tb_quote",
-    ])
+    tb_base = pick(
+        [
+            "taker_buy_base_asset_volume",
+            "takerbuybaseassetvolume",
+            "takerbuybase",
+            "taker_buy_base",
+            "takerbuybase",
+            "v_buy",
+            "vbuy",
+            "tb_base",
+        ]
+    )
+    tb_quote = pick(
+        [
+            "taker_buy_quote_asset_volume",
+            "takerbuyquoteassetvolume",
+            "takerbuyquote",
+            "taker_buy_quote",
+            "takerbuyquote",
+            "q_buy",
+            "qbuy",
+            "tb_quote",
+        ]
+    )
     if tb_quote.isna().all():
         tb_quote = (tb_base.astype(float) * close_.astype(float)).fillna(0.0)
 
     sym = _infer_symbol(path, df)
-    out = pd.DataFrame({
-        "timestamp": ts,
-        "symbol": sym,
-        "open": open_.astype(float),
-        "high": high_.astype(float),
-        "low": low_.astype(float),
-        "close": close_.astype(float),
-        "volume": vol.astype(float),
-        "quote_asset_volume": qvol.astype(float),
-        "number_of_trades": ntr.astype(int),
-        "taker_buy_base_asset_volume": tb_base.astype(float),
-        "taker_buy_quote_asset_volume": tb_quote.astype(float),
-    })
+    out = pd.DataFrame(
+        {
+            "timestamp": ts,
+            "symbol": sym,
+            "open": open_.astype(float),
+            "high": high_.astype(float),
+            "low": low_.astype(float),
+            "close": close_.astype(float),
+            "volume": vol.astype(float),
+            "quote_asset_volume": qvol.astype(float),
+            "number_of_trades": ntr.astype(int),
+            "taker_buy_base_asset_volume": tb_base.astype(float),
+            "taker_buy_quote_asset_volume": tb_quote.astype(float),
+        }
+    )
     out = out.dropna(subset=["timestamp"]).sort_values("timestamp")
     out = out.drop_duplicates(subset=["timestamp"], keep="last").reset_index(drop=True)
     out["timestamp"] = out["timestamp"].astype("int64")
@@ -274,8 +307,8 @@ def _parse_args():
     ap.add_argument(
         "--raw-dir",
         help="Comma-separated list of directories with raw candles (csv/parquet). "
-             "If omitted, uses ENV RAW_DIR or defaults to 'data/candles,data/klines_4h'.",
-        default=os.environ.get("RAW_DIR", "")
+        "If omitted, uses ENV RAW_DIR or defaults to 'data/candles,data/klines_4h'.",
+        default=os.environ.get("RAW_DIR", ""),
     )
     ap.add_argument(
         "--out-dir",
@@ -294,7 +327,7 @@ def _read_fng() -> pd.DataFrame:
     consistency we keep the floor logic only for alignment purposes.
     """
     if not os.path.exists(FNG):
-        return pd.DataFrame(columns=["timestamp","fear_greed_value","fear_greed_value_norm"])
+        return pd.DataFrame(columns=["timestamp", "fear_greed_value", "fear_greed_value_norm"])
     f = pd.read_csv(FNG)
     if f["timestamp"].max() > 10_000_000_000:
         f["timestamp"] = (f["timestamp"] // 1000).astype("int64")
@@ -307,9 +340,11 @@ def _read_fng() -> pd.DataFrame:
     f["timestamp"] = (f["timestamp"] // 14400) * 14400
 
     if "fear_greed_value" not in f.columns and "value" in f.columns:
-        f = f.rename(columns={"value":"fear_greed_value"})
+        f = f.rename(columns={"value": "fear_greed_value"})
     f["fear_greed_value_norm"] = f["fear_greed_value"].astype(float) / 100.0
-    f = f.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")[["timestamp","fear_greed_value","fear_greed_value_norm"]]
+    f = f.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")[
+        ["timestamp", "fear_greed_value", "fear_greed_value_norm"]
+    ]
     return f
 
 
@@ -322,7 +357,7 @@ def _read_events() -> pd.DataFrame:
     with tolerance window (EVENT_HORIZON_HOURS).
     """
     if not os.path.exists(EVENTS):
-        return pd.DataFrame(columns=["timestamp","importance_level"])
+        return pd.DataFrame(columns=["timestamp", "importance_level"])
     e = pd.read_csv(EVENTS)
     if e["timestamp"].max() > 10_000_000_000:
         e["timestamp"] = (e["timestamp"] // 1000).astype("int64")
@@ -333,7 +368,7 @@ def _read_events() -> pd.DataFrame:
     # This is acceptable since merge_asof uses tolerance window (EVENT_HORIZON_HOURS).
     e["timestamp"] = (e["timestamp"] // 14400) * 14400
 
-    e = e.sort_values("timestamp")[["timestamp","importance_level"]]
+    e = e.sort_values("timestamp")[["timestamp", "importance_level"]]
     return e
 
 
@@ -346,7 +381,7 @@ def prepare() -> list[str]:
     # 1) выбираем директории для поиска raw
     raw_dirs_env = os.environ.get("RAW_DIR", "")
     # резервные директории по умолчанию: и candles, и klines_4h для 4h таймфрейма
-    default_dirs = [RAW_DIR, os.path.join("data","klines_4h")]
+    default_dirs = [RAW_DIR, os.path.join("data", "klines_4h")]
     raw_dirs = [p for p in raw_dirs_env.split(",") if p] or default_dirs
 
     # 2) собираем пути raw
@@ -368,6 +403,7 @@ def prepare() -> list[str]:
     # ВАЖНО: Используем конфигурацию для 4h интервала из config_4h_timeframe.py
     # Это обеспечивает согласованность параметров с mediator.py и transformers.py
     from config_4h_timeframe import get_feature_spec_4h
+
     feature_spec = get_feature_spec_4h()
 
     for sym, parts in by_sym.items():
@@ -381,7 +417,9 @@ def prepare() -> list[str]:
 
         if not events.empty:
             dfs = df.copy()
-            dfs["timestamp_dt"] = pd.to_datetime(dfs["timestamp"], unit="s").astype("datetime64[ns]")
+            dfs["timestamp_dt"] = pd.to_datetime(dfs["timestamp"], unit="s").astype(
+                "datetime64[ns]"
+            )
             ev = events.rename(columns={"timestamp": "event_ts"}).copy()
             ev["event_ts_dt"] = pd.to_datetime(ev["event_ts"], unit="s").astype("datetime64[ns]")
             ev = ev.sort_values("event_ts_dt")
@@ -395,12 +433,16 @@ def prepare() -> list[str]:
                 tolerance=pd.Timedelta(hours=EVENT_HORIZON_HOURS),
             )
             dfs["time_since_last_event_hours"] = (
-                (dfs["timestamp_dt"] - dfs["event_ts_dt"]).dt.total_seconds() / 3600.0
-            )
+                dfs["timestamp_dt"] - dfs["event_ts_dt"]
+            ).dt.total_seconds() / 3600.0
             dfs["is_high_importance"] = (
                 (dfs.get("importance_level", 0) == 2) & dfs["event_ts_dt"].notna()
             ).astype(int)
-            drop_cols = [c for c in ["timestamp_dt", "event_ts_dt", "event_ts", "importance_level"] if c in dfs.columns]
+            drop_cols = [
+                c
+                for c in ["timestamp_dt", "event_ts_dt", "event_ts", "importance_level"]
+                if c in dfs.columns
+            ]
             dfs = dfs.drop(columns=drop_cols)
             df = dfs
 
@@ -433,12 +475,16 @@ def prepare() -> list[str]:
             # yang_zhang_*h, taker_buy_ratio*, cvd_*h
 
             # Удаляем вспомогательные колонки, которые дублируются
-            features_to_merge = features_df.drop(columns=["ts_ms", "symbol", "ref_price"], errors="ignore")
+            features_to_merge = features_df.drop(
+                columns=["ts_ms", "symbol", "ref_price"], errors="ignore"
+            )
 
             # Объединяем по индексу (порядок должен совпадать)
             df = pd.concat([df, features_to_merge], axis=1)
 
-            print(f"  ✓ {sym}: Created technical features including cvd_24h, cvd_7d, garch_200h, garch_14d, garch_30d")
+            print(
+                f"  ✓ {sym}: Created technical features including cvd_24h, cvd_7d, garch_200h, garch_14d, garch_30d"
+            )
         except Exception as e:
             print(f"  ⚠ {sym}: Failed to create technical features: {e}")
             # Продолжаем без технических признаков, если что-то пошло не так

@@ -15,7 +15,7 @@ def _make_worker() -> _Worker:
     worker._symbol_cooldowns = {}
     worker._symbol_cooldown_set_ts = {}
     worker._order_meta_fallback = {}  # Required for _build_envelope_payload
-    worker._order_meta_sidecar = {}   # Required for _ensure_order_meta
+    worker._order_meta_sidecar = {}  # Required for _ensure_order_meta
     return worker
 
 
@@ -39,9 +39,7 @@ def test_resolve_weight_targets_rejects_out_of_range_target() -> None:
     worker = _make_worker()
     worker._weights["BTCUSDT"] = 0.3
 
-    target, delta, reason = worker._resolve_weight_targets(
-        "BTCUSDT", {"target_weight": 1.2}
-    )
+    target, delta, reason = worker._resolve_weight_targets("BTCUSDT", {"target_weight": 1.2})
 
     assert target == pytest.approx(0.3)
     assert delta == pytest.approx(0.0)
@@ -52,9 +50,7 @@ def test_resolve_weight_targets_rejects_delta_out_of_range() -> None:
     worker = _make_worker()
     worker._weights["BTCUSDT"] = 0.8
 
-    target, delta, reason = worker._resolve_weight_targets(
-        "BTCUSDT", {"delta_weight": 0.5}
-    )
+    target, delta, reason = worker._resolve_weight_targets("BTCUSDT", {"delta_weight": 0.5})
 
     assert target == pytest.approx(0.8)
     assert delta == pytest.approx(0.0)
@@ -105,9 +101,7 @@ def test_build_envelope_payload_preserves_nested_economics() -> None:
 
     assert "edge_bps" not in payload
     assert payload["economics"]["edge_bps"] == pytest.approx(economics["edge_bps"])
-    assert payload["economics"]["turnover_usd"] == pytest.approx(
-        economics["turnover_usd"]
-    )
+    assert payload["economics"]["turnover_usd"] == pytest.approx(economics["turnover_usd"])
     assert adv_quote is None
 
 

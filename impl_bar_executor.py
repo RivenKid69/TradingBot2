@@ -582,11 +582,7 @@ def decide_spot_trade(
             candidate = float(turnover_override)
         except (TypeError, ValueError):
             candidate = None
-        if (
-            candidate is not None
-            and math.isfinite(candidate)
-            and candidate >= 0.0
-        ):
+        if candidate is not None and math.isfinite(candidate) and candidate >= 0.0:
             turnover_usd = candidate
 
     if turnover_usd is None:
@@ -604,14 +600,12 @@ def decide_spot_trade(
             linear_coeff = float(cost_config.impact.linear_coeff)
             impact += sqrt_coeff * math.sqrt(participation)
             impact += linear_coeff * participation
-            power_coeff = float(
-                getattr(cost_config.impact, "power_coefficient", 0.0) or 0.0
-            )
+            power_coeff = float(getattr(cost_config.impact, "power_coefficient", 0.0) or 0.0)
             power_exp = float(getattr(cost_config.impact, "power_exponent", 1.0) or 1.0)
             if power_coeff > 0.0 and participation > 0.0:
                 if power_exp <= 0.0:
                     power_exp = 1.0
-                impact += power_coeff * participation ** power_exp
+                impact += power_coeff * participation**power_exp
     else:
         impact_mode = "none"
 
@@ -675,9 +669,7 @@ class BarExecutor(TradeExecutor):
         self._last_snapshot: Dict[str, Any] = {}
         self._symbol_turnover: Dict[str, Dict[str, Any]] = {}
         self._portfolio_turnover: Dict[str, Any] = {"ts": None, "total": 0.0}
-        self._symbol_specs: Dict[str, SymbolSpec] = self._normalize_symbol_specs(
-            symbol_specs
-        )
+        self._symbol_specs: Dict[str, SymbolSpec] = self._normalize_symbol_specs(symbol_specs)
         if initial_weights:
             for symbol, weight in initial_weights.items():
                 symbol_key = self._normalize_symbol_key(symbol)
@@ -809,9 +801,7 @@ class BarExecutor(TradeExecutor):
         if min_step > 0.0 and abs(delta_weight) < min_step:
             skip_due_to_step = True
             if hasattr(metrics, "model_copy"):
-                metrics = metrics.model_copy(
-                    update={"act_now": False, "turnover_usd": 0.0}
-                )
+                metrics = metrics.model_copy(update={"act_now": False, "turnover_usd": 0.0})
             else:  # pragma: no cover - compatibility fallback
                 metrics = metrics.copy(update={"act_now": False, "turnover_usd": 0.0})
             turnover_usd = 0.0
@@ -865,9 +855,7 @@ class BarExecutor(TradeExecutor):
                         update={"act_now": False, "turnover_usd": turnover_usd}
                     )
                 else:  # pragma: no cover - compatibility fallback
-                    metrics = metrics.copy(
-                        update={"act_now": False, "turnover_usd": turnover_usd}
-                    )
+                    metrics = metrics.copy(update={"act_now": False, "turnover_usd": turnover_usd})
                 instructions = []
                 target_weight = state.weight
                 delta_weight = 0.0
@@ -875,9 +863,7 @@ class BarExecutor(TradeExecutor):
                 skip_due_to_cap = True
                 turnover_usd = 0.0
                 if hasattr(metrics, "model_copy"):
-                    metrics = metrics.model_copy(
-                        update={"act_now": False, "turnover_usd": 0.0}
-                    )
+                    metrics = metrics.model_copy(update={"act_now": False, "turnover_usd": 0.0})
                 else:  # pragma: no cover - compatibility fallback
                     metrics = metrics.copy(update={"act_now": False, "turnover_usd": 0.0})
                 instructions = []
@@ -997,13 +983,9 @@ class BarExecutor(TradeExecutor):
         if caps_eval.get("symbol_limit") is not None:
             report_meta["symbol_turnover_cap_usd"] = float(caps_eval["symbol_limit"])
         if caps_eval.get("portfolio_limit") is not None:
-            report_meta["portfolio_turnover_cap_usd"] = float(
-                caps_eval["portfolio_limit"]
-            )
+            report_meta["portfolio_turnover_cap_usd"] = float(caps_eval["portfolio_limit"])
         if caps_eval.get("symbol_remaining") is not None:
-            report_meta["symbol_turnover_remaining_usd"] = float(
-                caps_eval["symbol_remaining"]
-            )
+            report_meta["symbol_turnover_remaining_usd"] = float(caps_eval["symbol_remaining"])
         if caps_eval.get("portfolio_remaining") is not None:
             report_meta["portfolio_turnover_remaining_usd"] = float(
                 caps_eval["portfolio_remaining"]
@@ -1048,9 +1030,7 @@ class BarExecutor(TradeExecutor):
         if caps_eval.get("symbol_remaining") is not None:
             snapshot["symbol_cap_remaining_usd"] = float(caps_eval["symbol_remaining"])
         if caps_eval.get("portfolio_remaining") is not None:
-            snapshot["portfolio_cap_remaining_usd"] = float(
-                caps_eval["portfolio_remaining"]
-            )
+            snapshot["portfolio_cap_remaining_usd"] = float(caps_eval["portfolio_remaining"])
         if skip_due_to_cap:
             snapshot["turnover_cap_enforced"] = True
         filled = bool(instructions)
@@ -1101,7 +1081,9 @@ class BarExecutor(TradeExecutor):
             run_id=self.run_id,
             symbol=symbol,
             side=_normalize_side(order.side),
-            order_type=order.order_type if isinstance(order.order_type, OrderType) else OrderType.MARKET,
+            order_type=(
+                order.order_type if isinstance(order.order_type, OrderType) else OrderType.MARKET
+            ),
             price=exec_price,
             quantity=abs_filled_quantity,
             fee=Decimal("0"),
@@ -1122,7 +1104,9 @@ class BarExecutor(TradeExecutor):
     def cancel(self, client_order_id: str) -> None:  # pragma: no cover - no-op
         logger.debug("cancel() called on BarExecutor for %s", client_order_id)
 
-    def get_open_positions(self, symbols: Optional[Iterable[str]] = None) -> MutableMapping[str, Position]:
+    def get_open_positions(
+        self, symbols: Optional[Iterable[str]] = None
+    ) -> MutableMapping[str, Position]:
         if symbols is None:
             symbol_keys = list(self._states.keys())
         else:
@@ -1336,9 +1320,7 @@ class BarExecutor(TradeExecutor):
             tracker = {"ts": current_ts, "total": 0.0}
             self._symbol_turnover[symbol_key] = tracker
         used_symbol = float(tracker.get("total", 0.0) or 0.0)
-        symbol_remaining = (
-            None if symbol_limit is None else max(0.0, symbol_limit - used_symbol)
-        )
+        symbol_remaining = None if symbol_limit is None else max(0.0, symbol_limit - used_symbol)
         portfolio_tracker = self._portfolio_turnover
         stored_ts = portfolio_tracker.get("ts")
         if stored_ts != current_ts:
@@ -1349,9 +1331,7 @@ class BarExecutor(TradeExecutor):
             None if portfolio_limit is None else max(0.0, portfolio_limit - used_portfolio)
         )
         candidates = [
-            value
-            for value in (symbol_remaining, portfolio_remaining)
-            if value is not None
+            value for value in (symbol_remaining, portfolio_remaining) if value is not None
         ]
         effective_cap = min(candidates) if candidates else None
         return {
@@ -1369,9 +1349,7 @@ class BarExecutor(TradeExecutor):
         symbol_key = self._normalize_symbol_key(symbol)
         if not symbol_key:
             return
-        symbol_tracker = self._symbol_turnover.setdefault(
-            symbol_key, {"ts": ts, "total": 0.0}
-        )
+        symbol_tracker = self._symbol_turnover.setdefault(symbol_key, {"ts": ts, "total": 0.0})
         if symbol_tracker.get("ts") != ts:
             symbol_tracker["ts"] = ts
             symbol_tracker["total"] = 0.0
@@ -1382,9 +1360,9 @@ class BarExecutor(TradeExecutor):
         if portfolio_tracker.get("ts") != ts:
             portfolio_tracker["ts"] = ts
             portfolio_tracker["total"] = 0.0
-        portfolio_tracker["total"] = float(
-            portfolio_tracker.get("total", 0.0) or 0.0
-        ) + float(turnover_usd)
+        portfolio_tracker["total"] = float(portfolio_tracker.get("total", 0.0) or 0.0) + float(
+            turnover_usd
+        )
 
     def _coerce_bool(self, value: Any) -> bool:
         if isinstance(value, str):
@@ -1521,7 +1499,12 @@ class BarExecutor(TradeExecutor):
         if max_participation is None and self.max_participation is not None:
             max_participation = self.max_participation
         max_slice_notional_dec: Optional[Decimal] = None
-        if max_participation is not None and max_participation > 0.0 and adv_quote and adv_quote > 0.0:
+        if (
+            max_participation is not None
+            and max_participation > 0.0
+            and adv_quote
+            and adv_quote > 0.0
+        ):
             max_slice_notional = adv_quote * max_participation
             if max_slice_notional > 0.0:
                 required_parts = math.ceil(requested_notional / max_slice_notional)
@@ -1583,10 +1566,9 @@ class BarExecutor(TradeExecutor):
             quantized_qty = desired_qty
             if step_size > Decimal("0") and desired_qty > Decimal("0"):
                 try:
-                    quantized_qty = (
-                        (desired_qty / step_size).to_integral_value(rounding=ROUND_DOWN)
-                        * step_size
-                    )
+                    quantized_qty = (desired_qty / step_size).to_integral_value(
+                        rounding=ROUND_DOWN
+                    ) * step_size
                 except Exception:
                     quantized_qty = Decimal("0")
                 if quantized_qty < Decimal("0"):
@@ -1601,8 +1583,8 @@ class BarExecutor(TradeExecutor):
                     capped_qty = max_slice_notional_dec / price
                     if step_size > Decimal("0"):
                         try:
-                            capped_steps = (
-                                (capped_qty / step_size).to_integral_value(rounding=ROUND_DOWN)
+                            capped_steps = (capped_qty / step_size).to_integral_value(
+                                rounding=ROUND_DOWN
                             )
                             capped_qty = capped_steps * step_size
                         except Exception:
@@ -1685,6 +1667,7 @@ class BarExecutor(TradeExecutor):
 # DryRunExecutor: Wrapper for safe testing without real order execution
 # =============================================================================
 
+
 class DryRunExecutor(TradeExecutor):
     """Wrapper executor that logs orders but does NOT execute them.
 
@@ -1756,6 +1739,7 @@ class DryRunExecutor(TradeExecutor):
         # Return synthetic report indicating dry-run
         # Use current time in milliseconds for timestamp
         import time
+
         ts_ms = int(time.time() * 1000)
 
         # Determine side
@@ -1784,7 +1768,9 @@ class DryRunExecutor(TradeExecutor):
             fee_asset=None,
             exec_status=ExecStatus.NEW,  # Logged but not actually executed
             order_id=f"dry_run_{self._dry_run_count}",
-            meta={"dry_run_message": f"DRY-RUN: Order logged but not executed (#{self._dry_run_count})"},
+            meta={
+                "dry_run_message": f"DRY-RUN: Order logged but not executed (#{self._dry_run_count})"
+            },
         )
 
     @property
@@ -1807,4 +1793,3 @@ __all__ = [
     "RebalanceInstruction",
     "decide_spot_trade",
 ]
-

@@ -18,6 +18,7 @@ Mathematical proof:
 import math
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 
 from custom_policy_patch1 import QuantileValueHead
@@ -112,7 +113,9 @@ class TestCVaRComputationConsistency:
         # tau[1] = 1.5/21 = 0.07143 > 0.05 ✓
         assert alpha_idx == 0
         assert actual_taus[0] < alpha < actual_taus[1]
-        print(f"✓ CORRECT: alpha={alpha} falls between tau[0]={actual_taus[0]:.4f} and tau[1]={actual_taus[1]:.4f}")
+        print(
+            f"✓ CORRECT: alpha={alpha} falls between tau[0]={actual_taus[0]:.4f} and tau[1]={actual_taus[1]:.4f}"
+        )
 
     def test_extrapolation_assumptions_correct(self):
         """Verify extrapolation logic assumptions match actual taus."""
@@ -276,9 +279,7 @@ class TestInferenceTrainingCVaRConsistency:
         np_cvar = cvar_from_quantiles_np(q, alpha)
         shim = SimpleNamespace(cvar_alpha=alpha)
         torch_cvar = (
-            DistributionalPPO._cvar_from_quantiles(
-                shim, torch.tensor(q, dtype=torch.float64)
-            )
+            DistributionalPPO._cvar_from_quantiles(shim, torch.tensor(q, dtype=torch.float64))
             .cpu()
             .numpy()
         )

@@ -45,10 +45,14 @@ def test_worker_forwards_close_lag_to_guard(monkeypatch: pytest.MonkeyPatch) -> 
     dummy_metric = _DummyMetric()
     monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", dummy_metric)
     monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", dummy_metric)
-    monkeypatch.setattr(service_signal_runner.monitoring, "record_signals", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        service_signal_runner.monitoring, "record_signals", lambda *args, **kwargs: None
+    )
     monkeypatch.setattr(service_signal_runner.monitoring, "signal_error_rate", dummy_metric)
     monkeypatch.setattr(service_signal_runner.monitoring, "inc_stage", lambda *args, **kwargs: None)
-    monkeypatch.setattr(service_signal_runner.monitoring, "inc_reason", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        service_signal_runner.monitoring, "inc_reason", lambda *args, **kwargs: None
+    )
 
     worker = service_signal_runner._Worker(
         fp=SimpleNamespace(update=lambda bar, skip_metrics=False: {}, signal_quality={}),
@@ -77,9 +81,7 @@ def test_worker_forwards_close_lag_to_guard(monkeypatch: pytest.MonkeyPatch) -> 
     assert recorded["lag_ms"] == 321
 
 
-def test_from_config_propagates_close_lag(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_from_config_propagates_close_lag(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     captured: dict[str, int | None] = {}
 
     class _DummyRunner:

@@ -63,8 +63,10 @@ _MIN_VOLATILITY = 1e-10
 # Enums and Data Classes
 # =============================================================================
 
+
 class BasisFunctions(Enum):
     """Choice of basis functions for regression."""
+
     POWER = "power"  # 1, x, x^2, x^3, ...
     LAGUERRE = "laguerre"  # Laguerre polynomials (bounded on [0, inf))
     HERMITE = "hermite"  # Hermite polynomials (standard in finance)
@@ -73,6 +75,7 @@ class BasisFunctions(Enum):
 
 class VarianceReduction(Enum):
     """Variance reduction technique."""
+
     NONE = "none"
     ANTITHETIC = "antithetic"
     CONTROL_VARIATE = "control_variate"
@@ -88,6 +91,7 @@ class ExerciseBoundary:
     - Call: Exercise if S > S*(t)
     - Put: Exercise if S < S*(t)
     """
+
     times: np.ndarray  # Monitoring times (years from now)
     boundary_prices: np.ndarray  # S*(t) at each time
     exercise_probabilities: np.ndarray  # P(exercise at t | not exercised before)
@@ -98,6 +102,7 @@ class ExerciseBoundary:
 @dataclass
 class LSResult:
     """Result of Longstaff-Schwartz simulation."""
+
     # Option value
     price: float
     standard_error: float
@@ -136,6 +141,7 @@ class ExerciseProbability:
     - Exercising at that date (conditional on not exercised before)
     - Having exercised by that date (cumulative)
     """
+
     times: np.ndarray
     conditional_probs: np.ndarray  # P(exercise at t | not exercised before)
     cumulative_probs: np.ndarray  # P(exercise by t)
@@ -146,6 +152,7 @@ class ExerciseProbability:
 # =============================================================================
 # Basis Functions
 # =============================================================================
+
 
 def _evaluate_basis(
     x: np.ndarray,
@@ -168,7 +175,7 @@ def _evaluate_basis(
 
     if basis_type == BasisFunctions.POWER:
         for i in range(degree + 1):
-            X[:, i] = x ** i
+            X[:, i] = x**i
 
     elif basis_type == BasisFunctions.LAGUERRE:
         # Weighted Laguerre: L_n(x) * exp(-x/2)
@@ -207,6 +214,7 @@ def _evaluate_basis(
 # Path Generation
 # =============================================================================
 
+
 def _generate_paths(
     spot: float,
     rate: float,
@@ -242,7 +250,7 @@ def _generate_paths(
     times = np.linspace(0, time_to_expiry, n_steps + 1)
 
     # Drift and diffusion
-    drift = (rate - dividend_yield - 0.5 * volatility ** 2) * dt
+    drift = (rate - dividend_yield - 0.5 * volatility**2) * dt
     diffusion = volatility * math.sqrt(dt)
 
     # Generate random increments
@@ -270,6 +278,7 @@ def _generate_paths(
 # =============================================================================
 # Longstaff-Schwartz Algorithm
 # =============================================================================
+
 
 def longstaff_schwartz(
     spot: float,
@@ -503,13 +512,15 @@ def longstaff_schwartz(
         )
 
         delta = (result_up.price - result_down.price) / (2 * bump)
-        gamma = (result_up.price - 2 * price + result_down.price) / (bump ** 2)
+        gamma = (result_up.price - 2 * price + result_down.price) / (bump**2)
 
         # Standard errors via propagation
-        delta_se = math.sqrt(result_up.standard_error ** 2 + result_down.standard_error ** 2) / (2 * bump)
+        delta_se = math.sqrt(result_up.standard_error**2 + result_down.standard_error**2) / (
+            2 * bump
+        )
         gamma_se = math.sqrt(
-            result_up.standard_error ** 2 + 4 * standard_error ** 2 + result_down.standard_error ** 2
-        ) / (bump ** 2)
+            result_up.standard_error**2 + 4 * standard_error**2 + result_down.standard_error**2
+        ) / (bump**2)
 
     elapsed = (time.perf_counter() - start_time) * 1000
 
@@ -538,6 +549,7 @@ def longstaff_schwartz(
 # =============================================================================
 # Exercise Probability Analysis
 # =============================================================================
+
 
 def compute_exercise_probability(
     spot: float,
@@ -663,6 +675,7 @@ def should_exercise_early(
 # Early Exercise Premium
 # =============================================================================
 
+
 def compute_early_exercise_premium(
     spot: float,
     strike: float,
@@ -723,6 +736,7 @@ def compute_early_exercise_premium(
 # =============================================================================
 # Analytic Approximations
 # =============================================================================
+
 
 def barone_adesi_whaley(
     spot: float,
@@ -789,8 +803,7 @@ def barone_adesi_whaley(
         S_star = strike
         for _ in range(max_iter):
             d1 = (
-                math.log(S_star / strike)
-                + (rate - dividend_yield + 0.5 * sigma2) * time_to_expiry
+                math.log(S_star / strike) + (rate - dividend_yield + 0.5 * sigma2) * time_to_expiry
             ) / (volatility * math.sqrt(time_to_expiry))
 
             nd1 = 0.5 * (1.0 + math.erf(d1 / math.sqrt(2.0)))
@@ -826,8 +839,7 @@ def barone_adesi_whaley(
         S_star = strike
         for _ in range(max_iter):
             d1 = (
-                math.log(S_star / strike)
-                + (rate - dividend_yield + 0.5 * sigma2) * time_to_expiry
+                math.log(S_star / strike) + (rate - dividend_yield + 0.5 * sigma2) * time_to_expiry
             ) / (volatility * math.sqrt(time_to_expiry))
 
             nd1 = 0.5 * (1.0 + math.erf(d1 / math.sqrt(2.0)))
@@ -862,6 +874,7 @@ def barone_adesi_whaley(
 # Internal Functions
 # =============================================================================
 
+
 def _black_scholes_internal(
     spot: float,
     strike: float,
@@ -886,8 +899,7 @@ def _black_scholes_internal(
 
     sqrt_t = math.sqrt(time_to_expiry)
     d1 = (
-        math.log(spot / strike)
-        + (rate - dividend_yield + 0.5 * volatility ** 2) * time_to_expiry
+        math.log(spot / strike) + (rate - dividend_yield + 0.5 * volatility**2) * time_to_expiry
     ) / (volatility * sqrt_t)
     d2 = d1 - volatility * sqrt_t
 
@@ -907,6 +919,7 @@ def _black_scholes_internal(
 # Factory Functions
 # =============================================================================
 
+
 def create_exercise_analyzer(
     n_paths: int = _DEFAULT_N_PATHS,
     n_steps: int = _DEFAULT_N_STEPS,
@@ -919,6 +932,7 @@ def create_exercise_analyzer(
     Returns:
         Function that takes option parameters and returns LSResult
     """
+
     def analyze(
         spot: float,
         strike: float,
@@ -989,8 +1003,8 @@ def quick_exercise_check(
         "expected_exercise_time": result.expected_exercise_time,
         "prob_expire_worthless": result.prob_expire_worthless,
         "recommendation": (
-            "Consider exercising" if result.prob_early_exercise > 0.7
-            else "Hold" if result.prob_early_exercise < 0.3
-            else "Monitor closely"
+            "Consider exercising"
+            if result.prob_early_exercise > 0.7
+            else "Hold" if result.prob_early_exercise < 0.3 else "Monitor closely"
         ),
     }

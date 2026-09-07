@@ -102,6 +102,7 @@ _negotiated_versions: Dict[str, str] = {}
 
 # ----- Version Negotiation Models (Design Doc 10.3/10.4) -----
 
+
 class VersionNegotiateRequest(BaseModel):
     """
     Version negotiation request from Agent.
@@ -109,20 +110,15 @@ class VersionNegotiateRequest(BaseModel):
     Design Doc 10.3/10.4: Agent sends supported version range,
     Cloud responds with selected version or error.
     """
+
     min_supported: str = Field(
-        ...,
-        pattern=r"^\d+\.\d+\.\d+$",
-        description="Agent's minimum supported protocol version"
+        ..., pattern=r"^\d+\.\d+\.\d+$", description="Agent's minimum supported protocol version"
     )
     max_supported: str = Field(
-        ...,
-        pattern=r"^\d+\.\d+\.\d+$",
-        description="Agent's maximum supported protocol version"
+        ..., pattern=r"^\d+\.\d+\.\d+$", description="Agent's maximum supported protocol version"
     )
     preferred: Optional[str] = Field(
-        None,
-        pattern=r"^\d+\.\d+\.\d+$",
-        description="Agent's preferred version (optional)"
+        None, pattern=r"^\d+\.\d+\.\d+$", description="Agent's preferred version (optional)"
     )
 
     @field_validator("max_supported")
@@ -135,9 +131,7 @@ class VersionNegotiateRequest(BaseModel):
             min_parts = [int(x) for x in min_ver_str.split(".")]
             max_parts = [int(x) for x in v.split(".")]
             if max_parts < min_parts:
-                raise ValueError(
-                    f"max_supported ({v}) must be >= min_supported ({min_ver_str})"
-                )
+                raise ValueError(f"max_supported ({v}) must be >= min_supported ({min_ver_str})")
         return v
 
 
@@ -148,6 +142,7 @@ class VersionNegotiateResponse(BaseModel):
     Design Doc 10.3/10.4: Cloud returns selected version or error.
     Agent MUST verify version before proceeding.
     """
+
     status: str = Field(..., description="PENDING, SUCCESS, FAILED, TIMEOUT")
     selected_version: Optional[str] = Field(None, description="Negotiated protocol version")
     cloud_min: str = Field(..., description="Cloud's minimum supported version")
@@ -158,6 +153,7 @@ class VersionNegotiateResponse(BaseModel):
 
 class AgentHeartbeatRequest(BaseModel):
     """Agent heartbeat request."""
+
     agent_version: str = Field(..., min_length=1, max_length=50)
     current_state: str = Field(..., min_length=1, max_length=50)
     last_run_id: Optional[UUID] = None
@@ -166,6 +162,7 @@ class AgentHeartbeatRequest(BaseModel):
 
 class AgentHeartbeatResponse(BaseModel):
     """Agent heartbeat response."""
+
     server_time: datetime
     trust_state: str
     pending_commands: int
@@ -174,6 +171,7 @@ class AgentHeartbeatResponse(BaseModel):
 
 class CommandPollResponse(BaseModel):
     """Response from command polling."""
+
     commands: List["PendingCommand"]
     has_more: bool
     poll_again_after_sec: int
@@ -188,6 +186,7 @@ class PendingCommand(BaseModel):
     Design Doc 10.2: All commands MUST have signature field.
     Agent MUST verify signature before processing.
     """
+
     id: UUID
     status: str
     idempotency_key: str
@@ -205,6 +204,7 @@ class PendingCommand(BaseModel):
 
 class CommandAckResponse(BaseModel):
     """Response from command acknowledgement."""
+
     command_id: UUID
     status: str
     acknowledged_at: datetime
@@ -212,6 +212,7 @@ class CommandAckResponse(BaseModel):
 
 class CommandResultSubmission(BaseModel):
     """Command execution result submission."""
+
     success: bool
     result: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None
@@ -219,6 +220,7 @@ class CommandResultSubmission(BaseModel):
 
 class CommandResultResponse(BaseModel):
     """Response from result submission."""
+
     command_id: UUID
     status: str
     executed_at: Optional[datetime] = None
@@ -230,6 +232,7 @@ class LocalApprovalRequest(BaseModel):
 
     Design Doc 6.2, 12.2: Structured approval evidence with immutable blob references.
     """
+
     approved: bool
     evidence_hash: Optional[str] = Field(None, max_length=128)
     attestation: Optional[Dict[str, Any]] = None
@@ -252,6 +255,7 @@ class LocalApprovalRequest(BaseModel):
 
 class LocalApprovalResponse(BaseModel):
     """Response from local approval."""
+
     command_id: UUID
     status: str
     approved: bool
@@ -260,6 +264,7 @@ class LocalApprovalResponse(BaseModel):
 # ============================================================================
 # Agent Verification
 # ============================================================================
+
 
 async def verify_agent_enrolled(
     session: AsyncSession,
@@ -345,7 +350,7 @@ async def verify_version_negotiated(
                 "message": "Protocol version negotiation required. Call POST /negotiate-version first.",
                 "cloud_min": MIN_SUPPORTED_VERSION,
                 "cloud_max": MAX_SUPPORTED_VERSION,
-            }
+            },
         )
 
     # Verify header matches negotiated version if provided
@@ -356,7 +361,7 @@ async def verify_version_negotiated(
                 "error": "version_mismatch",
                 "message": f"Protocol version mismatch. Header: {x_protocol_version}, Negotiated: {negotiated}",
                 "negotiated_version": negotiated,
-            }
+            },
         )
 
     return negotiated
@@ -365,6 +370,7 @@ async def verify_version_negotiated(
 # ============================================================================
 # Version Negotiation Endpoint (Design Doc 10.3/10.4)
 # ============================================================================
+
 
 @router.post(
     "/negotiate-version",
@@ -417,7 +423,7 @@ async def negotiate_version(
                     "selected_version": str(result.selected_version),
                     "agent_range": f"[{request.min_supported}-{request.max_supported}]",
                     "cloud_range": f"[{MIN_SUPPORTED_VERSION}-{MAX_SUPPORTED_VERSION}]",
-                }
+                },
             )
 
         return VersionNegotiateResponse(
@@ -454,6 +460,7 @@ async def get_version_info() -> Dict[str, Any]:
 # ============================================================================
 # Heartbeat Endpoint
 # ============================================================================
+
 
 @router.post(
     "/heartbeat",
@@ -516,6 +523,7 @@ async def agent_heartbeat(
 # Command Polling Endpoint
 # ============================================================================
 
+
 @router.get(
     "/commands/poll",
     response_model=CommandPollResponse,
@@ -541,9 +549,7 @@ async def poll_commands(
     WI-CLOUD-02: Implements command polling with accurate results.
     """
     # Design Doc 10.3/10.4: Verify version negotiation completed
-    negotiated_version = await verify_version_negotiated(
-        str(current_agent.id), x_protocol_version
-    )
+    negotiated_version = await verify_version_negotiated(str(current_agent.id), x_protocol_version)
 
     async with get_session() as session:
         # Verify agent
@@ -560,19 +566,24 @@ async def poll_commands(
         # Get command signer for signing commands (Design Doc 10.2)
         # FAIL-CLOSED: In production, unsigned commands MUST NOT be sent
         import os
+
         is_production = os.environ.get("CCEA_ENV", "development") == "production"
 
         try:
             signer = get_cloud_signer()
         except CloudKeyNotConfiguredError:
             if is_production:
-                logger.error("Cloud signing key not configured in production - refusing to send unsigned commands")
+                logger.error(
+                    "Cloud signing key not configured in production - refusing to send unsigned commands"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Command signing service unavailable. Contact administrator.",
                 )
             else:
-                logger.warning("Cloud signing key not configured (development mode) - commands will be unsigned")
+                logger.warning(
+                    "Cloud signing key not configured (development mode) - commands will be unsigned"
+                )
                 signer = None
 
         # Convert to response format with signatures
@@ -636,6 +647,7 @@ async def poll_commands(
 # Command Acknowledgement Endpoint
 # ============================================================================
 
+
 @router.post(
     "/commands/{command_id}/ack",
     response_model=CommandAckResponse,
@@ -694,6 +706,7 @@ async def acknowledge_command(
 # ============================================================================
 # Command Result Submission Endpoint
 # ============================================================================
+
 
 @router.post(
     "/commands/{command_id}/result",
@@ -757,6 +770,7 @@ async def submit_command_result(
 # ============================================================================
 # Local Approval Endpoint
 # ============================================================================
+
 
 @router.post(
     "/commands/{command_id}/approval",
@@ -862,6 +876,7 @@ async def submit_local_approval(
 # Agent Status Endpoint
 # ============================================================================
 
+
 @router.get(
     "/status",
     response_model=Dict[str, Any],
@@ -886,7 +901,9 @@ async def get_agent_status(
             "agent_version": db_agent.agent_version,
             "trust_state": db_agent.trust_state,
             "capabilities": db_agent.capabilities or [],
-            "last_heartbeat_at": db_agent.last_heartbeat_at.isoformat() if db_agent.last_heartbeat_at else None,
+            "last_heartbeat_at": (
+                db_agent.last_heartbeat_at.isoformat() if db_agent.last_heartbeat_at else None
+            ),
             "health_status": db_agent.health_status,
         }
 
@@ -895,14 +912,17 @@ async def get_agent_status(
 # Agent Telemetry Endpoint (Design Doc Phase 5)
 # ============================================================================
 
+
 class AgentTelemetryRequest(BaseModel):
     """Agent telemetry submission request."""
+
     events: List[Dict[str, Any]] = Field(..., max_length=1000)
     batch_size: int = Field(default=0, ge=0, le=1000)
 
 
 class AgentTelemetryResponse(BaseModel):
     """Agent telemetry submission response."""
+
     accepted: bool
     events_received: int
     events_stored: int
@@ -974,7 +994,7 @@ async def submit_agent_telemetry(
                     "events_received": events_received,
                     "events_stored": events_stored,
                     "errors_count": len(errors),
-                }
+                },
             )
 
         except ImportError:
@@ -984,7 +1004,7 @@ async def submit_agent_telemetry(
                 extra={
                     "agent_id": str(current_agent.id),
                     "events_received": events_received,
-                }
+                },
             )
             # Still mark as stored (logged)
             events_stored = events_received
@@ -1004,9 +1024,19 @@ def _redact_telemetry_event(event: Dict[str, Any]) -> Dict[str, Any]:
     Design Doc Phase 5: Mandatory redaction of sensitive data.
     """
     sensitive_patterns = [
-        "key", "secret", "password", "token", "credential",
-        "api_key", "api_secret", "access_token", "refresh_token",
-        "bearer", "authorization", "auth", "private",
+        "key",
+        "secret",
+        "password",
+        "token",
+        "credential",
+        "api_key",
+        "api_secret",
+        "access_token",
+        "refresh_token",
+        "bearer",
+        "authorization",
+        "auth",
+        "private",
     ]
 
     def redact_dict(d: Dict[str, Any]) -> Dict[str, Any]:
@@ -1019,8 +1049,7 @@ def _redact_telemetry_event(event: Dict[str, Any]) -> Dict[str, Any]:
                 result[key] = redact_dict(value)
             elif isinstance(value, list):
                 result[key] = [
-                    redact_dict(item) if isinstance(item, dict) else item
-                    for item in value
+                    redact_dict(item) if isinstance(item, dict) else item for item in value
                 ]
             else:
                 result[key] = value

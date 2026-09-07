@@ -46,10 +46,11 @@ class RolloutStage(str, Enum):
         CANARY: Small % of traffic (configurable) for gradual rollout
         PRODUCTION: Full rollout to all traffic
     """
-    DISABLED = "disabled"           # Feature completely off
-    SHADOW = "shadow"               # Run in parallel, don't affect positions
-    CANARY = "canary"               # Small % of traffic (configurable)
-    PRODUCTION = "production"       # Full rollout
+
+    DISABLED = "disabled"  # Feature completely off
+    SHADOW = "shadow"  # Run in parallel, don't affect positions
+    CANARY = "canary"  # Small % of traffic (configurable)
+    PRODUCTION = "production"  # Full rollout
 
 
 class FuturesFeature(str, Enum):
@@ -58,6 +59,7 @@ class FuturesFeature(str, Enum):
 
     Organized by functional area for clarity.
     """
+
     # ─────────────────────────────────────────────────────────────────
     # CORE TRADING FEATURES
     # ─────────────────────────────────────────────────────────────────
@@ -138,8 +140,9 @@ class FeatureConfig:
         allowed_accounts: If set, only these accounts are affected
         metadata: Additional feature-specific metadata
     """
+
     stage: RolloutStage = RolloutStage.DISABLED
-    canary_percentage: float = 0.0      # 0-100, used when stage=CANARY
+    canary_percentage: float = 0.0  # 0-100, used when stage=CANARY
     allowed_symbols: Optional[List[str]] = None  # If set, only these symbols
     allowed_accounts: Optional[List[str]] = None  # If set, only these accounts
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -208,6 +211,7 @@ class FuturesFeatureFlags:
             if path.suffix in (".yaml", ".yml"):
                 try:
                     import yaml
+
                     data = yaml.safe_load(f)
                 except ImportError:
                     logger.error("PyYAML not installed, falling back to defaults")
@@ -335,7 +339,11 @@ class FuturesFeatureFlags:
                 # Check canary criteria
                 if config.allowed_symbols and symbol and symbol not in config.allowed_symbols:
                     return False
-                if config.allowed_accounts and account_id and account_id not in config.allowed_accounts:
+                if (
+                    config.allowed_accounts
+                    and account_id
+                    and account_id not in config.allowed_accounts
+                ):
                     return False
                 if random_value is not None:
                     return random_value < config.canary_percentage
@@ -383,8 +391,7 @@ class FuturesFeatureFlags:
         with self._lock:
             old_stage = self.features[feature].stage
             logger.info(
-                f"Feature {feature.value} stage changed: "
-                f"{old_stage.value} -> {stage.value}"
+                f"Feature {feature.value} stage changed: " f"{old_stage.value} -> {stage.value}"
             )
             self.features[feature].stage = stage
 
@@ -433,7 +440,7 @@ class FuturesFeatureFlags:
                         "metadata": self.features[f].metadata,
                     }
                     for f in FuturesFeature
-                }
+                },
             }
 
     def save(self, path: str) -> None:
@@ -450,6 +457,7 @@ class FuturesFeatureFlags:
             if path.suffix in (".yaml", ".yml"):
                 try:
                     import yaml
+
                     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
                 except ImportError:
                     logger.error("PyYAML not installed, saving as JSON")
@@ -470,10 +478,7 @@ class FuturesFeatureFlags:
         with self._lock:
             if self.global_kill_switch:
                 return []
-            return [
-                f for f in FuturesFeature
-                if self.features[f].stage != RolloutStage.DISABLED
-            ]
+            return [f for f in FuturesFeature if self.features[f].stage != RolloutStage.DISABLED]
 
     def get_production_features(self) -> List[FuturesFeature]:
         """
@@ -485,15 +490,13 @@ class FuturesFeatureFlags:
         with self._lock:
             if self.global_kill_switch:
                 return []
-            return [
-                f for f in FuturesFeature
-                if self.features[f].stage == RolloutStage.PRODUCTION
-            ]
+            return [f for f in FuturesFeature if self.features[f].stage == RolloutStage.PRODUCTION]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HELPER DECORATORS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def feature_flag(
     feature: FuturesFeature,
@@ -519,6 +522,7 @@ def feature_flag(
             # Falls back to no-op if disabled
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -535,6 +539,7 @@ def feature_flag(
                 return None
 
         return wrapper
+
     return decorator
 
 
@@ -553,6 +558,7 @@ def require_feature(feature: FuturesFeature):
         def open_perpetual_position(symbol, qty, leverage):
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -566,6 +572,7 @@ def require_feature(feature: FuturesFeature):
             return func(*args, **kwargs)
 
         return wrapper
+
     return decorator
 
 
@@ -638,52 +645,62 @@ def reset_global_flags() -> None:
 # FEATURE GROUP HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
-CRYPTO_FEATURES = frozenset({
-    FuturesFeature.PERPETUAL_TRADING,
-    FuturesFeature.QUARTERLY_TRADING,
-    FuturesFeature.CROSS_MARGIN,
-    FuturesFeature.ISOLATED_MARGIN,
-    FuturesFeature.FUNDING_RATE_TRACKING,
-    FuturesFeature.FUNDING_IN_REWARD,
-    FuturesFeature.PRO_RATA_FUNDING,
-    FuturesFeature.ADL_SIMULATION,
-    FuturesFeature.LIQUIDATION_CASCADE_SLIPPAGE,
-})
+CRYPTO_FEATURES = frozenset(
+    {
+        FuturesFeature.PERPETUAL_TRADING,
+        FuturesFeature.QUARTERLY_TRADING,
+        FuturesFeature.CROSS_MARGIN,
+        FuturesFeature.ISOLATED_MARGIN,
+        FuturesFeature.FUNDING_RATE_TRACKING,
+        FuturesFeature.FUNDING_IN_REWARD,
+        FuturesFeature.PRO_RATA_FUNDING,
+        FuturesFeature.ADL_SIMULATION,
+        FuturesFeature.LIQUIDATION_CASCADE_SLIPPAGE,
+    }
+)
 
-CME_FEATURES = frozenset({
-    FuturesFeature.INDEX_FUTURES,
-    FuturesFeature.COMMODITY_FUTURES,
-    FuturesFeature.CURRENCY_FUTURES,
-    FuturesFeature.BOND_FUTURES,
-    FuturesFeature.SPAN_MARGIN,
-    FuturesFeature.DAILY_SETTLEMENT,
-    FuturesFeature.AUTO_ROLLOVER,
-    FuturesFeature.VARIATION_MARGIN,
-    FuturesFeature.CIRCUIT_BREAKER_GUARD,
-})
+CME_FEATURES = frozenset(
+    {
+        FuturesFeature.INDEX_FUTURES,
+        FuturesFeature.COMMODITY_FUTURES,
+        FuturesFeature.CURRENCY_FUTURES,
+        FuturesFeature.BOND_FUTURES,
+        FuturesFeature.SPAN_MARGIN,
+        FuturesFeature.DAILY_SETTLEMENT,
+        FuturesFeature.AUTO_ROLLOVER,
+        FuturesFeature.VARIATION_MARGIN,
+        FuturesFeature.CIRCUIT_BREAKER_GUARD,
+    }
+)
 
-RISK_FEATURES = frozenset({
-    FuturesFeature.FUTURES_RISK_GUARDS,
-    FuturesFeature.LEVERAGE_GUARD,
-    FuturesFeature.FUNDING_EXPOSURE_GUARD,
-    FuturesFeature.CONCENTRATION_GUARD,
-    FuturesFeature.MARGIN_GUARD,
-    FuturesFeature.CIRCUIT_BREAKER_GUARD,
-})
+RISK_FEATURES = frozenset(
+    {
+        FuturesFeature.FUTURES_RISK_GUARDS,
+        FuturesFeature.LEVERAGE_GUARD,
+        FuturesFeature.FUNDING_EXPOSURE_GUARD,
+        FuturesFeature.CONCENTRATION_GUARD,
+        FuturesFeature.MARGIN_GUARD,
+        FuturesFeature.CIRCUIT_BREAKER_GUARD,
+    }
+)
 
-EXECUTION_FEATURES = frozenset({
-    FuturesFeature.L2_EXECUTION,
-    FuturesFeature.L3_EXECUTION,
-    FuturesFeature.LIQUIDATION_CASCADE_SLIPPAGE,
-    FuturesFeature.MARK_PRICE_EXECUTION,
-})
+EXECUTION_FEATURES = frozenset(
+    {
+        FuturesFeature.L2_EXECUTION,
+        FuturesFeature.L3_EXECUTION,
+        FuturesFeature.LIQUIDATION_CASCADE_SLIPPAGE,
+        FuturesFeature.MARK_PRICE_EXECUTION,
+    }
+)
 
-TRAINING_FEATURES = frozenset({
-    FuturesFeature.FUTURES_ENV_WRAPPER,
-    FuturesFeature.LEVERAGE_ACTION_SPACE,
-    FuturesFeature.MARGIN_OBSERVATION,
-    FuturesFeature.FUTURES_FEATURES_PIPELINE,
-})
+TRAINING_FEATURES = frozenset(
+    {
+        FuturesFeature.FUTURES_ENV_WRAPPER,
+        FuturesFeature.LEVERAGE_ACTION_SPACE,
+        FuturesFeature.MARGIN_OBSERVATION,
+        FuturesFeature.FUTURES_FEATURES_PIPELINE,
+    }
+)
 
 
 def are_crypto_features_enabled(flags: Optional[FuturesFeatureFlags] = None) -> bool:
@@ -768,6 +785,7 @@ def create_minimal_cme_flags() -> FuturesFeatureFlags:
 # ═══════════════════════════════════════════════════════════════════════════
 # CONVENIENCE FUNCTIONS (Module-level API)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def is_feature_enabled(feature: FuturesFeature) -> bool:
     """

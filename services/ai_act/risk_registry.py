@@ -127,12 +127,14 @@ class RiskEntry:
     def __post_init__(self) -> None:
         """Initialize audit trail with creation entry."""
         if not self.audit_trail:
-            self.audit_trail.append({
-                "timestamp": self.created_at.isoformat(),
-                "action": "created",
-                "status": self.status.value,
-                "user": "system",
-            })
+            self.audit_trail.append(
+                {
+                    "timestamp": self.created_at.isoformat(),
+                    "action": "created",
+                    "status": self.status.value,
+                    "user": "system",
+                }
+            )
 
     @property
     def risk_score(self) -> int:
@@ -178,18 +180,18 @@ class RiskEntry:
         self.status = new_status
         self.updated_at = datetime.now(timezone.utc)
 
-        self.audit_trail.append({
-            "timestamp": self.updated_at.isoformat(),
-            "action": "status_change",
-            "old_status": old_status.value,
-            "new_status": new_status.value,
-            "user": user,
-            "reason": reason,
-        })
-
-        logger.info(
-            f"Risk {self.risk_id} status changed: {old_status.value} -> {new_status.value}"
+        self.audit_trail.append(
+            {
+                "timestamp": self.updated_at.isoformat(),
+                "action": "status_change",
+                "old_status": old_status.value,
+                "new_status": new_status.value,
+                "user": user,
+                "reason": reason,
+            }
         )
+
+        logger.info(f"Risk {self.risk_id} status changed: {old_status.value} -> {new_status.value}")
 
     def add_mitigation(self, mitigation: RiskMitigation) -> None:
         """
@@ -201,13 +203,15 @@ class RiskEntry:
         self.mitigations.append(mitigation)
         self.updated_at = datetime.now(timezone.utc)
 
-        self.audit_trail.append({
-            "timestamp": self.updated_at.isoformat(),
-            "action": "mitigation_added",
-            "mitigation_id": mitigation.mitigation_id,
-            "description": mitigation.description,
-            "user": "system",
-        })
+        self.audit_trail.append(
+            {
+                "timestamp": self.updated_at.isoformat(),
+                "action": "mitigation_added",
+                "mitigation_id": mitigation.mitigation_id,
+                "description": mitigation.description,
+                "user": "system",
+            }
+        )
 
         # Auto-update status if not already mitigated
         if self.status in (RiskStatus.IDENTIFIED, RiskStatus.ASSESSED):
@@ -363,10 +367,7 @@ class RiskRegistry:
     def get_risks_by_category(self, category: AIActRiskCategory) -> List[RiskEntry]:
         """Get risks filtered by category."""
         with self._lock:
-            return [
-                r for r in self._risks.values()
-                if r.identification.category == category
-            ]
+            return [r for r in self._risks.values() if r.identification.category == category]
 
     def get_high_risks(self) -> List[RiskEntry]:
         """Get all high-risk entries (score >= 12)."""
@@ -395,7 +396,8 @@ class RiskRegistry:
         """
         with self._lock:
             high_priority = [
-                r for r in self._risks.values()
+                r
+                for r in self._risks.values()
                 if r.risk_score is not None and r.risk_score >= threshold
             ]
             return sorted(high_priority, key=lambda r: r.risk_score or 0, reverse=True)
@@ -564,10 +566,7 @@ class RiskRegistry:
 
             # Update status based on mitigations
             if entry.mitigations:
-                all_implemented = all(
-                    m.status == "implemented"
-                    for m in entry.mitigations
-                )
+                all_implemented = all(m.status == "implemented" for m in entry.mitigations)
                 if all_implemented:
                     entry.update_status(
                         RiskStatus.MITIGATED,
@@ -591,9 +590,7 @@ class RiskRegistry:
 
             status_counts = {}
             for status in RiskStatus:
-                status_counts[status.value] = sum(
-                    1 for r in risks if r.status == status
-                )
+                status_counts[status.value] = sum(1 for r in risks if r.status == status)
 
             category_counts = {}
             for category in AIActRiskCategory:
@@ -609,8 +606,7 @@ class RiskRegistry:
                 "status_breakdown": status_counts,
                 "category_breakdown": category_counts,
                 "average_risk_score": (
-                    sum(r.risk_score for r in risks) / len(risks)
-                    if risks else 0.0
+                    sum(r.risk_score for r in risks) / len(risks) if risks else 0.0
                 ),
                 "last_updated": max(
                     (r.updated_at for r in risks),
@@ -718,28 +714,32 @@ class RiskRegistry:
                         if mit_data.get("residual_likelihood"):
                             residual_lik = AIActRiskLikelihood(mit_data["residual_likelihood"])
 
-                        mitigations.append(RiskMitigation(
-                            mitigation_id=mit_data.get("mitigation_id", ""),
-                            risk_id=risk_id,
-                            mitigation_type=mit_data.get("mitigation_type", "control"),
-                            title=mit_data.get("title", ""),
-                            description=mit_data.get("description", ""),
-                            implementation_details=mit_data.get("implementation_details", ""),
-                            preventive_controls=mit_data.get("preventive_controls", []),
-                            detective_controls=mit_data.get("detective_controls", []),
-                            corrective_controls=mit_data.get("corrective_controls", []),
-                            status=mit_data.get("status", "planned"),
-                            implementation_date=mit_data.get("implementation_date"),
-                            verification_date=mit_data.get("verification_date"),
-                            residual_severity=residual_sev,
-                            residual_likelihood=residual_lik,
-                            effectiveness_rating=mit_data.get("effectiveness_rating", ""),
-                            deployer_information_provided=mit_data.get("deployer_information_provided", False),
-                            training_requirements=mit_data.get("training_requirements", []),
-                            owner=mit_data.get("owner", ""),
-                            review_frequency=mit_data.get("review_frequency", ""),
-                            last_review_date=mit_data.get("last_review_date", ""),
-                        ))
+                        mitigations.append(
+                            RiskMitigation(
+                                mitigation_id=mit_data.get("mitigation_id", ""),
+                                risk_id=risk_id,
+                                mitigation_type=mit_data.get("mitigation_type", "control"),
+                                title=mit_data.get("title", ""),
+                                description=mit_data.get("description", ""),
+                                implementation_details=mit_data.get("implementation_details", ""),
+                                preventive_controls=mit_data.get("preventive_controls", []),
+                                detective_controls=mit_data.get("detective_controls", []),
+                                corrective_controls=mit_data.get("corrective_controls", []),
+                                status=mit_data.get("status", "planned"),
+                                implementation_date=mit_data.get("implementation_date"),
+                                verification_date=mit_data.get("verification_date"),
+                                residual_severity=residual_sev,
+                                residual_likelihood=residual_lik,
+                                effectiveness_rating=mit_data.get("effectiveness_rating", ""),
+                                deployer_information_provided=mit_data.get(
+                                    "deployer_information_provided", False
+                                ),
+                                training_requirements=mit_data.get("training_requirements", []),
+                                owner=mit_data.get("owner", ""),
+                                review_frequency=mit_data.get("review_frequency", ""),
+                                last_review_date=mit_data.get("last_review_date", ""),
+                            )
+                        )
 
                     entry = RiskEntry(
                         risk_id=risk_id,
@@ -750,7 +750,11 @@ class RiskRegistry:
                         owner=risk_data.get("owner", "AI Act Compliance Team"),
                         created_at=datetime.fromisoformat(risk_data["created_at"]),
                         updated_at=datetime.fromisoformat(risk_data["updated_at"]),
-                        review_date=datetime.fromisoformat(risk_data["review_date"]) if risk_data.get("review_date") else None,
+                        review_date=(
+                            datetime.fromisoformat(risk_data["review_date"])
+                            if risk_data.get("review_date")
+                            else None
+                        ),
                         notes=risk_data.get("notes", ""),
                         audit_trail=risk_data.get("audit_trail", []),
                     )

@@ -161,8 +161,7 @@ class TestPreflightChecker:
 
         # Should fail
         vault_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.VAULT_UNLOCKED),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.VAULT_UNLOCKED), None
         )
         assert vault_check is not None
         assert vault_check.result == PreflightCheckResult.FAILED
@@ -176,8 +175,7 @@ class TestPreflightChecker:
         result = checker.run_preflight()
 
         vault_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.VAULT_UNLOCKED),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.VAULT_UNLOCKED), None
         )
         assert vault_check.result == PreflightCheckResult.FAILED
 
@@ -190,8 +188,7 @@ class TestPreflightChecker:
         result = checker.run_preflight()
 
         vault_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.VAULT_UNLOCKED),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.VAULT_UNLOCKED), None
         )
         assert vault_check.result == PreflightCheckResult.PASSED
 
@@ -209,7 +206,7 @@ class TestPreflightChecker:
 
         cred_check = next(
             (c for c in result.checks if c.check_type == PreflightCheckType.CREDENTIALS_AVAILABLE),
-            None
+            None,
         )
         assert cred_check.result == PreflightCheckResult.PASSED
 
@@ -224,7 +221,7 @@ class TestPreflightChecker:
 
         cred_check = next(
             (c for c in result.checks if c.check_type == PreflightCheckType.CREDENTIALS_AVAILABLE),
-            None
+            None,
         )
         assert cred_check.result == PreflightCheckResult.FAILED
 
@@ -235,8 +232,7 @@ class TestPreflightChecker:
         result = checker.run_preflight(manifest=manifest)
 
         schema_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.SCHEMA_VERSION),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.SCHEMA_VERSION), None
         )
         assert schema_check.result == PreflightCheckResult.PASSED
 
@@ -247,8 +243,7 @@ class TestPreflightChecker:
         result = checker.run_preflight(manifest=manifest)
 
         schema_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.SCHEMA_VERSION),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.SCHEMA_VERSION), None
         )
         assert schema_check.result == PreflightCheckResult.FAILED
 
@@ -259,8 +254,7 @@ class TestPreflightChecker:
         result = checker.run_preflight(manifest=manifest)
 
         manifest_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.MANIFEST_VALID),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.MANIFEST_VALID), None
         )
         assert manifest_check.result == PreflightCheckResult.PASSED
 
@@ -269,8 +263,7 @@ class TestPreflightChecker:
         result = checker.run_preflight(manifest=manifest)
 
         manifest_check = next(
-            (c for c in result.checks if c.check_type == PreflightCheckType.MANIFEST_VALID),
-            None
+            (c for c in result.checks if c.check_type == PreflightCheckType.MANIFEST_VALID), None
         )
         assert manifest_check.result == PreflightCheckResult.FAILED
 
@@ -292,8 +285,12 @@ class TestPreflightChecker:
             )
 
             digest_check = next(
-                (c for c in result.checks if c.check_type == PreflightCheckType.DIGEST_VERIFICATION),
-                None
+                (
+                    c
+                    for c in result.checks
+                    if c.check_type == PreflightCheckType.DIGEST_VERIFICATION
+                ),
+                None,
             )
             assert digest_check.result == PreflightCheckResult.PASSED
 
@@ -304,8 +301,12 @@ class TestPreflightChecker:
             )
 
             digest_check = next(
-                (c for c in result.checks if c.check_type == PreflightCheckType.DIGEST_VERIFICATION),
-                None
+                (
+                    c
+                    for c in result.checks
+                    if c.check_type == PreflightCheckType.DIGEST_VERIFICATION
+                ),
+                None,
             )
             assert digest_check.result == PreflightCheckResult.FAILED
 
@@ -334,8 +335,12 @@ class TestPreflightChecker:
             )
 
             sig_check = next(
-                (c for c in result.checks if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION),
-                None
+                (
+                    c
+                    for c in result.checks
+                    if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION
+                ),
+                None,
             )
             # Without ArtifactVerifier: WARNING (crypto skipped)
             # With ArtifactVerifier: PASSED (crypto verified)
@@ -351,8 +356,12 @@ class TestPreflightChecker:
             )
 
             sig_check = next(
-                (c for c in result.checks if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION),
-                None
+                (
+                    c
+                    for c in result.checks
+                    if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION
+                ),
+                None,
             )
             assert sig_check.result == PreflightCheckResult.FAILED
 
@@ -365,7 +374,7 @@ class TestPreflightChecker:
 
         resource_check = next(
             (c for c in result.checks if c.check_type == PreflightCheckType.RESOURCES_AVAILABLE),
-            None
+            None,
         )
         # Should pass on most systems
         assert resource_check is not None

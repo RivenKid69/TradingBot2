@@ -31,8 +31,10 @@ from uuid import uuid4
 # Constants
 # ============================================================================
 
+
 class DataRegion(Enum):
     """Supported data regions."""
+
     US_EAST = "us-east-1"
     US_WEST = "us-west-2"
     EU_WEST = "eu-west-1"
@@ -43,11 +45,13 @@ class DataRegion(Enum):
 
 
 # EU regions for GDPR compliance
-EU_REGIONS: Final[FrozenSet[DataRegion]] = frozenset({
-    DataRegion.EU_WEST,
-    DataRegion.EU_CENTRAL,
-    DataRegion.UK,
-})
+EU_REGIONS: Final[FrozenSet[DataRegion]] = frozenset(
+    {
+        DataRegion.EU_WEST,
+        DataRegion.EU_CENTRAL,
+        DataRegion.UK,
+    }
+)
 
 # Region country mappings
 COUNTRY_TO_REGION: Final[Dict[str, DataRegion]] = {
@@ -95,10 +99,11 @@ DEFAULT_REGION: Final[DataRegion] = DataRegion.US_EAST
 
 class ResidencyMode(Enum):
     """Data residency mode."""
-    CLOUD = auto()           # Data stored in cloud (default)
-    LOCAL_ONLY = auto()      # Data stays on agent (enterprise)
-    SELECTIVE = auto()       # Selective export (enterprise)
-    HYBRID = auto()          # Some local, some cloud
+
+    CLOUD = auto()  # Data stored in cloud (default)
+    LOCAL_ONLY = auto()  # Data stays on agent (enterprise)
+    SELECTIVE = auto()  # Selective export (enterprise)
+    HYBRID = auto()  # Some local, some cloud
 
 
 @dataclass
@@ -116,6 +121,7 @@ class ResidencyPolicy:
         export_allowed_to: Regions export is allowed to
         retention_region_specific: Region-specific retention
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     primary_region: DataRegion = DataRegion.US_EAST
@@ -142,7 +148,9 @@ class ResidencyPolicy:
 
         # If requires EU only, enforce it
         if self.requires_eu_only:
-            self.allowed_regions = self.allowed_regions.intersection(EU_REGIONS) or {DataRegion.EU_WEST}
+            self.allowed_regions = self.allowed_regions.intersection(EU_REGIONS) or {
+                DataRegion.EU_WEST
+            }
             if self.primary_region not in EU_REGIONS:
                 self.primary_region = DataRegion.EU_WEST
 
@@ -156,7 +164,9 @@ class ResidencyPolicy:
             "mode": self.mode.name,
             "telemetry_local": self.telemetry_local,
             "export_allowed_to": [r.value for r in self.export_allowed_to],
-            "retention_region_specific": {r.value: d for r, d in self.retention_region_specific.items()},
+            "retention_region_specific": {
+                r.value: d for r, d in self.retention_region_specific.items()
+            },
             "gdpr_compliant": self.gdpr_compliant,
             "requires_eu_only": self.requires_eu_only,
             "requires_local_only": self.requires_local_only,
@@ -168,6 +178,7 @@ class ResidencyPolicy:
 @dataclass
 class ResidencyConfig:
     """Global residency configuration."""
+
     default_region: DataRegion = DataRegion.US_EAST
     eu_default_region: DataRegion = DataRegion.EU_WEST
     enforce_gdpr_for_eu: bool = True
@@ -178,6 +189,7 @@ class ResidencyConfig:
 @dataclass
 class DataLocationInfo:
     """Information about where data is stored."""
+
     data_type: str
     current_region: DataRegion
     is_compliant: bool
@@ -241,7 +253,10 @@ class DataResidencyManager:
         region = COUNTRY_TO_REGION.get(country_code.upper(), self.config.default_region)
 
         # Check if EU country
-        is_eu = country_code.upper() in COUNTRY_TO_REGION and COUNTRY_TO_REGION[country_code.upper()] in EU_REGIONS
+        is_eu = (
+            country_code.upper() in COUNTRY_TO_REGION
+            and COUNTRY_TO_REGION[country_code.upper()] in EU_REGIONS
+        )
 
         policy = ResidencyPolicy(
             workspace_id=workspace_id,
@@ -380,7 +395,9 @@ class DataResidencyManager:
             # Re-validate
             policy.__post_init__()
 
-            self._log_audit("policy_updated", workspace_id, policy, {"updates": list(updates.keys())})
+            self._log_audit(
+                "policy_updated", workspace_id, policy, {"updates": list(updates.keys())}
+            )
 
             return policy
 

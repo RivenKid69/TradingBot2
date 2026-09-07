@@ -25,6 +25,7 @@ from unittest.mock import MagicMock
 # Import the mediator class
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -51,7 +52,7 @@ class TestFearGreedDetectionFix:
         """FG=NaN should be recognized as INVALID (missing) data."""
         from mediator import Mediator
 
-        row = {"fear_greed_value": float('nan')}
+        row = {"fear_greed_value": float("nan")}
 
         value, is_valid = Mediator._get_safe_float_with_validity(
             row, "fear_greed_value", default=50.0, min_value=0.0, max_value=100.0
@@ -89,7 +90,7 @@ class TestFearGreedDetectionFix:
         """FG=Inf should be recognized as INVALID."""
         from mediator import Mediator
 
-        row = {"fear_greed_value": float('inf')}
+        row = {"fear_greed_value": float("inf")}
 
         value, is_valid = Mediator._get_safe_float_with_validity(
             row, "fear_greed_value", default=50.0, min_value=0.0, max_value=100.0
@@ -169,11 +170,11 @@ class TestRiskOffFlagWithValidFG:
         """risk_off_flag should only be True when has_fear_greed=True AND value<25."""
         # Test cases: (fg_value, has_fg, expected_risk_off)
         test_cases = [
-            (10.0, True, True),    # Valid extreme fear -> risk off
-            (24.9, True, True),    # Valid just below threshold -> risk off
-            (25.0, True, False),   # Valid at threshold -> NOT risk off
-            (50.0, True, False),   # Valid neutral -> NOT risk off
-            (90.0, True, False),   # Valid greed -> NOT risk off
+            (10.0, True, True),  # Valid extreme fear -> risk off
+            (24.9, True, True),  # Valid just below threshold -> risk off
+            (25.0, True, False),  # Valid at threshold -> NOT risk off
+            (50.0, True, False),  # Valid neutral -> NOT risk off
+            (90.0, True, False),  # Valid greed -> NOT risk off
             (10.0, False, False),  # Invalid (missing) -> NOT risk off even if default would trigger
             (50.0, False, False),  # Invalid (missing), neutral default -> NOT risk off
         ]
@@ -182,8 +183,9 @@ class TestRiskOffFlagWithValidFG:
             # The new logic: risk_off_flag = has_fear_greed and fear_greed_value < 25.0
             risk_off_flag = has_fg and fg_value < 25.0
 
-            assert risk_off_flag == expected_risk_off, \
-                f"FG={fg_value}, has_fg={has_fg}: expected risk_off={expected_risk_off}, got {risk_off_flag}"
+            assert (
+                risk_off_flag == expected_risk_off
+            ), f"FG={fg_value}, has_fg={has_fg}: expected risk_off={expected_risk_off}, got {risk_off_flag}"
 
 
 class TestOldBugRegression:
@@ -197,8 +199,9 @@ class TestOldBugRegression:
         has_fear_greed_old = abs(fear_greed_value - 50.0) > 0.1
 
         # This incorrectly returns False for FG=50!
-        assert has_fear_greed_old is False, \
-            "Old logic should return False for FG=50 (demonstrating the bug)"
+        assert (
+            has_fear_greed_old is False
+        ), "Old logic should return False for FG=50 (demonstrating the bug)"
 
     def test_new_logic_works_for_fg_50(self):
         """Ensure new logic works correctly for FG=50."""
@@ -212,8 +215,7 @@ class TestOldBugRegression:
         )
 
         # This correctly returns True for FG=50!
-        assert has_fear_greed is True, \
-            "New logic should return True for FG=50 (fix verified)"
+        assert has_fear_greed is True, "New logic should return True for FG=50 (fix verified)"
 
     def test_old_vs_new_logic_comprehensive(self):
         """Compare old and new logic across various FG values."""
@@ -221,15 +223,15 @@ class TestOldBugRegression:
 
         # (fg_value, old_has_fg, new_has_fg)
         test_cases = [
-            (0.0, True, True),      # Extreme fear: both detect as valid
-            (25.0, True, True),     # Fear: both detect as valid
-            (49.0, True, True),     # Near neutral: both detect as valid
-            (49.9, True, True),     # Very near neutral: both detect as valid
-            (50.0, False, True),    # NEUTRAL: OLD=BUG, NEW=CORRECT
-            (50.1, True, True),     # Just above neutral: both detect as valid
-            (51.0, True, True),     # Near neutral: both detect as valid
-            (75.0, True, True),     # Greed: both detect as valid
-            (100.0, True, True),    # Extreme greed: both detect as valid
+            (0.0, True, True),  # Extreme fear: both detect as valid
+            (25.0, True, True),  # Fear: both detect as valid
+            (49.0, True, True),  # Near neutral: both detect as valid
+            (49.9, True, True),  # Very near neutral: both detect as valid
+            (50.0, False, True),  # NEUTRAL: OLD=BUG, NEW=CORRECT
+            (50.1, True, True),  # Just above neutral: both detect as valid
+            (51.0, True, True),  # Near neutral: both detect as valid
+            (75.0, True, True),  # Greed: both detect as valid
+            (100.0, True, True),  # Extreme greed: both detect as valid
         ]
 
         for fg_value, old_has_fg, new_has_fg in test_cases:
@@ -243,10 +245,12 @@ class TestOldBugRegression:
                 row, "fear_greed_value", default=50.0, min_value=0.0, max_value=100.0
             )
 
-            assert old_result == old_has_fg, \
-                f"Old logic unexpected for FG={fg_value}: expected {old_has_fg}, got {old_result}"
-            assert new_result == new_has_fg, \
-                f"New logic unexpected for FG={fg_value}: expected {new_has_fg}, got {new_result}"
+            assert (
+                old_result == old_has_fg
+            ), f"Old logic unexpected for FG={fg_value}: expected {old_has_fg}, got {old_result}"
+            assert (
+                new_result == new_has_fg
+            ), f"New logic unexpected for FG={fg_value}: expected {new_has_fg}, got {new_result}"
 
             # Most importantly: for FG=50, old was wrong and new is correct
             if fg_value == 50.0:

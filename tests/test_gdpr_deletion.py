@@ -43,9 +43,17 @@ class TestDataCategory:
     def test_all_categories_defined(self):
         """Verify all required data categories exist."""
         expected = [
-            "account", "profile", "strategies", "backtests",
-            "execution_logs", "broker_credentials", "analytics",
-            "notifications", "sessions", "disclaimers", "audit_logs"
+            "account",
+            "profile",
+            "strategies",
+            "backtests",
+            "execution_logs",
+            "broker_credentials",
+            "analytics",
+            "notifications",
+            "sessions",
+            "disclaimers",
+            "audit_logs",
         ]
         actual = [c.value for c in DataCategory]
         for exp in expected:
@@ -135,44 +143,52 @@ class TestInMemoryDeletionRequestStorage:
     def test_get_by_user(self, storage):
         """Test getting all requests for a user."""
         for i in range(3):
-            storage.save(DeletionRequest(
-                request_id=f"del_{i}",
-                user_id="user_001",
+            storage.save(
+                DeletionRequest(
+                    request_id=f"del_{i}",
+                    user_id="user_001",
+                    user_email=None,
+                    requested_at=datetime.now(timezone.utc),
+                    categories=[DataCategory.ACCOUNT],
+                    status=DeletionStatus.COMPLETED,
+                )
+            )
+        storage.save(
+            DeletionRequest(
+                request_id="del_other",
+                user_id="user_002",
                 user_email=None,
                 requested_at=datetime.now(timezone.utc),
                 categories=[DataCategory.ACCOUNT],
                 status=DeletionStatus.COMPLETED,
-            ))
-        storage.save(DeletionRequest(
-            request_id="del_other",
-            user_id="user_002",
-            user_email=None,
-            requested_at=datetime.now(timezone.utc),
-            categories=[DataCategory.ACCOUNT],
-            status=DeletionStatus.COMPLETED,
-        ))
+            )
+        )
 
         user_requests = storage.get_by_user("user_001")
         assert len(user_requests) == 3
 
     def test_get_pending(self, storage):
         """Test getting pending requests."""
-        storage.save(DeletionRequest(
-            request_id="del_pending",
-            user_id="user_001",
-            user_email=None,
-            requested_at=datetime.now(timezone.utc),
-            categories=[DataCategory.ACCOUNT],
-            status=DeletionStatus.PENDING,
-        ))
-        storage.save(DeletionRequest(
-            request_id="del_completed",
-            user_id="user_002",
-            user_email=None,
-            requested_at=datetime.now(timezone.utc),
-            categories=[DataCategory.ACCOUNT],
-            status=DeletionStatus.COMPLETED,
-        ))
+        storage.save(
+            DeletionRequest(
+                request_id="del_pending",
+                user_id="user_001",
+                user_email=None,
+                requested_at=datetime.now(timezone.utc),
+                categories=[DataCategory.ACCOUNT],
+                status=DeletionStatus.PENDING,
+            )
+        )
+        storage.save(
+            DeletionRequest(
+                request_id="del_completed",
+                user_id="user_002",
+                user_email=None,
+                requested_at=datetime.now(timezone.utc),
+                categories=[DataCategory.ACCOUNT],
+                status=DeletionStatus.COMPLETED,
+            )
+        )
 
         pending = storage.get_pending()
         assert len(pending) == 1
@@ -196,13 +212,16 @@ class TestInMemoryDataRepository:
 
     def test_anonymize(self, repo):
         """Test anonymizing records."""
-        repo.add_record("user_001", {
-            "id": 1,
-            "user_id": "user_001",
-            "email": "user@example.com",
-            "ip_address": "1.2.3.4",
-            "name": "John Doe",
-        })
+        repo.add_record(
+            "user_001",
+            {
+                "id": 1,
+                "user_id": "user_001",
+                "email": "user@example.com",
+                "ip_address": "1.2.3.4",
+                "name": "John Doe",
+            },
+        )
 
         count = repo.anonymize_by_user("user_001")
         assert count == 1
@@ -286,10 +305,13 @@ class TestGDPRDeletionService:
 
     def test_audit_logs_anonymized_not_deleted(self, service, mock_repos):
         """Test audit logs are anonymized, not deleted (retention exception)."""
-        mock_repos["audit_logs"].add_record("user_001", {
-            "user_id": "user_001",
-            "action": "login",
-        })
+        mock_repos["audit_logs"].add_record(
+            "user_001",
+            {
+                "user_id": "user_001",
+                "action": "login",
+            },
+        )
 
         request = service.create_request("user_001")
         result = service.execute_deletion(request)
@@ -299,9 +321,12 @@ class TestGDPRDeletionService:
 
     def test_broker_credentials_deleted(self, service, mock_repos):
         """Test broker credentials are deleted."""
-        mock_repos["broker_credentials"].add_record("user_001", {
-            "api_key": "encrypted_key",
-        })
+        mock_repos["broker_credentials"].add_record(
+            "user_001",
+            {
+                "api_key": "encrypted_key",
+            },
+        )
 
         request = service.create_request("user_001")
         result = service.execute_deletion(request)

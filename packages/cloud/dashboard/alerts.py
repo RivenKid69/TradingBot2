@@ -39,6 +39,7 @@ ALERT_EVAL_INTERVAL_SECONDS: Final[int] = 60
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -47,6 +48,7 @@ class AlertSeverity(str, Enum):
 
 class AlertState(str, Enum):
     """Alert lifecycle state."""
+
     PENDING = "pending"  # Just triggered
     FIRING = "firing"  # Active
     RESOLVED = "resolved"  # Condition cleared
@@ -56,6 +58,7 @@ class AlertState(str, Enum):
 
 class ComparisonOperator(str, Enum):
     """Comparison operators for alert conditions."""
+
     GT = "gt"  # Greater than
     GTE = "gte"  # Greater than or equal
     LT = "lt"  # Less than
@@ -66,6 +69,7 @@ class ComparisonOperator(str, Enum):
 
 class AggregationType(str, Enum):
     """Aggregation types for alert conditions."""
+
     AVG = "avg"
     SUM = "sum"
     MIN = "min"
@@ -88,6 +92,7 @@ class AlertCondition:
 
     Example: CPU > 90% for 5 minutes
     """
+
     metric_name: str
     operator: ComparisonOperator
     threshold: float
@@ -133,6 +138,7 @@ class AlertRule:
 
     Defines when and how alerts should be triggered.
     """
+
     rule_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     description: str = ""
@@ -180,6 +186,7 @@ class Alert:
 
     Represents an active or historical alert.
     """
+
     alert_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     rule_id: str = ""
     workspace_id: Optional[UUID] = None
@@ -247,6 +254,7 @@ class SilenceRule:
 
     Temporarily suppresses alerts matching certain criteria.
     """
+
     silence_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     workspace_id: Optional[UUID] = None
 
@@ -255,7 +263,9 @@ class SilenceRule:
 
     # Time window
     starts_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    ends_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=1))
+    ends_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=1)
+    )
 
     # Metadata
     created_by: str = ""
@@ -550,7 +560,11 @@ class AlertManager:
             handler = self._notification_handlers.get(channel)
             if handler:
                 try:
-                    await handler(alert, rule) if asyncio.iscoroutinefunction(handler) else handler(alert, rule)
+                    (
+                        await handler(alert, rule)
+                        if asyncio.iscoroutinefunction(handler)
+                        else handler(alert, rule)
+                    )
                     logger.info(f"Sent alert notification to {channel}")
                 except Exception as e:
                     logger.exception(f"Failed to send notification to {channel}: {e}")

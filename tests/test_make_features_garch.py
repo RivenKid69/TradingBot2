@@ -39,14 +39,16 @@ def test_make_features_with_garch():
         high_price = max(open_price, close_price) * 1.005
         low_price = min(open_price, close_price) * 0.995
 
-        data.append({
-            "ts_ms": ts_start + i * 60000,  # каждую минуту
-            "symbol": symbol,
-            "price": close_price,
-            "open": open_price,
-            "high": high_price,
-            "low": low_price,
-        })
+        data.append(
+            {
+                "ts_ms": ts_start + i * 60000,  # каждую минуту
+                "symbol": symbol,
+                "price": close_price,
+                "open": open_price,
+                "high": high_price,
+                "low": low_price,
+            }
+        )
 
         base_price = close_price
 
@@ -63,9 +65,9 @@ def test_make_features_with_garch():
         lookbacks_prices=[5, 15, 60],
         rsi_period=14,
         yang_zhang_windows=[1440],  # 24ч
-        parkinson_windows=[1440],   # 24ч
-        garch_windows=[500, 720],   # 500 мин, 12ч
-        bar_duration_minutes=1  # КРИТИЧНО: данные генерируются каждую минуту!
+        parkinson_windows=[1440],  # 24ч
+        garch_windows=[500, 720],  # 500 мин, 12ч
+        bar_duration_minutes=1,  # КРИТИЧНО: данные генерируются каждую минуту!
     )
 
     print("Спецификация признаков:")
@@ -94,7 +96,7 @@ def test_make_features_with_garch():
     print(f"  - Список признаков: {list(result_df.columns)}\n")
 
     # Проверяем что GARCH признаки созданы
-    garch_features = [col for col in result_df.columns if 'garch' in col.lower()]
+    garch_features = [col for col in result_df.columns if "garch" in col.lower()]
     print(f"GARCH признаки: {garch_features}")
 
     if len(garch_features) == 0:
@@ -104,19 +106,25 @@ def test_make_features_with_garch():
     # Проверяем последние строки где должны быть валидные GARCH значения
     last_rows = result_df.tail(10)
     print(f"\nПоследние 10 строк:")
-    print(last_rows[['ts_ms', 'symbol', 'ref_price'] + garch_features].to_string())
+    print(last_rows[["ts_ms", "symbol", "ref_price"] + garch_features].to_string())
 
     # Проверяем что есть непустые значения GARCH
     for feat in garch_features:
         non_nan_count = result_df[feat].notna().sum()
-        valid_count = result_df[feat].apply(lambda x: not pd.isna(x) and not (isinstance(x, float) and math.isnan(x))).sum()
+        valid_count = (
+            result_df[feat]
+            .apply(lambda x: not pd.isna(x) and not (isinstance(x, float) and math.isnan(x)))
+            .sum()
+        )
         print(f"\n{feat}:")
         print(f"  - Непустых значений: {non_nan_count}/{len(result_df)}")
         print(f"  - Валидных числовых значений: {valid_count}/{len(result_df)}")
 
         if valid_count > 0:
             valid_values = result_df[feat].dropna()
-            valid_values = valid_values[~valid_values.apply(lambda x: math.isnan(x) if isinstance(x, float) else False)]
+            valid_values = valid_values[
+                ~valid_values.apply(lambda x: math.isnan(x) if isinstance(x, float) else False)
+            ]
             if len(valid_values) > 0:
                 print(f"  - Мин: {valid_values.min():.6f}")
                 print(f"  - Макс: {valid_values.max():.6f}")
@@ -124,9 +132,18 @@ def test_make_features_with_garch():
 
     # Проверяем что другие признаки не пострадали
     # ВАЖНО: тест использует 1-минутные данные, поэтому имена признаков в минутах
-    expected_features = ['ref_price', 'rsi', 'sma_5', 'sma_15', 'sma_60',
-                        'ret_5m', 'ret_15m', 'ret_60m',
-                        'yang_zhang_24h', 'parkinson_24h']
+    expected_features = [
+        "ref_price",
+        "rsi",
+        "sma_5",
+        "sma_15",
+        "sma_60",
+        "ret_5m",
+        "ret_15m",
+        "ret_60m",
+        "yang_zhang_24h",
+        "parkinson_24h",
+    ]
 
     print(f"\n\nПроверка других признаков:")
     all_present = True
@@ -155,10 +172,10 @@ def test_make_features_script():
     print("\n\n=== Тест скрипта make_features.py ===\n")
 
     # Создаем временный файл с данными
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
         temp_input = f.name
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.parquet', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".parquet", delete=False) as f:
         temp_output = f.name
 
     try:
@@ -178,14 +195,16 @@ def test_make_features_script():
             high_price = max(open_price, close_price) * 1.003
             low_price = min(open_price, close_price) * 0.997
 
-            data.append({
-                "ts_ms": ts_start + i * 60000,
-                "symbol": "BTCUSDT",
-                "price": close_price,
-                "open": open_price,
-                "high": high_price,
-                "low": low_price,
-            })
+            data.append(
+                {
+                    "ts_ms": ts_start + i * 60000,
+                    "symbol": "BTCUSDT",
+                    "price": close_price,
+                    "open": open_price,
+                    "high": high_price,
+                    "low": low_price,
+                }
+            )
 
             base_price = close_price
 
@@ -197,19 +216,32 @@ def test_make_features_script():
 
         # Запускаем make_features.py
         import subprocess
+
         cmd = [
-            "python", "make_features.py",
-            "--in", temp_input,
-            "--out", temp_output,
-            "--lookbacks", "5,15,60",
-            "--rsi-period", "14",
-            "--yang-zhang-windows", "1440",
-            "--parkinson-windows", "1440",
-            "--garch-windows", "500,720",
-            "--bar-duration-minutes", "1",  # КРИТИЧНО: данные генерируются каждую минуту!
-            "--open-col", "open",
-            "--high-col", "high",
-            "--low-col", "low",
+            "python",
+            "make_features.py",
+            "--in",
+            temp_input,
+            "--out",
+            temp_output,
+            "--lookbacks",
+            "5,15,60",
+            "--rsi-period",
+            "14",
+            "--yang-zhang-windows",
+            "1440",
+            "--parkinson-windows",
+            "1440",
+            "--garch-windows",
+            "500,720",
+            "--bar-duration-minutes",
+            "1",  # КРИТИЧНО: данные генерируются каждую минуту!
+            "--open-col",
+            "open",
+            "--high-col",
+            "high",
+            "--low-col",
+            "low",
         ]
 
         print(f"Команда: {' '.join(cmd)}\n")
@@ -240,7 +272,7 @@ def test_make_features_script():
         print(f"  - Признаки: {list(result_df.columns)}")
 
         # Проверяем GARCH признаки
-        garch_features = [col for col in result_df.columns if 'garch' in col.lower()]
+        garch_features = [col for col in result_df.columns if "garch" in col.lower()]
         if len(garch_features) > 0:
             print(f"\n✓ GARCH признаки созданы: {garch_features}")
             for feat in garch_features:
@@ -288,6 +320,7 @@ def main():
         except Exception as e:
             print(f"\n❌ ИСКЛЮЧЕНИЕ в {test_func.__name__}: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
@@ -300,5 +333,6 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     success = main()
     sys.exit(0 if success else 1)

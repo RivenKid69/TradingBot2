@@ -35,10 +35,16 @@ def compute_metrics(
     r = pd.Series(returns, dtype="float64").replace([np.inf, -np.inf], np.nan).dropna()
     if len(r) == 0:
         return {
-            "n_periods": 0, "total_return": float("nan"), "sharpe": float("nan"),
-            "sortino": float("nan"), "calmar": float("nan"),
-            "ann_return": float("nan"), "ann_vol": float("nan"),
-            "max_drawdown": float("nan"), "hit_rate": float("nan"), "mean_return": float("nan"),
+            "n_periods": 0,
+            "total_return": float("nan"),
+            "sharpe": float("nan"),
+            "sortino": float("nan"),
+            "calmar": float("nan"),
+            "ann_return": float("nan"),
+            "ann_vol": float("nan"),
+            "max_drawdown": float("nan"),
+            "hit_rate": float("nan"),
+            "mean_return": float("nan"),
         }
     ppy = float(periods_per_year)
     nav = (1.0 + r).cumprod()
@@ -77,20 +83,25 @@ def compute_metrics(
         if len(aligned) >= 2 and float(aligned["b"].std(ddof=0)) > 0:
             ar, br = aligned["r"], aligned["b"]
             active = ar - br
-            te = float(active.std(ddof=0)) * math.sqrt(ppy)               # tracking error
-            ir = (float(active.mean()) / float(active.std(ddof=0)) * math.sqrt(ppy)
-                  if float(active.std(ddof=0)) > 0 else float("nan"))      # information ratio
+            te = float(active.std(ddof=0)) * math.sqrt(ppy)  # tracking error
+            ir = (
+                float(active.mean()) / float(active.std(ddof=0)) * math.sqrt(ppy)
+                if float(active.std(ddof=0)) > 0
+                else float("nan")
+            )  # information ratio
             var_b = float(br.var(ddof=0))
             beta = float(np.cov(ar, br, ddof=0)[0, 1] / var_b) if var_b > 0 else float("nan")
             # Jensen's alpha (annualized): a = (E[r]-rf) - beta*(E[b]-rf)
             alpha_p = float(ar.mean() - rf_per_period) - beta * float(br.mean() - rf_per_period)
-            out.update({
-                "benchmark_ann_return": float(br.mean() * ppy),
-                "tracking_error": te,
-                "information_ratio": float(ir),
-                "beta": beta,
-                "alpha": float(alpha_p * ppy),
-            })
+            out.update(
+                {
+                    "benchmark_ann_return": float(br.mean() * ppy),
+                    "tracking_error": te,
+                    "information_ratio": float(ir),
+                    "beta": beta,
+                    "alpha": float(alpha_p * ppy),
+                }
+            )
     return out
 
 
@@ -98,15 +109,15 @@ def compute_metrics(
 class XSBacktestResult:
     """Результат cross-sectional бэктеста."""
 
-    returns: pd.Series                 # доходность портфеля за период (net of costs), index=rebalance ts
-    weights: pd.DataFrame              # целевые веса: index=rebalance ts, columns=symbol
-    turnover: pd.Series                # оборот за период
-    costs: pd.Series                   # издержки за период
-    gross: pd.Series                   # gross exposure Σ|w|
-    net: pd.Series                     # net exposure Σw
-    nav: pd.Series                     # кривая капитала (cumprod(1+returns))
+    returns: pd.Series  # доходность портфеля за период (net of costs), index=rebalance ts
+    weights: pd.DataFrame  # целевые веса: index=rebalance ts, columns=symbol
+    turnover: pd.Series  # оборот за период
+    costs: pd.Series  # издержки за период
+    gross: pd.Series  # gross exposure Σ|w|
+    net: pd.Series  # net exposure Σw
+    nav: pd.Series  # кривая капитала (cumprod(1+returns))
     metrics: Dict[str, float] = field(default_factory=dict)
-    benchmark: Optional[pd.Series] = None   # benchmark return series (equal-weight universe)
+    benchmark: Optional[pd.Series] = None  # benchmark return series (equal-weight universe)
     meta: Dict[str, Any] = field(default_factory=dict)
 
     def summary(self) -> Dict[str, Any]:

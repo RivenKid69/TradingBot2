@@ -37,8 +37,10 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class EvidenceCategory(str, Enum):
     """Categories of evidence in the pack."""
+
     # Phase 7 categories
     SECURITY_BASELINE = "security_baseline"
     ENCRYPTION_CONFIG = "encryption_config"
@@ -74,6 +76,7 @@ class EvidenceCategory(str, Enum):
 
 class ExportFormat(str, Enum):
     """Export format for evidence pack."""
+
     JSON = "json"
     ZIP = "zip"
     CSV = "csv"
@@ -81,6 +84,7 @@ class ExportFormat(str, Enum):
 
 class PackStatus(str, Enum):
     """Status of evidence pack generation."""
+
     PENDING = "pending"
     GENERATING = "generating"
     COMPLETED = "completed"
@@ -91,9 +95,11 @@ class PackStatus(str, Enum):
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class EvidenceArtifact:
     """An individual artifact in the evidence pack."""
+
     artifact_id: str = field(default_factory=lambda: str(uuid4()))
     category: EvidenceCategory = EvidenceCategory.ACCESS_AUDIT
     filename: str = ""
@@ -125,12 +131,15 @@ class EvidenceArtifact:
 @dataclass
 class EvidenceManifest:
     """Manifest for an evidence pack."""
+
     manifest_version: str = "1.0.0"
     pack_id: str = ""
     workspace_id: str = ""
     exported_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     exported_by: str = ""
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30))
+    period_start: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+    )
     period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     categories_included: Set[EvidenceCategory] = field(default_factory=set)
     artifact_count: int = 0
@@ -143,15 +152,18 @@ class EvidenceManifest:
             self.manifest_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "pack_id": self.pack_id,
-            "workspace_id": self.workspace_id,
-            "exported_at": self.exported_at.isoformat(),
-            "period_start": self.period_start.isoformat(),
-            "period_end": self.period_end.isoformat(),
-            "artifact_count": self.artifact_count,
-            "artifacts": self.artifacts,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "pack_id": self.pack_id,
+                "workspace_id": self.workspace_id,
+                "exported_at": self.exported_at.isoformat(),
+                "period_start": self.period_start.isoformat(),
+                "period_end": self.period_end.isoformat(),
+                "artifact_count": self.artifact_count,
+                "artifacts": self.artifacts,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -174,13 +186,16 @@ class EvidenceManifest:
 @dataclass
 class EvidencePack:
     """A complete evidence pack for audit."""
+
     pack_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     title: str = ""
     description: str = ""
     exported_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     exported_by: str = ""
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30))
+    period_start: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+    )
     period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     categories: Set[EvidenceCategory] = field(default_factory=set)
     artifacts: List[EvidenceArtifact] = field(default_factory=list)
@@ -198,13 +213,16 @@ class EvidencePack:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "pack_id": self.pack_id,
-            "workspace_id": self.workspace_id,
-            "exported_at": self.exported_at.isoformat(),
-            "artifact_count": len(self.artifacts),
-            "categories": [c.value for c in self.categories],
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "pack_id": self.pack_id,
+                "workspace_id": self.workspace_id,
+                "exported_at": self.exported_at.isoformat(),
+                "artifact_count": len(self.artifacts),
+                "categories": [c.value for c in self.categories],
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -225,7 +243,9 @@ class EvidencePack:
             "integrity_hash": self.integrity_hash,
             "signature": self.signature,
             "download_url": self.download_url,
-            "download_expires_at": self.download_expires_at.isoformat() if self.download_expires_at else None,
+            "download_expires_at": (
+                self.download_expires_at.isoformat() if self.download_expires_at else None
+            ),
             "error": self.error,
         }
 
@@ -233,11 +253,14 @@ class EvidencePack:
 @dataclass
 class ExportRequest:
     """Request to generate an evidence pack."""
+
     request_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     requested_by: str = ""
     requested_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30))
+    period_start: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+    )
     period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     categories: Set[EvidenceCategory] = field(default_factory=lambda: set(EvidenceCategory))
     format: ExportFormat = ExportFormat.JSON
@@ -266,6 +289,7 @@ class ExportRequest:
 @dataclass
 class EvidenceEvent:
     """Event in the evidence pack audit log."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     pack_id: Optional[str] = None
@@ -281,15 +305,18 @@ class EvidenceEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "pack_id": self.pack_id,
-            "event_type": self.event_type,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "pack_id": self.pack_id,
+                "event_type": self.event_type,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -309,6 +336,7 @@ class EvidenceEvent:
 # =============================================================================
 # Evidence Pack Service
 # =============================================================================
+
 
 class EvidencePackService:
     """
@@ -572,8 +600,16 @@ class EvidencePackService:
 
             elif category == EvidenceCategory.KEY_MANAGEMENT and self._security_baseline:
                 content = {
-                    "keys": [k.to_dict() for k in self._security_baseline.list_keys(workspace_id=workspace_id)],
-                    "rotations": [r.to_dict() for r in self._security_baseline.get_key_rotations(workspace_id=workspace_id)],
+                    "keys": [
+                        k.to_dict()
+                        for k in self._security_baseline.list_keys(workspace_id=workspace_id)
+                    ],
+                    "rotations": [
+                        r.to_dict()
+                        for r in self._security_baseline.get_key_rotations(
+                            workspace_id=workspace_id
+                        )
+                    ],
                 }
                 record_count = len(content.get("keys", []))
 
@@ -667,7 +703,7 @@ class EvidencePackService:
 
             # Existing governance categories
             elif category == EvidenceCategory.ACCESS_AUDIT and self._access_audit:
-                if hasattr(self._access_audit, 'export_audit_logs'):
+                if hasattr(self._access_audit, "export_audit_logs"):
                     content = self._access_audit.export_audit_logs(
                         workspace_id=workspace_id,
                         start_time=period_start,
@@ -683,7 +719,7 @@ class EvidencePackService:
                 record_count = len(content.get("audit_entries", content.get("entries", [])))
 
             elif category == EvidenceCategory.CHANGE_JOURNAL and self._change_management:
-                if hasattr(self._change_management, 'export_journal'):
+                if hasattr(self._change_management, "export_journal"):
                     content = self._change_management.export_journal(workspace_id=workspace_id)
                 else:
                     journal = self._change_management.get_journal(workspace_id=workspace_id)
@@ -691,7 +727,7 @@ class EvidencePackService:
                 record_count = len(content.get("change_journal", content.get("journal", [])))
 
             elif category == EvidenceCategory.RBAC_SNAPSHOT and self._rbac:
-                if hasattr(self._rbac, 'export_snapshot'):
+                if hasattr(self._rbac, "export_snapshot"):
                     content = self._rbac.export_snapshot(workspace_id=workspace_id)
                 else:
                     roles = self._rbac.list_roles()
@@ -699,7 +735,7 @@ class EvidencePackService:
                 record_count = len(content.get("roles", []))
 
             elif category == EvidenceCategory.DSAR_RECORDS and self._dsar:
-                if hasattr(self._dsar, 'export_records'):
+                if hasattr(self._dsar, "export_records"):
                     content = self._dsar.export_records(workspace_id=workspace_id)
                 else:
                     requests = self._dsar.list_requests(workspace_id=workspace_id)
@@ -707,7 +743,7 @@ class EvidencePackService:
                 record_count = len(content.get("dsar_requests", content.get("requests", [])))
 
             elif category == EvidenceCategory.RETENTION_POLICIES and self._retention:
-                if hasattr(self._retention, 'export_policies'):
+                if hasattr(self._retention, "export_policies"):
                     content = self._retention.export_policies(workspace_id=workspace_id)
                 else:
                     policies = self._retention.get_workspace_policies(workspace_id=workspace_id)
@@ -715,13 +751,13 @@ class EvidencePackService:
                 record_count = len(content.get("retention_policies", content.get("policies", [])))
 
             elif category == EvidenceCategory.LEGAL_HOLDS and self._retention:
-                if hasattr(self._retention, 'list_legal_holds'):
+                if hasattr(self._retention, "list_legal_holds"):
                     holds = self._retention.list_legal_holds(workspace_id=workspace_id)
                     content = {"legal_holds": [h.to_dict() for h in holds]}
                     record_count = len(holds)
 
             elif category == EvidenceCategory.CONSENT_RECORDS and self._consent:
-                if hasattr(self._consent, 'export_records'):
+                if hasattr(self._consent, "export_records"):
                     content = self._consent.export_records(workspace_id=workspace_id)
                 else:
                     records = self._consent.list_records(workspace_id=workspace_id)
@@ -729,15 +765,19 @@ class EvidencePackService:
                 record_count = len(content.get("consent_records", content.get("records", [])))
 
             elif category == EvidenceCategory.RESIDENCY_EVIDENCE and self._residency:
-                if hasattr(self._residency, 'export_evidence'):
+                if hasattr(self._residency, "export_evidence"):
                     content = self._residency.export_evidence(workspace_id=workspace_id)
                 else:
                     report = self._residency.run_drift_check()
-                    content = {"residency_report": report.to_dict() if hasattr(report, 'to_dict') else report}
+                    content = {
+                        "residency_report": (
+                            report.to_dict() if hasattr(report, "to_dict") else report
+                        )
+                    }
                 record_count = 1
 
             elif category == EvidenceCategory.TELEMETRY_CONTRACTS and self._telemetry_contract:
-                if hasattr(self._telemetry_contract, 'export_contracts'):
+                if hasattr(self._telemetry_contract, "export_contracts"):
                     content = self._telemetry_contract.export_contracts(workspace_id=workspace_id)
                 else:
                     content = {"telemetry_contracts": "See telemetry contract documentation"}
@@ -770,7 +810,7 @@ class EvidencePackService:
 
         # Serialize content
         content_json = json.dumps(content, sort_keys=True, default=str, indent=2)
-        content_bytes = content_json.encode('utf-8')
+        content_bytes = content_json.encode("utf-8")
         content_hash = f"sha256:{hashlib.sha256(content_bytes).hexdigest()}"
 
         artifact = EvidenceArtifact(
@@ -844,7 +884,7 @@ class EvidencePackService:
         # Create in-memory ZIP
         zip_buffer = BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
             # Add manifest
             manifest_content = json.dumps(pack.manifest.to_dict(), indent=2, default=str)
             zf.writestr("manifest.json", manifest_content)
@@ -863,8 +903,12 @@ class EvidencePackService:
                     content_data = {
                         "artifact_id": artifact.artifact_id,
                         "category": artifact.category.value,
-                        "period_start": artifact.period_start.isoformat() if artifact.period_start else None,
-                        "period_end": artifact.period_end.isoformat() if artifact.period_end else None,
+                        "period_start": (
+                            artifact.period_start.isoformat() if artifact.period_start else None
+                        ),
+                        "period_end": (
+                            artifact.period_end.isoformat() if artifact.period_end else None
+                        ),
                         "record_count": artifact.record_count,
                         "content_hash": artifact.content_hash,
                     }
@@ -913,7 +957,9 @@ class EvidencePackService:
             # Development: local API endpoint
             # Production: pre-signed URL from object storage
             pack.download_url = f"/api/v1/evidence/packs/{pack_id}/download"
-            pack.download_expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+            pack.download_expires_at = datetime.now(timezone.utc) + timedelta(
+                hours=expires_in_hours
+            )
 
         # Log event
         event = EvidenceEvent(

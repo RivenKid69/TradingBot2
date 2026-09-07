@@ -281,14 +281,18 @@ class TestConformanceCertificate:
 
     def test_get_unsatisfied_conditions(self, sample_certificate):
         """Test getting unsatisfied conditions."""
-        sample_certificate.add_condition(CertificateCondition(
-            description="Unsatisfied",
-            satisfied=False,
-        ))
-        sample_certificate.add_condition(CertificateCondition(
-            description="Satisfied",
-            satisfied=True,
-        ))
+        sample_certificate.add_condition(
+            CertificateCondition(
+                description="Unsatisfied",
+                satisfied=False,
+            )
+        )
+        sample_certificate.add_condition(
+            CertificateCondition(
+                description="Satisfied",
+                satisfied=True,
+            )
+        )
 
         unsatisfied = sample_certificate.get_unsatisfied_conditions()
         assert len(unsatisfied) == 1
@@ -299,11 +303,7 @@ class TestConformanceCertificate:
         condition = CertificateCondition(description="To satisfy")
         sample_certificate.add_condition(condition)
 
-        result = sample_certificate.satisfy_condition(
-            condition.condition_id,
-            "tester",
-            "Resolved"
-        )
+        result = sample_certificate.satisfy_condition(condition.condition_id, "tester", "Resolved")
 
         assert result is True
         assert condition.satisfied is True
@@ -429,16 +429,20 @@ class TestCertificateManager:
             algorithm_version="1.0.0",
             environment=TestEnvironment.UAT,
         )
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
-        suite.add_test(ConformanceTest(
-            test_id="CT-002",
-            priority=TestPriority.HIGH,
-            result=TestResult.PASS,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-002",
+                priority=TestPriority.HIGH,
+                result=TestResult.PASS,
+            )
+        )
         suite.status = ConformanceSuiteStatus.PASSED
         return suite
 
@@ -706,12 +710,14 @@ class TestIntegration:
             algorithm_id="ALGO-001",
             algorithm_version="1.0.0",
         )
-        suite.add_test(ConformanceTest(
-            test_id="CT-001",
-            category=TestCategory.KILL_SWITCH,
-            priority=TestPriority.CRITICAL,
-            result=TestResult.PASS,
-        ))
+        suite.add_test(
+            ConformanceTest(
+                test_id="CT-001",
+                category=TestCategory.KILL_SWITCH,
+                priority=TestPriority.CRITICAL,
+                result=TestResult.PASS,
+            )
+        )
         suite.status = ConformanceSuiteStatus.PASSED
 
         # 3. Create certificate

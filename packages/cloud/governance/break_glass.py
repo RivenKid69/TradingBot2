@@ -48,6 +48,7 @@ MIN_REASON_LENGTH: Final[int] = 20
 
 class BreakGlassReason(Enum):
     """Pre-defined break-glass reasons."""
+
     INCIDENT_RESPONSE = "incident_response"
     SECURITY_INVESTIGATION = "security_investigation"
     COMPLIANCE_AUDIT = "compliance_audit"
@@ -59,11 +60,12 @@ class BreakGlassReason(Enum):
 
 class BreakGlassScope(Enum):
     """Scope of break-glass access."""
-    TELEMETRY_READ = auto()     # Read telemetry data
-    AUDIT_READ = auto()         # Read audit logs
-    CONFIG_READ = auto()        # Read configuration
-    ADMIN_ACCESS = auto()       # Full admin access
-    DATA_EXPORT = auto()        # Export data
+
+    TELEMETRY_READ = auto()  # Read telemetry data
+    AUDIT_READ = auto()  # Read audit logs
+    CONFIG_READ = auto()  # Read configuration
+    ADMIN_ACCESS = auto()  # Full admin access
+    DATA_EXPORT = auto()  # Export data
 
 
 @dataclass
@@ -81,6 +83,7 @@ class BreakGlassRequest:
         duration_hours: How long access is needed
         approved: Whether request was approved
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     requester_id: str = ""
     requester_email: str = ""
@@ -151,6 +154,7 @@ class BreakGlassRequest:
 @dataclass
 class BreakGlassResult:
     """Result of break-glass operation."""
+
     success: bool = True
     request_id: str = ""
     access_token: Optional[str] = None
@@ -261,12 +265,16 @@ class BreakGlassController:
         # Check cooldown
         with self._lock:
             recent = [
-                r for r in self._requests.values()
+                r
+                for r in self._requests.values()
                 if r.requester_id == requester_id
-                and (datetime.utcnow() - r.created_at).total_seconds() < BREAK_GLASS_COOLDOWN_MINUTES * 60
+                and (datetime.utcnow() - r.created_at).total_seconds()
+                < BREAK_GLASS_COOLDOWN_MINUTES * 60
             ]
             if recent:
-                raise ValueError(f"Cooldown in effect. Wait {BREAK_GLASS_COOLDOWN_MINUTES} minutes between requests")
+                raise ValueError(
+                    f"Cooldown in effect. Wait {BREAK_GLASS_COOLDOWN_MINUTES} minutes between requests"
+                )
 
         request = BreakGlassRequest(
             requester_id=requester_id,
@@ -394,10 +402,14 @@ class BreakGlassController:
             for token in tokens_to_remove:
                 del self._tokens[token]
 
-            self._log_audit("request_revoked", request, {
-                "revoked_by": revoked_by,
-                "reason": reason,
-            })
+            self._log_audit(
+                "request_revoked",
+                request,
+                {
+                    "revoked_by": revoked_by,
+                    "reason": reason,
+                },
+            )
 
             return True
 
@@ -472,10 +484,7 @@ class BreakGlassController:
     def get_pending_requests(self) -> List[BreakGlassRequest]:
         """Get requests awaiting approval."""
         with self._lock:
-            return [
-                r for r in self._requests.values()
-                if not r.approved and not r.revoked_at
-            ]
+            return [r for r in self._requests.values() if not r.approved and not r.revoked_at]
 
     def cleanup_expired(self) -> int:
         """

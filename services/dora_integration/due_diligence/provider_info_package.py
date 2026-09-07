@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations (Aligned with ITS templates)
 # =============================================================================
 
+
 class ICTServiceType(Enum):
     """ITS-aligned ICT service type codes."""
+
     # From B_03.01 template
     CLOUD_SERVICES = "CS"  # Cloud computing services
     DATA_ANALYTICS = "DA"  # Data analytics services
@@ -57,6 +59,7 @@ class ICTServiceType(Enum):
 
 class FunctionCriticality(Enum):
     """Function criticality classification."""
+
     CRITICAL = "critical"
     IMPORTANT = "important"
     NEITHER = "neither"
@@ -64,6 +67,7 @@ class FunctionCriticality(Enum):
 
 class SubstitutabilityLevel(Enum):
     """Ease of substitution assessment."""
+
     EASY = "easy"  # Multiple alternatives readily available
     MEDIUM = "medium"  # Some alternatives with transition effort
     DIFFICULT = "difficult"  # Few alternatives, significant effort
@@ -72,6 +76,7 @@ class SubstitutabilityLevel(Enum):
 
 class DataSensitivity(Enum):
     """Data sensitivity classification."""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -82,6 +87,7 @@ class DataSensitivity(Enum):
 # Data Structures (ITS-aligned)
 # =============================================================================
 
+
 @dataclass
 class ProviderIdentification:
     """
@@ -89,6 +95,7 @@ class ProviderIdentification:
 
     Required fields for client ROI.
     """
+
     # Entity identification
     provider_name: str = ""
     legal_name: str = ""
@@ -134,6 +141,7 @@ class ServiceDescription:
     """
     ICT service description (B_03.01 aligned).
     """
+
     service_id: str = ""
     service_name: str = ""
     service_type: ICTServiceType = ICTServiceType.OTHER
@@ -168,6 +176,7 @@ class DataLocation:
     """
     Data processing and storage location (B_04.01 aligned).
     """
+
     location_id: str = ""
     location_type: str = ""  # processing, storage, backup
     country_code: str = ""  # ISO 3166-1 alpha-2
@@ -203,6 +212,7 @@ class SubcontractorInfo:
     """
     Subcontractor information (B_99.01 aligned).
     """
+
     subcontractor_id: str = ""
     subcontractor_name: str = ""
     subcontractor_lei: str = ""
@@ -250,6 +260,7 @@ class CertificationInfo:
     """
     Certification and security attestation information.
     """
+
     certification_type: str = ""  # SOC2, ISO27001, C5, etc.
     certification_scope: str = ""
     issuing_body: str = ""
@@ -268,6 +279,7 @@ class ContractSummary:
     """
     Contract summary information for client ROI.
     """
+
     contract_reference: str = ""
     contract_start_date: str = ""
     contract_end_date: str = ""
@@ -293,6 +305,7 @@ class ProviderInfoPackage:
     This is what we provide to clients to help them populate
     their Register of Information submission.
     """
+
     package_id: str = ""
     package_version: str = "1.0"
     generated_at: str = ""
@@ -335,6 +348,7 @@ class ProviderInfoPackage:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ProviderInfoConfig:
     """Configuration for provider info package generation."""
@@ -360,6 +374,7 @@ class ProviderInfoConfig:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORAProviderInfoPackage:
     """
@@ -447,8 +462,8 @@ class DORAProviderInfoPackage:
                 service_name="Algorithmic Trading Platform",
                 service_type=ICTServiceType.ICT_PLATFORM,
                 service_description="Cloud-based algorithmic and AI-powered trading platform "
-                                    "supporting strategy development, backtesting, paper trading, "
-                                    "and live trading integration with multiple brokers.",
+                "supporting strategy development, backtesting, paper trading, "
+                "and live trading integration with multiple brokers.",
                 features=[
                     "Strategy development IDE",
                     "Historical backtesting engine",
@@ -475,7 +490,7 @@ class DORAProviderInfoPackage:
                 service_name="Quantitative Research Platform",
                 service_type=ICTServiceType.DATA_ANALYTICS,
                 service_description="AI/ML-powered quantitative research environment "
-                                    "for financial data analysis, model training, and signal generation.",
+                "for financial data analysis, model training, and signal generation.",
                 features=[
                     "Jupyter notebook environment",
                     "Pre-built ML models",
@@ -500,7 +515,7 @@ class DORAProviderInfoPackage:
                 service_name="Market Data Services",
                 service_type=ICTServiceType.DATA_ANALYTICS,
                 service_description="Real-time and historical market data aggregation "
-                                    "from multiple sources with normalization and storage.",
+                "from multiple sources with normalization and storage.",
                 features=[
                     "Real-time price feeds",
                     "Historical data access",
@@ -572,7 +587,7 @@ class DORAProviderInfoPackage:
                 subcontractor_country="LU",
                 services_provided=["cloud_infrastructure", "compute", "storage", "networking"],
                 service_description="Cloud infrastructure (IaaS) including compute, storage, "
-                                    "networking, and managed database services",
+                "networking, and managed database services",
                 data_locations=["IE", "DE", "FR"],
                 has_data_access=True,
                 data_types_accessed=["encrypted_storage", "compute_workloads"],
@@ -587,7 +602,7 @@ class DORAProviderInfoPackage:
                 subcontractor_country="US",
                 services_provided=["market_data"],
                 service_description="Real-time and historical market data API for stocks, "
-                                    "options, forex, and crypto",
+                "options, forex, and crypto",
                 data_locations=["US"],
                 has_data_access=False,
                 is_material=False,
@@ -663,7 +678,8 @@ class DORAProviderInfoPackage:
         # Filter services by scope
         if services_in_scope:
             services = [
-                s for s in self._services
+                s
+                for s in self._services
                 if s.service_id in services_in_scope or s.service_name in services_in_scope
             ]
         else:
@@ -673,9 +689,7 @@ class DORAProviderInfoPackage:
         relevant_subcontractors = self._get_relevant_subcontractors(services)
 
         # Calculate validity
-        valid_until = datetime.now(timezone.utc).replace(
-            year=datetime.now().year + 1
-        ).isoformat()
+        valid_until = datetime.now(timezone.utc).replace(year=datetime.now().year + 1).isoformat()
 
         package = ProviderInfoPackage(
             client_id=client_id,
@@ -699,11 +713,14 @@ class DORAProviderInfoPackage:
 
         self._packages[package.package_id] = package
 
-        self._log_event("package_generated", {
-            "package_id": package.package_id,
-            "client_id": client_id,
-            "services_count": len(services),
-        })
+        self._log_event(
+            "package_generated",
+            {
+                "package_id": package.package_id,
+                "client_id": client_id,
+                "services_count": len(services),
+            },
+        )
 
         return package
 
@@ -784,9 +801,7 @@ class DORAProviderInfoPackage:
         }
 
         if file_path is None:
-            file_path = str(
-                self._output_path / f"{package.client_id}_{package.package_id}.json"
-            )
+            file_path = str(self._output_path / f"{package.client_id}_{package.package_id}.json")
 
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, default=str)
@@ -862,10 +877,7 @@ class DORAProviderInfoPackage:
 
     def get_packages_for_client(self, client_id: str) -> List[ProviderInfoPackage]:
         """Get all packages generated for a client."""
-        return [
-            p for p in self._packages.values()
-            if p.client_id == client_id
-        ]
+        return [p for p in self._packages.values() if p.client_id == client_id]
 
     # =========================================================================
     # Summary and Reporting
@@ -899,9 +911,7 @@ class DORAProviderInfoPackage:
             ],
             "subcontractors_count": len(self._subcontractors),
             "material_subcontractors": [
-                s.subcontractor_name
-                for s in self._subcontractors
-                if s.is_material
+                s.subcontractor_name for s in self._subcontractors if s.is_material
             ],
             "certifications": [c.certification_type for c in self._certifications],
             "packages_generated": len(self._packages),
@@ -926,6 +936,7 @@ class DORAProviderInfoPackage:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_provider_info_package(
     config: Optional[ProviderInfoConfig] = None,

@@ -97,9 +97,11 @@ VIX_REGIMES = {
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class MacroDataConfig:
     """Configuration for MacroDataService."""
+
     cache_dir: Path = DEFAULT_CACHE_DIR
     cache_ttl_hours: int = 6  # Cache validity in hours (macro data is less volatile)
     default_lookback_days: int = 365 * 3  # Default 3 years of history
@@ -115,6 +117,7 @@ class MacroDataConfig:
 # =============================================================================
 # Main Service
 # =============================================================================
+
 
 class MacroDataService:
     """
@@ -156,6 +159,7 @@ class MacroDataService:
         """Get or create the Yahoo market data adapter."""
         if self._adapter is None:
             from adapters.yahoo.market_data import YahooMarketDataAdapter
+
             self._adapter = YahooMarketDataAdapter()
         return self._adapter
 
@@ -306,16 +310,20 @@ class MacroDataService:
             # Convert to DataFrame
             data = []
             for bar in bars:
-                data.append({
-                    "timestamp": bar.ts // 1000,  # Convert to seconds
-                    "date": datetime.fromtimestamp(bar.ts // 1000, tz=timezone.utc).strftime("%Y-%m-%d"),
-                    "symbol": indicator,
-                    "value": float(bar.close),
-                    "open": float(bar.open),
-                    "high": float(bar.high),
-                    "low": float(bar.low),
-                    "volume": float(bar.volume_base) if bar.volume_base else 0,
-                })
+                data.append(
+                    {
+                        "timestamp": bar.ts // 1000,  # Convert to seconds
+                        "date": datetime.fromtimestamp(bar.ts // 1000, tz=timezone.utc).strftime(
+                            "%Y-%m-%d"
+                        ),
+                        "symbol": indicator,
+                        "value": float(bar.close),
+                        "open": float(bar.open),
+                        "high": float(bar.high),
+                        "low": float(bar.low),
+                        "volume": float(bar.volume_base) if bar.volume_base else 0,
+                    }
+                )
 
             df = pd.DataFrame(data)
             df = df.sort_values("timestamp").reset_index(drop=True)
@@ -511,10 +519,12 @@ class MacroDataService:
         Returns:
             Normalized VIX (approximately [-1, 1])
         """
-        return float(np.tanh(
-            (vix_value - self.config.vix_normalization_center)
-            / self.config.vix_normalization_scale
-        ))
+        return float(
+            np.tanh(
+                (vix_value - self.config.vix_normalization_center)
+                / self.config.vix_normalization_scale
+            )
+        )
 
     def normalize_dxy(self, dxy_value: float) -> float:
         """
@@ -528,10 +538,12 @@ class MacroDataService:
         Returns:
             Normalized DXY (approximately [-1, 1])
         """
-        return float(np.tanh(
-            (dxy_value - self.config.dxy_normalization_center)
-            / self.config.dxy_normalization_scale
-        ))
+        return float(
+            np.tanh(
+                (dxy_value - self.config.dxy_normalization_center)
+                / self.config.dxy_normalization_scale
+            )
+        )
 
     def normalize_treasury(self, yield_value: float) -> float:
         """
@@ -545,10 +557,12 @@ class MacroDataService:
         Returns:
             Normalized yield (approximately [-1, 1])
         """
-        return float(np.tanh(
-            (yield_value - self.config.treasury_normalization_center)
-            / self.config.treasury_normalization_scale
-        ))
+        return float(
+            np.tanh(
+                (yield_value - self.config.treasury_normalization_center)
+                / self.config.treasury_normalization_scale
+            )
+        )
 
     def compute_real_yield_proxy(
         self,

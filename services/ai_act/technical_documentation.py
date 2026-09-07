@@ -53,6 +53,7 @@ class DocumentationSectionType(Enum):
 
     Maps to the required sections in Annex IV of the EU AI Act.
     """
+
     GENERAL_DESCRIPTION = "general_description"
     ALGORITHM_AND_DATA = "algorithm_and_data"
     MONITORING_AND_CONTROL = "monitoring_and_control"
@@ -67,6 +68,7 @@ class DocumentationSectionType(Enum):
 
 class ComplianceStatus(Enum):
     """Compliance status for documentation sections."""
+
     COMPLIANT = "compliant"
     PARTIALLY_COMPLIANT = "partially_compliant"
     NON_COMPLIANT = "non_compliant"
@@ -76,6 +78,7 @@ class ComplianceStatus(Enum):
 
 class ExportFormat(Enum):
     """Export formats for documentation."""
+
     MARKDOWN = "markdown"
     HTML = "html"
     JSON = "json"
@@ -94,7 +97,10 @@ class DocumentationMetadata:
 
     Per Annex IV, documentation must include identification information.
     """
-    document_id: str = field(default_factory=lambda: f"DOC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}")
+
+    document_id: str = field(
+        default_factory=lambda: f"DOC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+    )
     version: str = "1.0.0"
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     last_updated: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -124,7 +130,10 @@ class ComplianceEvidence:
 
     Per Article 11(2), documentation must demonstrate compliance.
     """
-    evidence_id: str = field(default_factory=lambda: f"EVD-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}")
+
+    evidence_id: str = field(
+        default_factory=lambda: f"EVD-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+    )
     article_reference: str = ""  # e.g., "Article 9" or "Annex IV.2"
     requirement_text: str = ""
     evidence_description: str = ""
@@ -142,7 +151,10 @@ class DocumentationSection:
 
     Represents one of the required sections per Annex IV.
     """
-    section_id: str = field(default_factory=lambda: f"SEC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}")
+
+    section_id: str = field(
+        default_factory=lambda: f"SEC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}"
+    )
     section_type: str = DocumentationSectionType.GENERAL_DESCRIPTION.value
     title: str = ""
     content: str = ""
@@ -177,7 +189,10 @@ class ChangeRecord:
 
     Per Annex IV.6, all changes must be documented.
     """
-    change_id: str = field(default_factory=lambda: f"CHG-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}")
+
+    change_id: str = field(
+        default_factory=lambda: f"CHG-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+    )
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     change_type: str = ""  # "algorithm", "data", "config", "deployment"
     description: str = ""
@@ -192,6 +207,7 @@ class ChangeRecord:
 @dataclass
 class TechnicalDocumentationConfig:
     """Configuration for documentation generation."""
+
     output_path: str = "docs/compliance/technical_documentation"
     template_path: str = "templates/ai_act"
     auto_generate_from_code: bool = True
@@ -745,12 +761,14 @@ For any proposed changes:
         for section_id, section in self.sections.items():
             requirement = section_mapping.get(section.section_type)
             if requirement and requirement in matrix:
-                matrix[requirement].append({
-                    "section_id": section_id,
-                    "title": section.title,
-                    "compliance_status": section.compliance_status,
-                    "evidence_count": len(section.evidence_refs),
-                })
+                matrix[requirement].append(
+                    {
+                        "section_id": section_id,
+                        "title": section.title,
+                        "compliance_status": section.compliance_status,
+                        "evidence_count": len(section.evidence_refs),
+                    }
+                )
 
         return matrix
 
@@ -764,7 +782,7 @@ For any proposed changes:
 
         # Limit change log size
         if len(self.change_log) > self.config.max_change_history:
-            self.change_log = self.change_log[-self.config.max_change_history:]
+            self.change_log = self.change_log[-self.config.max_change_history :]
 
         logger.info(f"Recorded change: {change.change_id} - {change.description}")
         return change.change_id
@@ -868,14 +886,17 @@ Generated: {datetime.now(timezone.utc).isoformat()}
         """Export documentation to JSON format."""
         export_data = {
             "metadata": asdict(self.metadata),
-            "sections": {sid: {
-                "section_id": s.section_id,
-                "section_type": s.section_type,
-                "title": s.title,
-                "content": s.content,
-                "compliance_status": s.compliance_status,
-                "evidence_refs": s.evidence_refs,
-            } for sid, s in self.sections.items()},
+            "sections": {
+                sid: {
+                    "section_id": s.section_id,
+                    "section_type": s.section_type,
+                    "title": s.title,
+                    "content": s.content,
+                    "compliance_status": s.compliance_status,
+                    "evidence_refs": s.evidence_refs,
+                }
+                for sid, s in self.sections.items()
+            },
             "evidence": {eid: asdict(e) for eid, e in self.evidence.items()},
             "change_log": [asdict(c) for c in self.change_log],
             "compliance_matrix": self.generate_compliance_matrix(),
@@ -963,7 +984,9 @@ Generated: {datetime.now(timezone.utc).isoformat()}
 
         lines = ["| Source | Type | Period |", "|--------|------|--------|"]
         for source in sources:
-            lines.append(f"| {source.get('Source', '')} | {source.get('Type', '')} | {source.get('Period', '')} |")
+            lines.append(
+                f"| {source.get('Source', '')} | {source.get('Type', '')} | {source.get('Period', '')} |"
+            )
         return "\n".join(lines)
 
     def _format_monitoring_metrics(self, metrics: Optional[List[Dict[str, str]]]) -> str:
@@ -985,16 +1008,38 @@ Generated: {datetime.now(timezone.utc).isoformat()}
         """Format risk categories."""
         if not categories:
             categories = [
-                {"Category": "Model Robustness", "Description": "Risks from model failures", "Severity": "High"},
-                {"Category": "Market Stability", "Description": "Risks to market stability", "Severity": "Critical"},
-                {"Category": "Data Quality", "Description": "Risks from data issues", "Severity": "High"},
-                {"Category": "Human Oversight", "Description": "Risks from oversight failures", "Severity": "Critical"},
-                {"Category": "Cybersecurity", "Description": "Security-related risks", "Severity": "High"},
+                {
+                    "Category": "Model Robustness",
+                    "Description": "Risks from model failures",
+                    "Severity": "High",
+                },
+                {
+                    "Category": "Market Stability",
+                    "Description": "Risks to market stability",
+                    "Severity": "Critical",
+                },
+                {
+                    "Category": "Data Quality",
+                    "Description": "Risks from data issues",
+                    "Severity": "High",
+                },
+                {
+                    "Category": "Human Oversight",
+                    "Description": "Risks from oversight failures",
+                    "Severity": "Critical",
+                },
+                {
+                    "Category": "Cybersecurity",
+                    "Description": "Security-related risks",
+                    "Severity": "High",
+                },
             ]
 
         lines = ["| Category | Description | Severity |", "|----------|-------------|----------|"]
         for cat in categories:
-            lines.append(f"| {cat.get('Category', '')} | {cat.get('Description', '')} | {cat.get('Severity', '')} |")
+            lines.append(
+                f"| {cat.get('Category', '')} | {cat.get('Description', '')} | {cat.get('Severity', '')} |"
+            )
         return "\n".join(lines)
 
     def _format_residual_risks(self, risks: Optional[List[Dict[str, str]]]) -> str:
@@ -1006,9 +1051,14 @@ Generated: {datetime.now(timezone.utc).isoformat()}
                 {"Risk": "Data feed failures", "Likelihood": "Low", "Impact": "Medium"},
             ]
 
-        lines = ["| Residual Risk | Likelihood | Impact |", "|---------------|------------|--------|"]
+        lines = [
+            "| Residual Risk | Likelihood | Impact |",
+            "|---------------|------------|--------|",
+        ]
         for risk in risks:
-            lines.append(f"| {risk.get('Risk', '')} | {risk.get('Likelihood', '')} | {risk.get('Impact', '')} |")
+            lines.append(
+                f"| {risk.get('Risk', '')} | {risk.get('Likelihood', '')} | {risk.get('Impact', '')} |"
+            )
         return "\n".join(lines)
 
     def _format_change_log(self) -> str:
@@ -1019,7 +1069,9 @@ Generated: {datetime.now(timezone.utc).isoformat()}
         lines = ["| Version | Date | Changes | Impact |", "|---------|------|---------|--------|"]
         for change in self.change_log[-10:]:  # Last 10 changes
             date = change.timestamp[:10] if change.timestamp else ""
-            lines.append(f"| {change.change_id} | {date} | {change.description[:50]} | {change.impact_assessment[:30]} |")
+            lines.append(
+                f"| {change.change_id} | {date} | {change.description[:50]} | {change.impact_assessment[:30]} |"
+            )
         return "\n".join(lines)
 
     def _markdown_to_html(self, markdown: str) -> str:
@@ -1029,22 +1081,22 @@ Generated: {datetime.now(timezone.utc).isoformat()}
         html = markdown
 
         # Headers
-        html = re.sub(r'^### (.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
-        html = re.sub(r'^## (.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
-        html = re.sub(r'^# (.+)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+        html = re.sub(r"^### (.+)$", r"<h3>\1</h3>", html, flags=re.MULTILINE)
+        html = re.sub(r"^## (.+)$", r"<h2>\1</h2>", html, flags=re.MULTILINE)
+        html = re.sub(r"^# (.+)$", r"<h1>\1</h1>", html, flags=re.MULTILINE)
 
         # Bold and italic
-        html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
-        html = re.sub(r'\*(.+?)\*', r'<em>\1</em>', html)
+        html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
+        html = re.sub(r"\*(.+?)\*", r"<em>\1</em>", html)
 
         # Lists
-        html = re.sub(r'^- (.+)$', r'<li>\1</li>', html, flags=re.MULTILINE)
+        html = re.sub(r"^- (.+)$", r"<li>\1</li>", html, flags=re.MULTILINE)
 
         # Tables (basic)
-        html = re.sub(r'\|(.+)\|', r'<tr><td>\1</td></tr>', html)
+        html = re.sub(r"\|(.+)\|", r"<tr><td>\1</td></tr>", html)
 
         # Paragraphs
-        html = re.sub(r'\n\n', r'</p><p>', html)
+        html = re.sub(r"\n\n", r"</p><p>", html)
 
         return f"<p>{html}</p>"
 

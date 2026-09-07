@@ -48,7 +48,7 @@ def test_zscore_mean_std():
 
 def test_zscore_constant_and_single():
     assert (xs.zscore(_series("ABC", [7, 7, 7])) == 0.0).all()  # constant → нули, не NaN/inf
-    assert (xs.zscore(_series("A", [5])) == 0.0).all()          # одно имя → 0
+    assert (xs.zscore(_series("A", [5])) == 0.0).all()  # одно имя → 0
 
 
 def test_rank_bounds():
@@ -109,7 +109,11 @@ def test_run_pipeline_applies_per_timestamp():
 
 def test_momentum_signal_values():
     frame = pd.DataFrame(
-        {"timestamp": [T0_SEC, T0_SEC + STEP, T0_SEC + 2 * STEP], "symbol": "A", "close": [100.0, 110.0, 121.0]}
+        {
+            "timestamp": [T0_SEC, T0_SEC + STEP, T0_SEC + 2 * STEP],
+            "symbol": "A",
+            "close": [100.0, 110.0, 121.0],
+        }
     )
     panel = PanelBuilder.from_frames({"A": frame})
     mom = MomentumSignal("mom", lookback=1, skip=0).compute_panel(panel)
@@ -157,14 +161,18 @@ def test_quantile_spread_positive_when_predictive():
 
 
 def test_turnover_zero_when_ranking_stable():
-    stable = _mi_series([(1, "A", 1), (1, "B", 2), (1, "C", 3), (2, "A", 1), (2, "B", 2), (2, "C", 3)])
+    stable = _mi_series(
+        [(1, "A", 1), (1, "B", 2), (1, "C", 3), (2, "A", 1), (2, "B", 2), (2, "C", 3)]
+    )
     rev = _mi_series([(1, "A", 1), (1, "B", 2), (1, "C", 3), (2, "A", 3), (2, "B", 2), (2, "C", 1)])
     assert diag.turnover(stable)["turnover_mean"] == pytest.approx(0.0, abs=1e-9)
     assert diag.turnover(rev)["turnover_mean"] > diag.turnover(stable)["turnover_mean"]
 
 
 def test_diagnostics_robust_to_empty_and_single_name():
-    empty = pd.Series(dtype="float64", index=pd.MultiIndex.from_tuples([], names=["ts_ms", "symbol"]))
+    empty = pd.Series(
+        dtype="float64", index=pd.MultiIndex.from_tuples([], names=["ts_ms", "symbol"])
+    )
     ic = diag.information_coefficient(empty, empty)
     assert ic["n_periods"] == 0 and np.isnan(ic["ic_mean"])
     # один символ на дату → корреляция не определена, но без падения

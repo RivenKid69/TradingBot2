@@ -53,6 +53,7 @@ from .change_class_enforcer import (
 # Constants (from commands.py, now centralized)
 # ============================================================================
 
+
 class CommandType(str, Enum):
     """
     Allowed command types per Design Doc.
@@ -60,6 +61,7 @@ class CommandType(str, Enum):
     These are the ONLY commands Cloud can send.
     Adding new command types requires security review.
     """
+
     REQUEST_START_RUN = "REQUEST_START_RUN"
     REQUEST_STOP_RUN = "REQUEST_STOP_RUN"
     REQUEST_PAUSE_RUN = "REQUEST_PAUSE_RUN"
@@ -69,16 +71,28 @@ class CommandType(str, Enum):
     REQUEST_EXPORT_LOGS = "REQUEST_EXPORT_LOGS"
 
 
-ALLOWED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset(
-    [ct.value for ct in CommandType]
-)
+ALLOWED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset([ct.value for ct in CommandType])
 
 # Fields prohibited in command payloads
-PROHIBITED_PAYLOAD_FIELDS: Final[FrozenSet[str]] = frozenset([
-    "side", "quantity", "qty", "price", "limit_price", "stop_price",
-    "order_type", "target_position", "execute_order", "place_order",
-    "submit_order", "intent", "signal", "trade", "order",
-])
+PROHIBITED_PAYLOAD_FIELDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "limit_price",
+        "stop_price",
+        "order_type",
+        "target_position",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "intent",
+        "signal",
+        "trade",
+        "order",
+    ]
+)
 
 # Valid state transitions
 COMMAND_STATE_TRANSITIONS: Dict[CommandStatus, List[CommandStatus]] = {
@@ -118,28 +132,34 @@ COMMAND_STATE_TRANSITIONS: Dict[CommandStatus, List[CommandStatus]] = {
 # Exceptions
 # ============================================================================
 
+
 class CommandServiceError(Exception):
     """Base exception for command service errors."""
+
     pass
 
 
 class CommandNotFoundError(CommandServiceError):
     """Command not found."""
+
     pass
 
 
 class CommandStateError(CommandServiceError):
     """Invalid state transition."""
+
     pass
 
 
 class DuplicateCommandError(CommandServiceError):
     """Duplicate idempotency key."""
+
     pass
 
 
 class CommandValidationError(CommandServiceError):
     """Command validation failed."""
+
     pass
 
 
@@ -147,9 +167,11 @@ class CommandValidationError(CommandServiceError):
 # DTOs
 # ============================================================================
 
+
 @dataclass
 class CommandCreateRequest:
     """Request to create a new command."""
+
     workspace_id: UUID
     agent_id: UUID
     command_type: str
@@ -168,6 +190,7 @@ class CommandCreateRequest:
 @dataclass
 class CommandPollResult:
     """Result of polling for pending commands."""
+
     commands: List[Command]
     has_more: bool
     poll_again_after_sec: int
@@ -176,6 +199,7 @@ class CommandPollResult:
 @dataclass
 class CommandAckRequest:
     """Request to acknowledge a command."""
+
     command_id: UUID
     agent_id: UUID
 
@@ -183,6 +207,7 @@ class CommandAckRequest:
 @dataclass
 class CommandResultRequest:
     """Request to submit command execution result."""
+
     command_id: UUID
     agent_id: UUID
     success: bool
@@ -193,6 +218,7 @@ class CommandResultRequest:
 # ============================================================================
 # Command Service
 # ============================================================================
+
 
 class CommandService:
     """
@@ -276,9 +302,7 @@ class CommandService:
         # Verify agent exists and is enrolled
         agent = await self._get_enrolled_agent(request.agent_id, request.workspace_id)
         if not agent:
-            raise CommandValidationError(
-                f"Agent {request.agent_id} not found or not enrolled"
-            )
+            raise CommandValidationError(f"Agent {request.agent_id} not found or not enrolled")
 
         # Design Doc 7/11: Use ChangeClassEnforcer to determine effective change class
         # and approval requirement. Cloud CANNOT bypass TRADING_IMPACTING approval.
@@ -313,6 +337,7 @@ class CommandService:
         if not is_valid:
             # Auto-correct rather than fail - but log the override
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(
                 f"Change class enforcement: {error_msg}. "
@@ -321,7 +346,9 @@ class CommandService:
             requires_approval = True
 
         initial_status = (
-            CommandStatus.PENDING_APPROVAL.value if requires_approval else CommandStatus.PENDING.value
+            CommandStatus.PENDING_APPROVAL.value
+            if requires_approval
+            else CommandStatus.PENDING.value
         )
 
         # Create command with enforced values
@@ -384,13 +411,15 @@ class CommandService:
             .where(
                 Command.agent_id == agent_id,
                 Command.workspace_id == workspace_id,
-                Command.status.in_([
-                    CommandStatus.PENDING.value,
-                    CommandStatus.PENDING_APPROVAL.value,
-                    CommandStatus.APPROVED.value,
-                    # SENT commands can be re-polled if not yet acknowledged
-                    CommandStatus.SENT.value,
-                ]),
+                Command.status.in_(
+                    [
+                        CommandStatus.PENDING.value,
+                        CommandStatus.PENDING_APPROVAL.value,
+                        CommandStatus.APPROVED.value,
+                        # SENT commands can be re-polled if not yet acknowledged
+                        CommandStatus.SENT.value,
+                    ]
+                ),
                 or_(
                     Command.expires_at.is_(None),
                     Command.expires_at > now,
@@ -435,12 +464,14 @@ class CommandService:
         query = select(func.count(Command.id)).where(
             Command.agent_id == agent_id,
             Command.workspace_id == workspace_id,
-            Command.status.in_([
-                CommandStatus.PENDING.value,
-                CommandStatus.PENDING_APPROVAL.value,
-                CommandStatus.APPROVED.value,
-                CommandStatus.SENT.value,
-            ]),
+            Command.status.in_(
+                [
+                    CommandStatus.PENDING.value,
+                    CommandStatus.PENDING_APPROVAL.value,
+                    CommandStatus.APPROVED.value,
+                    CommandStatus.SENT.value,
+                ]
+            ),
             or_(
                 Command.expires_at.is_(None),
                 Command.expires_at > now,
@@ -588,15 +619,12 @@ class CommandService:
         allowed = [CommandStatus.PENDING.value, CommandStatus.APPROVED.value]
         if command.status not in allowed:
             raise CommandStateError(
-                f"Cannot dispatch command in state {command.status}. "
-                f"Expected one of: {allowed}"
+                f"Cannot dispatch command in state {command.status}. " f"Expected one of: {allowed}"
             )
 
         # Check approval requirement
         if command.requires_approval and command.status != CommandStatus.APPROVED.value:
-            raise CommandStateError(
-                "Command requires approval before dispatch"
-            )
+            raise CommandStateError("Command requires approval before dispatch")
 
         command.status = CommandStatus.SENT.value
         command.sent_at = datetime.now(timezone.utc)
@@ -680,8 +708,7 @@ class CommandService:
     ) -> Command:
         """Get command by ID with agent validation."""
         result = await self.session.execute(
-            select(Command)
-            .where(
+            select(Command).where(
                 Command.id == command_id,
                 Command.agent_id == agent_id,
             )
@@ -689,9 +716,7 @@ class CommandService:
         command = result.scalar_one_or_none()
 
         if command is None:
-            raise CommandNotFoundError(
-                f"Command {command_id} not found for agent {agent_id}"
-            )
+            raise CommandNotFoundError(f"Command {command_id} not found for agent {agent_id}")
 
         return command
 

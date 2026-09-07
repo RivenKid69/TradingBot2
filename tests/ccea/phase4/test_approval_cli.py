@@ -120,7 +120,7 @@ class TestColorHelpers:
 
     def test_color_with_tty(self):
         """Test color is applied when terminal supports it."""
-        with patch.object(sys.stdout, 'isatty', return_value=True):
+        with patch.object(sys.stdout, "isatty", return_value=True):
             result = _color("test", Colors.RED)
             assert Colors.RED in result
             assert Colors.RESET in result
@@ -128,7 +128,7 @@ class TestColorHelpers:
 
     def test_color_without_tty(self):
         """Test color is not applied when terminal doesn't support it."""
-        with patch.object(sys.stdout, 'isatty', return_value=False):
+        with patch.object(sys.stdout, "isatty", return_value=False):
             result = _color("test", Colors.RED)
             assert result == "test"
             assert Colors.RED not in result
@@ -165,35 +165,35 @@ class TestColorHelpers:
 
     def test_format_status_pending(self):
         """Test status formatting for pending."""
-        with patch.object(sys.stdout, 'isatty', return_value=True):
+        with patch.object(sys.stdout, "isatty", return_value=True):
             result = _format_status("pending")
             assert "PENDING" in result
             assert Colors.YELLOW in result
 
     def test_format_status_approved(self):
         """Test status formatting for approved."""
-        with patch.object(sys.stdout, 'isatty', return_value=True):
+        with patch.object(sys.stdout, "isatty", return_value=True):
             result = _format_status("approved")
             assert "APPROVED" in result
             assert Colors.GREEN in result
 
     def test_format_status_denied(self):
         """Test status formatting for denied."""
-        with patch.object(sys.stdout, 'isatty', return_value=True):
+        with patch.object(sys.stdout, "isatty", return_value=True):
             result = _format_status("denied")
             assert "DENIED" in result
             assert Colors.RED in result
 
     def test_format_status_expired(self):
         """Test status formatting for expired."""
-        with patch.object(sys.stdout, 'isatty', return_value=True):
+        with patch.object(sys.stdout, "isatty", return_value=True):
             result = _format_status("expired")
             assert "EXPIRED" in result
             assert Colors.DIM in result
 
     def test_format_status_unknown(self):
         """Test status formatting for unknown status."""
-        with patch.object(sys.stdout, 'isatty', return_value=False):
+        with patch.object(sys.stdout, "isatty", return_value=False):
             result = _format_status("unknown_status")
             assert "UNKNOWN_STATUS" in result
 
@@ -530,7 +530,7 @@ class TestApprovalCLIInteractive:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.approve.return_value = True
 
-        with patch('builtins.input', side_effect=['yes', 'Manual approval']):
+        with patch("builtins.input", side_effect=["yes", "Manual approval"]):
             result = cli.interactive_approve(str(pending_request.request_id))
 
         assert result is True
@@ -541,7 +541,7 @@ class TestApprovalCLIInteractive:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.deny.return_value = True
 
-        with patch('builtins.input', side_effect=['no', 'Risk too high']):
+        with patch("builtins.input", side_effect=["no", "Risk too high"]):
             result = cli.interactive_approve(str(pending_request.request_id))
 
         assert result is True  # deny was successful
@@ -551,7 +551,7 @@ class TestApprovalCLIInteractive:
         mock_manager.get_request.return_value = pending_request
         mock_manager.get_pending_requests.return_value = [pending_request]
 
-        with patch('builtins.input', return_value='maybe'):
+        with patch("builtins.input", return_value="maybe"):
             result = cli.interactive_approve(str(pending_request.request_id))
 
         assert result is False
@@ -573,7 +573,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_quit(self, cli, capsys):
         """Test interactive mode quit command."""
-        with patch('builtins.input', side_effect=['quit']):
+        with patch("builtins.input", side_effect=["quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -581,7 +581,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_exit(self, cli, capsys):
         """Test interactive mode exit command."""
-        with patch('builtins.input', side_effect=['exit']):
+        with patch("builtins.input", side_effect=["exit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -589,7 +589,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_help(self, cli, capsys):
         """Test interactive mode help command."""
-        with patch('builtins.input', side_effect=['help', 'quit']):
+        with patch("builtins.input", side_effect=["help", "quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -601,7 +601,7 @@ class TestApprovalCLIRunInteractive:
         """Test interactive mode list command."""
         mock_manager.get_pending_requests.return_value = []
 
-        with patch('builtins.input', side_effect=['list', 'quit']):
+        with patch("builtins.input", side_effect=["list", "quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -612,7 +612,7 @@ class TestApprovalCLIRunInteractive:
         mock_manager.get_request.return_value = pending_request
         mock_manager.get_pending_requests.return_value = [pending_request]
 
-        with patch('builtins.input', side_effect=[f'show {pending_request.request_id}', 'quit']):
+        with patch("builtins.input", side_effect=[f"show {pending_request.request_id}", "quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -624,7 +624,10 @@ class TestApprovalCLIRunInteractive:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.approve.return_value = True
 
-        with patch('builtins.input', side_effect=[f'approve {pending_request.request_id} test reason', 'quit']):
+        with patch(
+            "builtins.input",
+            side_effect=[f"approve {pending_request.request_id} test reason", "quit"],
+        ):
             cli.run_interactive()
 
         mock_manager.approve.assert_called_once()
@@ -635,7 +638,7 @@ class TestApprovalCLIRunInteractive:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.deny.return_value = True
 
-        with patch('builtins.input', side_effect=[f'deny {pending_request.request_id}', 'quit']):
+        with patch("builtins.input", side_effect=[f"deny {pending_request.request_id}", "quit"]):
             cli.run_interactive()
 
         mock_manager.deny.assert_called_once()
@@ -644,7 +647,7 @@ class TestApprovalCLIRunInteractive:
         """Test interactive mode history command."""
         mock_manager.get_history.return_value = []
 
-        with patch('builtins.input', side_effect=['history', 'quit']):
+        with patch("builtins.input", side_effect=["history", "quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -654,7 +657,7 @@ class TestApprovalCLIRunInteractive:
         """Test interactive mode history command with limit."""
         mock_manager.get_history.return_value = []
 
-        with patch('builtins.input', side_effect=['history 5', 'quit']):
+        with patch("builtins.input", side_effect=["history 5", "quit"]):
             cli.run_interactive()
 
         mock_manager.get_history.assert_called_with(limit=5)
@@ -665,14 +668,17 @@ class TestApprovalCLIRunInteractive:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.approve.return_value = True
 
-        with patch('builtins.input', side_effect=[f'decide {pending_request.request_id}', 'yes', 'test', 'quit']):
+        with patch(
+            "builtins.input",
+            side_effect=[f"decide {pending_request.request_id}", "yes", "test", "quit"],
+        ):
             cli.run_interactive()
 
         mock_manager.approve.assert_called_once()
 
     def test_run_interactive_unknown_command(self, cli, capsys):
         """Test interactive mode unknown command."""
-        with patch('builtins.input', side_effect=['unknown_cmd', 'quit']):
+        with patch("builtins.input", side_effect=["unknown_cmd", "quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -680,7 +686,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_empty_input(self, cli, capsys):
         """Test interactive mode with empty input."""
-        with patch('builtins.input', side_effect=['', 'quit']):
+        with patch("builtins.input", side_effect=["", "quit"]):
             cli.run_interactive()
 
         # Should not crash, just continue
@@ -689,7 +695,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_keyboard_interrupt(self, cli, capsys):
         """Test interactive mode with keyboard interrupt."""
-        with patch('builtins.input', side_effect=KeyboardInterrupt()):
+        with patch("builtins.input", side_effect=KeyboardInterrupt()):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -697,7 +703,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_eof(self, cli, capsys):
         """Test interactive mode with EOF."""
-        with patch('builtins.input', side_effect=EOFError()):
+        with patch("builtins.input", side_effect=EOFError()):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -707,7 +713,7 @@ class TestApprovalCLIRunInteractive:
         """Test interactive mode 'ls' alias for list."""
         mock_manager.get_pending_requests.return_value = []
 
-        with patch('builtins.input', side_effect=['ls', 'quit']):
+        with patch("builtins.input", side_effect=["ls", "quit"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -715,7 +721,7 @@ class TestApprovalCLIRunInteractive:
 
     def test_run_interactive_q_alias(self, cli, capsys):
         """Test interactive mode 'q' alias for quit."""
-        with patch('builtins.input', side_effect=['q']):
+        with patch("builtins.input", side_effect=["q"]):
             cli.run_interactive()
 
         captured = capsys.readouterr()
@@ -758,63 +764,63 @@ class TestCreateCLIParser:
     def test_parser_list_command(self):
         """Test parser handles list command."""
         parser = create_cli_parser()
-        args = parser.parse_args(['list'])
-        assert args.command == 'list'
+        args = parser.parse_args(["list"])
+        assert args.command == "list"
 
     def test_parser_list_verbose(self):
         """Test parser handles list with verbose flag."""
         parser = create_cli_parser()
-        args = parser.parse_args(['list', '-v'])
-        assert args.command == 'list'
+        args = parser.parse_args(["list", "-v"])
+        assert args.command == "list"
         assert args.verbose is True
 
     def test_parser_show_command(self):
         """Test parser handles show command."""
         parser = create_cli_parser()
-        args = parser.parse_args(['show', 'abc123'])
-        assert args.command == 'show'
-        assert args.request_id == 'abc123'
+        args = parser.parse_args(["show", "abc123"])
+        assert args.command == "show"
+        assert args.request_id == "abc123"
 
     def test_parser_approve_command(self):
         """Test parser handles approve command."""
         parser = create_cli_parser()
-        args = parser.parse_args(['approve', 'abc123', '-r', 'approved'])
-        assert args.command == 'approve'
-        assert args.request_id == 'abc123'
-        assert args.reason == 'approved'
+        args = parser.parse_args(["approve", "abc123", "-r", "approved"])
+        assert args.command == "approve"
+        assert args.request_id == "abc123"
+        assert args.reason == "approved"
 
     def test_parser_approve_with_user(self):
         """Test parser handles approve with user."""
         parser = create_cli_parser()
-        args = parser.parse_args(['approve', 'abc123', '-u', 'admin'])
-        assert args.user == 'admin'
+        args = parser.parse_args(["approve", "abc123", "-u", "admin"])
+        assert args.user == "admin"
 
     def test_parser_deny_command(self):
         """Test parser handles deny command."""
         parser = create_cli_parser()
-        args = parser.parse_args(['deny', 'abc123', '-r', 'rejected'])
-        assert args.command == 'deny'
-        assert args.request_id == 'abc123'
-        assert args.reason == 'rejected'
+        args = parser.parse_args(["deny", "abc123", "-r", "rejected"])
+        assert args.command == "deny"
+        assert args.request_id == "abc123"
+        assert args.reason == "rejected"
 
     def test_parser_history_command(self):
         """Test parser handles history command."""
         parser = create_cli_parser()
-        args = parser.parse_args(['history', '-n', '10'])
-        assert args.command == 'history'
+        args = parser.parse_args(["history", "-n", "10"])
+        assert args.command == "history"
         assert args.limit == 10
 
     def test_parser_history_default_limit(self):
         """Test parser uses default history limit."""
         parser = create_cli_parser()
-        args = parser.parse_args(['history'])
+        args = parser.parse_args(["history"])
         assert args.limit == 20
 
     def test_parser_interactive_command(self):
         """Test parser handles interactive command."""
         parser = create_cli_parser()
-        args = parser.parse_args(['interactive'])
-        assert args.command == 'interactive'
+        args = parser.parse_args(["interactive"])
+        assert args.command == "interactive"
 
     def test_parser_no_command(self):
         """Test parser with no command."""
@@ -835,7 +841,7 @@ class TestMainFunction:
         """Test main with list command."""
         mock_manager.get_pending_requests.return_value = []
 
-        exit_code = main(mock_manager, ['list'])
+        exit_code = main(mock_manager, ["list"])
 
         assert exit_code == 0
 
@@ -844,7 +850,7 @@ class TestMainFunction:
         mock_manager.get_request.return_value = pending_request
         mock_manager.get_pending_requests.return_value = [pending_request]
 
-        exit_code = main(mock_manager, ['show', str(pending_request.request_id)])
+        exit_code = main(mock_manager, ["show", str(pending_request.request_id)])
 
         assert exit_code == 0
 
@@ -853,7 +859,7 @@ class TestMainFunction:
         mock_manager.get_request.return_value = None
         mock_manager.get_pending_requests.return_value = []
 
-        exit_code = main(mock_manager, ['show', 'nonexistent'])
+        exit_code = main(mock_manager, ["show", "nonexistent"])
 
         assert exit_code == 1
 
@@ -863,7 +869,7 @@ class TestMainFunction:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.approve.return_value = True
 
-        exit_code = main(mock_manager, ['approve', str(pending_request.request_id)])
+        exit_code = main(mock_manager, ["approve", str(pending_request.request_id)])
 
         assert exit_code == 0
 
@@ -873,7 +879,7 @@ class TestMainFunction:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.approve.return_value = False
 
-        exit_code = main(mock_manager, ['approve', str(pending_request.request_id)])
+        exit_code = main(mock_manager, ["approve", str(pending_request.request_id)])
 
         assert exit_code == 1
 
@@ -883,7 +889,7 @@ class TestMainFunction:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.deny.return_value = True
 
-        exit_code = main(mock_manager, ['deny', str(pending_request.request_id)])
+        exit_code = main(mock_manager, ["deny", str(pending_request.request_id)])
 
         assert exit_code == 0
 
@@ -893,7 +899,7 @@ class TestMainFunction:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.deny.return_value = False
 
-        exit_code = main(mock_manager, ['deny', str(pending_request.request_id)])
+        exit_code = main(mock_manager, ["deny", str(pending_request.request_id)])
 
         assert exit_code == 1
 
@@ -901,20 +907,20 @@ class TestMainFunction:
         """Test main with history command."""
         mock_manager.get_history.return_value = []
 
-        exit_code = main(mock_manager, ['history'])
+        exit_code = main(mock_manager, ["history"])
 
         assert exit_code == 0
 
     def test_main_interactive(self, mock_manager, capsys):
         """Test main with interactive command."""
-        with patch('builtins.input', side_effect=['quit']):
-            exit_code = main(mock_manager, ['interactive'])
+        with patch("builtins.input", side_effect=["quit"]):
+            exit_code = main(mock_manager, ["interactive"])
 
         assert exit_code == 0
 
     def test_main_no_command_starts_interactive(self, mock_manager, capsys):
         """Test main with no command starts interactive."""
-        with patch('builtins.input', side_effect=['quit']):
+        with patch("builtins.input", side_effect=["quit"]):
             exit_code = main(mock_manager, [])
 
         assert exit_code == 0
@@ -925,17 +931,23 @@ class TestMainFunction:
         mock_manager.get_pending_requests.return_value = [pending_request]
         mock_manager.approve.return_value = True
 
-        exit_code = main(mock_manager, [
-            'approve', str(pending_request.request_id),
-            '-r', 'ready for production review',
-            '-u', 'admin_user'
-        ])
+        exit_code = main(
+            mock_manager,
+            [
+                "approve",
+                str(pending_request.request_id),
+                "-r",
+                "ready for production review",
+                "-u",
+                "admin_user",
+            ],
+        )
 
         assert exit_code == 0
         mock_manager.approve.assert_called_once()
         call_kwargs = mock_manager.approve.call_args
-        assert call_kwargs[1]['reason'] == 'ready for production review'
-        assert call_kwargs[1]['decided_by'] == 'admin_user'
+        assert call_kwargs[1]["reason"] == "ready for production review"
+        assert call_kwargs[1]["decided_by"] == "admin_user"
 
 
 # ============================================================================
@@ -986,7 +998,9 @@ class TestCLIIntegration:
         assert details is not None
 
         # Approve
-        success = cli.approve(str(request.request_id), reason="Ready for production review", user="admin")
+        success = cli.approve(
+            str(request.request_id), reason="Ready for production review", user="admin"
+        )
         assert success is True
 
         # Verify in history
@@ -1102,8 +1116,7 @@ class TestEdgeCases:
         mock_manager.approve.return_value = True
 
         result = cli.approve(
-            str(pending_request.request_id),
-            reason="Approved: <script>alert('xss')</script>"
+            str(pending_request.request_id), reason="Approved: <script>alert('xss')</script>"
         )
 
         assert result is True

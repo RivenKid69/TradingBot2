@@ -54,22 +54,22 @@ def test_no_log_ratio_clamp() -> None:
     ratio = torch.exp(log_ratios)
 
     # All ratios should be finite (exp(20) is still within float32 range)
-    assert torch.all(torch.isfinite(ratio)), \
-        f"exp(log_ratio) should be finite for reasonable values: {ratio.tolist()}"
+    assert torch.all(
+        torch.isfinite(ratio)
+    ), f"exp(log_ratio) should be finite for reasonable values: {ratio.tolist()}"
 
     # Verify actual values
     expected = [
-        2.06e-9,     # exp(-20)
-        4.54e-5,     # exp(-10)
-        1.0,         # exp(0)
-        22026.5,     # exp(10)
-        4.85e8,      # exp(20)
+        2.06e-9,  # exp(-20)
+        4.54e-5,  # exp(-10)
+        1.0,  # exp(0)
+        22026.5,  # exp(10)
+        4.85e8,  # exp(20)
     ]
 
     for i, (actual, exp_val) in enumerate(zip(ratio.tolist(), expected)):
         rel_error = abs(actual - exp_val) / exp_val if exp_val != 0 else abs(actual - exp_val)
-        assert rel_error < 0.01, \
-            f"ratio[{i}] = {actual:.2e}, expected ≈{exp_val:.2e}"
+        assert rel_error < 0.01, f"ratio[{i}] = {actual:.2e}, expected ≈{exp_val:.2e}"
 
 
 def test_ppo_clipping_in_loss() -> None:
@@ -80,8 +80,7 @@ def test_ppo_clipping_in_loss() -> None:
 
     # Various log_ratio values, including extreme ones
     log_ratios = torch.tensor(
-        [-20.0, -10.0, -1.0, -0.1, 0.0, 0.1, 1.0, 10.0, 20.0],
-        dtype=torch.float32
+        [-20.0, -10.0, -1.0, -0.1, 0.0, 0.1, 1.0, 10.0, 20.0], dtype=torch.float32
     )
 
     # Compute ratio WITHOUT clamping log_ratio (correct approach)
@@ -91,16 +90,20 @@ def test_ppo_clipping_in_loss() -> None:
     ratio_clipped = torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
 
     # Verify all clipped values are in correct range
-    assert torch.all(ratio_clipped >= 1 - clip_range - 1e-6), \
-        f"ratio_clipped should be >= {1-clip_range}, got min={ratio_clipped.min().item()}"
-    assert torch.all(ratio_clipped <= 1 + clip_range + 1e-6), \
-        f"ratio_clipped should be <= {1+clip_range}, got max={ratio_clipped.max().item()}"
+    assert torch.all(
+        ratio_clipped >= 1 - clip_range - 1e-6
+    ), f"ratio_clipped should be >= {1-clip_range}, got min={ratio_clipped.min().item()}"
+    assert torch.all(
+        ratio_clipped <= 1 + clip_range + 1e-6
+    ), f"ratio_clipped should be <= {1+clip_range}, got max={ratio_clipped.max().item()}"
 
     # For extreme log_ratio values, ratio_clipped should saturate at bounds
-    assert abs(ratio_clipped[0].item() - 0.9) < 1e-6, \
-        f"ratio for log_ratio=-20 should clip to 0.9, got {ratio_clipped[0].item()}"
-    assert abs(ratio_clipped[-1].item() - 1.1) < 1e-6, \
-        f"ratio for log_ratio=+20 should clip to 1.1, got {ratio_clipped[-1].item()}"
+    assert (
+        abs(ratio_clipped[0].item() - 0.9) < 1e-6
+    ), f"ratio for log_ratio=-20 should clip to 0.9, got {ratio_clipped[0].item()}"
+    assert (
+        abs(ratio_clipped[-1].item() - 1.1) < 1e-6
+    ), f"ratio for log_ratio=+20 should clip to 1.1, got {ratio_clipped[-1].item()}"
 
 
 def test_gradient_flow_no_log_ratio_clamp() -> None:
@@ -109,9 +112,7 @@ def test_gradient_flow_no_log_ratio_clamp() -> None:
 
     # Create log_ratio tensor with gradient tracking
     log_ratio = torch.tensor(
-        [-20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0],
-        dtype=torch.float32,
-        requires_grad=True
+        [-20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0], dtype=torch.float32, requires_grad=True
     )
 
     # Compute ratio WITHOUT clamping (correct approach)
@@ -131,8 +132,9 @@ def test_gradient_flow_no_log_ratio_clamp() -> None:
 
     # Check gradients are finite
     assert log_ratio.grad is not None, "Gradients should be computed"
-    assert torch.all(torch.isfinite(log_ratio.grad)), \
-        f"Gradients should be finite: {log_ratio.grad.tolist()}"
+    assert torch.all(
+        torch.isfinite(log_ratio.grad)
+    ), f"Gradients should be finite: {log_ratio.grad.tolist()}"
 
     # CRITICAL: Gradients should be NON-ZERO even for extreme values
     # This is the key difference from the old (buggy) clamped version
@@ -148,8 +150,7 @@ def test_gradient_flow_no_log_ratio_clamp() -> None:
 
     # What's important is that gradients exist and are computed correctly
     for i, g in enumerate(grad):
-        assert math.isfinite(g), \
-            f"Gradient {i} should be finite, got {g}"
+        assert math.isfinite(g), f"Gradient {i} should be finite, got {g}"
 
 
 def test_gradient_flow_comparison_with_vs_without_clamp() -> None:
@@ -173,13 +174,13 @@ def test_gradient_flow_comparison_with_vs_without_clamp() -> None:
 
     # WITHOUT clamping: gradient flows correctly
     assert log_ratio_unclamped.grad is not None
-    assert log_ratio_unclamped.grad[0].item() != 0.0, \
-        "Gradient should be non-zero without clamping"
+    assert log_ratio_unclamped.grad[0].item() != 0.0, "Gradient should be non-zero without clamping"
 
     # WITH clamping: gradient is ZERO (broken gradient flow!)
     assert log_ratio_clamped.grad is not None
-    assert abs(log_ratio_clamped.grad[0].item()) < 1e-6, \
-        "Gradient should be ~0 with clamping (this is the bug!)"
+    assert (
+        abs(log_ratio_clamped.grad[0].item()) < 1e-6
+    ), "Gradient should be ~0 with clamping (this is the bug!)"
 
     # This demonstrates why log_ratio clamping is wrong
 
@@ -200,17 +201,14 @@ def test_ratio_realistic_values() -> None:
     ratio = torch.exp(log_ratio)
 
     # Verify all finite
-    assert torch.all(torch.isfinite(ratio)), \
-        "ratio should be finite for realistic log_ratio values"
+    assert torch.all(torch.isfinite(ratio)), "ratio should be finite for realistic log_ratio values"
 
     # Verify ratio statistics match logs
     ratio_mean = ratio.mean().item()
     ratio_std = ratio.std().item()
 
-    assert 0.98 < ratio_mean < 1.02, \
-        f"ratio_mean should be ≈1.0, got {ratio_mean}"
-    assert 0.01 < ratio_std < 0.05, \
-        f"ratio_std should be ≈0.03, got {ratio_std}"
+    assert 0.98 < ratio_mean < 1.02, f"ratio_mean should be ≈1.0, got {ratio_mean}"
+    assert 0.01 < ratio_std < 0.05, f"ratio_std should be ≈0.03, got {ratio_std}"
 
 
 def test_ppo_loss_with_extreme_ratios() -> None:
@@ -241,13 +239,15 @@ def test_ppo_loss_with_extreme_ratios() -> None:
     policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
 
     # Verify loss is finite and reasonable
-    assert torch.isfinite(policy_loss), \
-        f"PPO policy loss should be finite, got {policy_loss.item()}"
+    assert torch.isfinite(
+        policy_loss
+    ), f"PPO policy loss should be finite, got {policy_loss.item()}"
 
     # The loss should be reasonable even with extreme ratios
     # because the min() operation will select the clipped term for extreme values
-    assert abs(policy_loss.item()) < 1000.0, \
-        f"PPO policy loss should be reasonable, got {policy_loss.item()}"
+    assert (
+        abs(policy_loss.item()) < 1000.0
+    ), f"PPO policy loss should be reasonable, got {policy_loss.item()}"
 
 
 def test_ppo_theory_alignment() -> None:
@@ -263,10 +263,14 @@ def test_ppo_theory_alignment() -> None:
     # PPO takes min(r*A, clip(r)*A), so when A>0 and r<1, unclipped r*A is smaller
     test_cases = [
         # (log_ratio, advantage, expected_loss_contribution)
-        (0.0, 1.0, -1.0),           # ratio=1.0, A=1.0 → -min(1.0, 1.0) = -1.0
-        (0.1, 1.0, -1.105),         # ratio=1.105, A=1.0 → -min(1.105, 1.105) = -1.105 (not clipped)
-        (0.5, 1.0, -1.2),           # ratio=1.649, A=1.0 → -min(1.649, 1.2) = -1.2 (clipped)
-        (-0.5, 1.0, -0.6065),       # ratio=0.606, A=1.0 → -min(0.606, 0.8) = -0.606 (unclipped is smaller)
+        (0.0, 1.0, -1.0),  # ratio=1.0, A=1.0 → -min(1.0, 1.0) = -1.0
+        (0.1, 1.0, -1.105),  # ratio=1.105, A=1.0 → -min(1.105, 1.105) = -1.105 (not clipped)
+        (0.5, 1.0, -1.2),  # ratio=1.649, A=1.0 → -min(1.649, 1.2) = -1.2 (clipped)
+        (
+            -0.5,
+            1.0,
+            -0.6065,
+        ),  # ratio=0.606, A=1.0 → -min(0.606, 0.8) = -0.606 (unclipped is smaller)
     ]
 
     for log_ratio_val, advantage_val, expected_loss in test_cases:
@@ -282,8 +286,9 @@ def test_ppo_theory_alignment() -> None:
         loss = -torch.min(loss_1, loss_2).item()
 
         # Check alignment
-        assert abs(loss - expected_loss) < 0.01, \
-            f"For log_ratio={log_ratio_val}, expected loss≈{expected_loss}, got {loss}"
+        assert (
+            abs(loss - expected_loss) < 0.01
+        ), f"For log_ratio={log_ratio_val}, expected loss≈{expected_loss}, got {loss}"
 
 
 def test_numerical_stability_float32() -> None:
@@ -294,19 +299,20 @@ def test_numerical_stability_float32() -> None:
     # Test that we're well within safe range for typical values
 
     safe_log_ratios = torch.tensor(
-        [-30.0, -20.0, -10.0, 0.0, 10.0, 20.0, 30.0],
-        dtype=torch.float32
+        [-30.0, -20.0, -10.0, 0.0, 10.0, 20.0, 30.0], dtype=torch.float32
     )
 
     ratio = torch.exp(safe_log_ratios)
 
     # All should be finite
-    assert torch.all(torch.isfinite(ratio)), \
-        f"ratio should be finite for log_ratio up to ±30: {ratio.tolist()}"
+    assert torch.all(
+        torch.isfinite(ratio)
+    ), f"ratio should be finite for log_ratio up to ±30: {ratio.tolist()}"
 
     # exp(88) would overflow, but we test that exp(30) is fine
-    assert ratio[6].item() > 0 and ratio[6].item() < 1e20, \
-        f"exp(30) should be large but finite: {ratio[6].item():.2e}"
+    assert (
+        ratio[6].item() > 0 and ratio[6].item() < 1e20
+    ), f"exp(30) should be large but finite: {ratio[6].item():.2e}"
 
 
 def test_extreme_value_detection() -> None:
@@ -316,10 +322,7 @@ def test_extreme_value_detection() -> None:
     # If log_ratio > 20 in practice, this indicates serious training issues
     # The implementation should not clamp, but monitoring should detect this
 
-    log_ratios = torch.tensor(
-        [-25.0, -5.0, 0.0, 5.0, 25.0],
-        dtype=torch.float32
-    )
+    log_ratios = torch.tensor([-25.0, -5.0, 0.0, 5.0, 25.0], dtype=torch.float32)
 
     # Compute ratio without clamping
     ratio = torch.exp(log_ratios)
@@ -373,18 +376,16 @@ def test_edge_cases_inf_nan() -> None:
     ratio_overflow = torch.exp(log_ratio_overflow)
 
     # This will be inf, which is expected behavior (not clamped to finite)
-    assert torch.isinf(ratio_overflow), \
-        "exp(100) should be inf in float32"
+    assert torch.isinf(ratio_overflow), "exp(100) should be inf in float32"
 
     # The PPO loss computation should handle this gracefully
     # (in practice, the code should check for finite values before computing loss)
 
     # Edge case: NaN
-    log_ratio_nan = torch.tensor([float('nan')], dtype=torch.float32)
+    log_ratio_nan = torch.tensor([float("nan")], dtype=torch.float32)
     ratio_nan = torch.exp(log_ratio_nan)
 
-    assert torch.isnan(ratio_nan), \
-        "exp(nan) should be nan"
+    assert torch.isnan(ratio_nan), "exp(nan) should be nan"
 
 
 if __name__ == "__main__":

@@ -242,7 +242,5 @@ def _format_utc(ts_ms: int | None) -> str | None:
     if ts_ms is None:
         return None
     return (
-        datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z")
+        datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
     )

@@ -32,20 +32,38 @@ import numpy as np
 import pandas as pd
 
 CANON_PREFIX = [
-    "timestamp","symbol","open","high","low","close","volume","quote_asset_volume",
-    "number_of_trades","taker_buy_base_asset_volume","taker_buy_quote_asset_volume"
+    "timestamp",
+    "symbol",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "quote_asset_volume",
+    "number_of_trades",
+    "taker_buy_base_asset_volume",
+    "taker_buy_quote_asset_volume",
 ]
 
 # Metadata columns that should NOT be shifted (not features)
 METADATA_COLUMNS = {
-    "timestamp", "symbol", "wf_role", "close_orig", "_close_shifted",
+    "timestamp",
+    "symbol",
+    "wf_role",
+    "close_orig",
+    "_close_shifted",
     # Add other metadata columns here if needed
 }
 
 # Target columns that should NOT be shifted (labels for prediction)
 TARGET_COLUMNS = {
-    "target", "target_return", "target_log_return", "target_volatility",
-    "target_sharpe", "target_sortino", "target_max_drawdown",
+    "target",
+    "target_return",
+    "target_log_return",
+    "target_volatility",
+    "target_sharpe",
+    "target_sortino",
+    "target_max_drawdown",
     # Add other target columns here if needed
 }
 
@@ -53,6 +71,7 @@ TARGET_COLUMNS = {
 # ==============================================================================
 # Data Leakage Prevention - Feature Column Identification
 # ==============================================================================
+
 
 def _columns_to_shift(df: pd.DataFrame) -> List[str]:
     """
@@ -110,7 +129,10 @@ def _columns_to_shift(df: pd.DataFrame) -> List[str]:
 # Outlier Detection Utilities
 # ==============================================================================
 
-def winsorize_array(data: np.ndarray, lower_percentile: float = 1.0, upper_percentile: float = 99.0) -> np.ndarray:
+
+def winsorize_array(
+    data: np.ndarray, lower_percentile: float = 1.0, upper_percentile: float = 99.0
+) -> np.ndarray:
     """
     Winsorize array: cap extreme values at specified percentiles.
 
@@ -147,14 +169,20 @@ def winsorize_array(data: np.ndarray, lower_percentile: float = 1.0, upper_perce
 
     return np.clip(data, lower_bound, upper_bound)
 
+
 # Additional optional features we may standardize if present
 OPTIONAL_NUMERIC = [
-    "fear_greed_value","fear_greed_value_norm",
-    "recent_event_high_96h","recent_event_medium_96h","time_since_last_event_hours",
+    "fear_greed_value",
+    "fear_greed_value_norm",
+    "recent_event_high_96h",
+    "recent_event_medium_96h",
+    "time_since_last_event_hours",
 ]
+
 
 def _is_numeric(s: pd.Series) -> bool:
     return pd.api.types.is_float_dtype(s) or pd.api.types.is_integer_dtype(s)
+
 
 def _columns_to_scale(df: pd.DataFrame) -> List[str]:
     # Key columns which are numeric but shouldn't be z-scored directly:
@@ -171,6 +199,7 @@ def _columns_to_scale(df: pd.DataFrame) -> List[str]:
         if _is_numeric(df[c]):
             cols.append(c)
     return cols
+
 
 class FeaturePipeline:
     """
@@ -327,6 +356,7 @@ class FeaturePipeline:
         except Exception as e:
             # Log warning but don't fail - return original DataFrame
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(
                 f"Failed to add stock features to {symbol}: {e}. "
@@ -388,14 +418,14 @@ class FeaturePipeline:
         except ImportError:
             # forex_features module not available - return as-is
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.debug(
-                "forex_features module not available, skipping forex feature addition"
-            )
+            logger.debug("forex_features module not available, skipping forex feature addition")
             return df
         except Exception as e:
             # Log warning but don't fail - return original DataFrame
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(
                 f"Failed to add forex features to {symbol}: {e}. "
@@ -471,7 +501,9 @@ class FeaturePipeline:
                 frames.append(cur)
 
         if not frames:
-            raise ValueError("No rows available to fit FeaturePipeline after applying training filters.")
+            raise ValueError(
+                "No rows available to fit FeaturePipeline after applying training filters."
+            )
 
         # Shift ALL feature columns to prevent data leakage (look-ahead bias)
         # Per-symbol shift to prevent cross-symbol contamination
@@ -596,6 +628,7 @@ class FeaturePipeline:
         # and should be investigated for data quality issues
         if all_nan_columns:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(
                 f"Found {len(all_nan_columns)} column(s) with ALL NaN values: {all_nan_columns}. "
@@ -661,7 +694,7 @@ class FeaturePipeline:
         # Detect repeated transform_df() application
         # Check for marker in DataFrame attrs (metadata introduced in pandas 1.0)
         # This prevents silent data corruption from double-shifting
-        if hasattr(df, 'attrs') and df.attrs.get('_feature_pipeline_transformed', False):
+        if hasattr(df, "attrs") and df.attrs.get("_feature_pipeline_transformed", False):
             if self.strict_idempotency:
                 # STRICT MODE (default): Fail immediately to prevent data corruption
                 raise ValueError(
@@ -679,12 +712,13 @@ class FeaturePipeline:
             else:
                 # IDEMPOTENT MODE: Return already-transformed DataFrame unchanged
                 import warnings
+
                 warnings.warn(
                     "transform_df() called on already-transformed DataFrame. "
                     "Returning without changes (idempotent mode). "
                     "Set strict_idempotency=True to fail immediately and catch errors.",
                     RuntimeWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
                 return df  # Return original (already transformed) without changes
 
@@ -811,12 +845,14 @@ class FeaturePipeline:
         # Mark DataFrame as transformed to detect repeated applications
         # Use DataFrame.attrs (metadata dict introduced in pandas 1.0)
         # This marker survives copy() operations and helps prevent silent data corruption
-        if hasattr(out, 'attrs'):
-            out.attrs['_feature_pipeline_transformed'] = True
+        if hasattr(out, "attrs"):
+            out.attrs["_feature_pipeline_transformed"] = True
 
         return out
 
-    def transform_dict(self, dfs: Dict[str, pd.DataFrame], add_suffix: str = "_z") -> Dict[str, pd.DataFrame]:
+    def transform_dict(
+        self, dfs: Dict[str, pd.DataFrame], add_suffix: str = "_z"
+    ) -> Dict[str, pd.DataFrame]:
         return {k: self.transform_df(v, add_suffix=add_suffix) for k, v in dfs.items()}
 
     def get_metadata(self) -> Dict[str, object]:
@@ -839,7 +875,7 @@ class FeaturePipeline:
                 "asset_class": self.asset_class,
                 "auto_stock_features": self.auto_stock_features,
                 "auto_forex_features": self.auto_forex_features,
-            }
+            },
         }
         with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -882,6 +918,7 @@ class FeaturePipeline:
 # Gap Analysis Features (Phase 7 - Stock Support)
 # ==============================================================================
 
+
 def compute_gap_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute pre-market gap analysis features.
@@ -920,11 +957,7 @@ def compute_gap_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Gap percentage: (open - prev_close) / prev_close * 100
     # Handle division by zero gracefully
-    gap_pct = np.where(
-        prev_close > 0,
-        (df["open"] - prev_close) / prev_close * 100,
-        0.0
-    )
+    gap_pct = np.where(prev_close > 0, (df["open"] - prev_close) / prev_close * 100, 0.0)
     df["gap_pct"] = gap_pct
 
     # Absolute gap (log-scaled with sign preserved)
@@ -941,9 +974,7 @@ def compute_gap_features(df: pd.DataFrame) -> pd.DataFrame:
     # 3 = Large (> 5%)
     abs_gap = np.abs(gap_pct)
     df["gap_magnitude"] = np.select(
-        [abs_gap < 0.5, abs_gap < 2.0, abs_gap < 5.0],
-        [0, 1, 2],
-        default=3
+        [abs_gap < 0.5, abs_gap < 2.0, abs_gap < 5.0], [0, 1, 2], default=3
     )
 
     # Gap filled detection:
@@ -970,21 +1001,13 @@ def compute_gap_features(df: pd.DataFrame) -> pd.DataFrame:
         up_gap_size = df["open"] - prev_close
         up_gap_fill = df["open"] - df["low"]
         valid_up = up_gap_mask & (up_gap_size > 0)
-        gap_fill_ratio = np.where(
-            valid_up,
-            up_gap_fill / up_gap_size,
-            gap_fill_ratio
-        )
+        gap_fill_ratio = np.where(valid_up, up_gap_fill / up_gap_size, gap_fill_ratio)
 
         # Down gap fill ratio
         down_gap_size = prev_close - df["open"]
         down_gap_fill = df["high"] - df["open"]
         valid_down = down_gap_mask & (down_gap_size > 0)
-        gap_fill_ratio = np.where(
-            valid_down,
-            down_gap_fill / down_gap_size,
-            gap_fill_ratio
-        )
+        gap_fill_ratio = np.where(valid_down, down_gap_fill / down_gap_size, gap_fill_ratio)
 
         df["gap_fill_ratio"] = np.clip(gap_fill_ratio, 0, 2)  # Cap at 200%
 
@@ -1196,6 +1219,7 @@ def add_stock_features(
             # Try to fetch from service
             try:
                 from services.corporate_actions import get_service
+
                 service = get_service()
                 earnings = service.get_earnings(symbol)
                 earnings_dates = [e["report_date"] for e in earnings if e.get("report_date")]
@@ -1209,6 +1233,7 @@ def add_stock_features(
             # Try to fetch from service
             try:
                 from services.corporate_actions import get_service
+
                 service = get_service()
                 divs = service.get_dividends(symbol)
                 dividend_dates = [d["ex_date"] for d in divs if d.get("ex_date")]

@@ -205,4 +205,3 @@ def test_sync_symbol_rewrites_truncated_history(monkeypatch, tmp_path: Path):
     # ensure we performed the truncated rebuild path (earliest lookup + full sync)
     assert call_order[0] == (0, 1)
     assert call_order[1] == (0, 12)
-

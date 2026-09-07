@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 import numpy as np
 import pytest
@@ -11,12 +10,14 @@ try:
         run_full_step_logic_cython,
         SimulationWorkspace,
         CythonLOB,
-        CyMicrostructureGenerator
+        CyMicrostructureGenerator,
     )
+
     HAVE_LOB_STATE_CYTHON = True
 except ImportError:
     HAVE_LOB_STATE_CYTHON = False
     pytest.skip("lob_state_cython (Cython module) not available", allow_module_level=True)
+
 
 def test_risk_penalty_stable_with_negative_net_worth():
     """
@@ -59,15 +60,15 @@ def test_risk_penalty_stable_with_negative_net_worth():
         lob,
         generator,
         bar_price,
-        bar_price, # open
-        100000.0, # volume_usd
-        50000.0, # taker_buy_volume
+        bar_price,  # open
+        100000.0,  # volume_usd
+        50000.0,  # taker_buy_volume
         bar_atr,
-        bar_atr, # long_term_atr
-        100, # bar_trade_count
-        50.0, # fear_greed
+        bar_atr,  # long_term_atr
+        100,  # bar_trade_count
+        50.0,  # fear_greed
         action,
-        state
+        state,
     )
 
     # 3. Assertions
@@ -96,9 +97,10 @@ def test_risk_penalty_stable_with_negative_net_worth():
         100,
         50.0,
         action,
-        state
+        state,
     )
 
     assert np.isfinite(reward_near_zero), "Reward should be stable even with near-zero net worth"
-    assert reward_near_zero > -10.0 and reward_near_zero < 10.0, "Reward should not explode with near-zero net worth"
-
+    assert (
+        reward_near_zero > -10.0 and reward_near_zero < 10.0
+    ), "Reward should not explode with near-zero net worth"

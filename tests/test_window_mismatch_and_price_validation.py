@@ -31,6 +31,7 @@ from core_models import Bar
 # Test Suite 1: Window Mismatch Validation
 # ============================================================================
 
+
 class TestWindowMismatchValidation:
     """Test window conversion validation from minutes to bars."""
 
@@ -41,10 +42,7 @@ class TestWindowMismatchValidation:
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")  # Turn warnings into errors
-            spec = FeatureSpec(
-                lookbacks_prices=divisible_windows,
-                bar_duration_minutes=240
-            )
+            spec = FeatureSpec(lookbacks_prices=divisible_windows, bar_duration_minutes=240)
 
         # Verify conversion is correct
         expected_bars = [1, 2, 3, 5, 6, 21, 42, 50]
@@ -58,10 +56,7 @@ class TestWindowMismatchValidation:
         non_divisible_windows = [1000]
 
         with pytest.warns(UserWarning, match="not divisible"):
-            spec = FeatureSpec(
-                lookbacks_prices=non_divisible_windows,
-                bar_duration_minutes=240
-            )
+            spec = FeatureSpec(lookbacks_prices=non_divisible_windows, bar_duration_minutes=240)
 
         # Verify actual window is 960 minutes (4 bars), not 1000
         assert spec.lookbacks_prices == [4]  # 4 bars
@@ -75,19 +70,16 @@ class TestWindowMismatchValidation:
         """Verify warning message contains all critical information."""
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            spec = FeatureSpec(
-                lookbacks_prices=[1000],
-                bar_duration_minutes=240
-            )
+            spec = FeatureSpec(lookbacks_prices=[1000], bar_duration_minutes=240)
 
             assert len(w) == 1
             warning_msg = str(w[0].message)
 
             # Check warning contains key information
             assert "1000" in warning_msg  # Requested window
-            assert "960" in warning_msg   # Actual window
-            assert "4" in warning_msg     # Number of bars
-            assert "240" in warning_msg   # Bar duration
+            assert "960" in warning_msg  # Actual window
+            assert "4" in warning_msg  # Number of bars
+            assert "240" in warning_msg  # Bar duration
             assert "4.00%" in warning_msg  # Discrepancy percentage (40/1000 = 4%)
 
     def test_multiple_windows_mixed_divisibility(self):
@@ -98,10 +90,7 @@ class TestWindowMismatchValidation:
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            spec = FeatureSpec(
-                lookbacks_prices=mixed_windows,
-                bar_duration_minutes=240
-            )
+            spec = FeatureSpec(lookbacks_prices=mixed_windows, bar_duration_minutes=240)
 
             # Should emit 2 warnings (for 1000 and 1500)
             assert len(w) == 2
@@ -115,14 +104,14 @@ class TestWindowMismatchValidation:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             spec = FeatureSpec(
-                lookbacks_prices=[1000],        # Non-divisible
-                yang_zhang_windows=[2500],      # Non-divisible (2500 // 240 = 10 bars = 2400 min)
-                parkinson_windows=[3000],       # Divisible (3000 // 240 = 12.5 → 12 bars = 2880 min)
-                garch_windows=[11000],          # Non-divisible (11000 // 240 = 45.8 → 45 bars = 10800 min)
+                lookbacks_prices=[1000],  # Non-divisible
+                yang_zhang_windows=[2500],  # Non-divisible (2500 // 240 = 10 bars = 2400 min)
+                parkinson_windows=[3000],  # Divisible (3000 // 240 = 12.5 → 12 bars = 2880 min)
+                garch_windows=[11000],  # Non-divisible (11000 // 240 = 45.8 → 45 bars = 10800 min)
                 taker_buy_ratio_windows=[500],  # Non-divisible (500 // 240 = 2 bars = 480 min)
-                taker_buy_ratio_momentum=[350], # Non-divisible (350 // 240 = 1 bar = 240 min)
-                cvd_windows=[1500],             # Non-divisible (1500 // 240 = 6 bars = 1440 min)
-                bar_duration_minutes=240
+                taker_buy_ratio_momentum=[350],  # Non-divisible (350 // 240 = 1 bar = 240 min)
+                cvd_windows=[1500],  # Non-divisible (1500 // 240 = 6 bars = 1440 min)
+                bar_duration_minutes=240,
             )
 
             # Should have 7 warnings (one for each non-divisible window)
@@ -135,10 +124,7 @@ class TestWindowMismatchValidation:
         # Discrepancy: 1 minute (but percentage is tiny)
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            spec = FeatureSpec(
-                lookbacks_prices=[239],
-                bar_duration_minutes=240
-            )
+            spec = FeatureSpec(lookbacks_prices=[239], bar_duration_minutes=240)
 
             assert len(w) == 1
             assert spec.lookbacks_prices == [1]  # 1 bar minimum
@@ -155,10 +141,7 @@ class TestWindowMismatchValidation:
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            spec = FeatureSpec(
-                lookbacks_prices=windows,
-                bar_duration_minutes=1
-            )
+            spec = FeatureSpec(lookbacks_prices=windows, bar_duration_minutes=1)
 
         # All windows should convert exactly
         assert spec.lookbacks_prices == windows
@@ -169,19 +152,22 @@ class TestWindowMismatchValidation:
 # Test Suite 2: Price Validation for Log Returns
 # ============================================================================
 
+
 class TestPriceValidationLogReturns:
     """Test price validation for safe log-return computation."""
 
     def test_valid_prices_no_nan(self):
         """Valid positive prices should produce finite log returns."""
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 10,
-            'price': [100.0, 105.0, 110.0, 108.0, 112.0, 115.0, 113.0, 118.0, 120.0, 122.0],
-            'ts_ms': list(range(10))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 10,
+                "price": [100.0, 105.0, 110.0, 108.0, 112.0, 115.0, 113.0, 118.0, 120.0, 122.0],
+                "ts_ms": list(range(10)),
+            }
+        )
 
         spec = FeatureSpec(lookbacks_prices=[1], bar_duration_minutes=1)
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # All targets should be finite (no NaN, no inf)
@@ -190,14 +176,16 @@ class TestPriceValidationLogReturns:
 
     def test_zero_price_produces_nan(self):
         """Zero prices should produce NaN in targets."""
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 5,
-            'price': [100.0, 0.0, 110.0, 120.0, 130.0],  # Zero price at index 1
-            'ts_ms': list(range(5))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 5,
+                "price": [100.0, 0.0, 110.0, 120.0, 130.0],  # Zero price at index 1
+                "ts_ms": list(range(5)),
+            }
+        )
 
         spec = FeatureSpec(lookbacks_prices=[1], bar_duration_minutes=1)
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # Target at index 0 should be NaN (future_price is 0)
@@ -211,14 +199,16 @@ class TestPriceValidationLogReturns:
 
     def test_negative_price_produces_nan(self):
         """Negative prices should produce NaN in targets."""
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 5,
-            'price': [100.0, -50.0, 110.0, 120.0, 130.0],  # Negative price at index 1
-            'ts_ms': list(range(5))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 5,
+                "price": [100.0, -50.0, 110.0, 120.0, 130.0],  # Negative price at index 1
+                "ts_ms": list(range(5)),
+            }
+        )
 
         spec = FeatureSpec(lookbacks_prices=[1], bar_duration_minutes=1)
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # Targets involving negative price should be NaN
@@ -231,14 +221,16 @@ class TestPriceValidationLogReturns:
 
     def test_nan_price_produces_nan(self):
         """NaN prices should produce NaN in targets (not crash)."""
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 5,
-            'price': [100.0, np.nan, 110.0, 120.0, 130.0],  # NaN price at index 1
-            'ts_ms': list(range(5))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 5,
+                "price": [100.0, np.nan, 110.0, 120.0, 130.0],  # NaN price at index 1
+                "ts_ms": list(range(5)),
+            }
+        )
 
         spec = FeatureSpec(lookbacks_prices=[1], bar_duration_minutes=1)
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # Targets involving NaN price should be NaN
@@ -251,14 +243,16 @@ class TestPriceValidationLogReturns:
 
     def test_inf_price_produces_nan(self):
         """Inf prices should produce NaN in targets."""
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 5,
-            'price': [100.0, np.inf, 110.0, 120.0, 130.0],  # Inf price at index 1
-            'ts_ms': list(range(5))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 5,
+                "price": [100.0, np.inf, 110.0, 120.0, 130.0],  # Inf price at index 1
+                "ts_ms": list(range(5)),
+            }
+        )
 
         spec = FeatureSpec(lookbacks_prices=[1], bar_duration_minutes=1)
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # Targets involving inf price should be NaN
@@ -273,14 +267,16 @@ class TestPriceValidationLogReturns:
         """Ensure no -inf values in targets (critical for training stability)."""
         # Create scenario that WOULD produce -inf without validation:
         # ln(0 / 100) = ln(0) = -inf
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 5,
-            'price': [100.0, 0.0, 110.0, 120.0, 130.0],
-            'ts_ms': list(range(5))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 5,
+                "price": [100.0, 0.0, 110.0, 120.0, 130.0],
+                "ts_ms": list(range(5)),
+            }
+        )
 
         spec = FeatureSpec(lookbacks_prices=[1], bar_duration_minutes=1)
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # CRITICAL: No -inf values should exist (all should be NaN instead)
@@ -295,6 +291,7 @@ class TestPriceValidationLogReturns:
 # Test Suite 3: Online Transformer Price Validation
 # ============================================================================
 
+
 class TestOnlineTransformerPriceValidation:
     """Test price validation in OnlineFeatureTransformer.update()."""
 
@@ -304,12 +301,12 @@ class TestOnlineTransformerPriceValidation:
         transformer = OnlineFeatureTransformer(spec)
 
         # Update with two valid prices
-        feats1 = transformer.update(symbol='BTC', ts_ms=1000, close=100.0)
-        feats2 = transformer.update(symbol='BTC', ts_ms=2000, close=105.0)
+        feats1 = transformer.update(symbol="BTC", ts_ms=1000, close=100.0)
+        feats2 = transformer.update(symbol="BTC", ts_ms=2000, close=105.0)
 
         # Second update should have ret_4h feature
-        assert 'ret_4h' in feats2
-        ret = feats2['ret_4h']
+        assert "ret_4h" in feats2
+        ret = feats2["ret_4h"]
 
         # Should be finite log return: ln(105/100) = 0.04879...
         assert math.isfinite(ret)
@@ -321,12 +318,12 @@ class TestOnlineTransformerPriceValidation:
         transformer = OnlineFeatureTransformer(spec)
 
         # Update with zero price first
-        feats1 = transformer.update(symbol='BTC', ts_ms=1000, close=0.0)
-        feats2 = transformer.update(symbol='BTC', ts_ms=2000, close=105.0)
+        feats1 = transformer.update(symbol="BTC", ts_ms=1000, close=0.0)
+        feats2 = transformer.update(symbol="BTC", ts_ms=2000, close=105.0)
 
         # Should produce NaN (not 0.0, not -inf)
-        assert 'ret_4h' in feats2
-        assert math.isnan(feats2['ret_4h'])
+        assert "ret_4h" in feats2
+        assert math.isnan(feats2["ret_4h"])
 
     def test_zero_current_price_produces_nan(self):
         """Zero current price should produce NaN."""
@@ -334,13 +331,13 @@ class TestOnlineTransformerPriceValidation:
         transformer = OnlineFeatureTransformer(spec)
 
         # Update with valid price first
-        feats1 = transformer.update(symbol='BTC', ts_ms=1000, close=100.0)
+        feats1 = transformer.update(symbol="BTC", ts_ms=1000, close=100.0)
         # Then update with zero current price
-        feats2 = transformer.update(symbol='BTC', ts_ms=2000, close=0.0)
+        feats2 = transformer.update(symbol="BTC", ts_ms=2000, close=0.0)
 
         # Should produce NaN
-        assert 'ret_4h' in feats2
-        assert math.isnan(feats2['ret_4h'])
+        assert "ret_4h" in feats2
+        assert math.isnan(feats2["ret_4h"])
 
     def test_negative_prices_produce_nan(self):
         """Negative prices should produce NaN."""
@@ -348,17 +345,17 @@ class TestOnlineTransformerPriceValidation:
         transformer = OnlineFeatureTransformer(spec)
 
         # Test negative old price
-        feats1 = transformer.update(symbol='BTC', ts_ms=1000, close=-100.0)
-        feats2 = transformer.update(symbol='BTC', ts_ms=2000, close=105.0)
-        assert 'ret_4h' in feats2
-        assert math.isnan(feats2['ret_4h'])
+        feats1 = transformer.update(symbol="BTC", ts_ms=1000, close=-100.0)
+        feats2 = transformer.update(symbol="BTC", ts_ms=2000, close=105.0)
+        assert "ret_4h" in feats2
+        assert math.isnan(feats2["ret_4h"])
 
         # Reset and test negative current price
         transformer = OnlineFeatureTransformer(spec)
-        feats1 = transformer.update(symbol='BTC', ts_ms=1000, close=100.0)
-        feats2 = transformer.update(symbol='BTC', ts_ms=2000, close=-105.0)
-        assert 'ret_4h' in feats2
-        assert math.isnan(feats2['ret_4h'])
+        feats1 = transformer.update(symbol="BTC", ts_ms=1000, close=100.0)
+        feats2 = transformer.update(symbol="BTC", ts_ms=2000, close=-105.0)
+        assert "ret_4h" in feats2
+        assert math.isnan(feats2["ret_4h"])
 
     def test_no_inf_in_online_returns(self):
         """Ensure no -inf values in online returns."""
@@ -366,18 +363,19 @@ class TestOnlineTransformerPriceValidation:
         transformer = OnlineFeatureTransformer(spec)
 
         # Scenario that would produce -inf: ln(0 / 100) = -inf
-        feats1 = transformer.update(symbol='BTC', ts_ms=1000, close=100.0)
-        feats2 = transformer.update(symbol='BTC', ts_ms=2000, close=0.0)
+        feats1 = transformer.update(symbol="BTC", ts_ms=1000, close=100.0)
+        feats2 = transformer.update(symbol="BTC", ts_ms=2000, close=0.0)
 
         # Should be NaN, not -inf
-        assert 'ret_4h' in feats2
-        assert math.isnan(feats2['ret_4h'])
-        assert not math.isinf(feats2['ret_4h'])
+        assert "ret_4h" in feats2
+        assert math.isnan(feats2["ret_4h"])
+        assert not math.isinf(feats2["ret_4h"])
 
 
 # ============================================================================
 # Integration Test: Full Pipeline
 # ============================================================================
+
 
 class TestFullPipelineIntegration:
     """Integration test: window validation + price validation."""
@@ -389,31 +387,33 @@ class TestFullPipelineIntegration:
             warnings.simplefilter("always")
             spec = FeatureSpec(
                 lookbacks_prices=[1000],  # Non-divisible: 1000 // 240 = 4 bars = 960 min
-                bar_duration_minutes=240
+                bar_duration_minutes=240,
             )
 
             # Should emit 1 warning for non-divisible window
             assert len(w) >= 1
 
         # Create DataFrame with edge case prices
-        df = pd.DataFrame({
-            'symbol': ['BTC'] * 10,
-            'price': [
-                100.0,     # Valid
-                0.0,       # Zero (invalid for log)
-                110.0,     # Valid
-                -50.0,     # Negative (invalid)
-                120.0,     # Valid
-                np.nan,    # NaN
-                130.0,     # Valid
-                np.inf,    # Inf (invalid)
-                140.0,     # Valid
-                150.0,     # Valid
-            ],
-            'ts_ms': list(range(10))
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTC"] * 10,
+                "price": [
+                    100.0,  # Valid
+                    0.0,  # Zero (invalid for log)
+                    110.0,  # Valid
+                    -50.0,  # Negative (invalid)
+                    120.0,  # Valid
+                    np.nan,  # NaN
+                    130.0,  # Valid
+                    np.inf,  # Inf (invalid)
+                    140.0,  # Valid
+                    150.0,  # Valid
+                ],
+                "ts_ms": list(range(10)),
+            }
+        )
 
-        pipe = FeaturePipe(spec=spec, price_col='price')
+        pipe = FeaturePipe(spec=spec, price_col="price")
         targets = pipe.make_targets(df)
 
         # Verify no -inf in targets (critical!)

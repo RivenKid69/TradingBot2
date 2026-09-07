@@ -12,6 +12,7 @@ This file tests:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -32,12 +33,12 @@ def test_twin_critics_configuration_validation():
     # Test 1: Twin critics with quantile mode
     print("Test 1: Twin Critics + Quantile")
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {
-            'distributional': True,
-            'num_quantiles': 16,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "critic": {
+            "distributional": True,
+            "num_quantiles": 16,
+            "use_twin_critics": True,
+        },
     }
     policy = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -50,12 +51,12 @@ def test_twin_critics_configuration_validation():
     # Test 2: Twin critics with categorical mode
     print("Test 2: Twin Critics + Categorical")
     arch_params = {
-        'hidden_dim': 32,
-        'num_atoms': 51,
-        'critic': {
-            'distributional': False,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "num_atoms": 51,
+        "critic": {
+            "distributional": False,
+            "use_twin_critics": True,
+        },
     }
     policy = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -67,7 +68,7 @@ def test_twin_critics_configuration_validation():
 
     # Test 3: Default behavior (twin critics ENABLED by default since 2025-11-21)
     print("Test 3: Default (Twin Critics enabled by default)")
-    arch_params = {'hidden_dim': 32, 'critic': {'distributional': True, 'num_quantiles': 16}}
+    arch_params = {"hidden_dim": 32, "critic": {"distributional": True, "num_quantiles": 16}}
     policy = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_params
     )
@@ -86,12 +87,12 @@ def test_twin_critics_parameter_independence():
     action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {
-            'distributional': True,
-            'num_quantiles': 16,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "critic": {
+            "distributional": True,
+            "num_quantiles": 16,
+            "use_twin_critics": True,
+        },
     }
 
     policy = CustomActorCriticPolicy(
@@ -144,12 +145,12 @@ def test_twin_critics_forward_consistency():
     action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {
-            'distributional': True,
-            'num_quantiles': 16,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "critic": {
+            "distributional": True,
+            "num_quantiles": 16,
+            "use_twin_critics": True,
+        },
     }
 
     policy = CustomActorCriticPolicy(
@@ -206,12 +207,12 @@ def test_twin_critics_gradient_flow_detailed():
     action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {
-            'distributional': True,
-            'num_quantiles': 16,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "critic": {
+            "distributional": True,
+            "num_quantiles": 16,
+            "use_twin_critics": True,
+        },
     }
 
     policy = CustomActorCriticPolicy(
@@ -284,12 +285,12 @@ def test_twin_critics_numerical_stability():
     action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {
-            'distributional': True,
-            'num_quantiles': 16,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "critic": {
+            "distributional": True,
+            "num_quantiles": 16,
+            "use_twin_critics": True,
+        },
     }
 
     policy = CustomActorCriticPolicy(
@@ -360,8 +361,8 @@ def test_twin_critics_memory_efficiency():
 
     # Single critic
     arch_single = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
     }
     policy_single = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_single
@@ -370,8 +371,8 @@ def test_twin_critics_memory_efficiency():
 
     # Twin critics
     arch_twin = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': True}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": True},
     }
     policy_twin = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_twin
@@ -426,8 +427,8 @@ def test_twin_critics_error_handling():
     # Test 1: Error when accessing second critic with twin critics disabled
     print("Test 1: Error when twin critics disabled")
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
     }
     policy = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -464,9 +465,9 @@ def test_twin_critics_error_handling():
 
 def run_all_deep_tests():
     """Run all deep audit tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TWIN CRITICS DEEP AUDIT - COMPREHENSIVE TEST SUITE")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         test_twin_critics_configuration_validation,
@@ -489,12 +490,13 @@ def run_all_deep_tests():
             print(f"\n❌ Test failed: {test.__name__}")
             print(f"Error: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print(f"RESULTS: {passed} passed, {failed} failed out of {len(tests)} tests")
-    print("="*70)
+    print("=" * 70)
 
     if failed > 0:
         sys.exit(1)

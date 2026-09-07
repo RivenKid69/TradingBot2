@@ -58,4 +58,3 @@ def test_cloud_distribution_excludes_guardrails_and_deprecated_agent_shims(tmp_p
 
     scan = verify_cloud_artifact(out)
     assert scan.passed is True, [str(v) for v in scan.violations]
-

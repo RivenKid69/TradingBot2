@@ -59,11 +59,11 @@ logger = logging.getLogger(__name__)
 class PositionDiscrepancyType(str, Enum):
     """Types of position discrepancies."""
 
-    MISSING_LOCAL = "missing_local"      # Position on broker but not locally
-    MISSING_REMOTE = "missing_remote"    # Position locally but not on broker
-    UNITS_MISMATCH = "units_mismatch"    # Units quantity differs
-    PRICE_MISMATCH = "price_mismatch"    # Average price differs (informational)
-    SIDE_MISMATCH = "side_mismatch"      # Long/short direction differs
+    MISSING_LOCAL = "missing_local"  # Position on broker but not locally
+    MISSING_REMOTE = "missing_remote"  # Position locally but not on broker
+    UNITS_MISMATCH = "units_mismatch"  # Units quantity differs
+    PRICE_MISMATCH = "price_mismatch"  # Average price differs (informational)
+    SIDE_MISMATCH = "side_mismatch"  # Long/short direction differs
 
 
 @dataclass
@@ -79,12 +79,13 @@ class ForexPosition:
         margin_used: Margin used for this position
         financing: Accumulated swap/financing cost
     """
+
     symbol: str
-    units: float              # Positive = long, Negative = short
+    units: float  # Positive = long, Negative = short
     average_price: float
     unrealized_pnl: float = 0.0
     margin_used: float = 0.0
-    financing: float = 0.0    # Accumulated swap
+    financing: float = 0.0  # Accumulated swap
 
     @property
     def is_long(self) -> bool:
@@ -132,16 +133,16 @@ class PositionDiscrepancy:
 class SyncConfig:
     """Position sync configuration."""
 
-    sync_interval_sec: float = 30.0       # Interval between syncs
+    sync_interval_sec: float = 30.0  # Interval between syncs
     position_tolerance_pct: float = 0.01  # 1% tolerance for unit comparison
-    price_tolerance_pct: float = 0.01     # 1% tolerance for price comparison
-    min_unit_diff: float = 1.0            # Minimum unit difference to report
-    auto_reconcile: bool = False          # Auto-reconcile discrepancies
+    price_tolerance_pct: float = 0.01  # 1% tolerance for price comparison
+    min_unit_diff: float = 1.0  # Minimum unit difference to report
+    auto_reconcile: bool = False  # Auto-reconcile discrepancies
     max_reconcile_units: float = 100_000  # Max units to auto-reconcile
-    alert_on_discrepancy: bool = True     # Alert on discrepancy
-    track_financing: bool = True          # Track swap/financing
-    include_symbols: Optional[List[str]] = None   # Only sync these symbols
-    exclude_symbols: Optional[List[str]] = None   # Exclude these symbols
+    alert_on_discrepancy: bool = True  # Alert on discrepancy
+    track_financing: bool = True  # Track swap/financing
+    include_symbols: Optional[List[str]] = None  # Only sync these symbols
+    exclude_symbols: Optional[List[str]] = None  # Exclude these symbols
 
 
 @dataclass
@@ -154,9 +155,9 @@ class SyncResult:
     remote_positions: Dict[str, ForexPosition] = field(default_factory=dict)
     discrepancies: List[PositionDiscrepancy] = field(default_factory=list)
     total_financing: float = 0.0
-    total_margin_used: float = 0.0        # Total margin across all positions
-    long_exposure: float = 0.0            # Total long notional exposure
-    short_exposure: float = 0.0           # Total short notional exposure
+    total_margin_used: float = 0.0  # Total margin across all positions
+    long_exposure: float = 0.0  # Total long notional exposure
+    short_exposure: float = 0.0  # Total short notional exposure
     reconciliation_results: List["ReconciliationOrderResult"] = field(default_factory=list)
     error: Optional[str] = None
 
@@ -274,6 +275,7 @@ class ReconciliationOrderResult:
         error: Error message (if failed)
         timestamp: Execution timestamp
     """
+
     success: bool
     order_id: Optional[str] = None
     symbol: str = ""
@@ -296,6 +298,7 @@ class ReconciliationAction:
         is_safe: Whether this reconciliation is safe (within limits)
         reason: Reason for action or why it's blocked
     """
+
     symbol: str
     discrepancy: "PositionDiscrepancy"
     units_to_trade: float
@@ -363,9 +366,7 @@ class ReconciliationExecutor:
         with self._lock:
             now = time.time()
             hour_ago = now - 3600
-            self._order_timestamps = [
-                ts for ts in self._order_timestamps if ts > hour_ago
-            ]
+            self._order_timestamps = [ts for ts in self._order_timestamps if ts > hour_ago]
 
             if len(self._order_timestamps) >= self._max_orders_per_hour:
                 return (False, f"Rate limit: {self._max_orders_per_hour} orders/hour exceeded")
@@ -414,8 +415,7 @@ class ReconciliationExecutor:
 
         if self._dry_run:
             logger.info(
-                f"[DRY RUN] Would reconcile {action.symbol}: "
-                f"{action.units_to_trade:+.0f} units"
+                f"[DRY RUN] Would reconcile {action.symbol}: " f"{action.units_to_trade:+.0f} units"
             )
             return ReconciliationOrderResult(
                 success=True,
@@ -443,9 +443,7 @@ class ReconciliationExecutor:
                     f"{result.filled_units:+.0f} units @ {result.fill_price}"
                 )
             else:
-                logger.error(
-                    f"Reconciliation order failed: {action.symbol} - {result.error}"
-                )
+                logger.error(f"Reconciliation order failed: {action.symbol} - {result.error}")
 
             return result
 
@@ -588,10 +586,7 @@ class ForexPositionSynchronizer:
 
             for symbol, pos in remote_raw.items():
                 # Skip excluded symbols
-                if (
-                    self._config.exclude_symbols
-                    and symbol in self._config.exclude_symbols
-                ):
+                if self._config.exclude_symbols and symbol in self._config.exclude_symbols:
                     continue
 
                 # Handle different position formats
@@ -620,14 +615,10 @@ class ForexPositionSynchronizer:
             logger.debug(f"Remote forex positions: {len(remote_positions)} symbols")
 
             # Calculate total financing
-            total_financing = sum(
-                p.financing for p in remote_positions.values()
-            )
+            total_financing = sum(p.financing for p in remote_positions.values())
 
             # Compare positions
-            discrepancies = self._compare_positions(
-                local_positions, remote_positions
-            )
+            discrepancies = self._compare_positions(local_positions, remote_positions)
 
             # Calculate exposure metrics
             total_margin_used = 0.0
@@ -659,9 +650,7 @@ class ForexPositionSynchronizer:
             if discrepancies:
                 logger.warning(f"Found {len(discrepancies)} forex position discrepancies")
                 for d in discrepancies:
-                    logger.warning(
-                        f"  {d.symbol}: {d.discrepancy_type.value} - {d.details}"
-                    )
+                    logger.warning(f"  {d.symbol}: {d.discrepancy_type.value} - {d.details}")
                     if self._on_discrepancy:
                         try:
                             self._on_discrepancy(d)
@@ -669,10 +658,7 @@ class ForexPositionSynchronizer:
                             logger.error(f"Discrepancy callback error: {e}")
 
                 # Auto-reconciliation if enabled
-                if (
-                    self._config.auto_reconcile
-                    and self._reconciliation_executor is not None
-                ):
+                if self._config.auto_reconcile and self._reconciliation_executor is not None:
                     reconciliation_results = self._execute_auto_reconciliation(
                         discrepancies, remote_positions
                     )
@@ -714,23 +700,16 @@ class ForexPositionSynchronizer:
 
             # Get remote positions (async if supported)
             if hasattr(self._provider, "get_positions_async"):
-                remote_raw = await self._provider.get_positions_async(
-                    self._config.include_symbols
-                )
+                remote_raw = await self._provider.get_positions_async(self._config.include_symbols)
             else:
                 # Fall back to sync
-                remote_raw = self._provider.get_positions(
-                    self._config.include_symbols
-                )
+                remote_raw = self._provider.get_positions(self._config.include_symbols)
 
             # Convert to standard format
             remote_positions: Dict[str, ForexPosition] = {}
 
             for symbol, pos in remote_raw.items():
-                if (
-                    self._config.exclude_symbols
-                    and symbol in self._config.exclude_symbols
-                ):
+                if self._config.exclude_symbols and symbol in self._config.exclude_symbols:
                     continue
 
                 if isinstance(pos, ForexPosition):
@@ -756,9 +735,7 @@ class ForexPositionSynchronizer:
 
             total_financing = sum(p.financing for p in remote_positions.values())
 
-            discrepancies = self._compare_positions(
-                local_positions, remote_positions
-            )
+            discrepancies = self._compare_positions(local_positions, remote_positions)
 
             result = SyncResult(
                 timestamp=timestamp,
@@ -772,9 +749,7 @@ class ForexPositionSynchronizer:
             if discrepancies:
                 logger.warning(f"Found {len(discrepancies)} forex position discrepancies")
                 for d in discrepancies:
-                    logger.warning(
-                        f"  {d.symbol}: {d.discrepancy_type.value} - {d.details}"
-                    )
+                    logger.warning(f"  {d.symbol}: {d.discrepancy_type.value} - {d.details}")
                     if self._on_discrepancy:
                         try:
                             self._on_discrepancy(d)
@@ -852,7 +827,11 @@ class ForexPositionSynchronizer:
             # Both exist - check for mismatches
             if local_units is not None and remote_units is not None:
                 # Side mismatch (one long, one short)
-                if (local_units > 0) != (remote_units > 0) and local_units != 0 and remote_units != 0:
+                if (
+                    (local_units > 0) != (remote_units > 0)
+                    and local_units != 0
+                    and remote_units != 0
+                ):
                     discrepancies.append(
                         PositionDiscrepancy(
                             symbol=symbol,

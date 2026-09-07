@@ -17,11 +17,13 @@ def test_scenario_1_clean_data():
     print("СЦЕНАРИЙ 1: Чистые данные без NaN в обязательных полях")
     print("=" * 80)
 
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 10,
-        "ts_ms": list(range(0, 600_000, 60_000)),
-        "close": [100.0 + i for i in range(10)],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 10,
+            "ts_ms": list(range(0, 600_000, 60_000)),
+            "close": [100.0 + i for i in range(10)],
+        }
+    )
 
     print(f"\nИсходные данные: {len(df)} строк")
     print(f"NaN в close: {df['close'].isna().sum()}")
@@ -57,15 +59,19 @@ def test_scenario_2_nan_in_middle():
     print("СЦЕНАРИЙ 2: NaN в price посередине данных")
     print("=" * 80)
 
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 10,
-        "ts_ms": list(range(0, 600_000, 60_000)),
-        "close": [100.0, 101.0, 102.0, 103.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0],
-        #                                       ^^^ NaN в строке 4
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 10,
+            "ts_ms": list(range(0, 600_000, 60_000)),
+            "close": [100.0, 101.0, 102.0, 103.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0],
+            #                                       ^^^ NaN в строке 4
+        }
+    )
 
     print(f"\nИсходные данные: {len(df)} строк")
-    print(f"NaN в close: {df['close'].isna().sum()} (строка {df[df['close'].isna()].index.tolist()})")
+    print(
+        f"NaN в close: {df['close'].isna().sum()} (строка {df[df['close'].isna()].index.tolist()})"
+    )
 
     fp = FeaturePipe(spec=FeatureSpec(lookbacks_prices=[1, 5]), price_col="close")
 
@@ -131,16 +137,18 @@ def test_scenario_3_with_timestamps():
     print("СЦЕНАРИЙ 3: Проверка выравнивания через временные метки")
     print("=" * 80)
 
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 10,
-        "ts_ms": list(range(0, 600_000, 60_000)),
-        "close": [100.0, 101.0, 102.0, 103.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 10,
+            "ts_ms": list(range(0, 600_000, 60_000)),
+            "close": [100.0, 101.0, 102.0, 103.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0],
+        }
+    )
 
     print(f"\nИсходные данные: {len(df)} строк")
     print("Строка с NaN:")
-    nan_row = df[df['close'].isna()]
-    print(nan_row[['symbol', 'ts_ms', 'close']])
+    nan_row = df[df["close"].isna()]
+    print(nan_row[["symbol", "ts_ms", "close"]])
 
     fp = FeaturePipe(spec=FeatureSpec(lookbacks_prices=[1, 5]), price_col="close")
 
@@ -149,11 +157,11 @@ def test_scenario_3_with_timestamps():
 
     print(f"\nПроверка соответствия через ts_ms:")
 
-    if 'ts_ms' in X.columns:
+    if "ts_ms" in X.columns:
         # Проверим, какая строка удалена
-        original_ts = set(df['ts_ms'].values)
-        X_ts = set(X['ts_ms'].values)
-        y_ts = set(df['ts_ms'].values)  # y сохраняет все ts
+        original_ts = set(df["ts_ms"].values)
+        X_ts = set(X["ts_ms"].values)
+        y_ts = set(df["ts_ms"].values)  # y сохраняет все ts
 
         missing_in_X = original_ts - X_ts
         print(f"  Временные метки отсутствующие в X: {missing_in_X}")
@@ -175,8 +183,8 @@ def test_scenario_3_with_timestamps():
             print(f"    len(y_filtered) = {len(y_filtered)}")
 
             # Проверим через ts_ms
-            if 'ts_ms' in X_filtered.columns:
-                X_filtered_ts = set(X_filtered['ts_ms'].values)
+            if "ts_ms" in X_filtered.columns:
+                X_filtered_ts = set(X_filtered["ts_ms"].values)
                 print(f"    ts_ms в X_filtered: {sorted(X_filtered_ts)[:5]}... (первые 5)")
 
                 # Проверим, есть ли удаленная временная метка
@@ -200,11 +208,13 @@ def test_scenario_4_realistic():
     # то X и y будут одного размера, НО:
     # y будет иметь NaN в последней строке каждого символа (из-за shift(-1))
 
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT"] * 5 + ["ETHUSDT"] * 5,
-        "ts_ms": list(range(0, 300_000, 60_000)) * 2,
-        "close": [100.0 + i for i in range(5)] + [200.0 + i for i in range(5)],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"] * 5 + ["ETHUSDT"] * 5,
+            "ts_ms": list(range(0, 300_000, 60_000)) * 2,
+            "close": [100.0 + i for i in range(5)] + [200.0 + i for i in range(5)],
+        }
+    )
 
     print(f"\nИсходные данные: {len(df)} строк, 2 символа")
     print(f"NaN в close: {df['close'].isna().sum()}")

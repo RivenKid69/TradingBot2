@@ -55,9 +55,7 @@ class TestClockDriftSeverity:
         assert severity == ClockDriftSeverity.WARNING
 
     def test_from_offset_custom_thresholds(self):
-        severity = ClockDriftSeverity.from_offset(
-            30.0, warning_ms=20.0, critical_ms=40.0
-        )
+        severity = ClockDriftSeverity.from_offset(30.0, warning_ms=20.0, critical_ms=40.0)
         assert severity == ClockDriftSeverity.WARNING
 
 
@@ -241,7 +239,9 @@ class TestComplianceClock:
         clock = ComplianceClock()
 
         # Mock ntplib
-        with patch("services.core.risk_controls.time_sync.ComplianceClock._sync_with_ntp_server") as mock_sync:
+        with patch(
+            "services.core.risk_controls.time_sync.ComplianceClock._sync_with_ntp_server"
+        ) as mock_sync:
             mock_sync.return_value = (5.0, 2, 10.0)  # offset_ms, stratum, rtt_ms
 
             status = clock.sync()
@@ -252,7 +252,9 @@ class TestComplianceClock:
         """Test sync when all NTP servers fail."""
         clock = ComplianceClock()
 
-        with patch("services.core.risk_controls.time_sync.ComplianceClock._sync_with_ntp_server") as mock_sync:
+        with patch(
+            "services.core.risk_controls.time_sync.ComplianceClock._sync_with_ntp_server"
+        ) as mock_sync:
             mock_sync.return_value = None
 
             status = clock.sync()
@@ -262,10 +264,14 @@ class TestComplianceClock:
         """Test fallback to HTTP time sync."""
         clock = ComplianceClock()
 
-        with patch("services.core.risk_controls.time_sync.ComplianceClock._sync_with_ntp_server") as mock_ntp:
+        with patch(
+            "services.core.risk_controls.time_sync.ComplianceClock._sync_with_ntp_server"
+        ) as mock_ntp:
             mock_ntp.return_value = None
 
-            with patch("services.core.risk_controls.time_sync.ComplianceClock._sync_with_http_time") as mock_http:
+            with patch(
+                "services.core.risk_controls.time_sync.ComplianceClock._sync_with_http_time"
+            ) as mock_http:
                 mock_http.return_value = (10.0, 15, 100.0)
 
                 status = clock.sync()

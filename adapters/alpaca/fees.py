@@ -40,8 +40,8 @@ class AlpacaFeeAdapter(FeeAdapter):
 
     # Regulatory fee rates (as of 2024, subject to change)
     SEC_FEE_RATE = 0.0000278  # Per dollar of sale proceeds
-    TAF_FEE_RATE = 0.000166   # Per share sold
-    TAF_MAX_FEE = 8.30        # Maximum TAF fee per trade
+    TAF_FEE_RATE = 0.000166  # Per share sold
+    TAF_MAX_FEE = 8.30  # Maximum TAF fee per trade
 
     def __init__(
         self,

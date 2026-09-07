@@ -1,4 +1,5 @@
 """Microbenchmark for ExecutionSimulator seasonality lookup."""
+
 import time
 import pathlib
 import sys
@@ -33,9 +34,7 @@ def main() -> None:
     ]
     for use_seasonality, interp in cases:
         dt = _run(use_seasonality, interpolate=interp)
-        print(
-            f"use_seasonality={use_seasonality} interpolate={interp}: {dt:.3f}s"
-        )
+        print(f"use_seasonality={use_seasonality} interpolate={interp}: {dt:.3f}s")
 
 
 if __name__ == "__main__":

@@ -37,38 +37,44 @@ from core_config import CommonRunConfig, ExecutionProfile
 @pytest.fixture
 def sample_trades_df():
     """Sample trades DataFrame."""
-    return pd.DataFrame({
-        "ts_ms": [1000, 2000, 3000, 4000, 5000],
-        "run_id": ["test"] * 5,
-        "symbol": ["BTCUSDT"] * 5,
-        "side": ["BUY", "SELL", "BUY", "SELL", "BUY"],
-        "order_type": ["MARKET"] * 5,
-        "price": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "qty": [1.0, 0.5, 1.5, 1.0, 0.5],
-        "pnl": [0.0, 1.0, -0.5, 1.5, -0.3],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000, 3000, 4000, 5000],
+            "run_id": ["test"] * 5,
+            "symbol": ["BTCUSDT"] * 5,
+            "side": ["BUY", "SELL", "BUY", "SELL", "BUY"],
+            "order_type": ["MARKET"] * 5,
+            "price": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "qty": [1.0, 0.5, 1.5, 1.0, 0.5],
+            "pnl": [0.0, 1.0, -0.5, 1.5, -0.3],
+        }
+    )
 
 
 @pytest.fixture
 def sample_reports_df():
     """Sample equity reports DataFrame."""
-    return pd.DataFrame({
-        "ts_ms": [1000, 2000, 3000, 4000, 5000],
-        "symbol": ["BTCUSDT"] * 5,
-        "equity": [10000.0, 10001.0, 10000.5, 10002.0, 10001.7],
-        "equity_after_costs": [9999.0, 10000.0, 9999.5, 10001.0, 10000.7],
-        "bar_pnl": [0.0, 1.0, -0.5, 1.5, -0.3],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000, 3000, 4000, 5000],
+            "symbol": ["BTCUSDT"] * 5,
+            "equity": [10000.0, 10001.0, 10000.5, 10002.0, 10001.7],
+            "equity_after_costs": [9999.0, 10000.0, 9999.5, 10001.0, 10000.7],
+            "bar_pnl": [0.0, 1.0, -0.5, 1.5, -0.3],
+        }
+    )
 
 
 @pytest.fixture
 def sample_reports_without_equity():
     """Sample reports without equity column (needs synthesis)."""
-    return pd.DataFrame({
-        "ts_ms": [1000, 2000, 3000, 4000, 5000],
-        "symbol": ["BTCUSDT"] * 5,
-        "bar_pnl": [0.0, 1.0, -0.5, 1.5, -0.3],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000, 3000, 4000, 5000],
+            "symbol": ["BTCUSDT"] * 5,
+            "bar_pnl": [0.0, 1.0, -0.5, 1.5, -0.3],
+        }
+    )
 
 
 # ============================================================================
@@ -397,11 +403,13 @@ def test_service_eval_run_snapshot_config():
             with mock.patch("service_eval.read_any") as mock_read:
                 with mock.patch("service_eval.calculate_metrics") as mock_calc:
                     with mock.patch("service_eval.plot_equity_curve"):
-                        mock_read.return_value = pd.DataFrame({
-                            "ts_ms": [1000],
-                            "pnl": [0.0],
-                            "equity": [10000.0],
-                        })
+                        mock_read.return_value = pd.DataFrame(
+                            {
+                                "ts_ms": [1000],
+                                "pnl": [0.0],
+                                "equity": [10000.0],
+                            }
+                        )
 
                         mock_calc.return_value = {
                             "equity": {"total_return": 0.0},
@@ -417,13 +425,15 @@ def test_service_eval_run_snapshot_config():
 def test_service_eval_run_side_normalization(sample_reports_df):
     """Test trades side column normalization."""
     # Create trades with lowercase side
-    trades_df = pd.DataFrame({
-        "ts_ms": [1000, 2000],
-        "symbol": ["BTCUSDT", "BTCUSDT"],
-        "side": ["buy", "sell"],
-        "qty": [1.0, 0.5],
-        "pnl": [0.0, 1.0],
-    })
+    trades_df = pd.DataFrame(
+        {
+            "ts_ms": [1000, 2000],
+            "symbol": ["BTCUSDT", "BTCUSDT"],
+            "side": ["buy", "sell"],
+            "qty": [1.0, 0.5],
+            "pnl": [0.0, 1.0],
+        }
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         trades_path = os.path.join(tmpdir, "trades.csv")
@@ -493,6 +503,7 @@ def test_from_config_all_profiles(sample_trades_df, sample_reports_df):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create files for each ExecutionProfile
         from core_config import ExecutionProfile
+
         for prof in ExecutionProfile:
             trades_path = os.path.join(tmpdir, f"trades_{prof.value}.csv")
             reports_path = os.path.join(tmpdir, f"reports_{prof.value}.csv")
@@ -626,16 +637,18 @@ def test_service_eval_empty_trades():
 
 def test_service_eval_quantity_column_rename():
     """Test trades quantity column renaming."""
-    trades_df = pd.DataFrame({
-        "ts": [1000],
-        "run_id": ["test"],
-        "symbol": ["BTCUSDT"],
-        "side": ["BUY"],
-        "order_type": ["MARKET"],
-        "price": [100.0],
-        "quantity": [1.0],  # Should be renamed to 'qty'
-        "pnl": [0.0],
-    })
+    trades_df = pd.DataFrame(
+        {
+            "ts": [1000],
+            "run_id": ["test"],
+            "symbol": ["BTCUSDT"],
+            "side": ["BUY"],
+            "order_type": ["MARKET"],
+            "price": [100.0],
+            "quantity": [1.0],  # Should be renamed to 'qty'
+            "pnl": [0.0],
+        }
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         trades_path = os.path.join(tmpdir, "trades.csv")

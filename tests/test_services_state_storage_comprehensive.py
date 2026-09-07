@@ -8,6 +8,7 @@ This test suite provides complete coverage of the state storage module including
 - Backup and recovery
 - File locking
 """
+
 import json
 import os
 import sqlite3
@@ -156,12 +157,7 @@ class TestOrderState:
 
     def test_init_with_values(self):
         """Test initialization with values."""
-        order = OrderState(
-            symbol="BTCUSDT",
-            client_order_id="order123",
-            qty=10.0,
-            side="BUY"
-        )
+        order = OrderState(symbol="BTCUSDT", client_order_id="order123", qty=10.0, side="BUY")
         assert order.symbol == "BTCUSDT"
         assert order.client_order_id == "order123"
         assert order.qty == 10.0
@@ -189,12 +185,7 @@ class TestOrderState:
     def test_update(self):
         """Test updating order."""
         order = OrderState()
-        order.update({
-            "symbol": "BTCUSDT",
-            "qty": 10.0,
-            "side": "BUY",
-            "status": "NEW"
-        })
+        order.update({"symbol": "BTCUSDT", "qty": 10.0, "side": "BUY", "status": "NEW"})
 
         assert order.symbol == "BTCUSDT"
         assert order.qty == 10.0
@@ -204,11 +195,7 @@ class TestOrderState:
     def test_update_alternative_keys(self):
         """Test updating with alternative key names."""
         order = OrderState()
-        order.update({
-            "quantity": 10.0,
-            "clientOrderId": "order123",
-            "orderId": "456"
-        })
+        order.update({"quantity": 10.0, "clientOrderId": "order123", "orderId": "456"})
 
         assert order.qty == 10.0
         assert order.client_order_id == "order123"
@@ -262,12 +249,8 @@ class TestTradingState:
         """Test creating from dict with data."""
         data = {
             "cash": 10000.0,
-            "positions": {
-                "BTCUSDT": {"qty": 0.5, "avg_price": 50000.0}
-            },
-            "open_orders": [
-                {"symbol": "ETHUSDT", "qty": 1.0, "orderId": "123"}
-            ]
+            "positions": {"BTCUSDT": {"qty": 0.5, "avg_price": 50000.0}},
+            "open_orders": [{"symbol": "ETHUSDT", "qty": 1.0, "orderId": "123"}],
         }
         state = TradingState.from_dict(data)
 
@@ -287,9 +270,7 @@ class TestTradingState:
     def test_apply_updates_positions(self):
         """Test applying position updates."""
         state = TradingState()
-        state.apply_updates(
-            positions={"BTCUSDT": {"qty": 0.5, "avg_price": 50000.0}}
-        )
+        state.apply_updates(positions={"BTCUSDT": {"qty": 0.5, "avg_price": 50000.0}})
 
         assert "BTCUSDT" in state.positions
         assert state.positions["BTCUSDT"].qty == 0.5
@@ -327,7 +308,7 @@ class TestJsonBackend:
     @pytest.fixture
     def temp_file(self):
         """Create temporary file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             path = Path(f.name)
         yield path
         if path.exists():
@@ -355,9 +336,7 @@ class TestJsonBackend:
     def test_save_with_orders(self, backend, temp_file):
         """Test saving state with orders."""
         state = TradingState()
-        state.open_orders.append(
-            OrderState(symbol="BTCUSDT", qty=1.0, order_id="123")
-        )
+        state.open_orders.append(OrderState(symbol="BTCUSDT", qty=1.0, order_id="123"))
 
         backend.save(temp_file, state)
         loaded = backend.load(temp_file)
@@ -377,13 +356,13 @@ class TestSQLiteBackend:
     @pytest.fixture
     def temp_file(self):
         """Create temporary file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.db') as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db") as f:
             path = Path(f.name)
         yield path
         if path.exists():
             path.unlink()
         # Clean up WAL and SHM files
-        for suffix in ('-wal', '-shm'):
+        for suffix in ("-wal", "-shm"):
             wal_path = path.with_suffix(path.suffix + suffix)
             if wal_path.exists():
                 wal_path.unlink()
@@ -455,6 +434,7 @@ class TestThreadSafeOperations:
 
     def test_concurrent_updates(self):
         """Test concurrent state updates."""
+
         def update_cash():
             for i in range(100):
                 update_state(cash=float(i))
@@ -475,7 +455,7 @@ class TestStatePersistence:
     @pytest.fixture
     def temp_file(self):
         """Create temporary file."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             path = Path(f.name)
         yield path
         # Cleanup
@@ -498,7 +478,7 @@ class TestStatePersistence:
 
     def test_save_and_load_sqlite(self):
         """Test save and load with SQLite backend."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.db') as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db") as f:
             temp_file = Path(f.name)
 
         try:
@@ -535,7 +515,7 @@ class TestStatePersistence:
         save_state(temp_file, backup_keep=1)
 
         # Corrupt main file
-        with open(temp_file, 'w') as f:
+        with open(temp_file, "w") as f:
             f.write("invalid json")
 
         # Should recover from backup
@@ -605,7 +585,7 @@ class TestEdgeCases:
 
     def test_backend_unknown(self):
         """Test loading with unknown backend."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             temp_file = Path(f.name)
 
         try:

@@ -174,7 +174,9 @@ class BinanceConnector(BaseBrokerConnector):
                 response.raise_for_status()
                 self._connected = True
                 self._last_heartbeat = datetime.utcnow()
-                logger.info(f"Connected to Binance via REST ({'testnet' if self._sandbox else 'live'})")
+                logger.info(
+                    f"Connected to Binance via REST ({'testnet' if self._sandbox else 'live'})"
+                )
                 return True
 
         except Exception as e:
@@ -391,7 +393,9 @@ class BinanceConnector(BaseBrokerConnector):
                 if broker_order_id:
                     result = self._client.cancel_order(symbol=symbol, orderId=int(broker_order_id))
                 else:
-                    result = self._client.cancel_order(symbol=symbol, origClientOrderId=client_order_id)
+                    result = self._client.cancel_order(
+                        symbol=symbol, origClientOrderId=client_order_id
+                    )
 
                 return CancelResult(
                     success=True,
@@ -596,12 +600,14 @@ class BinanceConnector(BaseBrokerConnector):
                 locked = Decimal(balance.get("locked", "0"))
                 total = free + locked
                 if total > 0:
-                    positions.append(Position(
-                        symbol=balance.get("asset", ""),
-                        side=PositionSide.LONG,
-                        quantity=total,
-                        avg_entry_price=Decimal("0"),  # Not tracked in spot
-                    ))
+                    positions.append(
+                        Position(
+                            symbol=balance.get("asset", ""),
+                            side=PositionSide.LONG,
+                            quantity=total,
+                            avg_entry_price=Decimal("0"),  # Not tracked in spot
+                        )
+                    )
             return positions
         return []
 
@@ -613,13 +619,15 @@ class BinanceConnector(BaseBrokerConnector):
             for pos in positions_data:
                 qty = Decimal(pos.get("positionAmt", "0"))
                 if qty != 0:
-                    positions.append(Position(
-                        symbol=pos.get("symbol", ""),
-                        side=PositionSide.LONG if qty > 0 else PositionSide.SHORT,
-                        quantity=abs(qty),
-                        avg_entry_price=Decimal(pos.get("entryPrice", "0")),
-                        unrealized_pnl=Decimal(pos.get("unRealizedProfit", "0")),
-                    ))
+                    positions.append(
+                        Position(
+                            symbol=pos.get("symbol", ""),
+                            side=PositionSide.LONG if qty > 0 else PositionSide.SHORT,
+                            quantity=abs(qty),
+                            avg_entry_price=Decimal(pos.get("entryPrice", "0")),
+                            unrealized_pnl=Decimal(pos.get("unRealizedProfit", "0")),
+                        )
+                    )
             return positions
         return []
 
@@ -699,7 +707,9 @@ class BinanceConnector(BaseBrokerConnector):
                     usdt_balance = Decimal("0")
                     for balance in account.get("balances", []):
                         if balance.get("asset") == "USDT":
-                            usdt_balance = Decimal(balance.get("free", "0")) + Decimal(balance.get("locked", "0"))
+                            usdt_balance = Decimal(balance.get("free", "0")) + Decimal(
+                                balance.get("locked", "0")
+                            )
                             break
 
                     return AccountInfo(
@@ -766,9 +776,19 @@ class BinanceConnector(BaseBrokerConnector):
             order_type=OrderType(data.get("type", "MARKET").lower()),
             quantity=Decimal(data.get("origQty", "0")),
             filled_quantity=Decimal(data.get("executedQty", "0")),
-            limit_price=Decimal(data["price"]) if data.get("price") and data["price"] != "0" else None,
-            stop_price=Decimal(data["stopPrice"]) if data.get("stopPrice") and data["stopPrice"] != "0" else None,
-            avg_fill_price=Decimal(data["avgPrice"]) if data.get("avgPrice") and data["avgPrice"] != "0" else None,
+            limit_price=(
+                Decimal(data["price"]) if data.get("price") and data["price"] != "0" else None
+            ),
+            stop_price=(
+                Decimal(data["stopPrice"])
+                if data.get("stopPrice") and data["stopPrice"] != "0"
+                else None
+            ),
+            avg_fill_price=(
+                Decimal(data["avgPrice"])
+                if data.get("avgPrice") and data["avgPrice"] != "0"
+                else None
+            ),
             status=self._map_order_status(data.get("status", "NEW")),
             time_in_force=TimeInForce.GTC,
         )
@@ -776,4 +796,6 @@ class BinanceConnector(BaseBrokerConnector):
 
 # Register with factory
 BrokerConnectorFactory.register("binance", BinanceConnector)
-BrokerConnectorFactory.register("binance_futures", lambda creds, **kw: BinanceConnector(creds, futures=True, **kw))
+BrokerConnectorFactory.register(
+    "binance_futures", lambda creds, **kw: BinanceConnector(creds, futures=True, **kw)
+)

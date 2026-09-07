@@ -42,33 +42,64 @@ DEFAULT_IV_COLS = ("iv", "skew", "term_slope")
 class IVSummaryEnricher(AsofEnricher):
     """IV-сводка (iv/skew/term_slope) по андерлаю as-of (publish-lag)."""
 
-    def __init__(self, *, provider: Callable[[Sequence[str]], pd.DataFrame],
-                 columns: Sequence[str] = DEFAULT_IV_COLS, publish_lag_ms: int = 0,
-                 vendor: str = "byo", pit_quality: str = PIT_APPROX, name: str = "iv") -> None:
+    def __init__(
+        self,
+        *,
+        provider: Callable[[Sequence[str]], pd.DataFrame],
+        columns: Sequence[str] = DEFAULT_IV_COLS,
+        publish_lag_ms: int = 0,
+        vendor: str = "byo",
+        pit_quality: str = PIT_APPROX,
+        name: str = "iv",
+    ) -> None:
         super().__init__(
-            provider, columns=list(columns), publish_ts_col="publish_ts",
+            provider,
+            columns=list(columns),
+            publish_ts_col="publish_ts",
             publish_lag_ms=publish_lag_ms,
-            meta=DataSourceMeta(name=name, vendor=vendor, kind="enrich", pit_quality=pit_quality,
-                                notes="Implied-vol summary (iv/skew/term)."),
+            meta=DataSourceMeta(
+                name=name,
+                vendor=vendor,
+                kind="enrich",
+                pit_quality=pit_quality,
+                notes="Implied-vol summary (iv/skew/term).",
+            ),
         )
 
 
 class DeribitIVEnricher(IVSummaryEnricher):
     """Free крипто-опционы (Deribit IV/DVOL). History → pit=approx."""
 
-    def __init__(self, *, provider: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
-                 publish_lag_ms: int = 0, pit_quality: str = PIT_APPROX) -> None:
-        super().__init__(provider=provider or _default_deribit_iv, columns=DEFAULT_IV_COLS,
-                         publish_lag_ms=publish_lag_ms, vendor="deribit", pit_quality=pit_quality,
-                         name="deribit:iv")
+    def __init__(
+        self,
+        *,
+        provider: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None,
+        publish_lag_ms: int = 0,
+        pit_quality: str = PIT_APPROX,
+    ) -> None:
+        super().__init__(
+            provider=provider or _default_deribit_iv,
+            columns=DEFAULT_IV_COLS,
+            publish_lag_ms=publish_lag_ms,
+            vendor="deribit",
+            pit_quality=pit_quality,
+            name="deribit:iv",
+        )
 
 
 class YFinanceChainEnricher(IVSummaryEnricher):
     """EOD US chains (yfinance). СНИМОК → pit=none (НЕ backtest-safe, live-screening)."""
 
-    def __init__(self, *, provider: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None) -> None:
-        super().__init__(provider=provider or _default_yfinance_iv, columns=DEFAULT_IV_COLS,
-                         vendor="yfinance", pit_quality=PIT_NONE, name="yfinance:chain")
+    def __init__(
+        self, *, provider: Optional[Callable[[Sequence[str]], pd.DataFrame]] = None
+    ) -> None:
+        super().__init__(
+            provider=provider or _default_yfinance_iv,
+            columns=DEFAULT_IV_COLS,
+            vendor="yfinance",
+            pit_quality=PIT_NONE,
+            name="yfinance:chain",
+        )
 
 
 def _default_deribit_iv(symbols: Sequence[str]) -> pd.DataFrame:  # pragma: no cover - сеть
@@ -87,14 +118,25 @@ def _default_yfinance_iv(symbols: Sequence[str]) -> pd.DataFrame:  # pragma: no 
 class RealizedVolEnricher:
     """Реализованная волатильность андерлая из close (annualized) → ``realized_vol`` (PIT-true)."""
 
-    def __init__(self, *, window: int = 20, periods_per_year: float = 365.0,
-                 close_col: str = "close", out_col: str = "realized_vol") -> None:
+    def __init__(
+        self,
+        *,
+        window: int = 20,
+        periods_per_year: float = 365.0,
+        close_col: str = "close",
+        out_col: str = "realized_vol",
+    ) -> None:
         self.window = int(window)
         self.ppy = float(periods_per_year)
         self.close_col = close_col
         self.out_col = out_col
-        self.meta = DataSourceMeta(name="realized_vol", vendor="computed", kind="enrich",
-                                   pit_quality=PIT_TRUE, notes="Annualized realized vol from close.")
+        self.meta = DataSourceMeta(
+            name="realized_vol",
+            vendor="computed",
+            kind="enrich",
+            pit_quality=PIT_TRUE,
+            notes="Annualized realized vol from close.",
+        )
 
     def columns(self) -> List[str]:
         return [self.out_col]
@@ -121,9 +163,15 @@ class OptionsBookLoader:
     """Option chain → ``List[OptionLeg]`` для greeks-конструктора (реальные IV)."""
 
     @staticmethod
-    def chain_to_legs(chain: Sequence[Mapping[str, Any]], *, spot: float,
-                      rate: float = 0.0, dividend_yield: float = 0.0,
-                      multiplier: float = 100.0, default_alpha: float = 0.0) -> List[Any]:
+    def chain_to_legs(
+        chain: Sequence[Mapping[str, Any]],
+        *,
+        spot: float,
+        rate: float = 0.0,
+        dividend_yield: float = 0.0,
+        multiplier: float = 100.0,
+        default_alpha: float = 0.0,
+    ) -> List[Any]:
         from service_options_portfolio import OptionLeg
 
         legs: List[Any] = []
@@ -136,13 +184,23 @@ class OptionsBookLoader:
             if strike is None or iv is None or tte is None:
                 continue
             is_call = bool(row.get("is_call", True))
-            sym = row.get("symbol") or f"OPT_{i}_{'C' if is_call else 'P'}{int(round(float(strike)))}"
-            legs.append(OptionLeg(
-                symbol=str(sym), spot=float(row.get("spot", spot)), strike=float(strike),
-                time_to_expiry=float(tte), iv=float(iv), is_call=is_call,
-                rate=float(row.get("rate", rate)), dividend_yield=float(row.get("dividend_yield", dividend_yield)),
-                alpha=float(row.get("alpha", default_alpha)), multiplier=float(row.get("multiplier", multiplier)),
-            ))
+            sym = (
+                row.get("symbol") or f"OPT_{i}_{'C' if is_call else 'P'}{int(round(float(strike)))}"
+            )
+            legs.append(
+                OptionLeg(
+                    symbol=str(sym),
+                    spot=float(row.get("spot", spot)),
+                    strike=float(strike),
+                    time_to_expiry=float(tte),
+                    iv=float(iv),
+                    is_call=is_call,
+                    rate=float(row.get("rate", rate)),
+                    dividend_yield=float(row.get("dividend_yield", dividend_yield)),
+                    alpha=float(row.get("alpha", default_alpha)),
+                    multiplier=float(row.get("multiplier", multiplier)),
+                )
+            )
         return legs
 
 
@@ -165,7 +223,12 @@ def build_options_enricher(name: str, cfg: Any) -> Optional[Any]:
 
 
 __all__ = [
-    "DEFAULT_IV_COLS", "IVSummaryEnricher", "DeribitIVEnricher", "YFinanceChainEnricher",
-    "RealizedVolEnricher", "OptionsBookLoader",
-    "OPTIONS_ENRICHERS", "build_options_enricher",
+    "DEFAULT_IV_COLS",
+    "IVSummaryEnricher",
+    "DeribitIVEnricher",
+    "YFinanceChainEnricher",
+    "RealizedVolEnricher",
+    "OptionsBookLoader",
+    "OPTIONS_ENRICHERS",
+    "build_options_enricher",
 ]

@@ -575,9 +575,7 @@ class QueuePositionTracker:
             return FillProbability(order_id=order_id, prob_fill=0.0)
 
         # Base rate from historical trades
-        base_rate = self._estimate_rate_at_level(
-            state.side, state.price, historical_trades
-        )
+        base_rate = self._estimate_rate_at_level(state.side, state.price, historical_trades)
 
         # Distance from mid price factor
         mid = order_book.mid_price
@@ -624,13 +622,8 @@ class QueuePositionTracker:
 
         # Use execution history
         if self._execution_history:
-            recent_qty = sum(
-                qty for ts, p, qty in self._execution_history
-                if abs(p - price) < 0.01
-            )
-            time_span = (
-                self._execution_history[-1][0] - self._execution_history[0][0]
-            ) / 1e9
+            recent_qty = sum(qty for ts, p, qty in self._execution_history if abs(p - price) < 0.01)
+            time_span = (self._execution_history[-1][0] - self._execution_history[0][0]) / 1e9
             if time_span > 0:
                 return recent_qty / time_span
 
@@ -717,7 +710,8 @@ class QueuePositionTracker:
     ) -> List[QueueState]:
         """Get all tracked orders at a specific price."""
         return [
-            state for state in self._tracked_orders.values()
+            state
+            for state in self._tracked_orders.values()
             if state.side == side and abs(state.price - price) < 1e-9
         ]
 

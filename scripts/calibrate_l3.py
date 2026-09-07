@@ -579,7 +579,9 @@ def main() -> int:
             )
             for order in orders:
                 pipeline.add_order(
-                    timestamp_ns=order.get("timestamp_ns", order.get("timestamp_ms", 0) * 1_000_000),
+                    timestamp_ns=order.get(
+                        "timestamp_ns", order.get("timestamp_ms", 0) * 1_000_000
+                    ),
                     price=order.get("price", 0.0),
                     qty=order.get("qty", 0.0),
                     side=Side.BUY if order.get("side", 1) > 0 else Side.SELL,
@@ -625,12 +627,16 @@ def main() -> int:
 
     if result.impact_result:
         params = result.get_impact_params()
-        logger.info(f"Impact params: eta={params.get('eta', 0):.4f}, gamma={params.get('gamma', 0):.4f}")
+        logger.info(
+            f"Impact params: eta={params.get('eta', 0):.4f}, gamma={params.get('gamma', 0):.4f}"
+        )
         logger.info(f"Impact R²: {result.impact_result.r_squared:.4f}")
 
     if result.fill_prob_result:
         params = result.get_fill_prob_params()
-        logger.info(f"Fill prob params: base_rate={params.get('base_rate', params.get('arrival_rate', 0)):.1f}")
+        logger.info(
+            f"Fill prob params: base_rate={params.get('base_rate', params.get('arrival_rate', 0)):.1f}"
+        )
 
     # Save output
     logger.info(f"Saving config to {args.output}")

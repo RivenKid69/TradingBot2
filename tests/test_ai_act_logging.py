@@ -336,8 +336,14 @@ class TestAIActLogger:
         """Test logger creates category subdirectories."""
         logger = AIActLogger(logging_config)
 
-        expected_dirs = ["decisions", "risk_events", "human_overrides",
-                        "system_events", "data_events", "audit"]
+        expected_dirs = [
+            "decisions",
+            "risk_events",
+            "human_overrides",
+            "system_events",
+            "data_events",
+            "audit",
+        ]
 
         for dir_name in expected_dirs:
             assert (Path(temp_log_dir) / dir_name).exists()
@@ -675,7 +681,7 @@ class TestLogIntegrityVerifier:
 
         # Create an invalid log file
         log_file = Path(temp_log_dir) / "invalid.jsonl"
-        log_file.write_text('not valid json\n')
+        log_file.write_text("not valid json\n")
 
         is_valid, errors = verifier.verify_log_file(log_file)
 
@@ -906,7 +912,9 @@ class TestEdgeCases:
         )
 
         # Should be serialized as summary
-        assert "_type" in event.inputs.get("observation", {}) or isinstance(event.inputs.get("observation"), dict)
+        assert "_type" in event.inputs.get("observation", {}) or isinstance(
+            event.inputs.get("observation"), dict
+        )
 
 
 # =============================================================================

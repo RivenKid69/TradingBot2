@@ -27,12 +27,14 @@ def test_logging_extended_columns(tmp_path):
     reports_path = tmp_path / "reports.csv"
     sim = ExecutionSimulator()
     sim.set_market_snapshot(bid=100.0, ask=101.0, liquidity=1.0)
+
     class Proto:
         def __init__(self):
             self.action_type = ActionType.MARKET
             self.volume_frac = 1.0
             self.ttl_steps = 5
             self.tif = "IOC"
+
     proto = Proto()
     sim.submit(proto)
     rep = sim.pop_ready(ref_price=100.5)
@@ -66,7 +68,9 @@ def test_logging_extended_columns(tmp_path):
                 return self._payload[item]
             raise AttributeError(item)
 
-    log = LogWriter(LogConfig(trades_path=str(trades_path), reports_path=str(reports_path), flush_every=1))
+    log = LogWriter(
+        LogConfig(trades_path=str(trades_path), reports_path=str(reports_path), flush_every=1)
+    )
     log.append(ReportWrapper(rep_payload), symbol="BTCUSDT", ts_ms=0)
     log.flush()
     df = pd.read_csv(trades_path)

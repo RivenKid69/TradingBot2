@@ -11,6 +11,7 @@ This test suite covers:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -28,15 +29,14 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full((1, 1), old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Should be clipped to 15.0
         expected = torch.tensor([[15.0]])
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected {expected}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected {expected}, got {quantiles_clipped}"
 
         print("✓ Single quantile edge case works correctly")
 
@@ -51,15 +51,14 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # All should be clipped to 5.0
         expected = torch.full_like(new_quantiles, clip_min)
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected all {clip_min}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected all {clip_min}, got {quantiles_clipped}"
 
         print("✓ All quantiles below bound correctly clipped")
 
@@ -74,15 +73,14 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # All should be clipped to 15.0
         expected = torch.full_like(new_quantiles, clip_max)
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected all {clip_max}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected all {clip_max}, got {quantiles_clipped}"
 
         print("✓ All quantiles above bound correctly clipped")
 
@@ -96,14 +94,13 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Should remain unchanged
-        assert torch.allclose(quantiles_clipped, new_quantiles), \
-            f"Quantiles on bounds should be unchanged"
+        assert torch.allclose(
+            quantiles_clipped, new_quantiles
+        ), f"Quantiles on bounds should be unchanged"
 
         print("✓ Quantiles on bounds unchanged")
 
@@ -116,14 +113,13 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         expected = torch.tensor([[-5.0, -5.0, 0.0, 5.0, 5.0]])
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected {expected}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected {expected}, got {quantiles_clipped}"
 
         print("✓ Zero old_value handled correctly")
 
@@ -136,14 +132,13 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         expected = torch.tensor([[-15.0, -10.0, -5.0, -5.0, -5.0]])
-        assert torch.allclose(quantiles_clipped, expected), \
-            f"Expected {expected}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected
+        ), f"Expected {expected}, got {quantiles_clipped}"
 
         print("✓ Negative old_value handled correctly")
 
@@ -156,15 +151,14 @@ class TestPerQuantileEdgeCases:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # All except middle should be clipped to [9.9, 10.1]
         expected = torch.tensor([[9.9, 9.9, 10.0, 10.1, 10.1]])
-        assert torch.allclose(quantiles_clipped, expected, atol=1e-6), \
-            f"Expected {expected}, got {quantiles_clipped}"
+        assert torch.allclose(
+            quantiles_clipped, expected, atol=1e-6
+        ), f"Expected {expected}, got {quantiles_clipped}"
 
         print("✓ Very small clip_delta handled correctly")
 
@@ -182,9 +176,7 @@ class TestPerQuantileEdgeCases:
 
         # Apply clipping
         quantiles_clipped = old_values + torch.clamp(
-            new_quantiles - old_values,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_values, min=-clip_delta, max=clip_delta
         )
 
         # Verify bounds for each sample
@@ -195,10 +187,12 @@ class TestPerQuantileEdgeCases:
 
             sample_quantiles = quantiles_clipped[i]
 
-            assert torch.all(sample_quantiles >= clip_min - 1e-6), \
-                f"Sample {i}: quantiles below bound"
-            assert torch.all(sample_quantiles <= clip_max + 1e-6), \
-                f"Sample {i}: quantiles above bound"
+            assert torch.all(
+                sample_quantiles >= clip_min - 1e-6
+            ), f"Sample {i}: quantiles below bound"
+            assert torch.all(
+                sample_quantiles <= clip_max + 1e-6
+            ), f"Sample {i}: quantiles above bound"
 
         print(f"✓ Large batch (n={batch_size}) consistency verified")
 
@@ -213,18 +207,14 @@ class TestPerQuantileGradientFlow:
 
         # Create quantiles with gradient tracking
         new_quantiles = torch.tensor(
-            [[0.0, 10.0, 20.0, 30.0, 50.0]],
-            requires_grad=True,
-            dtype=torch.float32
+            [[0.0, 10.0, 20.0, 30.0, 50.0]], requires_grad=True, dtype=torch.float32
         )
 
         old_value_tensor = torch.tensor([[old_value]], dtype=torch.float32)
 
         # Apply per_quantile clipping
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Compute loss (e.g., mean squared error)
@@ -243,9 +233,15 @@ class TestPerQuantileGradientFlow:
         grad = new_quantiles.grad[0]
 
         print(f"Gradients: {grad}")
-        print(f"  quantile[0] = {new_quantiles[0, 0].item():.1f} (clipped to 5.0), grad = {grad[0].item():.4f}")
-        print(f"  quantile[1] = {new_quantiles[0, 1].item():.1f} (unclipped), grad = {grad[1].item():.4f}")
-        print(f"  quantile[2] = {new_quantiles[0, 2].item():.1f} (clipped to 15.0), grad = {grad[2].item():.4f}")
+        print(
+            f"  quantile[0] = {new_quantiles[0, 0].item():.1f} (clipped to 5.0), grad = {grad[0].item():.4f}"
+        )
+        print(
+            f"  quantile[1] = {new_quantiles[0, 1].item():.1f} (unclipped), grad = {grad[1].item():.4f}"
+        )
+        print(
+            f"  quantile[2] = {new_quantiles[0, 2].item():.1f} (clipped to 15.0), grad = {grad[2].item():.4f}"
+        )
 
         # Quantile[1] at 10.0 is within bounds [5, 15], should have gradient
         assert grad[1].item() != 0.0, "Unclipped quantile should have gradient"
@@ -262,18 +258,12 @@ class TestPerQuantileGradientFlow:
         clip_delta = 10.0
 
         # Quantiles within bounds
-        new_quantiles = torch.tensor(
-            [[-5.0, 0.0, 5.0]],
-            requires_grad=True,
-            dtype=torch.float32
-        )
+        new_quantiles = torch.tensor([[-5.0, 0.0, 5.0]], requires_grad=True, dtype=torch.float32)
 
         old_value_tensor = torch.tensor([[old_value]], dtype=torch.float32)
 
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         target = torch.ones_like(quantiles_clipped)
@@ -287,8 +277,7 @@ class TestPerQuantileGradientFlow:
 
         # Gradient magnitudes should be similar (since all within bounds)
         grad_mean = grad.abs().mean()
-        assert torch.all(grad.abs() < grad_mean * 3), \
-            "Gradient magnitudes should be reasonable"
+        assert torch.all(grad.abs() < grad_mean * 3), "Gradient magnitudes should be reasonable"
 
         print(f"✓ Gradient magnitudes preserved (mean={grad_mean:.4f})")
 
@@ -312,9 +301,7 @@ class TestPerQuantileCategoricalSpecific:
         atoms_broadcast = atoms.unsqueeze(0)  # [1, num_atoms]
 
         atoms_clipped_batch = old_values + torch.clamp(
-            atoms_broadcast - old_values,
-            min=-clip_delta,
-            max=clip_delta
+            atoms_broadcast - old_values, min=-clip_delta, max=clip_delta
         )
 
         # Verify each sample's atoms
@@ -326,16 +313,16 @@ class TestPerQuantileCategoricalSpecific:
             atoms_i = atoms_clipped_batch[i]
 
             # All atoms should be within bounds
-            assert torch.all(atoms_i >= clip_min - 1e-6), \
-                f"Sample {i}: atoms below {clip_min}"
-            assert torch.all(atoms_i <= clip_max + 1e-6), \
-                f"Sample {i}: atoms above {clip_max}"
+            assert torch.all(atoms_i >= clip_min - 1e-6), f"Sample {i}: atoms below {clip_min}"
+            assert torch.all(atoms_i <= clip_max + 1e-6), f"Sample {i}: atoms above {clip_max}"
 
             # Check specific values
-            assert atoms_i.min().item() == pytest.approx(clip_min, abs=1e-5), \
-                f"Sample {i}: min atom should be {clip_min}"
-            assert atoms_i.max().item() == pytest.approx(clip_max, abs=1e-5), \
-                f"Sample {i}: max atom should be {clip_max}"
+            assert atoms_i.min().item() == pytest.approx(
+                clip_min, abs=1e-5
+            ), f"Sample {i}: min atom should be {clip_min}"
+            assert atoms_i.max().item() == pytest.approx(
+                clip_max, abs=1e-5
+            ), f"Sample {i}: max atom should be {clip_max}"
 
         print("✓ Categorical atoms clipped per-sample correctly")
 
@@ -350,8 +337,7 @@ class TestPerQuantileCategoricalSpecific:
 
         # Verify they sum to 1
         prob_sums = probs.sum(dim=1)
-        assert torch.allclose(prob_sums, torch.ones(batch_size)), \
-            "Probabilities should sum to 1"
+        assert torch.allclose(prob_sums, torch.ones(batch_size)), "Probabilities should sum to 1"
 
         print("✓ Categorical probability preservation verified")
 
@@ -369,14 +355,13 @@ class TestPerQuantileNormalizeReturns:
 
         old_value_tensor = torch.full_like(new_quantiles_norm[:, :1], old_value_norm)
         quantiles_clipped_norm = old_value_tensor + torch.clamp(
-            new_quantiles_norm - old_value_tensor,
-            min=-clip_delta_norm,
-            max=clip_delta_norm
+            new_quantiles_norm - old_value_tensor, min=-clip_delta_norm, max=clip_delta_norm
         )
 
         expected = torch.tensor([[-1.0, -1.0, 0.0, 1.0, 1.0]])
-        assert torch.allclose(quantiles_clipped_norm, expected), \
-            f"Expected {expected}, got {quantiles_clipped_norm}"
+        assert torch.allclose(
+            quantiles_clipped_norm, expected
+        ), f"Expected {expected}, got {quantiles_clipped_norm}"
 
         print("✓ per_quantile with normalize_returns works correctly")
 
@@ -390,9 +375,7 @@ class TestPerQuantileNormalizeReturns:
 
         old_value_tensor_raw = torch.full_like(new_quantiles_raw[:, :1], old_value_raw)
         quantiles_clipped_raw = old_value_tensor_raw + torch.clamp(
-            new_quantiles_raw - old_value_tensor_raw,
-            min=-clip_delta_raw,
-            max=clip_delta_raw
+            new_quantiles_raw - old_value_tensor_raw, min=-clip_delta_raw, max=clip_delta_raw
         )
 
         # Normalized space (assume mean=100, std=50)
@@ -405,17 +388,16 @@ class TestPerQuantileNormalizeReturns:
 
         old_value_tensor_norm = torch.full_like(new_quantiles_norm[:, :1], old_value_norm)
         quantiles_clipped_norm = old_value_tensor_norm + torch.clamp(
-            new_quantiles_norm - old_value_tensor_norm,
-            min=-clip_delta_norm,
-            max=clip_delta_norm
+            new_quantiles_norm - old_value_tensor_norm, min=-clip_delta_norm, max=clip_delta_norm
         )
 
         # Convert back to raw
         quantiles_clipped_from_norm = quantiles_clipped_norm * ret_std + ret_mu
 
         # Should match
-        assert torch.allclose(quantiles_clipped_raw, quantiles_clipped_from_norm, rtol=1e-5), \
-            "Raw and normalized clipping should be consistent"
+        assert torch.allclose(
+            quantiles_clipped_raw, quantiles_clipped_from_norm, rtol=1e-5
+        ), "Raw and normalized clipping should be consistent"
 
         print("✓ Raw vs normalized clipping consistency verified")
 
@@ -435,9 +417,7 @@ class TestPerQuantileCVaRPreservation:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # CVaR at α=0.3 uses tail quantiles [0.1, 0.3]
@@ -445,12 +425,12 @@ class TestPerQuantileCVaRPreservation:
         cvar_clipped = tail_clipped.mean().item()
 
         # All tail quantiles must be >= clip_min
-        assert torch.all(tail_clipped >= clip_min), \
-            f"Tail quantiles must be >= {clip_min}, got {tail_clipped}"
+        assert torch.all(
+            tail_clipped >= clip_min
+        ), f"Tail quantiles must be >= {clip_min}, got {tail_clipped}"
 
         # CVaR must be >= clip_min
-        assert cvar_clipped >= clip_min - 1e-6, \
-            f"CVaR must be >= {clip_min}, got {cvar_clipped}"
+        assert cvar_clipped >= clip_min - 1e-6, f"CVaR must be >= {clip_min}, got {cvar_clipped}"
 
         print(f"✓ CVaR tail constraint verified (CVaR={cvar_clipped:.2f} >= {clip_min})")
 
@@ -464,23 +444,21 @@ class TestPerQuantileCVaRPreservation:
 
         old_value_tensor = torch.full_like(new_quantiles[:, :1], old_value)
         quantiles_clipped = old_value_tensor + torch.clamp(
-            new_quantiles - old_value_tensor,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_value_tensor, min=-clip_delta, max=clip_delta
         )
 
         # Worst-case quantile (τ=0.1) should be -10.0, not -1000.0
         worst_case = quantiles_clipped.min().item()
-        assert worst_case == pytest.approx(-10.0, abs=1e-5), \
-            f"Worst case should be -10.0, got {worst_case}"
+        assert worst_case == pytest.approx(
+            -10.0, abs=1e-5
+        ), f"Worst case should be -10.0, got {worst_case}"
 
         # CVaR at α=0.5 (median of 3 worst)
         tail = quantiles_clipped[0, :3]
         cvar = tail.mean().item()
 
         # CVaR should be bounded
-        assert cvar >= -10.0, \
-            f"CVaR should be >= -10.0, got {cvar}"
+        assert cvar >= -10.0, f"CVaR should be >= -10.0, got {cvar}"
 
         print(f"✓ Downside risk limited (worst={worst_case:.1f}, CVaR={cvar:.1f})")
 
@@ -495,13 +473,9 @@ class TestPerQuantileDefaultDisabled:
         distributional_vf_clip_mode = None
         clip_range_vf = 0.5
 
-        enabled = (
-            clip_range_vf is not None
-            and distributional_vf_clip_mode not in (None, "disable")
-        )
+        enabled = clip_range_vf is not None and distributional_vf_clip_mode not in (None, "disable")
 
-        assert not enabled, \
-            "VF clipping should be disabled by default (mode=None)"
+        assert not enabled, "VF clipping should be disabled by default (mode=None)"
 
         print("✓ Default mode properly disables VF clipping")
 
@@ -510,21 +484,17 @@ class TestPerQuantileDefaultDisabled:
         distributional_vf_clip_mode = "disable"
         clip_range_vf = 0.5
 
-        enabled = (
-            clip_range_vf is not None
-            and distributional_vf_clip_mode not in (None, "disable")
-        )
+        enabled = clip_range_vf is not None and distributional_vf_clip_mode not in (None, "disable")
 
-        assert not enabled, \
-            "VF clipping should be disabled with mode='disable'"
+        assert not enabled, "VF clipping should be disabled with mode='disable'"
 
         print("✓ Explicit disable works correctly")
 
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEEP COMPREHENSIVE TESTS FOR PER_QUANTILE VF CLIPPING")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     # Run all tests
     test_classes = [
@@ -551,8 +521,9 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"❌ FAILED: {e}")
                     import traceback
+
                     traceback.print_exc()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ALL TESTS COMPLETED")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")

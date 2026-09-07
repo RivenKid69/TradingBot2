@@ -55,9 +55,7 @@ def _ensure_dir(path: str) -> None:
     os.makedirs(directory, exist_ok=True)
 
 
-def run(
-    out: str = "data/universe/symbols.json", liquidity_threshold: float = 0.0
-) -> List[str]:
+def run(out: str = "data/universe/symbols.json", liquidity_threshold: float = 0.0) -> List[str]:
     """Fetch Binance spot symbols trading against USDT and store them.
 
     Parameters
@@ -77,13 +75,8 @@ def run(
 
     volumes: Dict[str, float] = {}
     if liquidity_threshold > 0:
-        resp = _throttled_get(
-            "https://api.binance.com/api/v3/ticker/24hr", timeout=20
-        )
-        volumes = {
-            t["symbol"].upper(): float(t.get("quoteVolume", 0.0))
-            for t in resp.json()
-        }
+        resp = _throttled_get("https://api.binance.com/api/v3/ticker/24hr", timeout=20)
+        volumes = {t["symbol"].upper(): float(t.get("quoteVolume", 0.0)) for t in resp.json()}
 
     symbols = [
         s["symbol"].upper()
@@ -92,8 +85,7 @@ def run(
         and s.get("quoteAsset") == "USDT"
         and "SPOT" in s.get("permissions", [])
         and (
-            liquidity_threshold <= 0
-            or volumes.get(s["symbol"].upper(), 0.0) >= liquidity_threshold
+            liquidity_threshold <= 0 or volumes.get(s["symbol"].upper(), 0.0) >= liquidity_threshold
         )
     ]
     symbols.sort()
@@ -135,9 +127,7 @@ __all__ = ["run", "get_symbols"]
 
 
 def _main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Fetch Binance spot symbols trading against USDT."
-    )
+    parser = argparse.ArgumentParser(description="Fetch Binance spot symbols trading against USDT.")
     parser.add_argument(
         "--liquidity-threshold",
         type=float,

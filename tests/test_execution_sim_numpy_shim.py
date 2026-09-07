@@ -47,4 +47,3 @@ def test_execution_sim_numpy_shim(monkeypatch, tmp_path):
         sys.modules.pop("numpy", None)
         if original_numpy is not None:
             sys.modules["numpy"] = original_numpy
-

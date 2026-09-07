@@ -143,7 +143,11 @@ class TestMandatoryRedaction:
     def test_sensitive_field_names(self):
         """Test all sensitive field names are defined."""
         expected_sensitive = {
-            "password", "secret", "token", "api_key", "credential",
+            "password",
+            "secret",
+            "token",
+            "api_key",
+            "credential",
         }
 
         for field in expected_sensitive:

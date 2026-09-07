@@ -47,6 +47,7 @@ from distributional_ppo import (
 # Test Environment
 # =============================================================================
 
+
 class FullInfoEnv(gymnasium.Env):
     """Environment that returns all possible info fields for coverage."""
 
@@ -54,12 +55,8 @@ class FullInfoEnv(gymnasium.Env):
 
     def __init__(self, seed: int = 42, max_steps: int = 10):
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
         self._max_steps = max_steps
@@ -77,13 +74,12 @@ class FullInfoEnv(gymnasium.Env):
 
     def step(self, action):
         self._step_count += 1
-        action_scalar = float(action[0]) if hasattr(action, '__len__') else float(action)
+        action_scalar = float(action[0]) if hasattr(action, "__len__") else float(action)
         self._state = np.clip(
-            self._state + 0.1 * action_scalar + 0.01 * self._rng.standard_normal(4),
-            -10.0, 10.0
+            self._state + 0.1 * action_scalar + 0.01 * self._rng.standard_normal(4), -10.0, 10.0
         ).astype(np.float32)
 
-        reward = float(-np.sum(self._state ** 2) * 0.01 + 0.1)
+        reward = float(-np.sum(self._state**2) * 0.01 + 0.1)
         terminated = self._step_count >= self._max_steps
         truncated = False
 
@@ -112,14 +108,17 @@ class FullInfoEnv(gymnasium.Env):
 
 def make_vec_env(env_cls=FullInfoEnv, n_envs=2, seed=42, **kwargs):
     """Create vectorized environment."""
+
     def make_env():
         return env_cls(seed=seed, **kwargs)
+
     return DummyVecEnv([make_env for _ in range(n_envs)])
 
 
 # =============================================================================
 # Tests for additional helper methods
 # =============================================================================
+
 
 class TestDistributionalPPOHelpers:
     """Test helper methods in DistributionalPPO."""
@@ -397,8 +396,8 @@ class TestValueTargetOutlierFractions:
         low, high = DistributionalPPO._value_target_outlier_fractions(
             values, support_min=-1.0, support_max=2.0
         )
-        assert abs(low - 1/3) < 0.01
-        assert abs(high - 1/3) < 0.01
+        assert abs(low - 1 / 3) < 0.01
+        assert abs(high - 1 / 3) < 0.01
 
     def test_empty_tensor(self):
         """Test with empty tensor."""
@@ -479,6 +478,7 @@ class TestCvarFromQuantiles:
 # =============================================================================
 # Cleanup
 # =============================================================================
+
 
 @pytest.fixture(autouse=True)
 def cleanup():

@@ -142,9 +142,7 @@ def test_bar_execution_snapshot_removes_zero_caps() -> None:
     expected_turnover = 1_000.0 + 600.0 + 400.0
 
     assert cumulative["cap_usd"] == pytest.approx(expected_cap)
-    assert cumulative["turnover_vs_cap"] == pytest.approx(
-        expected_turnover / expected_cap
-    )
+    assert cumulative["turnover_vs_cap"] == pytest.approx(expected_turnover / expected_cap)
 
 
 def test_record_bar_execution_sanitises_turnover_values() -> None:

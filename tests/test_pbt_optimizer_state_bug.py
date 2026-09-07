@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -41,9 +42,7 @@ class SimpleModel(nn.Module):
     def __init__(self, input_dim: int = 10, hidden_dim: int = 64, output_dim: int = 1):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim)
+            nn.Linear(input_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, output_dim)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -82,17 +81,17 @@ class TestPBTOptimizerStateBug:
         optimizer_state = optimizer.state_dict()
 
         # Verify optimizer has state
-        assert len(optimizer_state['state']) > 0, "Optimizer should have state after training"
+        assert len(optimizer_state["state"]) > 0, "Optimizer should have state after training"
 
         # Check momentum buffers exist
-        for param_id, param_state in optimizer_state['state'].items():
-            assert 'exp_avg' in param_state, "Adam should have exp_avg (momentum)"
-            assert 'exp_avg_sq' in param_state, "Adam should have exp_avg_sq (velocity)"
+        for param_id, param_state in optimizer_state["state"].items():
+            assert "exp_avg" in param_state, "Adam should have exp_avg (momentum)"
+            assert "exp_avg_sq" in param_state, "Adam should have exp_avg_sq (velocity)"
 
         # Simulate what PBT currently does: save model parameters only
         # (mimicking DistributionalPPO.get_parameters())
         model_parameters = {
-            'policy': model.state_dict(),  # Only model weights
+            "policy": model.state_dict(),  # Only model weights
             # NOTE: optimizer_state is NOT included!
         }
 
@@ -111,8 +110,9 @@ class TestPBTOptimizerStateBug:
         loaded_parameters = loaded_checkpoint["data"]
 
         # BUG CONFIRMATION: Optimizer state is NOT in checkpoint
-        assert 'optimizer_state' not in loaded_parameters, \
-            "BUG CONFIRMED: Optimizer state is not saved in current checkpoint format"
+        assert (
+            "optimizer_state" not in loaded_parameters
+        ), "BUG CONFIRMED: Optimizer state is not saved in current checkpoint format"
 
         print("[X] BUG CONFIRMED: Optimizer state is NOT saved in PBT checkpoints")
 
@@ -136,10 +136,12 @@ class TestPBTOptimizerStateBug:
         scheduler = PBTScheduler(config, seed=42)
 
         # Initialize population
-        population = scheduler.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = scheduler.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create two agents with different models and optimizers
         agent1_model = SimpleModel()
@@ -170,17 +172,16 @@ class TestPBTOptimizerStateBug:
         # Capture optimizer states BEFORE exploit
         agent1_optimizer_state_before = {
             k: v.clone() if isinstance(v, torch.Tensor) else v
-            for k, v in agent1_optimizer.state_dict()['state'][0].items()
+            for k, v in agent1_optimizer.state_dict()["state"][0].items()
         }
         agent2_optimizer_state_before = {
             k: v.clone() if isinstance(v, torch.Tensor) else v
-            for k, v in agent2_optimizer.state_dict()['state'][0].items()
+            for k, v in agent2_optimizer.state_dict()["state"][0].items()
         }
 
         # Verify optimizer states are DIFFERENT before exploit
         exp_avg_diff = torch.norm(
-            agent1_optimizer_state_before['exp_avg'] -
-            agent2_optimizer_state_before['exp_avg']
+            agent1_optimizer_state_before["exp_avg"] - agent2_optimizer_state_before["exp_avg"]
         ).item()
         assert exp_avg_diff > 0.01, "Optimizer states should be different"
         print(f"[OK] Optimizer states are different (momentum diff: {exp_avg_diff:.4f})")
@@ -192,7 +193,7 @@ class TestPBTOptimizerStateBug:
         member2.performance = 0.9
 
         # Save Agent 2 checkpoint (better performer)
-        agent2_parameters = {'policy': agent2_model.state_dict()}
+        agent2_parameters = {"policy": agent2_model.state_dict()}
         scheduler.update_performance(
             member2,
             performance=0.9,
@@ -208,20 +209,21 @@ class TestPBTOptimizerStateBug:
         print(f"[OK] Exploit occurred: Agent 1 copying from Agent 2")
 
         # Load new parameters into Agent 1 model
-        agent1_model.load_state_dict(new_parameters['policy'])
+        agent1_model.load_state_dict(new_parameters["policy"])
 
         # BUG DEMONSTRATION: Agent 1's optimizer state is UNCHANGED
-        agent1_optimizer_state_after = agent1_optimizer.state_dict()['state'][0]
+        agent1_optimizer_state_after = agent1_optimizer.state_dict()["state"][0]
 
         # Check if momentum changed (it shouldn't, demonstrating the bug)
-        momentum_changed = torch.norm(
-            agent1_optimizer_state_after['exp_avg'] -
-            agent1_optimizer_state_before['exp_avg']
-        ).item() > 1e-6
+        momentum_changed = (
+            torch.norm(
+                agent1_optimizer_state_after["exp_avg"] - agent1_optimizer_state_before["exp_avg"]
+            ).item()
+            > 1e-6
+        )
 
         # BUG: Optimizer state did NOT change after exploit
-        assert not momentum_changed, \
-            "BUG CONFIRMED: Optimizer state did NOT change after exploit"
+        assert not momentum_changed, "BUG CONFIRMED: Optimizer state did NOT change after exploit"
 
         print("[X] BUG CONFIRMED: After exploit, model weights changed but optimizer state DID NOT")
         print("  This causes mismatch between model and optimizer state!")
@@ -272,7 +274,7 @@ class TestPBTOptimizerStateBug:
             optimizer_bad.step()
 
         # Get momentum from bad optimizer
-        bad_momentum = optimizer_bad.state_dict()['state'][0]['exp_avg'].clone()
+        bad_momentum = optimizer_bad.state_dict()["state"][0]["exp_avg"].clone()
 
         # Simulate exploit: bad model copies weights from good model
         model_bad.load_state_dict(model_good.state_dict())
@@ -305,15 +307,16 @@ class TestPBTOptimizerStateBug:
             first_param_grad = true_gradient[0].flatten()
             momentum_flat = momentum_direction.flatten()
             if len(first_param_grad) >= len(momentum_flat):
-                similarity = torch.dot(
-                    first_param_grad[:len(momentum_flat)],
-                    momentum_flat
-                ) / (torch.norm(first_param_grad[:len(momentum_flat)]) * momentum_norm)
+                similarity = torch.dot(first_param_grad[: len(momentum_flat)], momentum_flat) / (
+                    torch.norm(first_param_grad[: len(momentum_flat)]) * momentum_norm
+                )
 
                 print(f"\nGradient-Momentum alignment: {similarity.item():.4f}")
                 print("  > 0.5:  Good alignment (optimizer helps)")
                 print("  < 0.0:  Opposite direction (optimizer HURTS!)")
-                print("\n[X] BUG IMPACT: Optimizer momentum can point in WRONG direction after exploit")
+                print(
+                    "\n[X] BUG IMPACT: Optimizer momentum can point in WRONG direction after exploit"
+                )
 
     def test_performance_drop_simulation(self, tmp_checkpoint_dir):
         """

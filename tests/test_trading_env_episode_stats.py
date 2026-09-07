@@ -85,4 +85,3 @@ def test_trading_env_episode_stats_payload():
     win_flag, length = extract_episode_win_payload(info)
     assert win_flag is expected_win
     assert length == len(rewards)
-

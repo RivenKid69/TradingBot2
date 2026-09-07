@@ -31,6 +31,7 @@ from packages.shared.contracts.config import ChangeClass
 # Rule types
 class RuleType(Enum):
     """Types of auto-approve rules."""
+
     COMMAND_TYPE = auto()  # Match by command type
     SYMBOL_PATTERN = auto()  # Match by trading symbol
     STRATEGY_ID = auto()  # Match by strategy ID
@@ -42,6 +43,7 @@ class RuleType(Enum):
 
 class RuleAction(Enum):
     """Action to take when rule matches."""
+
     AUTO_APPROVE = "auto_approve"  # Automatically approve
     AUTO_DENY = "auto_deny"  # Automatically deny (blocklist)
     REQUIRE_APPROVAL = "require_approval"  # Force manual approval
@@ -52,6 +54,7 @@ class AutoApproveRule:
     """
     Single auto-approve rule.
     """
+
     rule_id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     description: str = ""
@@ -193,7 +196,8 @@ class AutoApproveRule:
     def from_dict(cls, data: Dict[str, Any]) -> "AutoApproveRule":
         """Create from dictionary."""
         allowed_classes = {
-            ChangeClass(c) for c in data.get("allowed_change_classes", ["operational", "informational"])
+            ChangeClass(c)
+            for c in data.get("allowed_change_classes", ["operational", "informational"])
         }
 
         rule = cls(
@@ -230,6 +234,7 @@ class AutoApproveResult:
     """
     Result of auto-approve evaluation.
     """
+
     should_auto_approve: bool = False
     matched_rule: Optional[AutoApproveRule] = None
     reason: str = ""

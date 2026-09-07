@@ -12,11 +12,16 @@ def run(mode: str | None) -> None:
     out = f"/tmp/no_trade_sample_{mode or 'mask'}.csv"
     sys.argv = [
         "no-trade-mask",
-        "--data", os.path.join(REPO, "tests/data/no_trade_sample.csv"),
-        "--out", out,
-        "--sandbox_config", os.path.join(REPO, "configs/legacy_sandbox.yaml"),
-        "--timeframe", "4h",  # Changed from 1m to 4h for 4-hour timeframe
-        "--close-lag-ms", "0",
+        "--data",
+        os.path.join(REPO, "tests/data/no_trade_sample.csv"),
+        "--out",
+        out,
+        "--sandbox_config",
+        os.path.join(REPO, "configs/legacy_sandbox.yaml"),
+        "--timeframe",
+        "4h",  # Changed from 1m to 4h for 4-hour timeframe
+        "--close-lag-ms",
+        "0",
     ]
     if mode:
         sys.argv += ["--mode", mode]

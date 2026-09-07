@@ -60,17 +60,21 @@ def test_cvd_online():
     print(f"CVD 10 периодов (окно 10m): {last_feats.get('cvd_10m', 'N/A')}")
 
     # Проверяем наличие CVD признаков
-    assert 'cvd_5m' in last_feats, f"CVD признак cvd_5m не найден. Доступные: {list(last_feats.keys())}"
+    assert (
+        "cvd_5m" in last_feats
+    ), f"CVD признак cvd_5m не найден. Доступные: {list(last_feats.keys())}"
 
     # Вычисляем ожидаемое значение для окна 5 (последние 5 баров)
     # Бары 6-10: deltas = [800, -200, -400, 300, 500]
     expected_cvd_5 = 800 + (-200) + (-400) + 300 + 500
-    actual_cvd_5 = last_feats['cvd_5m']
+    actual_cvd_5 = last_feats["cvd_5m"]
 
     print(f"Ожидаемый CVD (5 баров): {expected_cvd_5}")
     print(f"Фактический CVD (5 баров): {actual_cvd_5}")
 
-    assert abs(actual_cvd_5 - expected_cvd_5) < 0.01, f"CVD не совпадает: ожидалось {expected_cvd_5}, получено {actual_cvd_5}"
+    assert (
+        abs(actual_cvd_5 - expected_cvd_5) < 0.01
+    ), f"CVD не совпадает: ожидалось {expected_cvd_5}, получено {actual_cvd_5}"
 
     print("✓ Тест 1 пройден\n")
 
@@ -111,7 +115,9 @@ def test_cvd_offline():
 
     # Проверяем наличие CVD признаков
     assert "cvd_24h" in result.columns, "cvd_24h не найден"
-    assert "cvd_7d" in result.columns, "cvd_7d не найден"  # было cvd_168h, но _format_window_name(10080) = "7d"
+    assert (
+        "cvd_7d" in result.columns
+    ), "cvd_7d не найден"  # было cvd_168h, но _format_window_name(10080) = "7d"
 
     # Проверяем последнюю строку (должна иметь данные для 24ч окна)
     last_row = result.iloc[-1]
@@ -174,7 +180,7 @@ def test_cvd_edge_cases():
     # delta = 500 - 500 = 0
 
     # После 3 баров CVD должен быть недоступен (окно 5)
-    assert pd.isna(feats3.get('cvd_5m', float('nan'))), "CVD должен быть NaN (недостаточно данных)"
+    assert pd.isna(feats3.get("cvd_5m", float("nan"))), "CVD должен быть NaN (недостаточно данных)"
 
     # Добавляем еще 2 бара
     for i in range(2):
@@ -195,7 +201,7 @@ def test_cvd_edge_cases():
         taker_buy_base=700.0,
     )
 
-    cvd = feats_final.get('cvd_5m', float('nan'))
+    cvd = feats_final.get("cvd_5m", float("nan"))
     assert not pd.isna(cvd), "CVD не должен быть NaN после 5 баров"
 
     # Последние 5 дельт: [-1000, 0, 0, 0, 400]

@@ -27,6 +27,7 @@ import pytest
 # Test 3.1: Artifact Builder Honest Format
 # =============================================================================
 
+
 class TestArtifactBuilderHonestFormat:
     """Tests for honest format in artifact builder."""
 
@@ -120,6 +121,7 @@ class TestArtifactBuilderHonestFormat:
 # =============================================================================
 # Test 3.1A: Deterministic Idempotency Keys
 # =============================================================================
+
 
 class TestDeterministicIdempotencyKeys:
     """Tests for deterministic idempotency key generation."""
@@ -256,6 +258,7 @@ class TestDeterministicIdempotencyKeys:
 # Test 3.2: Artifact Signing + Mandatory Verification
 # =============================================================================
 
+
 class TestArtifactSigningAndVerification:
     """Tests for artifact signing and mandatory verification."""
 
@@ -276,10 +279,14 @@ class TestArtifactSigningAndVerification:
                 zf.writestr("test.txt", "content")
 
             manifest_path = tmpdir / "manifest.json"
-            manifest_path.write_text(json.dumps({
-                "schema_version": "1.0.0",
-                "entrypoint": "test:Test",
-            }))
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1.0.0",
+                        "entrypoint": "test:Test",
+                    }
+                )
+            )
 
             # Strict mode verifier
             verifier = ArtifactVerifier(strict_mode=True)
@@ -311,10 +318,14 @@ class TestArtifactSigningAndVerification:
                 zf.writestr("test.txt", "content")
 
             manifest_path = tmpdir / "manifest.json"
-            manifest_path.write_text(json.dumps({
-                "schema_version": "1.0.0",
-                "entrypoint": "test:Test",
-            }))
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1.0.0",
+                        "entrypoint": "test:Test",
+                    }
+                )
+            )
 
             verifier = ArtifactVerifier(strict_mode=True)
 
@@ -350,10 +361,14 @@ class TestArtifactSigningAndVerification:
                 zf.writestr("test.txt", "content")
 
             manifest_path = tmpdir / "manifest.json"
-            manifest_path.write_text(json.dumps({
-                "schema_version": "1.0.0",
-                "entrypoint": "test:Test",
-            }))
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1.0.0",
+                        "entrypoint": "test:Test",
+                    }
+                )
+            )
 
             verifier = ArtifactVerifier(strict_mode=False)  # Allow unsigned for this test
 
@@ -382,10 +397,14 @@ class TestArtifactSigningAndVerification:
                 zf.writestr("test.txt", "content")
 
             manifest_path = tmpdir / "manifest.json"
-            manifest_path.write_text(json.dumps({
-                "schema_version": "1.0.0",
-                "entrypoint": "test:Test",
-            }))
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "1.0.0",
+                        "entrypoint": "test:Test",
+                    }
+                )
+            )
 
             # Only allow specific registry
             verifier = ArtifactVerifier(
@@ -406,6 +425,7 @@ class TestArtifactSigningAndVerification:
 # =============================================================================
 # Test 3.3: SBOM + Provenance Validation
 # =============================================================================
+
 
 class TestSBOMAndProvenanceValidation:
     """Tests for SBOM and provenance validation."""
@@ -497,6 +517,7 @@ class TestSBOMAndProvenanceValidation:
 # Test 3.4: Config Diff for Approval
 # =============================================================================
 
+
 class TestConfigDiff:
     """Tests for config diff functionality."""
 
@@ -569,6 +590,7 @@ class TestConfigDiff:
 # =============================================================================
 # Test 3.5: No Silent Upgrades for TRADING_IMPACTING
 # =============================================================================
+
 
 class TestNoSilentUpgrades:
     """Tests for TRADING_IMPACTING approval enforcement."""
@@ -671,6 +693,7 @@ class TestNoSilentUpgrades:
 # Test Artifact Publisher
 # =============================================================================
 
+
 class TestArtifactPublisher:
     """Tests for artifact publisher."""
 
@@ -681,7 +704,11 @@ class TestArtifactPublisher:
             PublishStatus,
             RegistryConfig,
         )
-        from packages.shared.contracts.manifest import ArtifactManifest, Signature, SignatureAlgorithm
+        from packages.shared.contracts.manifest import (
+            ArtifactManifest,
+            Signature,
+            SignatureAlgorithm,
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
@@ -713,7 +740,11 @@ class TestArtifactPublisher:
             PublishStatus,
             RegistryConfig,
         )
-        from packages.shared.contracts.manifest import ArtifactManifest, Signature, SignatureAlgorithm
+        from packages.shared.contracts.manifest import (
+            ArtifactManifest,
+            Signature,
+            SignatureAlgorithm,
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
@@ -745,6 +776,7 @@ class TestArtifactPublisher:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestPhase3Integration:
     """Integration tests for Phase 3 supply chain."""
@@ -785,7 +817,8 @@ class TestPhase3Integration:
 
             # Create minimal strategy source
             strategy_file = source_dir / "strategy.py"
-            strategy_file.write_text('''
+            strategy_file.write_text(
+                '''
 """Example strategy for e2e test."""
 class TestStrategy:
     """Minimal test strategy."""
@@ -793,7 +826,8 @@ class TestStrategy:
         self.name = "test"
     def compute_intent(self, snapshot):
         return None
-''')
+'''
+            )
 
             requirements_file = source_dir / "requirements.txt"
             requirements_file.write_text("numpy>=1.20.0\n")
@@ -823,9 +857,9 @@ class TestStrategy:
             assert build_result.manifest is not None, "Manifest must be created"
             assert build_result.artifact_path is not None, "Artifact path must be set"
             assert build_result.artifact_path.exists(), "Artifact file must exist"
-            assert build_result.artifact_digest.startswith("sha256:"), (
-                "Digest must use SHA-256 format"
-            )
+            assert build_result.artifact_digest.startswith(
+                "sha256:"
+            ), "Digest must use SHA-256 format"
 
             # Verify manifest content
             manifest = build_result.manifest
@@ -861,9 +895,9 @@ class TestStrategy:
             published_path = registry_path / publish_result.registry_ref
             if published_path.exists():
                 recomputed_digest = compute_file_hash(published_path)
-                assert recomputed_digest == build_result.artifact_digest, (
-                    "Published artifact digest must match original"
-                )
+                assert (
+                    recomputed_digest == build_result.artifact_digest
+                ), "Published artifact digest must match original"
 
             # ================================================================
             # SUCCESS: Complete supply chain verified
@@ -921,9 +955,9 @@ class TestStrategy:
                 )
 
                 # Publisher should reject unsigned artifacts
-                assert not publish_result.success, (
-                    "Publisher must reject unsigned artifacts (CCEA Section 8.3)"
-                )
+                assert (
+                    not publish_result.success
+                ), "Publisher must reject unsigned artifacts (CCEA Section 8.3)"
                 assert publish_result.status == PublishStatus.FAILED
 
 

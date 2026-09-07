@@ -40,6 +40,7 @@ from typing import Any, Dict, FrozenSet, List, Optional, Pattern, Set, Tuple
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
@@ -50,22 +51,43 @@ except ImportError:
 # ============================================================================
 
 # EU AWS regions
-EU_AWS_REGIONS: FrozenSet[str] = frozenset({
-    "eu-west-1", "eu-west-2", "eu-west-3",
-    "eu-central-1", "eu-central-2",
-    "eu-north-1", "eu-south-1", "eu-south-2",
-})
+EU_AWS_REGIONS: FrozenSet[str] = frozenset(
+    {
+        "eu-west-1",
+        "eu-west-2",
+        "eu-west-3",
+        "eu-central-1",
+        "eu-central-2",
+        "eu-north-1",
+        "eu-south-1",
+        "eu-south-2",
+    }
+)
 
 # Non-EU AWS regions (explicit deny list)
-NON_EU_AWS_REGIONS: FrozenSet[str] = frozenset({
-    "us-east-1", "us-east-2", "us-west-1", "us-west-2",
-    "us-gov-east-1", "us-gov-west-1",
-    "ap-northeast-1", "ap-northeast-2", "ap-northeast-3",
-    "ap-southeast-1", "ap-southeast-2", "ap-southeast-3",
-    "ap-south-1", "ap-east-1",
-    "sa-east-1", "af-south-1", "me-south-1", "me-central-1",
-    "ca-central-1",
-})
+NON_EU_AWS_REGIONS: FrozenSet[str] = frozenset(
+    {
+        "us-east-1",
+        "us-east-2",
+        "us-west-1",
+        "us-west-2",
+        "us-gov-east-1",
+        "us-gov-west-1",
+        "ap-northeast-1",
+        "ap-northeast-2",
+        "ap-northeast-3",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-southeast-3",
+        "ap-south-1",
+        "ap-east-1",
+        "sa-east-1",
+        "af-south-1",
+        "me-south-1",
+        "me-central-1",
+        "ca-central-1",
+    }
+)
 
 # Patterns that indicate non-EU regions in config files
 NON_EU_PATTERNS: List[Tuple[Pattern, str]] = [
@@ -114,23 +136,27 @@ CONFIG_PATTERNS: List[str] = [
 ]
 
 # Paths to exclude
-EXCLUDED_PATHS: FrozenSet[str] = frozenset({
-    "node_modules",
-    ".git",
-    "__pycache__",
-    "venv",
-    ".venv",
-    "tests/fixtures",
-    "test_data",
-})
+EXCLUDED_PATHS: FrozenSet[str] = frozenset(
+    {
+        "node_modules",
+        ".git",
+        "__pycache__",
+        "venv",
+        ".venv",
+        "tests/fixtures",
+        "test_data",
+    }
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 class CheckResult(str, Enum):
     """Result of a guardrail check."""
+
     PASS = "pass"
     FAIL = "fail"
     WARNING = "warning"
@@ -139,6 +165,7 @@ class CheckResult(str, Enum):
 
 class CheckSeverity(str, Enum):
     """Severity of violations."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -148,6 +175,7 @@ class CheckSeverity(str, Enum):
 @dataclass
 class ResidencyViolation:
     """A residency policy violation."""
+
     file_path: str
     line_number: int
     violation_type: str
@@ -172,6 +200,7 @@ class ResidencyViolation:
 @dataclass
 class ResidencyCheckResult:
     """Result of residency guardrail check."""
+
     passed: bool
     result: CheckResult
     message: str
@@ -198,6 +227,7 @@ class ResidencyCheckResult:
 # ============================================================================
 # File Discovery
 # ============================================================================
+
 
 def find_config_files(base_path: Path, patterns: Optional[List[str]] = None) -> List[Path]:
     """
@@ -230,6 +260,7 @@ def find_config_files(base_path: Path, patterns: Optional[List[str]] = None) -> 
 # ============================================================================
 # Region Detection
 # ============================================================================
+
 
 def detect_region_in_string(content: str) -> Tuple[List[str], List[str]]:
     """
@@ -297,6 +328,7 @@ def is_non_eu_region(region: str) -> bool:
 # File Checkers
 # ============================================================================
 
+
 def check_yaml_file(file_path: Path) -> Tuple[List[ResidencyViolation], List[str], List[str]]:
     """
     Check a YAML file for residency violations.
@@ -330,15 +362,17 @@ def check_yaml_file(file_path: Path) -> Tuple[List[ResidencyViolation], List[str
 
             # Create violations for non-EU regions
             for region in line_non_eu:
-                violations.append(ResidencyViolation(
-                    file_path=str(file_path),
-                    line_number=line_num,
-                    violation_type="non_eu_region",
-                    message=f"Non-EU region detected: {region}",
-                    region_found=region,
-                    severity=CheckSeverity.CRITICAL,
-                    code_snippet=line.strip()[:100],
-                ))
+                violations.append(
+                    ResidencyViolation(
+                        file_path=str(file_path),
+                        line_number=line_num,
+                        violation_type="non_eu_region",
+                        message=f"Non-EU region detected: {region}",
+                        region_found=region,
+                        severity=CheckSeverity.CRITICAL,
+                        code_snippet=line.strip()[:100],
+                    )
+                )
 
         # Parse YAML for deep inspection
         if HAS_YAML:
@@ -351,14 +385,16 @@ def check_yaml_file(file_path: Path) -> Tuple[List[ResidencyViolation], List[str
                 pass  # Continue with line-based analysis
 
     except Exception as e:
-        violations.append(ResidencyViolation(
-            file_path=str(file_path),
-            line_number=0,
-            violation_type="read_error",
-            message=f"Error reading file: {e}",
-            region_found="unknown",
-            severity=CheckSeverity.LOW,
-        ))
+        violations.append(
+            ResidencyViolation(
+                file_path=str(file_path),
+                line_number=0,
+                violation_type="read_error",
+                message=f"Error reading file: {e}",
+                region_found="unknown",
+                severity=CheckSeverity.LOW,
+            )
+        )
 
     return violations, eu_regions, non_eu_regions
 
@@ -379,14 +415,16 @@ def _check_yaml_structure(
             key_lower = key.lower()
             if "region" in key_lower or key_lower in ("awsregion", "aws_region", "azureregion"):
                 if isinstance(value, str) and is_non_eu_region(value):
-                    violations.append(ResidencyViolation(
-                        file_path=file_path,
-                        line_number=0,
-                        violation_type="non_eu_region_config",
-                        message=f"Non-EU region in config key '{current_path}': {value}",
-                        region_found=value,
-                        severity=CheckSeverity.CRITICAL,
-                    ))
+                    violations.append(
+                        ResidencyViolation(
+                            file_path=file_path,
+                            line_number=0,
+                            violation_type="non_eu_region_config",
+                            message=f"Non-EU region in config key '{current_path}': {value}",
+                            region_found=value,
+                            severity=CheckSeverity.CRITICAL,
+                        )
+                    )
 
             # Recurse
             violations.extend(_check_yaml_structure(value, file_path, current_path))
@@ -398,14 +436,16 @@ def _check_yaml_structure(
     elif isinstance(data, str):
         # Check string value for embedded regions
         if is_non_eu_region(data):
-            violations.append(ResidencyViolation(
-                file_path=file_path,
-                line_number=0,
-                violation_type="non_eu_region_value",
-                message=f"Non-EU region in value at '{path}': {data}",
-                region_found=data,
-                severity=CheckSeverity.CRITICAL,
-            ))
+            violations.append(
+                ResidencyViolation(
+                    file_path=file_path,
+                    line_number=0,
+                    violation_type="non_eu_region_value",
+                    message=f"Non-EU region in value at '{path}': {data}",
+                    region_found=data,
+                    severity=CheckSeverity.CRITICAL,
+                )
+            )
 
     return violations
 
@@ -443,19 +483,25 @@ def check_env_file(file_path: Path) -> Tuple[List[ResidencyViolation], List[str]
                 # Check region-related keys
                 key_lower = key.lower()
                 if "region" in key_lower or key_lower in (
-                    "aws_default_region", "aws_region", "s3_region",
-                    "database_region", "redis_region", "cache_region",
+                    "aws_default_region",
+                    "aws_region",
+                    "s3_region",
+                    "database_region",
+                    "redis_region",
+                    "cache_region",
                 ):
                     if is_non_eu_region(value):
-                        violations.append(ResidencyViolation(
-                            file_path=str(file_path),
-                            line_number=line_num,
-                            violation_type="non_eu_region_env",
-                            message=f"Non-EU region in environment variable {key}: {value}",
-                            region_found=value,
-                            severity=CheckSeverity.CRITICAL,
-                            code_snippet=stripped[:100],
-                        ))
+                        violations.append(
+                            ResidencyViolation(
+                                file_path=str(file_path),
+                                line_number=line_num,
+                                violation_type="non_eu_region_env",
+                                message=f"Non-EU region in environment variable {key}: {value}",
+                                region_found=value,
+                                severity=CheckSeverity.CRITICAL,
+                                code_snippet=stripped[:100],
+                            )
+                        )
                         non_eu_regions.append(value)
                     elif is_eu_region(value):
                         eu_regions.append(value)
@@ -466,26 +512,30 @@ def check_env_file(file_path: Path) -> Tuple[List[ResidencyViolation], List[str]
 
             for region in line_non_eu:
                 if region not in non_eu_regions:
-                    violations.append(ResidencyViolation(
-                        file_path=str(file_path),
-                        line_number=line_num,
-                        violation_type="non_eu_region_url",
-                        message=f"Non-EU region in URL/endpoint: {region}",
-                        region_found=region,
-                        severity=CheckSeverity.CRITICAL,
-                        code_snippet=stripped[:100],
-                    ))
+                    violations.append(
+                        ResidencyViolation(
+                            file_path=str(file_path),
+                            line_number=line_num,
+                            violation_type="non_eu_region_url",
+                            message=f"Non-EU region in URL/endpoint: {region}",
+                            region_found=region,
+                            severity=CheckSeverity.CRITICAL,
+                            code_snippet=stripped[:100],
+                        )
+                    )
                     non_eu_regions.append(region)
 
     except Exception as e:
-        violations.append(ResidencyViolation(
-            file_path=str(file_path),
-            line_number=0,
-            violation_type="read_error",
-            message=f"Error reading file: {e}",
-            region_found="unknown",
-            severity=CheckSeverity.LOW,
-        ))
+        violations.append(
+            ResidencyViolation(
+                file_path=str(file_path),
+                line_number=0,
+                violation_type="read_error",
+                message=f"Error reading file: {e}",
+                region_found="unknown",
+                severity=CheckSeverity.LOW,
+            )
+        )
 
     return violations, eu_regions, non_eu_regions
 
@@ -493,6 +543,7 @@ def check_env_file(file_path: Path) -> Tuple[List[ResidencyViolation], List[str]
 # ============================================================================
 # Main Check Function
 # ============================================================================
+
 
 def check_residency_compliance(
     base_path: Optional[Path] = None,
@@ -575,6 +626,7 @@ def check_residency_compliance(
 # Helm Values Specific Check
 # ============================================================================
 
+
 def check_helm_values(values_path: Path) -> ResidencyCheckResult:
     """
     Check a Helm values file specifically.
@@ -607,14 +659,16 @@ def check_helm_values(values_path: Path) -> ResidencyCheckResult:
 
             # If data residency is explicitly non-EU, fail
             if data_residency and is_non_eu_region(data_residency):
-                violations.append(ResidencyViolation(
-                    file_path=str(values_path),
-                    line_number=0,
-                    violation_type="non_eu_data_residency",
-                    message=f"global.dataResidency is set to non-EU: {data_residency}",
-                    region_found=data_residency,
-                    severity=CheckSeverity.CRITICAL,
-                ))
+                violations.append(
+                    ResidencyViolation(
+                        file_path=str(values_path),
+                        line_number=0,
+                        violation_type="non_eu_data_residency",
+                        message=f"global.dataResidency is set to non-EU: {data_residency}",
+                        region_found=data_residency,
+                        severity=CheckSeverity.CRITICAL,
+                    )
+                )
 
             # Check governance.residency.enforceEuOnly
             governance = values.get("governance", {})
@@ -622,14 +676,16 @@ def check_helm_values(values_path: Path) -> ResidencyCheckResult:
             enforce_eu_only = residency.get("enforceEuOnly", None)
 
             if enforce_eu_only is False:
-                violations.append(ResidencyViolation(
-                    file_path=str(values_path),
-                    line_number=0,
-                    violation_type="eu_enforcement_disabled",
-                    message="governance.residency.enforceEuOnly is set to false",
-                    region_found="N/A",
-                    severity=CheckSeverity.CRITICAL,
-                ))
+                violations.append(
+                    ResidencyViolation(
+                        file_path=str(values_path),
+                        line_number=0,
+                        violation_type="eu_enforcement_disabled",
+                        message="governance.residency.enforceEuOnly is set to false",
+                        region_found="N/A",
+                        severity=CheckSeverity.CRITICAL,
+                    )
+                )
 
     except Exception:
         pass
@@ -661,6 +717,7 @@ def check_helm_values(values_path: Path) -> ResidencyCheckResult:
 # ============================================================================
 # Docker Compose Specific Check
 # ============================================================================
+
 
 def check_docker_compose(compose_path: Path) -> ResidencyCheckResult:
     """
@@ -702,14 +759,16 @@ def check_docker_compose(compose_path: Path) -> ResidencyCheckResult:
                         key_lower = key.lower()
                         if "region" in key_lower:
                             if is_non_eu_region(value):
-                                violations.append(ResidencyViolation(
-                                    file_path=str(compose_path),
-                                    line_number=0,
-                                    violation_type="non_eu_region_compose_env",
-                                    message=f"Service '{service_name}' has non-EU region in {key}: {value}",
-                                    region_found=value,
-                                    severity=CheckSeverity.CRITICAL,
-                                ))
+                                violations.append(
+                                    ResidencyViolation(
+                                        file_path=str(compose_path),
+                                        line_number=0,
+                                        violation_type="non_eu_region_compose_env",
+                                        message=f"Service '{service_name}' has non-EU region in {key}: {value}",
+                                        region_found=value,
+                                        severity=CheckSeverity.CRITICAL,
+                                    )
+                                )
 
         except Exception:
             pass
@@ -742,6 +801,7 @@ def check_docker_compose(compose_path: Path) -> ResidencyCheckResult:
 # Report Generation
 # ============================================================================
 
+
 def generate_report(result: ResidencyCheckResult, output_path: Optional[Path] = None) -> str:
     """
     Generate a JSON report from check result.
@@ -773,34 +833,38 @@ def generate_report(result: ResidencyCheckResult, output_path: Optional[Path] = 
 # Main Entry Point
 # ============================================================================
 
+
 def main(argv: Optional[List[str]] = None) -> int:
     """Main entry point for CI."""
-    parser = argparse.ArgumentParser(
-        description="EU-only residency guardrail check"
-    )
+    parser = argparse.ArgumentParser(description="EU-only residency guardrail check")
     parser.add_argument(
-        "--config-dir", "-c",
+        "--config-dir",
+        "-c",
         type=Path,
         default=Path.cwd(),
         help="Directory to check for config files",
     )
     parser.add_argument(
-        "--helm-values", "-v",
+        "--helm-values",
+        "-v",
         type=Path,
         help="Specific Helm values file to check",
     )
     parser.add_argument(
-        "--compose", "-d",
+        "--compose",
+        "-d",
         type=Path,
         help="Specific Docker Compose file to check",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Output path for JSON report",
     )
     parser.add_argument(
-        "--verbose", "-V",
+        "--verbose",
+        "-V",
         action="store_true",
         help="Verbose output",
     )

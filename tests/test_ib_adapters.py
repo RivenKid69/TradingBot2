@@ -56,6 +56,7 @@ from core_futures import (
 # IBRateLimiter Tests (20 tests)
 # =============================================================================
 
+
 class TestIBRateLimiter:
     """Test IB rate limiter functionality."""
 
@@ -254,6 +255,7 @@ class TestIBRateLimiter:
 # IBConnectionManager Tests (15 tests)
 # =============================================================================
 
+
 class TestIBConnectionManager:
     """Test IB connection manager functionality."""
 
@@ -381,6 +383,7 @@ class TestIBConnectionManager:
 # =============================================================================
 # IBMarketDataAdapter Tests (20 tests)
 # =============================================================================
+
 
 class TestIBMarketDataAdapter:
     """Test IB market data adapter functionality."""
@@ -513,6 +516,7 @@ class TestIBMarketDataAdapter:
 # IBOrderExecutionAdapter Tests (15 tests)
 # =============================================================================
 
+
 class TestIBOrderExecutionAdapter:
     """Test IB order execution adapter functionality."""
 
@@ -536,6 +540,7 @@ class TestIBOrderExecutionAdapter:
     def test_contract_map_present(self):
         """Test order execution has CONTRACT_MAP."""
         from adapters.ib.order_execution import CONTRACT_MAP as EXEC_MAP
+
         assert "ES" in EXEC_MAP
         assert "GC" in EXEC_MAP
 
@@ -612,12 +617,19 @@ class TestIBOrderExecutionAdapter:
 
     def test_ib_status_to_order_status_cancelled(self):
         """Test IB status conversion - cancelled."""
-        assert IBOrderExecutionAdapter._ib_status_to_order_status("Cancelled") == OrderStatus.CANCELLED
-        assert IBOrderExecutionAdapter._ib_status_to_order_status("Inactive") == OrderStatus.CANCELLED
+        assert (
+            IBOrderExecutionAdapter._ib_status_to_order_status("Cancelled") == OrderStatus.CANCELLED
+        )
+        assert (
+            IBOrderExecutionAdapter._ib_status_to_order_status("Inactive") == OrderStatus.CANCELLED
+        )
 
     def test_ib_status_to_order_status_partial(self):
         """Test IB status conversion - partial fill."""
-        assert IBOrderExecutionAdapter._ib_status_to_order_status("PartiallyFilled") == OrderStatus.PARTIALLY_FILLED
+        assert (
+            IBOrderExecutionAdapter._ib_status_to_order_status("PartiallyFilled")
+            == OrderStatus.PARTIALLY_FILLED
+        )
 
     def test_do_disconnect_safe(self):
         """Test disconnect is safe when not connected."""
@@ -640,6 +652,7 @@ class TestIBOrderExecutionAdapter:
 # =============================================================================
 # IBExchangeInfoAdapter Tests (15 tests)
 # =============================================================================
+
 
 class TestIBExchangeInfoAdapter:
     """Test IB exchange info adapter functionality."""
@@ -666,8 +679,12 @@ class TestIBExchangeInfoAdapter:
 
         # Required fields in CONTRACT_SPECS
         required_fields = [
-            "exchange", "multiplier", "tick_size",
-            "currency", "description", "futures_type",
+            "exchange",
+            "multiplier",
+            "tick_size",
+            "currency",
+            "description",
+            "futures_type",
         ]
 
         for field in required_fields:
@@ -769,6 +786,7 @@ class TestIBExchangeInfoAdapter:
 # Integration Tests (5 tests)
 # =============================================================================
 
+
 class TestIBAdapterIntegration:
     """Integration tests for IB adapters."""
 
@@ -824,6 +842,7 @@ class TestIBAdapterIntegration:
 # =============================================================================
 # Edge Case Tests (10 tests)
 # =============================================================================
+
 
 class TestIBAdapterEdgeCases:
     """Edge case tests for IB adapters."""

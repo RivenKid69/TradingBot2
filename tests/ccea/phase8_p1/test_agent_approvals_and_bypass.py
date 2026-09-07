@@ -162,7 +162,9 @@ def test_manual_local_approval_submission(tmp_path: Path):
     daemon._process_cloud_commands(polled.commands)
     assert captured["approval"] is None  # no auto-approve
 
-    ok = daemon.decide_cloud_command_approval(str(cmd_id), approved=True, reason="Operator approved")
+    ok = daemon.decide_cloud_command_approval(
+        str(cmd_id), approved=True, reason="Operator approved"
+    )
     assert ok is True
     assert captured["approval"] is not None
     assert captured["approval"]["approved"] is True

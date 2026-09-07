@@ -95,9 +95,7 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
         try:
             import alpaca  # noqa: F401
         except ImportError:
-            raise ImportError(
-                "Alpaca SDK not installed. Install with: pip install alpaca-py"
-            )
+            raise ImportError("Alpaca SDK not installed. Install with: pip install alpaca-py")
 
     def _do_connect(self) -> None:
         """Initialize client connection."""
@@ -148,15 +146,13 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
 
         if start_ts:
             from datetime import datetime, timezone
-            request_params["start"] = datetime.fromtimestamp(
-                start_ts / 1000, tz=timezone.utc
-            )
+
+            request_params["start"] = datetime.fromtimestamp(start_ts / 1000, tz=timezone.utc)
 
         if end_ts:
             from datetime import datetime, timezone
-            request_params["end"] = datetime.fromtimestamp(
-                end_ts / 1000, tz=timezone.utc
-            )
+
+            request_params["end"] = datetime.fromtimestamp(end_ts / 1000, tz=timezone.utc)
 
         feed = self._config.get("feed", "iex")
         request_params["feed"] = feed
@@ -164,6 +160,7 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
         adjustment = self._config.get("adjustment")
         if adjustment:
             from alpaca.data.enums import Adjustment
+
             if isinstance(adjustment, str):
                 try:
                     # Map standard values to enum values
@@ -214,6 +211,7 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
             quote = quotes[symbol]
 
             import time
+
             return Tick(
                 ts=int(time.time() * 1000),
                 symbol=symbol,
@@ -538,9 +536,9 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
                 low=Decimal(str(alpaca_bar.low)),
                 close=Decimal(str(alpaca_bar.close)),
                 volume_base=Decimal(str(alpaca_bar.volume)),
-                volume_quote=Decimal(str(alpaca_bar.vwap * alpaca_bar.volume))
-                if alpaca_bar.vwap
-                else None,
+                volume_quote=(
+                    Decimal(str(alpaca_bar.vwap * alpaca_bar.volume)) if alpaca_bar.vwap else None
+                ),
                 trades=alpaca_bar.trade_count if hasattr(alpaca_bar, "trade_count") else None,
                 vwap=Decimal(str(alpaca_bar.vwap)) if alpaca_bar.vwap else None,
                 is_final=True,
@@ -577,6 +575,7 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
         else:
             # Try to parse custom format
             import re
+
             match = re.match(r"(\d+)([mhd])", tf_lower)
             if match:
                 value = int(match.group(1))

@@ -74,35 +74,146 @@ DEFAULT_TTL_SECONDS = 24 * 60 * 60
 # Popular/liquid stocks (S&P 500 components + popular retail stocks)
 POPULAR_SYMBOLS: Set[str] = {
     # Tech giants
-    "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "NVDA", "TSLA", "AMD", "INTC",
-    "CRM", "ORCL", "ADBE", "CSCO", "AVGO", "TXN", "QCOM", "ASML", "AMAT", "MU",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "GOOG",
+    "AMZN",
+    "META",
+    "NVDA",
+    "TSLA",
+    "AMD",
+    "INTC",
+    "CRM",
+    "ORCL",
+    "ADBE",
+    "CSCO",
+    "AVGO",
+    "TXN",
+    "QCOM",
+    "ASML",
+    "AMAT",
+    "MU",
     # Finance
-    "JPM", "BAC", "WFC", "GS", "MS", "C", "BRK.B", "V", "MA", "AXP",
-    "BLK", "SCHW", "USB", "PNC", "TFC",
+    "JPM",
+    "BAC",
+    "WFC",
+    "GS",
+    "MS",
+    "C",
+    "BRK.B",
+    "V",
+    "MA",
+    "AXP",
+    "BLK",
+    "SCHW",
+    "USB",
+    "PNC",
+    "TFC",
     # Healthcare
-    "JNJ", "UNH", "PFE", "ABBV", "MRK", "LLY", "TMO", "ABT", "BMY", "AMGN",
-    "GILD", "CVS", "CI", "HCA",
+    "JNJ",
+    "UNH",
+    "PFE",
+    "ABBV",
+    "MRK",
+    "LLY",
+    "TMO",
+    "ABT",
+    "BMY",
+    "AMGN",
+    "GILD",
+    "CVS",
+    "CI",
+    "HCA",
     # Consumer
-    "WMT", "COST", "HD", "MCD", "NKE", "SBUX", "TGT", "LOW", "DIS", "NFLX",
-    "PG", "KO", "PEP", "PM", "MO",
+    "WMT",
+    "COST",
+    "HD",
+    "MCD",
+    "NKE",
+    "SBUX",
+    "TGT",
+    "LOW",
+    "DIS",
+    "NFLX",
+    "PG",
+    "KO",
+    "PEP",
+    "PM",
+    "MO",
     # Energy
-    "XOM", "CVX", "COP", "SLB", "EOG", "OXY", "MPC", "VLO", "PSX", "KMI",
+    "XOM",
+    "CVX",
+    "COP",
+    "SLB",
+    "EOG",
+    "OXY",
+    "MPC",
+    "VLO",
+    "PSX",
+    "KMI",
     # Industrial
-    "CAT", "DE", "HON", "UNP", "UPS", "FDX", "BA", "LMT", "RTX", "GE",
+    "CAT",
+    "DE",
+    "HON",
+    "UNP",
+    "UPS",
+    "FDX",
+    "BA",
+    "LMT",
+    "RTX",
+    "GE",
     # ETFs
-    "SPY", "QQQ", "IWM", "DIA", "VTI", "VOO", "VXX", "ARKK", "XLF", "XLE",
-    "XLK", "XLV", "XLI", "XLC", "XLY", "XLP", "XLB", "XLU", "XLRE",
+    "SPY",
+    "QQQ",
+    "IWM",
+    "DIA",
+    "VTI",
+    "VOO",
+    "VXX",
+    "ARKK",
+    "XLF",
+    "XLE",
+    "XLK",
+    "XLV",
+    "XLI",
+    "XLC",
+    "XLY",
+    "XLP",
+    "XLB",
+    "XLU",
+    "XLRE",
     # Precious Metals ETFs
-    "GLD", "IAU", "SGOL", "SLV",
+    "GLD",
+    "IAU",
+    "SGOL",
+    "SLV",
     # Bond ETFs
-    "TLT", "IEF", "SHY", "BND", "AGG",
+    "TLT",
+    "IEF",
+    "SHY",
+    "BND",
+    "AGG",
 }
 
 # Highly liquid stocks (subset of popular)
 HIGHLY_LIQUID_SYMBOLS: Set[str] = {
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA",
-    "SPY", "QQQ", "IWM", "VTI", "VOO",
-    "JPM", "BAC", "V", "MA",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "NVDA",
+    "TSLA",
+    "SPY",
+    "QQQ",
+    "IWM",
+    "VTI",
+    "VOO",
+    "JPM",
+    "BAC",
+    "V",
+    "MA",
 }
 
 
@@ -110,9 +221,11 @@ HIGHLY_LIQUID_SYMBOLS: Set[str] = {
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class StockUniverseConfig:
     """Configuration for stock universe service."""
+
     cache_dir: Path = DEFAULT_CACHE_DIR
     symbols_path: str = DEFAULT_UNIVERSE_PATH
     popular_path: str = DEFAULT_POPULAR_PATH
@@ -136,6 +249,7 @@ _REQUEST_MAX_ATTEMPTS = 3
 # =============================================================================
 # Utility Functions
 # =============================================================================
+
 
 def _ensure_dir(path: str) -> None:
     """Ensure directory exists for the given path."""
@@ -162,6 +276,7 @@ def _get_api_credentials() -> tuple:
 # =============================================================================
 # Main Functions
 # =============================================================================
+
 
 def fetch_from_alpaca(
     api_key: Optional[str] = None,
@@ -205,9 +320,7 @@ def fetch_from_alpaca(
         from alpaca.trading.requests import GetAssetsRequest
         from alpaca.trading.enums import AssetClass, AssetStatus
     except ImportError:
-        raise ImportError(
-            "alpaca-py not installed. Install with: pip install alpaca-py"
-        )
+        raise ImportError("alpaca-py not installed. Install with: pip install alpaca-py")
 
     logger.info("Fetching stock universe from Alpaca...")
 
@@ -412,9 +525,34 @@ def get_popular_symbols(
 
     if not include_etfs:
         etfs = {
-            "SPY", "QQQ", "IWM", "DIA", "VTI", "VOO", "VXX", "ARKK",
-            "XLF", "XLE", "XLK", "XLV", "XLI", "XLC", "XLY", "XLP", "XLB", "XLU", "XLRE",
-            "GLD", "IAU", "SGOL", "SLV", "TLT", "IEF", "SHY", "BND", "AGG",
+            "SPY",
+            "QQQ",
+            "IWM",
+            "DIA",
+            "VTI",
+            "VOO",
+            "VXX",
+            "ARKK",
+            "XLF",
+            "XLE",
+            "XLK",
+            "XLV",
+            "XLI",
+            "XLC",
+            "XLY",
+            "XLP",
+            "XLB",
+            "XLU",
+            "XLRE",
+            "GLD",
+            "IAU",
+            "SGOL",
+            "SLV",
+            "TLT",
+            "IEF",
+            "SHY",
+            "BND",
+            "AGG",
         }
         symbols = symbols - etfs
 
@@ -433,26 +571,100 @@ def get_sector_symbols(sector: str) -> List[str]:
     """
     sectors = {
         "tech": [
-            "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "NVDA", "TSLA", "AMD", "INTC",
-            "CRM", "ORCL", "ADBE", "CSCO", "AVGO", "TXN", "QCOM", "ASML", "AMAT", "MU",
+            "AAPL",
+            "MSFT",
+            "GOOGL",
+            "GOOG",
+            "AMZN",
+            "META",
+            "NVDA",
+            "TSLA",
+            "AMD",
+            "INTC",
+            "CRM",
+            "ORCL",
+            "ADBE",
+            "CSCO",
+            "AVGO",
+            "TXN",
+            "QCOM",
+            "ASML",
+            "AMAT",
+            "MU",
         ],
         "finance": [
-            "JPM", "BAC", "WFC", "GS", "MS", "C", "BRK.B", "V", "MA", "AXP",
-            "BLK", "SCHW", "USB", "PNC", "TFC",
+            "JPM",
+            "BAC",
+            "WFC",
+            "GS",
+            "MS",
+            "C",
+            "BRK.B",
+            "V",
+            "MA",
+            "AXP",
+            "BLK",
+            "SCHW",
+            "USB",
+            "PNC",
+            "TFC",
         ],
         "healthcare": [
-            "JNJ", "UNH", "PFE", "ABBV", "MRK", "LLY", "TMO", "ABT", "BMY", "AMGN",
-            "GILD", "CVS", "CI", "HCA",
+            "JNJ",
+            "UNH",
+            "PFE",
+            "ABBV",
+            "MRK",
+            "LLY",
+            "TMO",
+            "ABT",
+            "BMY",
+            "AMGN",
+            "GILD",
+            "CVS",
+            "CI",
+            "HCA",
         ],
         "consumer": [
-            "WMT", "COST", "HD", "MCD", "NKE", "SBUX", "TGT", "LOW", "DIS", "NFLX",
-            "PG", "KO", "PEP", "PM", "MO",
+            "WMT",
+            "COST",
+            "HD",
+            "MCD",
+            "NKE",
+            "SBUX",
+            "TGT",
+            "LOW",
+            "DIS",
+            "NFLX",
+            "PG",
+            "KO",
+            "PEP",
+            "PM",
+            "MO",
         ],
         "energy": [
-            "XOM", "CVX", "COP", "SLB", "EOG", "OXY", "MPC", "VLO", "PSX", "KMI",
+            "XOM",
+            "CVX",
+            "COP",
+            "SLB",
+            "EOG",
+            "OXY",
+            "MPC",
+            "VLO",
+            "PSX",
+            "KMI",
         ],
         "industrial": [
-            "CAT", "DE", "HON", "UNP", "UPS", "FDX", "BA", "LMT", "RTX", "GE",
+            "CAT",
+            "DE",
+            "HON",
+            "UNP",
+            "UPS",
+            "FDX",
+            "BA",
+            "LMT",
+            "RTX",
+            "GE",
         ],
     }
 

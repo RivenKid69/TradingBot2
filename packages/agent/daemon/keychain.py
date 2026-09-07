@@ -32,16 +32,19 @@ KEY_SIZE: Final[int] = 32  # 256 bits
 
 class KeychainError(Exception):
     """Keychain operation error."""
+
     pass
 
 
 class KeychainNotAvailableError(KeychainError):
     """OS keychain not available."""
+
     pass
 
 
 class KeyNotFoundError(KeychainError):
     """Key not found in keychain."""
+
     pass
 
 
@@ -50,6 +53,7 @@ class KeychainConfig:
     """
     Keychain configuration.
     """
+
     # Service identification
     service_name: str = SERVICE_NAME
     account_name: str = ACCOUNT_NAME
@@ -206,9 +210,7 @@ class KeychainManager:
             key = self._generate_and_store_key()
             return key
 
-        raise KeyNotFoundError(
-            "Master key not found in keychain, environment, or file"
-        )
+        raise KeyNotFoundError("Master key not found in keychain, environment, or file")
 
     def store_master_key(self, key: bytes) -> bool:
         """
@@ -350,9 +352,12 @@ class KeychainManager:
         try:
             result = subprocess.run(
                 [
-                    "security", "find-generic-password",
-                    "-s", self.config.service_name,
-                    "-a", self.config.account_name,
+                    "security",
+                    "find-generic-password",
+                    "-s",
+                    self.config.service_name,
+                    "-a",
+                    self.config.account_name,
                     "-w",  # Output password only
                 ],
                 capture_output=True,
@@ -384,10 +389,14 @@ class KeychainManager:
 
         result = subprocess.run(
             [
-                "security", "add-generic-password",
-                "-s", self.config.service_name,
-                "-a", self.config.account_name,
-                "-w", key_b64,
+                "security",
+                "add-generic-password",
+                "-s",
+                self.config.service_name,
+                "-a",
+                self.config.account_name,
+                "-w",
+                key_b64,
                 "-U",  # Update if exists
             ],
             capture_output=True,
@@ -402,9 +411,12 @@ class KeychainManager:
         """Delete key from macOS Keychain."""
         subprocess.run(
             [
-                "security", "delete-generic-password",
-                "-s", self.config.service_name,
-                "-a", self.config.account_name,
+                "security",
+                "delete-generic-password",
+                "-s",
+                self.config.service_name,
+                "-a",
+                self.config.account_name,
             ],
             capture_output=True,
             timeout=10,
@@ -417,9 +429,12 @@ class KeychainManager:
         try:
             result = subprocess.run(
                 [
-                    "secret-tool", "lookup",
-                    "service", self.config.service_name,
-                    "account", self.config.account_name,
+                    "secret-tool",
+                    "lookup",
+                    "service",
+                    self.config.service_name,
+                    "account",
+                    self.config.account_name,
                 ],
                 capture_output=True,
                 timeout=10,
@@ -439,10 +454,14 @@ class KeychainManager:
 
         result = subprocess.run(
             [
-                "secret-tool", "store",
-                "--label", f"{self.config.service_name} - {self.config.account_name}",
-                "service", self.config.service_name,
-                "account", self.config.account_name,
+                "secret-tool",
+                "store",
+                "--label",
+                f"{self.config.service_name} - {self.config.account_name}",
+                "service",
+                self.config.service_name,
+                "account",
+                self.config.account_name,
             ],
             input=key_b64.encode(),
             capture_output=True,
@@ -456,9 +475,12 @@ class KeychainManager:
         """Delete key from Linux Secret Service."""
         subprocess.run(
             [
-                "secret-tool", "clear",
-                "service", self.config.service_name,
-                "account", self.config.account_name,
+                "secret-tool",
+                "clear",
+                "service",
+                self.config.service_name,
+                "account",
+                self.config.account_name,
             ],
             capture_output=True,
             timeout=10,
@@ -473,14 +495,14 @@ class KeychainManager:
             target = f"{self.config.service_name}:{self.config.account_name}"
 
             # Use PowerShell to read credential
-            ps_script = f'''
+            ps_script = f"""
                 $cred = Get-StoredCredential -Target "{target}"
                 if ($cred) {{
                     [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
                         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($cred.Password)
                     )
                 }}
-            '''
+            """
 
             result = subprocess.run(
                 ["powershell", "-Command", ps_script],

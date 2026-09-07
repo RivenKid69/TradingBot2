@@ -28,8 +28,10 @@ import json
 # Enumerations
 # =========================
 
+
 class MarketType(str, Enum):
     """Type of market/asset class."""
+
     # Crypto
     CRYPTO_SPOT = "CRYPTO_SPOT"
     CRYPTO_FUTURES = "CRYPTO_FUTURES"
@@ -41,14 +43,19 @@ class MarketType(str, Enum):
     # Forex
     FOREX = "FOREX"
     # Traditional Futures (CME, CBOT, NYMEX, COMEX)
-    INDEX_FUTURES = "INDEX_FUTURES"          # ES, NQ, YM, RTY
+    INDEX_FUTURES = "INDEX_FUTURES"  # ES, NQ, YM, RTY
     COMMODITY_FUTURES = "COMMODITY_FUTURES"  # GC, SI, CL, NG, ZC, ZS, ZW
-    CURRENCY_FUTURES = "CURRENCY_FUTURES"    # 6E, 6J, 6B, 6A, 6C, 6S
-    BOND_FUTURES = "BOND_FUTURES"            # ZN, ZB, ZT, ZF, UB
+    CURRENCY_FUTURES = "CURRENCY_FUTURES"  # 6E, 6J, 6B, 6A, 6C, 6S
+    BOND_FUTURES = "BOND_FUTURES"  # ZN, ZB, ZT, ZF, UB
 
     @property
     def is_crypto(self) -> bool:
-        return self in (MarketType.CRYPTO_SPOT, MarketType.CRYPTO_FUTURES, MarketType.CRYPTO_PERP, MarketType.CRYPTO_OPTIONS)
+        return self in (
+            MarketType.CRYPTO_SPOT,
+            MarketType.CRYPTO_FUTURES,
+            MarketType.CRYPTO_PERP,
+            MarketType.CRYPTO_OPTIONS,
+        )
 
     @property
     def is_equity(self) -> bool:
@@ -97,39 +104,36 @@ class MarketType(str, Enum):
     @property
     def has_trading_hours(self) -> bool:
         """Returns True if this market type has trading hours (not 24/7)."""
-        return (
-            self.is_equity
-            or self == MarketType.FOREX
-            or self.is_traditional_futures
-        )
+        return self.is_equity or self == MarketType.FOREX or self.is_traditional_futures
 
 
 class ExchangeVendor(str, Enum):
     """Supported exchange vendors."""
+
     # Crypto Spot
     BINANCE = "binance"
     BINANCE_US = "binance_us"
     # Crypto Futures
-    BINANCE_FUTURES = "binance_futures"        # Binance USDT-M Futures
+    BINANCE_FUTURES = "binance_futures"  # Binance USDT-M Futures
     BINANCE_COIN_FUTURES = "binance_coin_futures"  # Binance COIN-M Futures
     # Equity
     ALPACA = "alpaca"
     POLYGON = "polygon"  # Data provider
-    YAHOO = "yahoo"      # Data provider for corporate actions, earnings (Phase 7)
+    YAHOO = "yahoo"  # Data provider for corporate actions, earnings (Phase 7)
     # Options Data Providers (Phase 2)
-    THETA_DATA = "theta_data"    # Theta Data - US options (historical + delayed real-time)
+    THETA_DATA = "theta_data"  # Theta Data - US options (historical + delayed real-time)
     # Crypto Options (Phase 2B)
-    DERIBIT = "deribit"          # Deribit - BTC/ETH options (European, inverse settlement)
+    DERIBIT = "deribit"  # Deribit - BTC/ETH options (European, inverse settlement)
     # Forex (Phase 0)
-    OANDA = "oanda"          # Primary forex broker (OANDA v20 API)
-    IG = "ig"                # IG Markets (alternative)
+    OANDA = "oanda"  # Primary forex broker (OANDA v20 API)
+    IG = "ig"  # IG Markets (alternative)
     DUKASCOPY = "dukascopy"  # Dukascopy (historical tick data)
     # Traditional Futures (via Interactive Brokers)
-    IB = "ib"                    # Interactive Brokers (CME, CBOT, NYMEX, COMEX)
-    IB_CME = "ib_cme"            # IB → CME (ES, NQ, 6E, 6J)
-    IB_CBOT = "ib_cbot"          # IB → CBOT (ZN, ZB, ZC, ZS, ZW)
-    IB_NYMEX = "ib_nymex"        # IB → NYMEX (CL, NG)
-    IB_COMEX = "ib_comex"        # IB → COMEX (GC, SI)
+    IB = "ib"  # Interactive Brokers (CME, CBOT, NYMEX, COMEX)
+    IB_CME = "ib_cme"  # IB → CME (ES, NQ, 6E, 6J)
+    IB_CBOT = "ib_cbot"  # IB → CBOT (ZN, ZB, ZC, ZS, ZW)
+    IB_NYMEX = "ib_nymex"  # IB → NYMEX (CL, NG)
+    IB_COMEX = "ib_comex"  # IB → COMEX (GC, SI)
     # Unknown
     UNKNOWN = "unknown"
 
@@ -187,25 +191,28 @@ class ExchangeVendor(str, Enum):
 
 class FeeStructure(str, Enum):
     """Fee calculation structure type."""
-    PERCENTAGE = "percentage"      # Fee as % of notional (e.g., 0.1% = 10 bps)
-    PER_SHARE = "per_share"        # Fee per share/unit (e.g., $0.005/share)
-    FLAT = "flat"                  # Flat fee per trade (e.g., $1.00)
-    TIERED = "tiered"              # Tiered based on volume
-    MIXED = "mixed"                # Combination of above
+
+    PERCENTAGE = "percentage"  # Fee as % of notional (e.g., 0.1% = 10 bps)
+    PER_SHARE = "per_share"  # Fee per share/unit (e.g., $0.005/share)
+    FLAT = "flat"  # Flat fee per trade (e.g., $1.00)
+    TIERED = "tiered"  # Tiered based on volume
+    MIXED = "mixed"  # Combination of above
 
 
 class SessionType(str, Enum):
     """Trading session type."""
-    REGULAR = "regular"            # Regular market hours (9:30-16:00 ET for US)
-    PRE_MARKET = "pre_market"      # Pre-market (4:00-9:30 ET)
-    AFTER_HOURS = "after_hours"    # After hours (16:00-20:00 ET)
-    EXTENDED = "extended"          # All extended hours
-    CONTINUOUS = "continuous"      # 24/7 (crypto)
+
+    REGULAR = "regular"  # Regular market hours (9:30-16:00 ET for US)
+    PRE_MARKET = "pre_market"  # Pre-market (4:00-9:30 ET)
+    AFTER_HOURS = "after_hours"  # After hours (16:00-20:00 ET)
+    EXTENDED = "extended"  # All extended hours
+    CONTINUOUS = "continuous"  # 24/7 (crypto)
 
 
 # =========================
 # Exchange Rules
 # =========================
+
 
 @dataclass(frozen=True)
 class ExchangeRule:
@@ -234,6 +241,7 @@ class ExchangeRule:
         is_shortable: Whether short selling is allowed
         raw_filters: Original exchange-specific filter data
     """
+
     symbol: str
     tick_size: Decimal
     step_size: Decimal
@@ -255,9 +263,9 @@ class ExchangeRule:
     def __post_init__(self) -> None:
         # Validate immutable constraints (done via object.__setattr__ for frozen)
         if self.tick_size <= Decimal("0"):
-            object.__setattr__(self, 'tick_size', Decimal("0.00000001"))
+            object.__setattr__(self, "tick_size", Decimal("0.00000001"))
         if self.step_size <= Decimal("0"):
-            object.__setattr__(self, 'step_size', Decimal("0.00000001"))
+            object.__setattr__(self, "step_size", Decimal("0.00000001"))
 
     def quantize_price(self, price: Decimal) -> Decimal:
         """Round price to valid tick size."""
@@ -370,6 +378,7 @@ class ExchangeRule:
 # Trading Sessions
 # =========================
 
+
 @dataclass(frozen=True)
 class TradingSession:
     """
@@ -387,9 +396,10 @@ class TradingSession:
         days_of_week: Days when session is active (0=Monday, 6=Sunday)
         is_active: Whether session is currently active
     """
+
     session_type: SessionType
     start_minutes: int  # Minutes from midnight (0-1439)
-    end_minutes: int    # Minutes from midnight (0-1439)
+    end_minutes: int  # Minutes from midnight (0-1439)
     timezone: str = "UTC"
     days_of_week: Tuple[int, ...] = (0, 1, 2, 3, 4)  # Mon-Fri by default
     is_active: bool = True
@@ -461,6 +471,7 @@ class MarketCalendar:
         half_days: List of half-day dates with early close
         timezone: Primary timezone for this market
     """
+
     vendor: ExchangeVendor
     market_type: MarketType
     sessions: List[TradingSession] = field(default_factory=list)
@@ -495,6 +506,7 @@ class MarketCalendar:
 # Fee Structures
 # =========================
 
+
 @dataclass(frozen=True)
 class FeeSchedule:
     """
@@ -517,6 +529,7 @@ class FeeSchedule:
         volume_tiers: Volume-based tier discounts {volume_threshold: rate_multiplier}
         rebate_enabled: Whether maker rebates are possible
     """
+
     structure: FeeStructure = FeeStructure.PERCENTAGE
     maker_rate: float = 10.0  # bps for percentage, $ for per-share
     taker_rate: float = 10.0
@@ -619,6 +632,7 @@ class FeeSchedule:
 # Account Info
 # =========================
 
+
 @dataclass(frozen=True)
 class AccountInfo:
     """
@@ -637,6 +651,7 @@ class AccountInfo:
         pattern_day_trader: PDT status (for US equities)
         raw_data: Original account data from exchange
     """
+
     vendor: ExchangeVendor
     account_id: str = ""
     account_type: str = "cash"
@@ -669,6 +684,7 @@ class AccountInfo:
 # Symbol Info
 # =========================
 
+
 @dataclass(frozen=True)
 class SymbolInfo:
     """
@@ -693,6 +709,7 @@ class SymbolInfo:
         delisted_date: Delisting date if applicable
         raw_data: Original exchange data
     """
+
     symbol: str
     vendor: ExchangeVendor
     market_type: MarketType
@@ -779,7 +796,7 @@ class SymbolInfo:
 US_EQUITY_SESSIONS = [
     TradingSession(
         session_type=SessionType.PRE_MARKET,
-        start_minutes=4 * 60,   # 04:00 ET
+        start_minutes=4 * 60,  # 04:00 ET
         end_minutes=9 * 60 + 30,  # 09:30 ET
         timezone="America/New_York",
         days_of_week=(0, 1, 2, 3, 4),
@@ -794,7 +811,7 @@ US_EQUITY_SESSIONS = [
     TradingSession(
         session_type=SessionType.AFTER_HOURS,
         start_minutes=16 * 60,  # 16:00 ET
-        end_minutes=20 * 60,    # 20:00 ET
+        end_minutes=20 * 60,  # 20:00 ET
         timezone="America/New_York",
         days_of_week=(0, 1, 2, 3, 4),
     ),
@@ -813,6 +830,7 @@ CRYPTO_CONTINUOUS_SESSION = TradingSession(
 # =========================
 # Default Calendars
 # =========================
+
 
 def create_us_equity_calendar(vendor: ExchangeVendor = ExchangeVendor.ALPACA) -> MarketCalendar:
     """Create US equity market calendar."""
@@ -838,25 +856,28 @@ def create_crypto_calendar(vendor: ExchangeVendor = ExchangeVendor.BINANCE) -> M
 # Corporate Actions (Phase 7)
 # =========================
 
+
 class CorporateActionType(str, Enum):
     """Type of corporate action affecting stock price/position."""
-    DIVIDEND = "dividend"              # Cash dividend
+
+    DIVIDEND = "dividend"  # Cash dividend
     STOCK_DIVIDEND = "stock_dividend"  # Stock dividend (shares distributed)
-    SPLIT = "split"                    # Stock split (forward or reverse)
-    MERGER = "merger"                  # Merger/acquisition
-    SPINOFF = "spinoff"                # Spinoff of subsidiary
-    RIGHTS = "rights"                  # Rights offering
-    SYMBOL_CHANGE = "symbol_change"    # Ticker symbol change
-    DELISTING = "delisting"            # Removed from exchange
+    SPLIT = "split"  # Stock split (forward or reverse)
+    MERGER = "merger"  # Merger/acquisition
+    SPINOFF = "spinoff"  # Spinoff of subsidiary
+    RIGHTS = "rights"  # Rights offering
+    SYMBOL_CHANGE = "symbol_change"  # Ticker symbol change
+    DELISTING = "delisting"  # Removed from exchange
 
 
 class DividendType(str, Enum):
     """Type of dividend distribution."""
-    REGULAR = "regular"         # Regular quarterly/monthly dividend
-    SPECIAL = "special"         # One-time special dividend
-    STOCK = "stock"            # Paid in shares, not cash
-    QUALIFIED = "qualified"     # Tax-advantaged qualified dividend
-    UNQUALIFIED = "unqualified" # Ordinary income dividend
+
+    REGULAR = "regular"  # Regular quarterly/monthly dividend
+    SPECIAL = "special"  # One-time special dividend
+    STOCK = "stock"  # Paid in shares, not cash
+    QUALIFIED = "qualified"  # Tax-advantaged qualified dividend
+    UNQUALIFIED = "unqualified"  # Ordinary income dividend
 
 
 @dataclass(frozen=True)
@@ -886,6 +907,7 @@ class CorporateAction:
         related_symbol: New symbol for mergers/spinoffs/symbol changes
         raw_data: Original data from source
     """
+
     action_type: CorporateActionType
     symbol: str
     ex_date: str  # ISO format YYYY-MM-DD
@@ -907,7 +929,7 @@ class CorporateAction:
             # e.g., 2:1 split → adjustment_factor = 0.5 (prices halve)
             new, old = self.ratio
             if old > 0:
-                object.__setattr__(self, 'adjustment_factor', old / new)
+                object.__setattr__(self, "adjustment_factor", old / new)
 
     @property
     def is_price_adjusting(self) -> bool:
@@ -1005,6 +1027,7 @@ class Dividend:
         yield_pct: Dividend yield at declaration (optional)
         is_adjusted: Whether amount is split-adjusted
     """
+
     symbol: str
     ex_date: str  # ISO format
     amount: Decimal
@@ -1021,6 +1044,7 @@ class Dividend:
     def ex_date_timestamp(self) -> int:
         """Ex-date as Unix timestamp (seconds)."""
         from datetime import datetime
+
         dt = datetime.fromisoformat(self.ex_date)
         return int(dt.timestamp())
 
@@ -1096,6 +1120,7 @@ class StockSplit:
         announcement_date: When split was announced
         is_reverse: True if reverse split (consolidation)
     """
+
     symbol: str
     ex_date: str  # ISO format
     ratio: Tuple[int, int]  # (new, old)
@@ -1106,7 +1131,7 @@ class StockSplit:
         """Validate and set is_reverse flag."""
         new, old = self.ratio
         if new < old and not self.is_reverse:
-            object.__setattr__(self, 'is_reverse', True)
+            object.__setattr__(self, "is_reverse", True)
 
     @property
     def adjustment_factor(self) -> float:
@@ -1194,6 +1219,7 @@ class EarningsEvent:
         surprise_pct: EPS surprise percentage (actual - estimate) / estimate
         is_confirmed: Whether date is confirmed by company
     """
+
     symbol: str
     report_date: str  # ISO format YYYY-MM-DD
     fiscal_quarter: Optional[int] = None  # 1-4
@@ -1210,6 +1236,7 @@ class EarningsEvent:
     def report_date_timestamp(self) -> int:
         """Report date as Unix timestamp (seconds)."""
         from datetime import datetime
+
         dt = datetime.fromisoformat(self.report_date)
         return int(dt.timestamp())
 
@@ -1279,6 +1306,7 @@ class AdjustmentFactors:
         dividend_factor: Cumulative dividend adjustment factor
         combined_factor: Product of split and dividend factors
     """
+
     symbol: str
     date: str  # ISO format
     split_factor: float = 1.0
@@ -1328,6 +1356,7 @@ class AdjustmentFactors:
 # Forex Models (Phase 0)
 # =========================
 
+
 class ForexSessionType(str, Enum):
     """
     Forex trading session type.
@@ -1343,6 +1372,7 @@ class ForexSessionType(str, Enum):
         - BIS Triennial Survey 2022: https://www.bis.org/statistics/rpfx22.htm
         - Forex session times: Standard GMT/UTC-based windows
     """
+
     SYDNEY = "sydney"
     TOKYO = "tokyo"
     LONDON = "london"
@@ -1367,9 +1397,10 @@ class CurrencyPairCategory(str, Enum):
         - BIS Triennial Survey 2022
         - Standard institutional classification
     """
-    MAJOR = "major"    # EUR/USD, USD/JPY, GBP/USD, USD/CHF, AUD/USD, USD/CAD, NZD/USD
-    MINOR = "minor"    # EUR/GBP, EUR/CHF, GBP/CHF, EUR/AUD, GBP/AUD
-    CROSS = "cross"    # EUR/JPY, GBP/JPY, AUD/JPY, CHF/JPY, CAD/JPY, NZD/JPY
+
+    MAJOR = "major"  # EUR/USD, USD/JPY, GBP/USD, USD/CHF, AUD/USD, USD/CAD, NZD/USD
+    MINOR = "minor"  # EUR/GBP, EUR/CHF, GBP/CHF, EUR/AUD, GBP/AUD
+    CROSS = "cross"  # EUR/JPY, GBP/JPY, AUD/JPY, CHF/JPY, CAD/JPY, NZD/JPY
     EXOTIC = "exotic"  # USD/TRY, USD/ZAR, USD/MXN, USD/SGD, USD/HKD, USD/NOK, USD/SEK
 
 
@@ -1390,6 +1421,7 @@ class ForexSessionWindow:
         liquidity_factor and spread_multiplier are inversely related:
         Higher liquidity → Lower spread multiplier
     """
+
     session_type: ForexSessionType
     start_hour_utc: int
     end_hour_utc: int
@@ -1543,7 +1575,7 @@ FOREX_SESSION_WINDOWS: List[ForexSessionWindow] = [
 FOREX_WEEKEND_WINDOW = ForexSessionWindow(
     session_type=ForexSessionType.WEEKEND,
     start_hour_utc=21,  # Friday 21:00 UTC
-    end_hour_utc=21,    # Sunday 21:00 UTC (special case: 48h)
+    end_hour_utc=21,  # Sunday 21:00 UTC (special case: 48h)
     liquidity_factor=0.0,  # No trading
     spread_multiplier=float("inf"),  # Cannot trade
     days_of_week=(4, 5, 6),  # Fri evening, Sat, Sun until evening
@@ -1559,8 +1591,8 @@ FOREX_WEEKEND_WINDOW = ForexSessionWindow(
 # JPY pairs: 0.01 (2 decimal places)
 
 PIP_SIZE_BY_QUOTE_CURRENCY: Dict[str, float] = {
-    "JPY": 0.01,    # Japanese Yen pairs
-    "HUF": 0.01,    # Hungarian Forint
+    "JPY": 0.01,  # Japanese Yen pairs
+    "HUF": 0.01,  # Hungarian Forint
     "default": 0.0001,  # Standard 4-decimal pairs
 }
 
@@ -1588,10 +1620,7 @@ def get_pip_size(symbol: str) -> float:
     parts = normalized.split("/")
     if len(parts) == 2:
         quote_currency = parts[1]
-        return PIP_SIZE_BY_QUOTE_CURRENCY.get(
-            quote_currency,
-            PIP_SIZE_BY_QUOTE_CURRENCY["default"]
-        )
+        return PIP_SIZE_BY_QUOTE_CURRENCY.get(quote_currency, PIP_SIZE_BY_QUOTE_CURRENCY["default"])
     return PIP_SIZE_BY_QUOTE_CURRENCY["default"]
 
 
@@ -1644,29 +1673,57 @@ def price_to_pips(price_diff: float, symbol: str) -> float:
 
 # Major pairs: USD with G7 currencies
 FOREX_MAJOR_PAIRS: Tuple[str, ...] = (
-    "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-    "AUD_USD", "USD_CAD", "NZD_USD",
+    "EUR_USD",
+    "USD_JPY",
+    "GBP_USD",
+    "USD_CHF",
+    "AUD_USD",
+    "USD_CAD",
+    "NZD_USD",
 )
 
 # Minor pairs (crosses): G7 without USD
 FOREX_MINOR_PAIRS: Tuple[str, ...] = (
-    "EUR_GBP", "EUR_CHF", "GBP_CHF", "EUR_AUD",
-    "GBP_AUD", "EUR_CAD", "GBP_CAD", "AUD_NZD",
-    "AUD_CAD", "NZD_CAD",
+    "EUR_GBP",
+    "EUR_CHF",
+    "GBP_CHF",
+    "EUR_AUD",
+    "GBP_AUD",
+    "EUR_CAD",
+    "GBP_CAD",
+    "AUD_NZD",
+    "AUD_CAD",
+    "NZD_CAD",
 )
 
 # JPY crosses
 FOREX_JPY_CROSSES: Tuple[str, ...] = (
-    "EUR_JPY", "GBP_JPY", "AUD_JPY", "CHF_JPY",
-    "CAD_JPY", "NZD_JPY",
+    "EUR_JPY",
+    "GBP_JPY",
+    "AUD_JPY",
+    "CHF_JPY",
+    "CAD_JPY",
+    "NZD_JPY",
 )
 
 # Exotic pairs (emerging markets)
 FOREX_EXOTIC_PAIRS: Tuple[str, ...] = (
-    "USD_TRY", "USD_ZAR", "USD_MXN", "USD_SGD",
-    "USD_HKD", "USD_NOK", "USD_SEK", "USD_DKK",
-    "USD_PLN", "USD_CZK", "USD_HUF", "USD_RUB",
-    "EUR_TRY", "EUR_ZAR", "EUR_NOK", "EUR_SEK",
+    "USD_TRY",
+    "USD_ZAR",
+    "USD_MXN",
+    "USD_SGD",
+    "USD_HKD",
+    "USD_NOK",
+    "USD_SEK",
+    "USD_DKK",
+    "USD_PLN",
+    "USD_CZK",
+    "USD_HUF",
+    "USD_RUB",
+    "EUR_TRY",
+    "EUR_ZAR",
+    "EUR_NOK",
+    "EUR_SEK",
 )
 
 
@@ -1717,6 +1774,7 @@ def classify_currency_pair(symbol: str) -> CurrencyPairCategory:
 # Forex Spread Profiles
 # =========================
 
+
 @dataclass(frozen=True)
 class ForexSpreadProfile:
     """
@@ -1733,6 +1791,7 @@ class ForexSpreadProfile:
         - BIS Triennial Survey 2022
         - Major broker spread sheets
     """
+
     category: CurrencyPairCategory
     retail_spread_pips: float
     institutional_spread_pips: float
@@ -1799,6 +1858,7 @@ def get_spread_profile(symbol: str) -> ForexSpreadProfile:
 # Forex Calendar Helper
 # =========================
 
+
 def create_forex_calendar(vendor: ExchangeVendor = ExchangeVendor.OANDA) -> MarketCalendar:
     """
     Create forex market calendar.
@@ -1810,7 +1870,7 @@ def create_forex_calendar(vendor: ExchangeVendor = ExchangeVendor.OANDA) -> Mark
     forex_session = TradingSession(
         session_type=SessionType.CONTINUOUS,
         start_minutes=21 * 60,  # Sunday 21:00 UTC
-        end_minutes=21 * 60,    # Friday 21:00 UTC (special handling)
+        end_minutes=21 * 60,  # Friday 21:00 UTC (special handling)
         timezone="UTC",
         days_of_week=(0, 1, 2, 3, 4),  # Active Mon-Fri
         is_active=True,

@@ -133,8 +133,10 @@ MAX_MARKET_DATA_AGE_SEC = 10.0
 # ENUMS
 # ============================================================================
 
+
 class LiveRunnerState(Enum):
     """Live runner states."""
+
     INITIALIZING = auto()
     CONNECTING = auto()
     SYNCING = auto()
@@ -147,6 +149,7 @@ class LiveRunnerState(Enum):
 
 class LiveRunnerEvent(Enum):
     """Events emitted by live runner."""
+
     STATE_CHANGED = auto()
     POSITION_SYNCED = auto()
     MARGIN_WARNING = auto()
@@ -165,6 +168,7 @@ class LiveRunnerEvent(Enum):
 # ============================================================================
 # PROTOCOLS
 # ============================================================================
+
 
 @runtime_checkable
 class MarketDataProvider(Protocol):
@@ -243,6 +247,7 @@ class SignalProvider(Protocol):
 # CONFIGURATION
 # ============================================================================
 
+
 @dataclass
 class FuturesLiveRunnerConfig:
     """
@@ -265,6 +270,7 @@ class FuturesLiveRunnerConfig:
         paper_trading: Enable paper/simulation mode
         event_callbacks: Callbacks for events
     """
+
     futures_type: FuturesType = FuturesType.CRYPTO_PERPETUAL
     symbols: List[str] = field(default_factory=list)
 
@@ -308,19 +314,33 @@ class FuturesLiveRunnerConfig:
         return cls(
             futures_type=futures_type,
             symbols=list(d.get("symbols", [])),
-            main_loop_interval_sec=float(d.get("main_loop_interval_sec", DEFAULT_MAIN_LOOP_INTERVAL_SEC)),
-            position_sync_interval_sec=float(d.get("position_sync_interval_sec", DEFAULT_POSITION_SYNC_INTERVAL_SEC)),
-            margin_check_interval_sec=float(d.get("margin_check_interval_sec", DEFAULT_MARGIN_CHECK_INTERVAL_SEC)),
-            funding_check_interval_sec=float(d.get("funding_check_interval_sec", DEFAULT_FUNDING_CHECK_INTERVAL_SEC)),
-            heartbeat_interval_sec=float(d.get("heartbeat_interval_sec", DEFAULT_HEARTBEAT_INTERVAL_SEC)),
+            main_loop_interval_sec=float(
+                d.get("main_loop_interval_sec", DEFAULT_MAIN_LOOP_INTERVAL_SEC)
+            ),
+            position_sync_interval_sec=float(
+                d.get("position_sync_interval_sec", DEFAULT_POSITION_SYNC_INTERVAL_SEC)
+            ),
+            margin_check_interval_sec=float(
+                d.get("margin_check_interval_sec", DEFAULT_MARGIN_CHECK_INTERVAL_SEC)
+            ),
+            funding_check_interval_sec=float(
+                d.get("funding_check_interval_sec", DEFAULT_FUNDING_CHECK_INTERVAL_SEC)
+            ),
+            heartbeat_interval_sec=float(
+                d.get("heartbeat_interval_sec", DEFAULT_HEARTBEAT_INTERVAL_SEC)
+            ),
             enable_position_sync=bool(d.get("enable_position_sync", True)),
             enable_margin_monitoring=bool(d.get("enable_margin_monitoring", True)),
             enable_funding_tracking=bool(d.get("enable_funding_tracking", True)),
             enable_adl_monitoring=bool(d.get("enable_adl_monitoring", True)),
-            enable_circuit_breaker_monitoring=bool(d.get("enable_circuit_breaker_monitoring", True)),
+            enable_circuit_breaker_monitoring=bool(
+                d.get("enable_circuit_breaker_monitoring", True)
+            ),
             max_reconnect_attempts=int(d.get("max_reconnect_attempts", MAX_RECONNECT_ATTEMPTS)),
             strict_mode=bool(d.get("strict_mode", True)),
-            max_position_value=Decimal(str(d["max_position_value"])) if d.get("max_position_value") else None,
+            max_position_value=(
+                Decimal(str(d["max_position_value"])) if d.get("max_position_value") else None
+            ),
             max_leverage=int(d.get("max_leverage", 10)),
             paper_trading=bool(d.get("paper_trading", True)),
         )
@@ -365,9 +385,11 @@ class FuturesLiveRunnerConfig:
 # HEALTH CHECK
 # ============================================================================
 
+
 @dataclass
 class HealthStatus:
     """Health status of the live runner."""
+
     is_healthy: bool
     state: LiveRunnerState
     last_position_sync_age_sec: float
@@ -403,9 +425,11 @@ class HealthStatus:
 # LIVE RUNNER STATS
 # ============================================================================
 
+
 @dataclass
 class LiveRunnerStats:
     """Statistics for live runner session."""
+
     session_start_time_ms: int = 0
     total_orders_submitted: int = 0
     total_orders_filled: int = 0
@@ -444,6 +468,7 @@ class LiveRunnerStats:
 # ============================================================================
 # MAIN LIVE RUNNER CLASS
 # ============================================================================
+
 
 class FuturesLiveRunner:
     """
@@ -575,11 +600,14 @@ class FuturesLiveRunner:
 
         if old_state != new_state:
             logger.info(f"State transition: {old_state.name} -> {new_state.name}")
-            self._emit_event(LiveRunnerEvent.STATE_CHANGED, {
-                "old_state": old_state.name,
-                "new_state": new_state.name,
-                "timestamp_ms": int(time.time() * 1000),
-            })
+            self._emit_event(
+                LiveRunnerEvent.STATE_CHANGED,
+                {
+                    "old_state": old_state.name,
+                    "new_state": new_state.name,
+                    "timestamp_ms": int(time.time() * 1000),
+                },
+            )
 
     @property
     def is_running(self) -> bool:
@@ -886,7 +914,8 @@ class FuturesLiveRunner:
 
                 # Check ADL warnings
                 adl_warnings = [
-                    d for d in result.discrepancies
+                    d
+                    for d in result.discrepancies
                     if d.event_type == FuturesSyncEventType.ADL_WARNING
                 ]
                 if adl_warnings:
@@ -900,11 +929,14 @@ class FuturesLiveRunner:
                         exchange_positions[symbol] = pos
                 self._update_local_positions(exchange_positions)
 
-                self._emit_event(LiveRunnerEvent.POSITION_SYNCED, {
-                    "positions": len(exchange_positions),
-                    "discrepancies": len(result.discrepancies),
-                    "timestamp_ms": result.timestamp_ms,
-                })
+                self._emit_event(
+                    LiveRunnerEvent.POSITION_SYNCED,
+                    {
+                        "positions": len(exchange_positions),
+                        "discrepancies": len(result.discrepancies),
+                        "timestamp_ms": result.timestamp_ms,
+                    },
+                )
             else:
                 logger.warning(f"Position sync failed: {result.error_message}")
 
@@ -924,13 +956,11 @@ class FuturesLiveRunner:
                 )
             elif disc.event_type == FuturesSyncEventType.UNEXPECTED_POSITION:
                 logger.warning(
-                    f"Unexpected position on exchange: {disc.symbol}, "
-                    f"qty={disc.exchange_qty}"
+                    f"Unexpected position on exchange: {disc.symbol}, " f"qty={disc.exchange_qty}"
                 )
             elif disc.event_type == FuturesSyncEventType.MISSING_POSITION:
                 logger.warning(
-                    f"Position missing from exchange: {disc.symbol}, "
-                    f"local_qty={disc.local_qty}"
+                    f"Position missing from exchange: {disc.symbol}, " f"local_qty={disc.local_qty}"
                 )
 
     def _handle_adl_warnings(self, warnings: List[FuturesPositionDiff]) -> None:
@@ -943,11 +973,14 @@ class FuturesLiveRunner:
                 f"level={warning.adl_risk_level.name if warning.adl_risk_level else 'N/A'}"
             )
 
-            self._emit_event(LiveRunnerEvent.ADL_WARNING, {
-                "symbol": warning.symbol,
-                "adl_level": warning.adl_risk_level.name if warning.adl_risk_level else None,
-                "timestamp_ms": warning.timestamp_ms,
-            })
+            self._emit_event(
+                LiveRunnerEvent.ADL_WARNING,
+                {
+                    "symbol": warning.symbol,
+                    "adl_level": warning.adl_risk_level.name if warning.adl_risk_level else None,
+                    "timestamp_ms": warning.timestamp_ms,
+                },
+            )
 
     # ------------------------------------------------------------------------
     # MARGIN MONITORING
@@ -995,11 +1028,14 @@ class FuturesLiveRunner:
                         else LiveRunnerEvent.MARGIN_CRITICAL
                     )
 
-                    self._emit_event(event, {
-                        "status": result.status.name,
-                        "margin_ratio": result.margin_ratio,
-                        "timestamp_ms": int(time.time() * 1000),
-                    })
+                    self._emit_event(
+                        event,
+                        {
+                            "status": result.status.name,
+                            "margin_ratio": result.margin_ratio,
+                            "timestamp_ms": int(time.time() * 1000),
+                        },
+                    )
 
                     # Notify via margin notifier
                     self._margin_notifier.check_and_notify(result)
@@ -1050,16 +1086,17 @@ class FuturesLiveRunner:
                         else:
                             self._stats.total_funding_paid += abs(payment.payment_amount)
 
-                        logger.info(
-                            f"Funding payment for {symbol}: {payment.payment_amount}"
-                        )
+                        logger.info(f"Funding payment for {symbol}: {payment.payment_amount}")
 
-                        self._emit_event(LiveRunnerEvent.FUNDING_PAYMENT, {
-                            "symbol": symbol,
-                            "payment": float(payment.payment_amount),
-                            "rate": float(funding_info.rate),
-                            "timestamp_ms": now_ms,
-                        })
+                        self._emit_event(
+                            LiveRunnerEvent.FUNDING_PAYMENT,
+                            {
+                                "symbol": symbol,
+                                "payment": float(payment.payment_amount),
+                                "rate": float(funding_info.rate),
+                                "timestamp_ms": now_ms,
+                            },
+                        )
 
         except Exception as e:
             logger.error(f"Funding check error: {e}")
@@ -1153,24 +1190,30 @@ class FuturesLiveRunner:
                 )
 
             self._stats.total_orders_submitted += 1
-            self._add_order(order_id, {
-                "symbol": symbol,
-                "side": side.name,
-                "qty": qty,
-                "time": time.time(),
-            })
+            self._add_order(
+                order_id,
+                {
+                    "symbol": symbol,
+                    "side": side.name,
+                    "qty": qty,
+                    "time": time.time(),
+                },
+            )
 
             logger.info(f"Order submitted: {order_id} {symbol} {side.name} {qty}")
 
         except Exception as e:
             logger.error(f"Order execution error: {e}")
             self._stats.total_orders_rejected += 1
-            self._emit_event(LiveRunnerEvent.ORDER_REJECTED, {
-                "symbol": symbol,
-                "action": action,
-                "qty": qty,
-                "error": str(e),
-            })
+            self._emit_event(
+                LiveRunnerEvent.ORDER_REJECTED,
+                {
+                    "symbol": symbol,
+                    "action": action,
+                    "qty": qty,
+                    "error": str(e),
+                },
+            )
 
     # ------------------------------------------------------------------------
     # CONNECTION HANDLING
@@ -1180,9 +1223,12 @@ class FuturesLiveRunner:
         """Handle lost connection to exchange."""
         logger.warning("Connection lost to exchange")
 
-        self._emit_event(LiveRunnerEvent.CONNECTION_LOST, {
-            "timestamp_ms": int(time.time() * 1000),
-        })
+        self._emit_event(
+            LiveRunnerEvent.CONNECTION_LOST,
+            {
+                "timestamp_ms": int(time.time() * 1000),
+            },
+        )
 
         # Attempt reconnection
         self._attempt_reconnection()
@@ -1196,7 +1242,7 @@ class FuturesLiveRunner:
 
         # Exponential backoff
         backoff = min(
-            RECONNECT_BACKOFF_BASE * (2 ** self._reconnect_attempts),
+            RECONNECT_BACKOFF_BASE * (2**self._reconnect_attempts),
             RECONNECT_BACKOFF_MAX,
         )
 
@@ -1210,9 +1256,12 @@ class FuturesLiveRunner:
         if self._market_data.is_connected():
             logger.info("Reconnection successful")
             self._reconnect_attempts = 0
-            self._emit_event(LiveRunnerEvent.CONNECTION_RESTORED, {
-                "timestamp_ms": int(time.time() * 1000),
-            })
+            self._emit_event(
+                LiveRunnerEvent.CONNECTION_RESTORED,
+                {
+                    "timestamp_ms": int(time.time() * 1000),
+                },
+            )
 
     # ------------------------------------------------------------------------
     # ERROR HANDLING
@@ -1220,10 +1269,13 @@ class FuturesLiveRunner:
 
     def _handle_error(self, error: Exception) -> None:
         """Handle runtime error."""
-        self._emit_event(LiveRunnerEvent.ERROR, {
-            "error": str(error),
-            "timestamp_ms": int(time.time() * 1000),
-        })
+        self._emit_event(
+            LiveRunnerEvent.ERROR,
+            {
+                "error": str(error),
+                "timestamp_ms": int(time.time() * 1000),
+            },
+        )
 
         # Decide if we should stop or continue
         if isinstance(error, (ConnectionError, TimeoutError)):
@@ -1281,7 +1333,11 @@ class FuturesLiveRunner:
             connection_status={"exchange": connected},
             active_orders=len(self._active_orders),
             open_positions=len(self._positions),
-            margin_status=self._last_margin_result.status if self._last_margin_result else MarginStatus.HEALTHY,
+            margin_status=(
+                self._last_margin_result.status
+                if self._last_margin_result
+                else MarginStatus.HEALTHY
+            ),
             warnings=warnings,
             errors=errors,
             timestamp_ms=int(now * 1000),
@@ -1339,6 +1395,7 @@ class FuturesLiveRunner:
 # ============================================================================
 # FACTORY FUNCTIONS
 # ============================================================================
+
 
 def create_futures_live_runner(
     config: FuturesLiveRunnerConfig,

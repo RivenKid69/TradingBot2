@@ -164,9 +164,7 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
             try:
                 from alpaca.trading.client import TradingClient
             except ImportError:
-                raise ImportError(
-                    "Alpaca SDK not installed. Install with: pip install alpaca-py"
-                )
+                raise ImportError("Alpaca SDK not installed. Install with: pip install alpaca-py")
 
             api_key = self._config.get("api_key")
             api_secret = self._config.get("api_secret")
@@ -263,9 +261,11 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
                 client_order_id=str(alpaca_order.client_order_id),
                 status=str(alpaca_order.status.value),
                 filled_qty=Decimal(str(alpaca_order.filled_qty or 0)),
-                filled_price=Decimal(str(alpaca_order.filled_avg_price))
-                if alpaca_order.filled_avg_price
-                else None,
+                filled_price=(
+                    Decimal(str(alpaca_order.filled_avg_price))
+                    if alpaca_order.filled_avg_price
+                    else None
+                ),
                 raw_response={"id": str(alpaca_order.id)},
             )
 
@@ -406,6 +406,7 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
                     continue
 
                 import time
+
                 position = Position(
                     symbol=p.symbol,
                     qty=Decimal(str(p.qty)),
@@ -473,11 +474,7 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
             from core_models import TimeInForce
 
             side = Side.BUY if str(alpaca_order.side) == "buy" else Side.SELL
-            order_type = (
-                OrderType.MARKET
-                if str(alpaca_order.type) == "market"
-                else OrderType.LIMIT
-            )
+            order_type = OrderType.MARKET if str(alpaca_order.type) == "market" else OrderType.LIMIT
 
             tif_map = {
                 "day": TimeInForce.GTC,
@@ -492,9 +489,7 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
                 side=side,
                 order_type=order_type,
                 quantity=Decimal(str(alpaca_order.qty)),
-                price=Decimal(str(alpaca_order.limit_price))
-                if alpaca_order.limit_price
-                else None,
+                price=Decimal(str(alpaca_order.limit_price)) if alpaca_order.limit_price else None,
                 time_in_force=tif_map.get(str(alpaca_order.time_in_force), TimeInForce.GTC),
                 client_order_id=str(alpaca_order.client_order_id),
                 meta={"alpaca_id": str(alpaca_order.id)},
@@ -508,11 +503,7 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
         import time
 
         side = Side.BUY if str(alpaca_order.side) == "buy" else Side.SELL
-        order_type = (
-            OrderType.MARKET
-            if str(alpaca_order.type) == "market"
-            else OrderType.LIMIT
-        )
+        order_type = OrderType.MARKET if str(alpaca_order.type) == "market" else OrderType.LIMIT
 
         # Map status
         status_map = {
@@ -651,9 +642,11 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
                 client_order_id=str(alpaca_order.client_order_id),
                 status=str(alpaca_order.status.value),
                 filled_qty=Decimal(str(alpaca_order.filled_qty or 0)),
-                filled_price=Decimal(str(alpaca_order.filled_avg_price))
-                if alpaca_order.filled_avg_price
-                else None,
+                filled_price=(
+                    Decimal(str(alpaca_order.filled_avg_price))
+                    if alpaca_order.filled_avg_price
+                    else None
+                ),
                 raw_response={"id": str(alpaca_order.id), "replaced": True},
             )
 
@@ -1076,9 +1069,11 @@ class AlpacaOrderExecutionAdapter(OrderExecutionAdapter):
                 client_order_id=str(alpaca_order.client_order_id),
                 status=str(alpaca_order.status.value),
                 filled_qty=Decimal(str(alpaca_order.filled_qty or 0)),
-                filled_price=Decimal(str(alpaca_order.filled_avg_price))
-                if alpaca_order.filled_avg_price
-                else None,
+                filled_price=(
+                    Decimal(str(alpaca_order.filled_avg_price))
+                    if alpaca_order.filled_avg_price
+                    else None
+                ),
                 raw_response={
                     "id": str(alpaca_order.id),
                     "extended_hours": extended,

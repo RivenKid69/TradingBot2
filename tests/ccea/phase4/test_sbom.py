@@ -143,11 +143,13 @@ class TestSBOM:
             metadata={"component": {"name": "test-app"}},
         )
 
-        sbom.add_component(Component(
-            name="test-app",
-            version="1.0.0",
-            type=ComponentType.APPLICATION,
-        ))
+        sbom.add_component(
+            Component(
+                name="test-app",
+                version="1.0.0",
+                type=ComponentType.APPLICATION,
+            )
+        )
 
         data = sbom.to_spdx()
 
@@ -167,12 +169,14 @@ class TestSBOMGenerator:
         src.mkdir()
 
         (src / "strategy.py").write_text("class Strategy: pass")
-        (src / "requirements.txt").write_text("""
+        (src / "requirements.txt").write_text(
+            """
 # Dependencies
 numpy==1.24.0
 pandas>=2.0.0,<3.0.0
 scikit-learn
-""")
+"""
+        )
         return src
 
     def test_generator_initialization(self):
@@ -222,7 +226,8 @@ scikit-learn
         src.mkdir()
 
         pyproject = src / "pyproject.toml"
-        pyproject.write_text("""
+        pyproject.write_text(
+            """
 [project]
 name = "my-project"
 version = "1.0.0"
@@ -230,7 +235,8 @@ dependencies = [
     "requests>=2.28.0",
     "pydantic>=2.0.0",
 ]
-""")
+"""
+        )
 
         generator = SBOMGenerator()
         sbom = generator.generate(

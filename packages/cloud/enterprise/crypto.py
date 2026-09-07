@@ -48,6 +48,7 @@ try:
         Ed25519PublicKey,
     )
     from cryptography.exceptions import InvalidSignature
+
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
@@ -58,21 +59,25 @@ except ImportError:
 
 class CryptoError(Exception):
     """Cryptographic operation error."""
+
     pass
 
 
 class SignatureError(CryptoError):
     """Signature error."""
+
     pass
 
 
 class VerificationError(CryptoError):
     """Signature verification error."""
+
     pass
 
 
 class KeyError(CryptoError):
     """Key management error."""
+
     pass
 
 
@@ -83,6 +88,7 @@ class SigningKey:
 
     Stores both private and public keys for signing operations.
     """
+
     key_id: str = ""
     private_key_bytes: bytes = field(default=b"", repr=False)
     public_key_bytes: bytes = b""
@@ -114,9 +120,7 @@ class SigningKey:
     def public_key_base64(self) -> str:
         """Get public key as base64 string."""
         if self.public_key:
-            return base64.b64encode(
-                self.public_key.public_bytes_raw()
-            ).decode('ascii')
+            return base64.b64encode(self.public_key.public_bytes_raw()).decode("ascii")
         return ""
 
     @property
@@ -144,6 +148,7 @@ class Signature:
     """
     Digital signature with metadata.
     """
+
     signature_bytes: bytes = b""
     algorithm: str = SIGNATURE_ALGORITHM
     key_id: str = ""
@@ -158,15 +163,12 @@ class Signature:
     @property
     def signature_base64(self) -> str:
         """Get signature as base64 string."""
-        return base64.b64encode(self.signature_bytes).decode('ascii')
+        return base64.b64encode(self.signature_bytes).decode("ascii")
 
     @classmethod
-    def from_base64(cls, sig_b64: str, **kwargs) -> 'Signature':
+    def from_base64(cls, sig_b64: str, **kwargs) -> "Signature":
         """Create signature from base64 string."""
-        return cls(
-            signature_bytes=base64.b64decode(sig_b64),
-            **kwargs
-        )
+        return cls(signature_bytes=base64.b64decode(sig_b64), **kwargs)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -182,13 +184,17 @@ class Signature:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Signature':
+    def from_dict(cls, data: Dict[str, Any]) -> "Signature":
         """Create signature from dictionary."""
         return cls(
             signature_bytes=base64.b64decode(data["signature"]),
             algorithm=data.get("algorithm", SIGNATURE_ALGORITHM),
             key_id=data.get("key_id", ""),
-            signed_at=datetime.fromisoformat(data["signed_at"]) if data.get("signed_at") else datetime.now(timezone.utc),
+            signed_at=(
+                datetime.fromisoformat(data["signed_at"])
+                if data.get("signed_at")
+                else datetime.now(timezone.utc)
+            ),
             signer_id=data.get("signer_id", ""),
             version=data.get("version", SIGNATURE_VERSION),
             payload_digest=data.get("payload_digest", ""),
@@ -228,8 +234,7 @@ class Ed25519Signer:
         """
         if not CRYPTO_AVAILABLE:
             raise CryptoError(
-                "cryptography library not available. "
-                "Install with: pip install cryptography"
+                "cryptography library not available. " "Install with: pip install cryptography"
             )
 
         self._trusted_keys: Dict[str, SigningKey] = {}
@@ -261,6 +266,7 @@ class Ed25519Signer:
         expires_at = None
         if expires_in_days:
             from datetime import timedelta
+
             expires_at = now + timedelta(days=expires_in_days)
 
         # Generate key_id from public key if not provided
@@ -345,9 +351,7 @@ class Ed25519Signer:
             public_key = self._trusted_keys[signature.key_id].public_key
 
         if not public_key:
-            raise VerificationError(
-                f"No public key available for key_id: {signature.key_id}"
-            )
+            raise VerificationError(f"No public key available for key_id: {signature.key_id}")
 
         try:
             public_key.verify(signature.signature_bytes, data)
@@ -537,7 +541,7 @@ class Ed25519Signer:
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
 
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             f.write(key_bytes)
 
         # Restrictive permissions
@@ -560,7 +564,7 @@ class Ed25519Signer:
         Returns:
             SigningKey
         """
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             key_bytes = f.read()
 
         # Try private key first
@@ -634,6 +638,7 @@ def create_signer(
 
 
 # Utility functions for simple use cases
+
 
 def sign_data(
     data: bytes,

@@ -22,6 +22,7 @@ torch.manual_seed(42)
 
 def _make_env(max_steps: int = 8, n_envs: int = 1) -> DummyVecEnv:
     """Create minimal test environment."""
+
     def _env_fn():
         import gymnasium
 
@@ -51,6 +52,7 @@ def _make_env(max_steps: int = 8, n_envs: int = 1) -> DummyVecEnv:
 # =============================================================================
 # __init__ Validation Errors
 # =============================================================================
+
 
 class TestInitValidationErrors:
     """Test validation errors in __init__."""
@@ -88,7 +90,7 @@ class TestInitValidationErrors:
             DistributionalPPO(
                 policy="DistributionalPolicy",
                 env=env,
-                clip_range_vf=float('inf'),
+                clip_range_vf=float("inf"),
                 device="cpu",
                 verbose=0,
             )
@@ -101,7 +103,7 @@ class TestInitValidationErrors:
             DistributionalPPO(
                 policy="DistributionalPolicy",
                 env=env,
-                clip_range_vf=float('nan'),
+                clip_range_vf=float("nan"),
                 device="cpu",
                 verbose=0,
             )
@@ -114,7 +116,7 @@ class TestInitValidationErrors:
             DistributionalPPO(
                 policy="DistributionalPolicy",
                 env=env,
-                vf_clip_threshold_ev=float('inf'),
+                vf_clip_threshold_ev=float("inf"),
                 device="cpu",
                 verbose=0,
             )
@@ -179,7 +181,7 @@ class TestInitValidationErrors:
             DistributionalPPO(
                 policy="DistributionalPolicy",
                 env=env,
-                distributional_vf_clip_variance_factor=float('inf'),
+                distributional_vf_clip_variance_factor=float("inf"),
                 device="cpu",
                 verbose=0,
             )
@@ -268,6 +270,7 @@ class TestInitValidationErrors:
 # Additional Validation Errors
 # =============================================================================
 
+
 class TestAdditionalValidationErrors:
     """Additional validation error tests."""
 
@@ -327,6 +330,7 @@ class TestAdditionalValidationErrors:
 # =============================================================================
 # safe_explained_variance edge cases
 # =============================================================================
+
 
 class TestSafeExplainedVarianceEdgeCases:
     """Test safe_explained_variance edge cases."""
@@ -397,6 +401,7 @@ class TestSafeExplainedVarianceEdgeCases:
 # Valid configurations that should NOT raise
 # =============================================================================
 
+
 class TestValidConfigurations:
     """Test valid configurations that should not raise."""
 
@@ -460,6 +465,7 @@ class TestValidConfigurations:
 # =============================================================================
 # Edge case numerical values
 # =============================================================================
+
 
 class TestEdgeCaseNumericalValues:
     """Test edge case numerical values."""

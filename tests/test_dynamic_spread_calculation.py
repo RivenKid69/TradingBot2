@@ -19,7 +19,9 @@ def dynamic_cfg() -> DynamicSpreadConfig:
 
 
 def test_calc_dynamic_spread_produces_finite_values(dynamic_cfg: DynamicSpreadConfig) -> None:
-    profile = _DynamicSpreadProfile(cfg=dynamic_cfg, default_spread_bps=dynamic_cfg.alpha_bps or 5.0)
+    profile = _DynamicSpreadProfile(
+        cfg=dynamic_cfg, default_spread_bps=dynamic_cfg.alpha_bps or 5.0
+    )
     for _ in range(5):
         spread = _calc_dynamic_spread(
             cfg=dynamic_cfg,
@@ -42,7 +44,9 @@ def test_get_spread_bps_fallback_to_base(dynamic_cfg: DynamicSpreadConfig) -> No
     impl = SlippageImpl(cfg)
 
     # missing bar data forces fallback to base spread
-    fallback = impl.get_spread_bps(ts_ms=0, base_spread_bps=6.0, bar_high=None, bar_low=None, mid_price=None)
+    fallback = impl.get_spread_bps(
+        ts_ms=0, base_spread_bps=6.0, bar_high=None, bar_low=None, mid_price=None
+    )
     assert math.isfinite(fallback)
     assert fallback >= 0.0
     assert fallback == pytest.approx(6.0)

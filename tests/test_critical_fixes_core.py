@@ -19,6 +19,7 @@ import pytest
 # Direct EWMA Testing (without importing transformers)
 # =============================================================================
 
+
 def _test_calculate_ewma_robust(prices, lambda_decay=0.94):
     """
     Direct implementation matching the FIXED EWMA logic.
@@ -42,12 +43,12 @@ def _test_calculate_ewma_robust(prices, lambda_decay=0.94):
     if len(log_returns) >= 10:
         variance = np.var(log_returns, ddof=1)
     elif len(log_returns) >= 3:
-        variance = float(np.median(log_returns ** 2))
+        variance = float(np.median(log_returns**2))
     else:
-        variance = float(np.mean(log_returns ** 2))
+        variance = float(np.mean(log_returns**2))
 
     for ret in log_returns:
-        variance = lambda_decay * variance + (1 - lambda_decay) * (ret ** 2)
+        variance = lambda_decay * variance + (1 - lambda_decay) * (ret**2)
 
     volatility = np.sqrt(variance)
 
@@ -74,10 +75,12 @@ class TestEWMARobustInitialization:
         # Calculate what old approach would give
         log_returns = np.log(np.array(prices[1:]) / np.array(prices[:-1]))
         old_init = log_returns[0] ** 2
-        new_init = float(np.median(log_returns ** 2))
+        new_init = float(np.median(log_returns**2))
 
         # New init should be much smaller (spike filtered)
-        assert new_init < old_init * 0.5, f"Median should filter spike: old={old_init:.6f}, new={new_init:.6f}"
+        assert (
+            new_init < old_init * 0.5
+        ), f"Median should filter spike: old={old_init:.6f}, new={new_init:.6f}"
         assert vol < 0.05, f"Final volatility should be reasonable: {vol:.4f}"
 
     def test_mean_fallback_for_2_returns(self):
@@ -105,6 +108,7 @@ class TestEWMARobustInitialization:
 # =============================================================================
 # Log vs Linear Returns Consistency
 # =============================================================================
+
 
 class TestLogLinearReturnsConsistency:
     """Test that log returns are used consistently."""
@@ -160,6 +164,7 @@ class TestLogLinearReturnsConsistency:
 # Yang-Zhang Bessel's Correction
 # =============================================================================
 
+
 def _test_calculate_yang_zhang_fixed(ohlc_bars, n):
     """
     Direct implementation of Yang-Zhang with FIXED Bessel's correction.
@@ -175,7 +180,7 @@ def _test_calculate_yang_zhang_fixed(ohlc_bars, n):
     # Overnight returns
     overnight_returns = []
     for i in range(1, len(bars)):
-        prev_close = bars[i-1]["close"]
+        prev_close = bars[i - 1]["close"]
         curr_open = bars[i]["open"]
         if prev_close > 0 and curr_open > 0:
             overnight_returns.append(math.log(curr_open / prev_close))
@@ -184,7 +189,9 @@ def _test_calculate_yang_zhang_fixed(ohlc_bars, n):
         return None
 
     mean_overnight = sum(overnight_returns) / len(overnight_returns)
-    sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (len(overnight_returns) - 1)
+    sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (
+        len(overnight_returns) - 1
+    )
 
     # Open-close returns
     oc_returns = []
@@ -235,12 +242,14 @@ class TestYangZhangBesselCorrection:
     def test_minimum_sample_size_2(self):
         """After Bessel's correction, rs_count < 2 should fail."""
         # Single bar
-        ohlc_bars = [{
-            "open": 100.0,
-            "high": 101.0,
-            "low": 99.0,
-            "close": 100.5,
-        }]
+        ohlc_bars = [
+            {
+                "open": 100.0,
+                "high": 101.0,
+                "low": 99.0,
+                "close": 100.5,
+            }
+        ]
 
         result = _test_calculate_yang_zhang_fixed(ohlc_bars, n=1)
 
@@ -275,18 +284,20 @@ class TestYangZhangBesselCorrection:
 
         ohlc_bars = []
         for i in range(n):
-            close_prev = base_price if i == 0 else ohlc_bars[i-1]["close"]
-            open_price = close_prev * (1 + np.random.normal(0, volatility/2))
+            close_prev = base_price if i == 0 else ohlc_bars[i - 1]["close"]
+            open_price = close_prev * (1 + np.random.normal(0, volatility / 2))
             close = open_price * (1 + np.random.normal(0, volatility))
-            high = max(open_price, close) * (1 + abs(np.random.normal(0, volatility/4)))
-            low = min(open_price, close) * (1 - abs(np.random.normal(0, volatility/4)))
+            high = max(open_price, close) * (1 + abs(np.random.normal(0, volatility / 4)))
+            low = min(open_price, close) * (1 - abs(np.random.normal(0, volatility / 4)))
 
-            ohlc_bars.append({
-                "open": open_price,
-                "high": high,
-                "low": low,
-                "close": close,
-            })
+            ohlc_bars.append(
+                {
+                    "open": open_price,
+                    "high": high,
+                    "low": low,
+                    "close": close,
+                }
+            )
 
         yz_vol = _test_calculate_yang_zhang_fixed(ohlc_bars, n)
 
@@ -297,6 +308,7 @@ class TestYangZhangBesselCorrection:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for all fixes."""
@@ -323,7 +335,9 @@ class TestIntegration:
         linear_ret_total = (prices[2] / prices[0]) - 1
 
         # This should NOT equal sum (it equals product minus 1)
-        assert abs(linear_ret_total - (linear_ret_1 + linear_ret_2)) > 0.001, "Linear returns not additive"
+        assert (
+            abs(linear_ret_total - (linear_ret_1 + linear_ret_2)) > 0.001
+        ), "Linear returns not additive"
 
     def test_volatility_estimation_robustness(self):
         """
@@ -333,7 +347,7 @@ class TestIntegration:
 
         # Generate realistic price paths using cumulative product
         def generate_prices(n, vol):
-            returns = np.random.normal(0, vol, n-1)
+            returns = np.random.normal(0, vol, n - 1)
             prices = [100.0]
             for ret in returns:
                 prices.append(prices[-1] * (1 + ret))
@@ -351,7 +365,9 @@ class TestIntegration:
         for prices, vol_min, vol_max in scenarios:
             vol = _test_calculate_ewma_robust(prices)
             assert vol is not None, "Should estimate volatility"
-            assert vol_min < vol < vol_max, f"Volatility {vol:.4f} should be in range [{vol_min}, {vol_max}]"
+            assert (
+                vol_min < vol < vol_max
+            ), f"Volatility {vol:.4f} should be in range [{vol_min}, {vol_max}]"
 
 
 if __name__ == "__main__":

@@ -308,14 +308,16 @@ class VenueAnalysisConfig:
     rolling_window_days: int = 30
 
     # Weights for venue quality scoring
-    metric_weights: Dict[VenueMetricType, float] = field(default_factory=lambda: {
-        VenueMetricType.SPREAD: 0.20,
-        VenueMetricType.LATENCY: 0.15,
-        VenueMetricType.FILL_RATE: 0.20,
-        VenueMetricType.PRICE_IMPROVEMENT: 0.25,
-        VenueMetricType.REJECTION_RATE: 0.10,
-        VenueMetricType.COST: 0.10,
-    })
+    metric_weights: Dict[VenueMetricType, float] = field(
+        default_factory=lambda: {
+            VenueMetricType.SPREAD: 0.20,
+            VenueMetricType.LATENCY: 0.15,
+            VenueMetricType.FILL_RATE: 0.20,
+            VenueMetricType.PRICE_IMPROVEMENT: 0.25,
+            VenueMetricType.REJECTION_RATE: 0.10,
+            VenueMetricType.COST: 0.10,
+        }
+    )
 
     auto_update_rankings: bool = True
     dark_pool_enabled: bool = False
@@ -423,10 +425,12 @@ class VenueAnalyzer:
 
         # Callback for audit
         if self.audit_callback:
-            self.audit_callback({
-                "type": "venue_execution_record",
-                "record": record.to_dict(),
-            })
+            self.audit_callback(
+                {
+                    "type": "venue_execution_record",
+                    "record": record.to_dict(),
+                }
+            )
 
     def record_from_fill(
         self,
@@ -543,9 +547,9 @@ class VenueAnalyzer:
 
         with self._lock:
             records = [
-                r for r in self._records
-                if r.venue_mic == venue_mic
-                and start_ns <= r.timestamp_ns <= end_ns
+                r
+                for r in self._records
+                if r.venue_mic == venue_mic and start_ns <= r.timestamp_ns <= end_ns
             ]
 
         metrics = VenuePerformanceMetrics(
@@ -578,8 +582,12 @@ class VenueAnalyzer:
             metrics.avg_latency_ms = statistics.mean(latencies)
             metrics.median_latency_ms = statistics.median(latencies)
             sorted_lat = sorted(latencies)
-            metrics.p95_latency_ms = sorted_lat[int(len(sorted_lat) * 0.95)] if len(sorted_lat) > 0 else 0
-            metrics.p99_latency_ms = sorted_lat[int(len(sorted_lat) * 0.99)] if len(sorted_lat) > 0 else 0
+            metrics.p95_latency_ms = (
+                sorted_lat[int(len(sorted_lat) * 0.95)] if len(sorted_lat) > 0 else 0
+            )
+            metrics.p99_latency_ms = (
+                sorted_lat[int(len(sorted_lat) * 0.99)] if len(sorted_lat) > 0 else 0
+            )
             metrics.min_latency_ms = min(latencies)
             metrics.max_latency_ms = max(latencies)
 
@@ -596,8 +604,12 @@ class VenueAnalyzer:
         price_improvements = [float(r.price_improvement_bps) for r in records]
         if price_improvements:
             metrics.avg_price_improvement_bps = Decimal(str(statistics.mean(price_improvements)))
-            metrics.median_price_improvement_bps = Decimal(str(statistics.median(price_improvements)))
-            metrics.price_improvement_rate = sum(1 for p in price_improvements if p > 0) / len(price_improvements) * 100
+            metrics.median_price_improvement_bps = Decimal(
+                str(statistics.median(price_improvements))
+            )
+            metrics.price_improvement_rate = (
+                sum(1 for p in price_improvements if p > 0) / len(price_improvements) * 100
+            )
 
         # Cost
         costs = [float(r.cost_bps) for r in records if r.cost_bps > 0]
@@ -682,10 +694,7 @@ class VenueAnalyzer:
             with self._lock:
                 venue_mics = list(self._venues.keys())
 
-        return {
-            mic: self.get_venue_metrics(mic, start_time, end_time)
-            for mic in venue_mics
-        }
+        return {mic: self.get_venue_metrics(mic, start_time, end_time) for mic in venue_mics}
 
     def get_venue_rankings(
         self,
@@ -824,10 +833,12 @@ class SmartOrderRouter:
 
         # Audit callback
         if self.audit_callback:
-            self.audit_callback({
-                "type": "venue_routing_decision",
-                "decision": decision.to_dict(),
-            })
+            self.audit_callback(
+                {
+                    "type": "venue_routing_decision",
+                    "decision": decision.to_dict(),
+                }
+            )
 
         return decision
 
@@ -843,7 +854,11 @@ class SmartOrderRouter:
                     venue = self.analyzer._venues.get(mic)
                     if venue:
                         # Filter by asset class if specified
-                        if asset_class is None or venue.venue_type != VenueType.DARK_POOL or self.config.dark_pool_enabled:
+                        if (
+                            asset_class is None
+                            or venue.venue_type != VenueType.DARK_POOL
+                            or self.config.dark_pool_enabled
+                        ):
                             venues.append(mic)
             return venues
 
@@ -914,7 +929,11 @@ class SmartOrderRouter:
         # Determine primary reason
         quote = market_data.get(best_venue, {})
         if side == "BUY":
-            best_ask = min(float(market_data[v].get("ask", float("inf"))) for v in venues if market_data[v].get("ask"))
+            best_ask = min(
+                float(market_data[v].get("ask", float("inf")))
+                for v in venues
+                if market_data[v].get("ask")
+            )
             if float(quote.get("ask", float("inf"))) == best_ask:
                 reason = VenueSelectionReason.BEST_PRICE
             else:
@@ -1003,7 +1022,9 @@ class SmartOrderRouter:
 
         for d in decisions:
             venue_counts[d.selected_venue] = venue_counts.get(d.selected_venue, 0) + 1
-            reason_counts[d.selection_reason.value] = reason_counts.get(d.selection_reason.value, 0) + 1
+            reason_counts[d.selection_reason.value] = (
+                reason_counts.get(d.selection_reason.value, 0) + 1
+            )
 
         total = len(decisions)
 

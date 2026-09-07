@@ -20,10 +20,12 @@ import math
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def equity_fee_provider():
     """Create equity fee provider with default settings."""
     from execution_providers import EquityFeeProvider
+
     return EquityFeeProvider()
 
 
@@ -31,6 +33,7 @@ def equity_fee_provider():
 def equity_fee_provider_no_regulatory():
     """Create equity fee provider without regulatory fees."""
     from execution_providers import EquityFeeProvider
+
     return EquityFeeProvider(include_regulatory=False)
 
 
@@ -38,12 +41,14 @@ def equity_fee_provider_no_regulatory():
 def crypto_fee_provider():
     """Create crypto fee provider with default settings."""
     from execution_providers import CryptoFeeProvider
+
     return CryptoFeeProvider()
 
 
 # =============================================================================
 # Test EquityFeeProvider - Basic Behavior
 # =============================================================================
+
 
 class TestEquityFeeProviderBasic:
     """Basic tests for EquityFeeProvider."""
@@ -73,6 +78,7 @@ class TestEquityFeeProviderBasic:
     def test_buy_enum_side(self, equity_fee_provider):
         """Test buy with OrderSide enum."""
         from execution_providers import OrderSide
+
         fee = equity_fee_provider.compute_fee(
             notional=10000.0,
             side=OrderSide.BUY,
@@ -84,6 +90,7 @@ class TestEquityFeeProviderBasic:
     def test_sell_enum_side(self, equity_fee_provider):
         """Test sell with OrderSide enum."""
         from execution_providers import OrderSide
+
         fee = equity_fee_provider.compute_fee(
             notional=10000.0,
             side=OrderSide.SELL,
@@ -96,6 +103,7 @@ class TestEquityFeeProviderBasic:
 # =============================================================================
 # Test SEC Fee Calculation
 # =============================================================================
+
 
 class TestSECFeeCalculation:
     """Tests for SEC Section 31 fee calculation."""
@@ -143,15 +151,13 @@ class TestSECFeeCalculation:
         )
 
         # 10x notional should give 10x SEC fee
-        assert breakdown_10["sec_fee"] == pytest.approx(
-            breakdown_1["sec_fee"] * 10,
-            rel=0.01
-        )
+        assert breakdown_10["sec_fee"] == pytest.approx(breakdown_1["sec_fee"] * 10, rel=0.01)
 
 
 # =============================================================================
 # Test TAF Fee Calculation
 # =============================================================================
+
 
 class TestTAFFeeCalculation:
     """Tests for FINRA TAF fee calculation."""
@@ -216,6 +222,7 @@ class TestTAFFeeCalculation:
 # Test Total Fee Calculation
 # =============================================================================
 
+
 class TestTotalFeeCalculation:
     """Tests for total regulatory fee calculation."""
 
@@ -226,8 +233,7 @@ class TestTotalFeeCalculation:
             qty=100.0,
         )
         assert breakdown["total"] == pytest.approx(
-            breakdown["sec_fee"] + breakdown["taf_fee"],
-            rel=0.001
+            breakdown["sec_fee"] + breakdown["taf_fee"], rel=0.001
         )
 
     def test_compute_fee_matches_breakdown(self, equity_fee_provider):
@@ -277,6 +283,7 @@ class TestTotalFeeCalculation:
 # Test Regulatory Fees Disabled
 # =============================================================================
 
+
 class TestRegulatoryFeesDisabled:
     """Tests for equity provider with regulatory fees disabled."""
 
@@ -304,6 +311,7 @@ class TestRegulatoryFeesDisabled:
 # =============================================================================
 # Test Crypto vs Equity Fee Comparison
 # =============================================================================
+
 
 class TestCryptoVsEquityFees:
     """Compare crypto and equity fee structures."""
@@ -433,6 +441,7 @@ class TestCryptoVsEquityFees:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestFeeEdgeCases:
     """Test edge cases for fee calculation."""
 
@@ -477,6 +486,7 @@ class TestFeeEdgeCases:
 # =============================================================================
 # Test Custom Fee Rates
 # =============================================================================
+
 
 class TestCustomFeeRates:
     """Test EquityFeeProvider with custom fee rates."""
@@ -532,6 +542,7 @@ class TestCustomFeeRates:
 # Test Config-Based Fee Providers
 # =============================================================================
 
+
 class TestConfigBasedFees:
     """Test fee provider creation from config."""
 
@@ -542,6 +553,7 @@ class TestConfigBasedFees:
         provider = create_fee_provider(AssetClass.EQUITY)
 
         from execution_providers import EquityFeeProvider
+
         assert isinstance(provider, EquityFeeProvider)
 
     def test_create_crypto_provider_from_config(self):
@@ -551,6 +563,7 @@ class TestConfigBasedFees:
         provider = create_fee_provider(AssetClass.CRYPTO)
 
         from execution_providers import CryptoFeeProvider
+
         assert isinstance(provider, CryptoFeeProvider)
 
 

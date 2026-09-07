@@ -3,6 +3,7 @@ import sys
 import types
 
 import numpy as np
+
 torch = pytest.importorskip("torch")
 
 if "sb3_contrib" not in sys.modules:  # pragma: no cover - тестовый шим

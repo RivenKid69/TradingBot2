@@ -522,14 +522,16 @@ class ExecutionQualityReportGenerator:
 
         # Audit callback
         if self.audit_callback:
-            self.audit_callback({
-                "type": "execution_quality_report_generated",
-                "report_id": report.metadata.report_id,
-                "period": period.value,
-                "period_start": start_date.isoformat(),
-                "period_end": end_date.isoformat(),
-                "total_orders": report.total_orders,
-            })
+            self.audit_callback(
+                {
+                    "type": "execution_quality_report_generated",
+                    "report_id": report.metadata.report_id,
+                    "period": period.value,
+                    "period_start": start_date.isoformat(),
+                    "period_end": end_date.isoformat(),
+                    "total_orders": report.total_orders,
+                }
+            )
 
         return report
 
@@ -559,7 +561,8 @@ class ExecutionQualityReportGenerator:
         """Collect execution analyses for period."""
         if self.be_analyzer:
             return [
-                a for a in self.be_analyzer.get_analyses()
+                a
+                for a in self.be_analyzer.get_analyses()
                 if start_dt.timestamp() * 1e9 <= a.analysis_timestamp_ns <= end_dt.timestamp() * 1e9
             ]
         return []
@@ -649,11 +652,27 @@ class ExecutionQualityReportGenerator:
 
         # Quality distribution
         total = len(analyses)
-        summary.excellent_pct = sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.EXCELLENT) / total * 100
-        summary.good_pct = sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.GOOD) / total * 100
-        summary.acceptable_pct = sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.ACCEPTABLE) / total * 100
-        summary.below_standard_pct = sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.BELOW_STANDARD) / total * 100
-        summary.poor_pct = sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.POOR) / total * 100
+        summary.excellent_pct = (
+            sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.EXCELLENT)
+            / total
+            * 100
+        )
+        summary.good_pct = (
+            sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.GOOD) / total * 100
+        )
+        summary.acceptable_pct = (
+            sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.ACCEPTABLE)
+            / total
+            * 100
+        )
+        summary.below_standard_pct = (
+            sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.BELOW_STANDARD)
+            / total
+            * 100
+        )
+        summary.poor_pct = (
+            sum(1 for a in analyses if a.quality_level == ExecutionQualityLevel.POOR) / total * 100
+        )
 
         # Top venues for this asset class
         if self.venue_analyzer:
@@ -806,7 +825,9 @@ class ExecutionQualityReportGenerator:
         recommendations = []
 
         # Based on quality distribution
-        poor_pct = report.quality_distribution.get("poor", 0) + report.quality_distribution.get("below_standard", 0)
+        poor_pct = report.quality_distribution.get("poor", 0) + report.quality_distribution.get(
+            "below_standard", 0
+        )
         if poor_pct > 20:
             recommendations.append(
                 "Review execution strategy - significant portion of executions below standard. "
@@ -864,7 +885,9 @@ VENUES:
 
         if report.top_venues_overall:
             summary += "- Top Venues: "
-            summary += ", ".join(f"{v.venue_mic} ({v.quality_score:.1f})" for v in report.top_venues_overall[:3])
+            summary += ", ".join(
+                f"{v.venue_mic} ({v.quality_score:.1f})" for v in report.top_venues_overall[:3]
+            )
             summary += "\n"
 
         if report.compliance_issues:

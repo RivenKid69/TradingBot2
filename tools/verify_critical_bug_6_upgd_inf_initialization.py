@@ -117,8 +117,8 @@ def test_upgd_inf_initialization():
     for i, param in enumerate(model.parameters()):
         if param in optimizer.state:
             state = optimizer.state[param]
-            avg_utility = state['avg_utility']
-            step_count = state['step']
+            avg_utility = state["avg_utility"]
+            step_count = state["step"]
 
             util_min = avg_utility.min().item()
             util_max = avg_utility.max().item()

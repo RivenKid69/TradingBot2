@@ -38,6 +38,7 @@ DEFAULT_GENERAL_PERCENTAGE: Final[float] = 100.0
 
 class RolloutState(Enum):
     """State of a rollout."""
+
     CREATED = auto()
     PAUSED = auto()
     ROLLING_OUT = auto()
@@ -49,6 +50,7 @@ class RolloutState(Enum):
 
 class RolloutStageState(Enum):
     """State of a rollout stage."""
+
     PENDING = auto()
     ACTIVE = auto()
     MONITORING = auto()
@@ -60,6 +62,7 @@ class RolloutStageState(Enum):
 @dataclass
 class RolloutStage:
     """Definition of a rollout stage."""
+
     name: str
     percentage: float
     duration_hours: float = 24.0  # Time to wait before next stage
@@ -106,6 +109,7 @@ class RolloutStage:
 @dataclass
 class RolloutProgress:
     """Progress tracking for a rollout."""
+
     rollout_id: UUID
     current_stage: str
     current_percentage: float
@@ -143,9 +147,7 @@ class RolloutProgress:
             "current_stage_success_rate": self.current_stage_success_rate,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "estimated_completion": (
-                self.estimated_completion.isoformat()
-                if self.estimated_completion
-                else None
+                self.estimated_completion.isoformat() if self.estimated_completion else None
             ),
             "time_in_current_stage_seconds": self.time_in_current_stage.total_seconds(),
         }
@@ -154,6 +156,7 @@ class RolloutProgress:
 @dataclass
 class Rollout:
     """A staged rollout instance."""
+
     id: UUID = field(default_factory=uuid4)
     name: str = ""
     description: str = ""
@@ -233,30 +236,33 @@ class Rollout:
 @dataclass
 class RolloutConfig:
     """Configuration for rollout manager."""
+
     # Default stages
-    default_stages: List[RolloutStage] = field(default_factory=lambda: [
-        RolloutStage(
-            name="canary",
-            percentage=DEFAULT_CANARY_PERCENTAGE,
-            duration_hours=24,
-            min_success_rate=0.99,
-            auto_promote=True,
-        ),
-        RolloutStage(
-            name="early_adopters",
-            percentage=DEFAULT_EARLY_ADOPTER_PERCENTAGE,
-            duration_hours=48,
-            min_success_rate=0.98,
-            auto_promote=True,
-        ),
-        RolloutStage(
-            name="general",
-            percentage=DEFAULT_GENERAL_PERCENTAGE,
-            duration_hours=0,  # No wait for final stage
-            min_success_rate=0.95,
-            auto_promote=False,  # Final stage
-        ),
-    ])
+    default_stages: List[RolloutStage] = field(
+        default_factory=lambda: [
+            RolloutStage(
+                name="canary",
+                percentage=DEFAULT_CANARY_PERCENTAGE,
+                duration_hours=24,
+                min_success_rate=0.99,
+                auto_promote=True,
+            ),
+            RolloutStage(
+                name="early_adopters",
+                percentage=DEFAULT_EARLY_ADOPTER_PERCENTAGE,
+                duration_hours=48,
+                min_success_rate=0.98,
+                auto_promote=True,
+            ),
+            RolloutStage(
+                name="general",
+                percentage=DEFAULT_GENERAL_PERCENTAGE,
+                duration_hours=0,  # No wait for final stage
+                min_success_rate=0.95,
+                auto_promote=False,  # Final stage
+            ),
+        ]
+    )
 
     # Monitoring
     health_check_interval_seconds: int = 60
@@ -451,8 +457,7 @@ class StagedRolloutManager:
             self._monitor_task = asyncio.create_task(self._monitor_loop())
 
         logger.info(
-            f"Started rollout: {rollout.name} at {first_stage.percentage}% "
-            f"({first_stage.name})"
+            f"Started rollout: {rollout.name} at {first_stage.percentage}% " f"({first_stage.name})"
         )
 
         # Notify
@@ -595,8 +600,7 @@ class StagedRolloutManager:
         rollout.current_percentage = prev_stage.percentage
 
         logger.info(
-            f"Demoted rollout: {rollout.name} to {prev_stage.name} "
-            f"({prev_stage.percentage}%)"
+            f"Demoted rollout: {rollout.name} to {prev_stage.name} " f"({prev_stage.percentage}%)"
         )
 
         return True, None
@@ -675,8 +679,7 @@ class StagedRolloutManager:
         else:
             stage.agents_failed += 1
             logger.warning(
-                f"Agent {agent_id} failed update in rollout {rollout.name}: "
-                f"{error_message}"
+                f"Agent {agent_id} failed update in rollout {rollout.name}: " f"{error_message}"
             )
 
         # Check failure threshold
@@ -796,9 +799,7 @@ class StagedRolloutManager:
             progress.current_stage_success_rate = stage.success_rate
 
             if stage.started_at:
-                progress.time_in_current_stage = (
-                    datetime.utcnow() - stage.started_at
-                )
+                progress.time_in_current_stage = datetime.utcnow() - stage.started_at
 
         return progress
 
@@ -838,8 +839,7 @@ class StagedRolloutManager:
             "total_rollouts": len(self._rollouts),
             "state_counts": state_counts,
             "active_rollouts": sum(
-                1 for r in self._rollouts.values()
-                if r.state == RolloutState.ROLLING_OUT
+                1 for r in self._rollouts.values() if r.state == RolloutState.ROLLING_OUT
             ),
             "assigned_agents": len(self._agent_assignments),
         }
@@ -931,8 +931,7 @@ class StagedRolloutManager:
         rollout.current_percentage = next_stage.percentage
 
         logger.info(
-            f"Advanced rollout: {rollout.name} to {next_stage.name} "
-            f"({next_stage.percentage}%)"
+            f"Advanced rollout: {rollout.name} to {next_stage.name} " f"({next_stage.percentage}%)"
         )
 
         # Notify

@@ -88,6 +88,7 @@ def main():
     print("-" * 80)
     # Create advantages with mean 0.001 and very small std (simulated)
     import random
+
     random.seed(42)
     advantages_small = [0.001 + 1e-9 * random.gauss(0, 1) for _ in range(100)]
     print(f"Raw advantages mean: {mean(advantages_small):.10f}")
@@ -121,15 +122,11 @@ def main():
     advantages_test = [0.001]
 
     # With 1e-8
-    norm_1e8, _, std_1e8, _ = normalize_advantages(
-        advantages_test + [0.001] * 99, 1e-8
-    )
+    norm_1e8, _, std_1e8, _ = normalize_advantages(advantages_test + [0.001] * 99, 1e-8)
     gradient_scale_1e8 = abs(norm_1e8[0])
 
     # With 1e-4
-    norm_1e4, _, std_1e4, _ = normalize_advantages(
-        advantages_test + [0.001] * 99, 1e-4
-    )
+    norm_1e4, _, std_1e4, _ = normalize_advantages(advantages_test + [0.001] * 99, 1e-4)
     gradient_scale_1e4 = abs(norm_1e4[0])
 
     print(f"Gradient scale with std_floor=1e-8: {gradient_scale_1e8:.2e}")

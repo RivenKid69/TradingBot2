@@ -102,6 +102,7 @@ from adapters.deribit.websocket import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_btc_call_instrument() -> str:
     """Sample BTC call instrument name."""
@@ -217,6 +218,7 @@ def margin_calculator() -> DeribitMarginCalculator:
 # Test Category 1: Instrument Naming (12 tests)
 # =============================================================================
 
+
 class TestInstrumentNaming:
     """Tests for Deribit instrument name parsing and creation."""
 
@@ -309,6 +311,7 @@ class TestInstrumentNaming:
 # =============================================================================
 # Test Category 2: Inverse Payoffs (20 tests)
 # =============================================================================
+
 
 class TestInversePayoffs:
     """Tests for inverse settlement payoff calculations."""
@@ -464,6 +467,7 @@ class TestInversePayoffs:
 # Test Category 3: Greeks Validation (15 tests)
 # =============================================================================
 
+
 class TestGreeksValidation:
     """Tests for Greeks data structures and validation."""
 
@@ -543,11 +547,11 @@ class TestGreeksValidation:
         # Vega: typically positive (vol sensitivity)
         # Gamma: typically positive
         greeks = DeribitGreeks(
-            delta=Decimal("0.5"),    # Call delta
+            delta=Decimal("0.5"),  # Call delta
             gamma=Decimal("0.001"),  # Always positive for vanilla
-            theta=Decimal("-0.01"), # Time decay (negative)
-            vega=Decimal("0.02"),   # Vol sensitivity (positive)
-            rho=Decimal("0.001"),   # Interest rate sensitivity
+            theta=Decimal("-0.01"),  # Time decay (negative)
+            vega=Decimal("0.02"),  # Vol sensitivity (positive)
+            rho=Decimal("0.001"),  # Interest rate sensitivity
         )
         assert greeks.gamma > 0
         assert greeks.theta < 0
@@ -645,6 +649,7 @@ class TestGreeksValidation:
 # =============================================================================
 # Test Category 4: Quote/Market Data (18 tests)
 # =============================================================================
+
 
 class TestQuoteMarketData:
     """Tests for quote and market data handling."""
@@ -821,6 +826,7 @@ class TestQuoteMarketData:
 # Test Category 5: Margin Calculations (25 tests)
 # =============================================================================
 
+
 class TestMarginCalculations:
     """Tests for margin and risk calculations."""
 
@@ -912,7 +918,11 @@ class TestMarginCalculations:
         ]
         # Low margin balance relative to position
         result = margin_calculator.calculate_portfolio_margin(positions, Decimal("0.5"))
-        assert result.margin_call_level in (MarginCallLevel.WARNING, MarginCallLevel.MARGIN_CALL, MarginCallLevel.LIQUIDATION)
+        assert result.margin_call_level in (
+            MarginCallLevel.WARNING,
+            MarginCallLevel.MARGIN_CALL,
+            MarginCallLevel.LIQUIDATION,
+        )
 
     def test_margin_call_liquidation(self, margin_calculator: DeribitMarginCalculator):
         """Test liquidation level margin."""
@@ -1146,6 +1156,7 @@ class TestMarginCalculations:
 # Test Category 6: Order Execution (15 tests)
 # =============================================================================
 
+
 class TestOrderExecution:
     """Tests for order creation and execution."""
 
@@ -1294,6 +1305,7 @@ class TestOrderExecution:
 # Test Category 7: WebSocket Streaming (15 tests)
 # =============================================================================
 
+
 class TestWebSocketStreaming:
     """Tests for WebSocket streaming functionality."""
 
@@ -1365,6 +1377,7 @@ class TestWebSocketStreaming:
 
     def test_subscription_with_callback(self):
         """Test subscription with callback."""
+
         def my_callback(data):
             pass
 
@@ -1423,6 +1436,7 @@ class TestWebSocketStreaming:
 # =============================================================================
 # Integration Tests (Additional)
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests combining multiple components."""

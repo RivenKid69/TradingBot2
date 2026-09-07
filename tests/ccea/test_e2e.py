@@ -135,6 +135,7 @@ class TestE2EPhase1:
             registry = ArtifactRegistry(registry_dir)
 
             from ccea.artifact.signer import SignatureInfo
+
             sig_info = SignatureInfo(
                 algorithm=signing_keypair.algorithm.value,
                 signature=package.signature,
@@ -183,14 +184,16 @@ class TestE2EPhase1:
         assert record.command_type == "REQUEST_START_RUN"
 
         # 3. Agent receives command
-        agent_record = agent_handler.handle_command({
-            "command_id": record.command_id,
-            "command_type": record.command_type,
-            "deployment_id": "deploy_e2e",
-            "artifact_digest": "sha256:e2e1234567890123456789012345678901234567890123456789012345678901",
-            "idempotency_key": record.idempotency_key,
-            "requires_approval": True,
-        })
+        agent_record = agent_handler.handle_command(
+            {
+                "command_id": record.command_id,
+                "command_type": record.command_type,
+                "deployment_id": "deploy_e2e",
+                "artifact_digest": "sha256:e2e1234567890123456789012345678901234567890123456789012345678901",
+                "idempotency_key": record.idempotency_key,
+                "requires_approval": True,
+            }
+        )
 
         # 4. Verify agent requires approval
         assert agent_record.status == LocalCommandStatus.AWAITING_APPROVAL
@@ -242,13 +245,15 @@ class TestE2EPhase1:
         assert record.requires_approval is False
 
         # 3. Agent handles command immediately
-        agent_record = agent_handler.handle_command({
-            "command_id": record.command_id,
-            "command_type": record.command_type,
-            "deployment_id": "deploy_safety",
-            "idempotency_key": record.idempotency_key,
-            "requires_approval": False,
-        })
+        agent_record = agent_handler.handle_command(
+            {
+                "command_id": record.command_id,
+                "command_type": record.command_type,
+                "deployment_id": "deploy_safety",
+                "idempotency_key": record.idempotency_key,
+                "requires_approval": False,
+            }
+        )
 
         # 4. Command should be immediately approved (safety)
         assert agent_record.status == LocalCommandStatus.APPROVED
@@ -304,6 +309,7 @@ class TestE2EPhase1:
 
         # 2. Verify agent online
         from ccea.control_plane.heartbeat import AgentStatus
+
         assert status.status == AgentStatus.ONLINE
 
         # 3. Check status
@@ -383,6 +389,7 @@ class TestE2EPhase1:
             package = build_hello_strategy(Path(tmpdir), signing_key=signing_keypair)
 
             from ccea.artifact.signer import SignatureInfo
+
             sig_info = SignatureInfo(
                 algorithm=signing_keypair.algorithm.value,
                 signature=package.signature,

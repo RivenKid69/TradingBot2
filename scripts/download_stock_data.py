@@ -82,6 +82,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # =========================
 
+
 @dataclass
 class DownloadConfig:
     """Configuration for stock data download."""
@@ -97,8 +98,8 @@ class DownloadConfig:
 
     # Date range
     start_date: Optional[str] = None  # YYYY-MM-DD
-    end_date: Optional[str] = None    # YYYY-MM-DD
-    lookback_days: int = 365 * 3      # Default: 3 years
+    end_date: Optional[str] = None  # YYYY-MM-DD
+    lookback_days: int = 365 * 3  # Default: 3 years
 
     # Timeframe
     timeframe: str = "1h"  # 1m, 5m, 15m, 1h, 4h, 1d
@@ -129,6 +130,7 @@ class DownloadConfig:
 # NYSE Calendar
 # =========================
 
+
 class NYSECalendar:
     """
     NYSE market calendar with holidays and trading hours.
@@ -142,38 +144,38 @@ class NYSECalendar:
     # US market holidays (approximate - some may vary by year)
     HOLIDAYS = {
         # 2023
-        datetime(2023, 1, 2),   # New Year's Day (observed)
+        datetime(2023, 1, 2),  # New Year's Day (observed)
         datetime(2023, 1, 16),  # MLK Day
         datetime(2023, 2, 20),  # Presidents Day
-        datetime(2023, 4, 7),   # Good Friday
+        datetime(2023, 4, 7),  # Good Friday
         datetime(2023, 5, 29),  # Memorial Day
         datetime(2023, 6, 19),  # Juneteenth
-        datetime(2023, 7, 4),   # Independence Day
-        datetime(2023, 9, 4),   # Labor Day
-        datetime(2023, 11, 23), # Thanksgiving
-        datetime(2023, 12, 25), # Christmas
+        datetime(2023, 7, 4),  # Independence Day
+        datetime(2023, 9, 4),  # Labor Day
+        datetime(2023, 11, 23),  # Thanksgiving
+        datetime(2023, 12, 25),  # Christmas
         # 2024
-        datetime(2024, 1, 1),   # New Year's Day
+        datetime(2024, 1, 1),  # New Year's Day
         datetime(2024, 1, 15),  # MLK Day
         datetime(2024, 2, 19),  # Presidents Day
         datetime(2024, 3, 29),  # Good Friday
         datetime(2024, 5, 27),  # Memorial Day
         datetime(2024, 6, 19),  # Juneteenth
-        datetime(2024, 7, 4),   # Independence Day
-        datetime(2024, 9, 2),   # Labor Day
-        datetime(2024, 11, 28), # Thanksgiving
-        datetime(2024, 12, 25), # Christmas
+        datetime(2024, 7, 4),  # Independence Day
+        datetime(2024, 9, 2),  # Labor Day
+        datetime(2024, 11, 28),  # Thanksgiving
+        datetime(2024, 12, 25),  # Christmas
         # 2025
-        datetime(2025, 1, 1),   # New Year's Day
+        datetime(2025, 1, 1),  # New Year's Day
         datetime(2025, 1, 20),  # MLK Day
         datetime(2025, 2, 17),  # Presidents Day
         datetime(2025, 4, 18),  # Good Friday
         datetime(2025, 5, 26),  # Memorial Day
         datetime(2025, 6, 19),  # Juneteenth
-        datetime(2025, 7, 4),   # Independence Day
-        datetime(2025, 9, 1),   # Labor Day
-        datetime(2025, 11, 27), # Thanksgiving
-        datetime(2025, 12, 25), # Christmas
+        datetime(2025, 7, 4),  # Independence Day
+        datetime(2025, 9, 1),  # Labor Day
+        datetime(2025, 11, 27),  # Thanksgiving
+        datetime(2025, 12, 25),  # Christmas
     }
 
     @classmethod
@@ -227,6 +229,7 @@ class NYSECalendar:
 # =========================
 # Data Download Functions
 # =========================
+
 
 def download_symbol_alpaca(
     symbol: str,
@@ -288,16 +291,18 @@ def download_symbol_alpaca(
         # Convert to DataFrame
         records = []
         for bar in bars:
-            records.append({
-                "timestamp": bar.ts // 1000,  # Convert to seconds
-                "open": float(bar.open),
-                "high": float(bar.high),
-                "low": float(bar.low),
-                "close": float(bar.close),
-                "volume": float(bar.volume_base),
-                "vwap": float(bar.vwap) if bar.vwap else None,
-                "trades": bar.trades if bar.trades else None,
-            })
+            records.append(
+                {
+                    "timestamp": bar.ts // 1000,  # Convert to seconds
+                    "open": float(bar.open),
+                    "high": float(bar.high),
+                    "low": float(bar.low),
+                    "close": float(bar.close),
+                    "volume": float(bar.volume_base),
+                    "vwap": float(bar.vwap) if bar.vwap else None,
+                    "trades": bar.trades if bar.trades else None,
+                }
+            )
 
         df = pd.DataFrame(records)
 
@@ -359,7 +364,9 @@ def download_symbol_yahoo(
         start_ts = int(start_dt.timestamp() * 1000)
         end_ts = int(end_dt.timestamp() * 1000)
 
-        logger.info(f"Downloading {symbol} from Yahoo Finance: {start_dt.date()} to {end_dt.date()}")
+        logger.info(
+            f"Downloading {symbol} from Yahoo Finance: {start_dt.date()} to {end_dt.date()}"
+        )
 
         # Download bars
         bars = adapter.get_bars(
@@ -376,14 +383,16 @@ def download_symbol_yahoo(
         # Convert to DataFrame
         records = []
         for bar in bars:
-            records.append({
-                "timestamp": bar.ts // 1000,  # Convert to seconds
-                "open": float(bar.open),
-                "high": float(bar.high),
-                "low": float(bar.low),
-                "close": float(bar.close),
-                "volume": float(bar.volume_base),
-            })
+            records.append(
+                {
+                    "timestamp": bar.ts // 1000,  # Convert to seconds
+                    "open": float(bar.open),
+                    "high": float(bar.high),
+                    "low": float(bar.low),
+                    "close": float(bar.close),
+                    "volume": float(bar.volume_base),
+                }
+            )
 
         df = pd.DataFrame(records)
 
@@ -490,16 +499,18 @@ def download_symbol_polygon(
 
         # Convert to DataFrame
         df = pd.DataFrame(all_results)
-        df = df.rename(columns={
-            "t": "timestamp",
-            "o": "open",
-            "h": "high",
-            "l": "low",
-            "c": "close",
-            "v": "volume",
-            "vw": "vwap",
-            "n": "trades",
-        })
+        df = df.rename(
+            columns={
+                "t": "timestamp",
+                "o": "open",
+                "h": "high",
+                "l": "low",
+                "c": "close",
+                "v": "volume",
+                "vw": "vwap",
+                "n": "trades",
+            }
+        )
 
         # Polygon returns timestamp in milliseconds
         df["timestamp"] = df["timestamp"] // 1000
@@ -540,9 +551,7 @@ def _filter_market_hours(
     df["_dt"] = pd.to_datetime(df["timestamp"], unit="s", utc=True)
 
     # Filter
-    mask = df["_dt"].apply(
-        lambda x: NYSECalendar.is_market_hours(x, include_extended)
-    )
+    mask = df["_dt"].apply(lambda x: NYSECalendar.is_market_hours(x, include_extended))
 
     df = df[mask].drop(columns=["_dt"]).reset_index(drop=True)
     return df
@@ -580,17 +589,23 @@ def _resample_bars(
     df = df.set_index("_dt")
 
     # Resample OHLCV
-    resampled = df.resample(offset).agg({
-        "timestamp": "first",  # Start of bar
-        "open": "first",
-        "high": "max",
-        "low": "min",
-        "close": "last",
-        "volume": "sum",
-        "vwap": "mean",  # Approximate
-        "trades": "sum",
-        "symbol": "first",
-    }).dropna()
+    resampled = (
+        df.resample(offset)
+        .agg(
+            {
+                "timestamp": "first",  # Start of bar
+                "open": "first",
+                "high": "max",
+                "low": "min",
+                "close": "last",
+                "volume": "sum",
+                "vwap": "mean",  # Approximate
+                "trades": "sum",
+                "symbol": "first",
+            }
+        )
+        .dropna()
+    )
 
     return resampled.reset_index(drop=True)
 
@@ -598,6 +613,7 @@ def _resample_bars(
 # =========================
 # Main Download Functions
 # =========================
+
 
 def sanitize_filename(symbol: str) -> str:
     """
@@ -607,9 +623,9 @@ def sanitize_filename(symbol: str) -> str:
     """
     # Replace special chars with underscores
     replacements = {
-        "^": "",      # ^VIX -> VIX
-        "=": "_",     # GC=F -> GC_F
-        ".": "_",     # DX-Y.NYB -> DX-Y_NYB
+        "^": "",  # ^VIX -> VIX
+        "=": "_",  # GC=F -> GC_F
+        ".": "_",  # DX-Y.NYB -> DX-Y_NYB
         " ": "_",
     }
     result = symbol
@@ -740,43 +756,51 @@ def download_all_symbols(config: DownloadConfig) -> Dict[str, Any]:
         try:
             from adapters.yahoo.corporate_actions import YahooCorporateActionsAdapter
             from adapters.models import ExchangeVendor
-            
+
             ca_adapter = YahooCorporateActionsAdapter(vendor=ExchangeVendor.YAHOO)
-            
+
             for symbol in symbols:
                 if symbol.startswith("^") or "=" in symbol or "-Y." in symbol:
                     continue
-                
+
                 logger.info(f"Fetching corporate actions for {symbol}...")
                 try:
                     start_str = config.start_date
                     end_str = config.end_date
-                    
+
                     splits = ca_adapter.get_splits(symbol, start_date=start_str, end_date=end_str)
-                    dividends = ca_adapter.get_dividends(symbol, start_date=start_str, end_date=end_str)
-                    
+                    dividends = ca_adapter.get_dividends(
+                        symbol, start_date=start_str, end_date=end_str
+                    )
+
                     ca_records = []
                     for s in splits:
-                        ca_records.append({
-                            "date": s.ex_date,
-                            "type": "split",
-                            "factor": float(s.adjustment_factor),
-                        })
+                        ca_records.append(
+                            {
+                                "date": s.ex_date,
+                                "type": "split",
+                                "factor": float(s.adjustment_factor),
+                            }
+                        )
                     for d in dividends:
-                        ca_records.append({
-                            "date": d.ex_date,
-                            "type": "dividend",
-                            "amount": float(d.amount),
-                        })
-                        
+                        ca_records.append(
+                            {
+                                "date": d.ex_date,
+                                "type": "dividend",
+                                "amount": float(d.amount),
+                            }
+                        )
+
                     if ca_records:
                         ca_df = pd.DataFrame(ca_records)
                         ca_df = ca_df.sort_values("date").reset_index(drop=True)
-                        
+
                         safe_symbol = sanitize_filename(symbol)
                         ca_path = output_dir / f"{safe_symbol}_corporate_actions.parquet"
                         ca_df.to_parquet(ca_path, index=False)
-                        logger.info(f"Saved {len(ca_df)} corporate actions for {symbol} to {ca_path}")
+                        logger.info(
+                            f"Saved {len(ca_df)} corporate actions for {symbol} to {ca_path}"
+                        )
                     else:
                         logger.info(f"No corporate actions found for {symbol}")
                 except Exception as ex:
@@ -790,6 +814,7 @@ def download_all_symbols(config: DownloadConfig) -> Dict[str, Any]:
 # =========================
 # CLI Entry Point
 # =========================
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -954,7 +979,8 @@ Examples:
 
     # Logging
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Verbose output",
     )

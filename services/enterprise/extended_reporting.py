@@ -393,7 +393,9 @@ class PDFReportGenerator:
                 "detection_time": report.summary.detection_time.isoformat(),
                 "classification_time": report.summary.classification_time.isoformat(),
                 "resolution_time": (
-                    report.summary.resolution_time.isoformat() if report.summary.resolution_time else None
+                    report.summary.resolution_time.isoformat()
+                    if report.summary.resolution_time
+                    else None
                 ),
                 "duration_hours": report.summary.duration_hours,
                 "description": report.summary.description,
@@ -474,7 +476,9 @@ class JSONReportGenerator:
                     "detected": report.summary.detection_time.isoformat(),
                     "classified": report.summary.classification_time.isoformat(),
                     "resolved": (
-                        report.summary.resolution_time.isoformat() if report.summary.resolution_time else None
+                        report.summary.resolution_time.isoformat()
+                        if report.summary.resolution_time
+                        else None
                     ),
                     "durationHours": report.summary.duration_hours,
                 },
@@ -848,7 +852,9 @@ def create_extended_reporting(
     **kwargs: Any,
 ) -> ExtendedReportingService:
     """Create extended reporting service instance."""
-    config = ReportingConfig(entity_lei=entity_lei, entity_name=entity_name, default_nca=default_nca, **kwargs)
+    config = ReportingConfig(
+        entity_lei=entity_lei, entity_name=entity_name, default_nca=default_nca, **kwargs
+    )
     return ExtendedReportingService(config)
 
 

@@ -55,6 +55,7 @@ from distributional_ppo import (
 # Test _patch_rand_for_tests (lines 101-114)
 # =============================================================================
 
+
 class TestPatchRandForTests:
     """Tests for the _patch_rand_for_tests function."""
 
@@ -77,6 +78,7 @@ class TestPatchRandForTests:
 # =============================================================================
 # Test compute_grouped_explained_variance edge cases (lines 600-670)
 # =============================================================================
+
 
 class TestComputeGroupedExplainedVarianceEdgeCases:
     """Tests for edge cases in compute_grouped_explained_variance."""
@@ -184,6 +186,7 @@ class TestComputeGroupedExplainedVarianceEdgeCases:
 # Test calculate_cvar edge cases (lines 673-716)
 # =============================================================================
 
+
 class TestCalculateCvarEdgeCases:
     """Test edge cases for calculate_cvar function."""
 
@@ -249,16 +252,18 @@ class TestCalculateCvarEdgeCases:
         atoms = torch.tensor([1.0, 2.0, 3.0, 4.0])
 
         result = calculate_cvar(probs, atoms, alpha=1.0)
-        expected_mean = (0.25 * 1.0 + 0.25 * 2.0 + 0.25 * 3.0 + 0.25 * 4.0)
+        expected_mean = 0.25 * 1.0 + 0.25 * 2.0 + 0.25 * 3.0 + 0.25 * 4.0
 
         assert torch.allclose(result, torch.tensor([expected_mean]), atol=1e-5)
 
     def test_batch_processing(self):
         """Test batch processing of multiple distributions."""
-        probs = torch.tensor([
-            [0.5, 0.3, 0.2],
-            [0.1, 0.1, 0.8],
-        ])
+        probs = torch.tensor(
+            [
+                [0.5, 0.3, 0.2],
+                [0.1, 0.1, 0.8],
+            ]
+        )
         atoms = torch.tensor([1.0, 2.0, 3.0])
 
         result = calculate_cvar(probs, atoms, alpha=0.5)
@@ -270,6 +275,7 @@ class TestCalculateCvarEdgeCases:
 # =============================================================================
 # Test create_sequencers (lines 719-800)
 # =============================================================================
+
 
 class TestCreateSequencersEdgeCases:
     """Test edge cases for create_sequencers function."""
@@ -359,6 +365,7 @@ class TestCreateSequencersEdgeCases:
 # Test PopArtController comprehensive (lines 895-1530)
 # =============================================================================
 
+
 class TestPopArtControllerShadowToLive:
     """Test PopArtController shadow to live mode transition."""
 
@@ -436,12 +443,13 @@ class TestPopArtControllerShadowToLive:
         assert not PopArtController._within_tolerance(0.5, 1.0, abs_tol=0.1, rel_tol=0.1)
 
         # Test non-finite delta
-        assert not PopArtController._within_tolerance(float('nan'), 1.0, abs_tol=0.1, rel_tol=0.1)
+        assert not PopArtController._within_tolerance(float("nan"), 1.0, abs_tol=0.1, rel_tol=0.1)
 
 
 # =============================================================================
 # Test RawRecurrentRolloutBuffer (lines 1514-1822)
 # =============================================================================
+
 
 class TestRawRecurrentRolloutBufferInit:
     """Test RawRecurrentRolloutBuffer initialization."""
@@ -449,21 +457,22 @@ class TestRawRecurrentRolloutBufferInit:
     def test_buffer_samples_structure(self):
         """Test that RawRecurrentRolloutBufferSamples has expected fields."""
         # Just verify the structure exists
-        assert hasattr(RawRecurrentRolloutBufferSamples, '_fields')
+        assert hasattr(RawRecurrentRolloutBufferSamples, "_fields")
         fields = RawRecurrentRolloutBufferSamples._fields
 
         # Check key fields exist
-        assert 'observations' in fields
-        assert 'actions' in fields
-        assert 'old_values' in fields
-        assert 'advantages' in fields
-        assert 'returns' in fields
-        assert 'mask' in fields
+        assert "observations" in fields
+        assert "actions" in fields
+        assert "old_values" in fields
+        assert "advantages" in fields
+        assert "returns" in fields
+        assert "mask" in fields
 
 
 # =============================================================================
 # Test DistributionalPPO lightweight initialization (lines 6249-6271)
 # =============================================================================
+
 
 class TestDistributionalPPOLightweightInit:
     """Test DistributionalPPO lightweight initialization path."""
@@ -505,6 +514,7 @@ class TestDistributionalPPOLightweightInit:
 # Test _compute_returns_with_time_limits (lines 293-390)
 # =============================================================================
 
+
 class TestComputeReturnsWithTimeLimits:
     """Tests for _compute_returns_with_time_limits function."""
 
@@ -522,8 +532,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="NaN"):
             _compute_returns_with_time_limits(
-                mock_buffer, last_values, dones, 0.99, 0.95,
-                time_limit_mask, time_limit_bootstrap
+                mock_buffer, last_values, dones, 0.99, 0.95, time_limit_mask, time_limit_bootstrap
             )
 
     def test_inf_in_values_raises_error(self):
@@ -540,8 +549,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="NaN or inf"):
             _compute_returns_with_time_limits(
-                mock_buffer, last_values, dones, 0.99, 0.95,
-                time_limit_mask, time_limit_bootstrap
+                mock_buffer, last_values, dones, 0.99, 0.95, time_limit_mask, time_limit_bootstrap
             )
 
     def test_mismatched_time_limit_mask_raises_error(self):
@@ -558,8 +566,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="TimeLimit mask"):
             _compute_returns_with_time_limits(
-                mock_buffer, last_values, dones, 0.99, 0.95,
-                time_limit_mask, time_limit_bootstrap
+                mock_buffer, last_values, dones, 0.99, 0.95, time_limit_mask, time_limit_bootstrap
             )
 
     def test_inf_in_last_values_raises_error(self):
@@ -576,8 +583,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="last_values"):
             _compute_returns_with_time_limits(
-                mock_buffer, last_values, dones, 0.99, 0.95,
-                time_limit_mask, time_limit_bootstrap
+                mock_buffer, last_values, dones, 0.99, 0.95, time_limit_mask, time_limit_bootstrap
             )
 
     def test_inf_in_time_limit_bootstrap_raises_error(self):
@@ -594,14 +600,14 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="time_limit_bootstrap"):
             _compute_returns_with_time_limits(
-                mock_buffer, last_values, dones, 0.99, 0.95,
-                time_limit_mask, time_limit_bootstrap
+                mock_buffer, last_values, dones, 0.99, 0.95, time_limit_mask, time_limit_bootstrap
             )
 
 
 # =============================================================================
 # Test safe_explained_variance more edge cases (lines 390-484)
 # =============================================================================
+
 
 class TestSafeExplainedVarianceMore:
     """Additional tests for safe_explained_variance."""
@@ -639,6 +645,7 @@ class TestSafeExplainedVarianceMore:
 # Test _weighted_variance_np edge cases (lines 486-550)
 # =============================================================================
 
+
 class TestWeightedVarianceNpMore:
     """Additional tests for _weighted_variance_np."""
 
@@ -674,6 +681,7 @@ class TestWeightedVarianceNpMore:
 # =============================================================================
 # Test DistributionalPPO static methods
 # =============================================================================
+
 
 class TestDistributionalPPOStaticMethods:
     """Test DistributionalPPO static methods."""
@@ -720,6 +728,7 @@ class TestDistributionalPPOStaticMethods:
 # Test _make_clip_range_callable (lines 187-202)
 # =============================================================================
 
+
 class TestMakeClipRangeCallable:
     """Test _make_clip_range_callable function."""
 
@@ -749,6 +758,7 @@ class TestMakeClipRangeCallable:
 # Test unwrap_vec_normalize (lines 272-290)
 # =============================================================================
 
+
 class TestUnwrapVecNormalizeMore:
     """Additional tests for unwrap_vec_normalize."""
 
@@ -775,6 +785,7 @@ class TestUnwrapVecNormalizeMore:
 # Test DEFAULT_CLIP_RANGE_VF constant
 # =============================================================================
 
+
 class TestDefaultClipRangeVF:
     """Test DEFAULT_CLIP_RANGE_VF constant."""
 
@@ -790,6 +801,7 @@ class TestDefaultClipRangeVF:
 # =============================================================================
 # Test PopArtHoldoutBatch and related (lines 831-894)
 # =============================================================================
+
 
 class TestPopArtHoldoutBatch:
     """Test PopArtHoldoutBatch named tuple."""
@@ -809,9 +821,9 @@ class TestPopArtHoldoutBatch:
 
     def test_fields(self):
         """Test PopArtHoldoutBatch has expected fields."""
-        assert 'observations' in PopArtHoldoutBatch._fields
-        assert 'returns_raw' in PopArtHoldoutBatch._fields
-        assert 'episode_starts' in PopArtHoldoutBatch._fields
+        assert "observations" in PopArtHoldoutBatch._fields
+        assert "returns_raw" in PopArtHoldoutBatch._fields
+        assert "episode_starts" in PopArtHoldoutBatch._fields
 
 
 class TestPopArtCandidateMetrics:
@@ -823,10 +835,10 @@ class TestPopArtCandidateMetrics:
         assert dataclasses.is_dataclass(PopArtCandidateMetrics)
         fields = {f.name for f in dataclasses.fields(PopArtCandidateMetrics)}
 
-        assert 'mean' in fields
-        assert 'std' in fields
-        assert 'ev_before' in fields
-        assert 'ev_after' in fields
+        assert "mean" in fields
+        assert "std" in fields
+        assert "ev_before" in fields
+        assert "ev_after" in fields
 
 
 class TestPopArtHoldoutEvaluation:
@@ -837,15 +849,16 @@ class TestPopArtHoldoutEvaluation:
         assert dataclasses.is_dataclass(PopArtHoldoutEvaluation)
         fields = {f.name for f in dataclasses.fields(PopArtHoldoutEvaluation)}
 
-        assert 'ev_before' in fields
-        assert 'ev_after' in fields
-        assert 'baseline_raw' in fields
-        assert 'candidate_raw' in fields
+        assert "ev_before" in fields
+        assert "ev_after" in fields
+        assert "baseline_raw" in fields
+        assert "candidate_raw" in fields
 
 
 # =============================================================================
 # Test RawRecurrentRolloutBufferSamples (lines 796-818)
 # =============================================================================
+
 
 class TestRawRecurrentRolloutBufferSamples:
     """Test RawRecurrentRolloutBufferSamples named tuple."""
@@ -881,6 +894,7 @@ class TestRawRecurrentRolloutBufferSamples:
 # Test _serialize_popart_config (lines 256-259)
 # =============================================================================
 
+
 class TestSerializePopartConfig:
     """Test _serialize_popart_config function."""
 
@@ -911,6 +925,7 @@ class TestSerializePopartConfig:
 # Test DistributionalPPO helper methods for coverage
 # =============================================================================
 
+
 class TestDistributionalPPOHelperMethods:
     """Test various helper methods for coverage."""
 
@@ -925,7 +940,7 @@ class TestDistributionalPPOHelperMethods:
     def test_bounded_dual_update_nan_inputs(self):
         """Test _bounded_dual_update with NaN inputs."""
         if hasattr(DistributionalPPO, "_bounded_dual_update"):
-            result = DistributionalPPO._bounded_dual_update(float('nan'), 0.01, 0.1)
+            result = DistributionalPPO._bounded_dual_update(float("nan"), 0.01, 0.1)
             assert isinstance(result, float)
 
     def test_bounded_dual_update_edge_values(self):
@@ -942,6 +957,7 @@ class TestDistributionalPPOHelperMethods:
 # =============================================================================
 # Integration-style tests for coverage
 # =============================================================================
+
 
 class TestIntegrationCoverage:
     """Integration-style tests to hit more code paths."""
@@ -992,11 +1008,13 @@ class TestIntegrationCoverage:
 # Test edge cases in error paths
 # =============================================================================
 
+
 class TestErrorPaths:
     """Test error handling paths."""
 
     def test_cfg_get_with_type_error_in_get(self):
         """Test _cfg_get when get() raises TypeError (fallback to single-arg)."""
+
         class TypeErrorGet:
             def get(self, key, default=None):
                 raise TypeError("too many args")
@@ -1007,6 +1025,7 @@ class TestErrorPaths:
 
     def test_cfg_get_with_exception_in_model_dump(self):
         """Test _cfg_get when model_dump() raises an exception."""
+
         class RaisingModelDump:
             def model_dump(self):
                 raise RuntimeError("model_dump failed")
@@ -1025,6 +1044,7 @@ class TestErrorPaths:
 # =============================================================================
 # Additional edge case tests
 # =============================================================================
+
 
 class TestAdditionalEdgeCases:
     """Additional edge case tests for maximum coverage."""

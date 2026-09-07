@@ -44,54 +44,55 @@ from ccea.guardrails.intent_prohibition import (
 # ============================================================================
 
 # Lifecycle commands - the ONLY commands Cloud can send
-LIFECYCLE_COMMANDS: Final[FrozenSet[str]] = frozenset({
-    "REQUEST_START_RUN",
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-    "REQUEST_UPDATE_CONFIG",
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-})
+LIFECYCLE_COMMANDS: Final[FrozenSet[str]] = frozenset(
+    {
+        "REQUEST_START_RUN",
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+        "REQUEST_UPDATE_CONFIG",
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    }
+)
 
 # Fields allowed in lifecycle commands (whitelist approach)
-ALLOWED_LIFECYCLE_FIELDS: Final[FrozenSet[str]] = frozenset({
-    # Identifiers
-    "command_type",
-    "message_type",
-    "idempotency_key",
-    "command_id",
-    "deployment_id",
-    "agent_id",
-    "run_id",
-
-    # Artifacts
-    "artifact_digest",
-    "new_artifact_digest",
-    "old_artifact_digest",
-    "config_digest",
-    "new_config_digest",
-    "old_config_digest",
-
-    # Metadata
-    "timestamp",
-    "signature",
-    "change_class",
-    "requires_approval",
-    "reason",
-
-    # Export
-    "export_config",
-    "break_glass_reason",
-
-    # Batch
-    "commands",
-})
+ALLOWED_LIFECYCLE_FIELDS: Final[FrozenSet[str]] = frozenset(
+    {
+        # Identifiers
+        "command_type",
+        "message_type",
+        "idempotency_key",
+        "command_id",
+        "deployment_id",
+        "agent_id",
+        "run_id",
+        # Artifacts
+        "artifact_digest",
+        "new_artifact_digest",
+        "old_artifact_digest",
+        "config_digest",
+        "new_config_digest",
+        "old_config_digest",
+        # Metadata
+        "timestamp",
+        "signature",
+        "change_class",
+        "requires_approval",
+        "reason",
+        # Export
+        "export_config",
+        "break_glass_reason",
+        # Batch
+        "commands",
+    }
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
+
 
 class BoundaryViolationType(str, Enum):
     """Types of boundary violations."""
@@ -156,6 +157,7 @@ class BoundaryValidationResult:
 # Validators
 # ============================================================================
 
+
 class CloudBoundaryValidator:
     """
     Validates Cloud -> Agent messages at the boundary.
@@ -204,21 +206,25 @@ class CloudBoundaryValidator:
         if "command_type" in message:
             cmd_type = str(message["command_type"])
             if cmd_type not in LIFECYCLE_COMMANDS:
-                result.add_violation(BoundaryViolation(
-                    violation_type=BoundaryViolationType.PROHIBITED_COMMAND,
-                    severity="critical",
-                    message=f"Non-lifecycle command type: '{cmd_type}'",
-                    field_path="command_type",
-                ))
+                result.add_violation(
+                    BoundaryViolation(
+                        violation_type=BoundaryViolationType.PROHIBITED_COMMAND,
+                        severity="critical",
+                        message=f"Non-lifecycle command type: '{cmd_type}'",
+                        field_path="command_type",
+                    )
+                )
 
             # Also check against prohibited
             if cmd_type.upper() in PROHIBITED_COMMAND_TYPES:
-                result.add_violation(BoundaryViolation(
-                    violation_type=BoundaryViolationType.INTENT_INJECTION,
-                    severity="critical",
-                    message=f"BLOCKED: Intent injection attempt via '{cmd_type}'",
-                    field_path="command_type",
-                ))
+                result.add_violation(
+                    BoundaryViolation(
+                        violation_type=BoundaryViolationType.INTENT_INJECTION,
+                        severity="critical",
+                        message=f"BLOCKED: Intent injection attempt via '{cmd_type}'",
+                        field_path="command_type",
+                    )
+                )
 
         # 2. Check for prohibited intent fields (recursive)
         self._check_prohibited_fields_recursive(message, "", result)
@@ -288,12 +294,14 @@ class CloudBoundaryValidator:
 
                 # Check against prohibited fields
                 if key_lower in PROHIBITED_INTENT_FIELDS:
-                    result.add_violation(BoundaryViolation(
-                        violation_type=BoundaryViolationType.PROHIBITED_FIELD,
-                        severity="critical",
-                        message=f"Prohibited field '{key}' - potential intent injection",
-                        field_path=current_path,
-                    ))
+                    result.add_violation(
+                        BoundaryViolation(
+                            violation_type=BoundaryViolationType.PROHIBITED_FIELD,
+                            severity="critical",
+                            message=f"Prohibited field '{key}' - potential intent injection",
+                            field_path=current_path,
+                        )
+                    )
 
                 # Recurse
                 self._check_prohibited_fields_recursive(value, current_path, result)
@@ -318,13 +326,15 @@ class CloudBoundaryValidator:
                     # Check if it's a subfield of an allowed field
                     parent = path.split(".")[-1] if path else ""
                     if parent not in ("export_config", "signature"):
-                        result.add_violation(BoundaryViolation(
-                            violation_type=BoundaryViolationType.UNKNOWN_FIELD,
-                            severity="medium",
-                            message=f"Unknown field '{key}' not in allowed list",
-                            field_path=current_path,
-                            blocked=False,  # Warning only in strict mode
-                        ))
+                        result.add_violation(
+                            BoundaryViolation(
+                                violation_type=BoundaryViolationType.UNKNOWN_FIELD,
+                                severity="medium",
+                                message=f"Unknown field '{key}' not in allowed list",
+                                field_path=current_path,
+                                blocked=False,  # Warning only in strict mode
+                            )
+                        )
 
     def get_violations_log(self) -> List[BoundaryViolation]:
         """Get log of all violations."""
@@ -354,6 +364,7 @@ class CloudCommandFilter:
         Returns:
             Sanitized command (new dict)
         """
+
         def _sanitize_recursive(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {
@@ -421,9 +432,7 @@ class RuntimeBoundaryEnforcer:
             # Validate all dict arguments
             for i, arg in enumerate(args):
                 if isinstance(arg, dict):
-                    result = self._validator.validate_outgoing_message(
-                        arg, f"arg[{i}]"
-                    )
+                    result = self._validator.validate_outgoing_message(arg, f"arg[{i}]")
                     if not result.valid:
                         self._blocked_count += 1
                         raise BoundaryViolationError(
@@ -433,9 +442,7 @@ class RuntimeBoundaryEnforcer:
 
             for key, value in kwargs.items():
                 if isinstance(value, dict):
-                    result = self._validator.validate_outgoing_message(
-                        value, f"kwarg[{key}]"
-                    )
+                    result = self._validator.validate_outgoing_message(value, f"kwarg[{key}]")
                     if not result.valid:
                         self._blocked_count += 1
                         raise BoundaryViolationError(
@@ -470,9 +477,7 @@ class RuntimeBoundaryEnforcer:
 
         if not result.valid:
             self._blocked_count += 1
-            raise BoundaryViolationError(
-                f"Message blocked: {result.violations[0].message}"
-            )
+            raise BoundaryViolationError(f"Message blocked: {result.violations[0].message}")
 
         self._passed_count += 1
         return send_func(message)
@@ -499,6 +504,7 @@ class BoundaryViolationError(Exception):
 # Factory Functions
 # ============================================================================
 
+
 def create_boundary_validator(strict: bool = True) -> CloudBoundaryValidator:
     """Create a configured boundary validator."""
     return CloudBoundaryValidator(strict_mode=strict)
@@ -512,6 +518,7 @@ def create_boundary_enforcer() -> RuntimeBoundaryEnforcer:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def validate_cloud_message(message: Dict[str, Any]) -> bool:
     """
@@ -542,12 +549,15 @@ def assert_no_intent_fields(data: Dict[str, Any]) -> None:
     if violations:
         raise BoundaryViolationError(
             f"Intent field detected: {violations[0].message}",
-            [BoundaryViolation(
-                violation_type=BoundaryViolationType.PROHIBITED_FIELD,
-                severity="critical",
-                message=v.message,
-                field_path=v.location,
-            ) for v in violations]
+            [
+                BoundaryViolation(
+                    violation_type=BoundaryViolationType.PROHIBITED_FIELD,
+                    severity="critical",
+                    message=v.message,
+                    field_path=v.location,
+                )
+                for v in violations
+            ],
         )
 
 
@@ -556,35 +566,35 @@ def assert_no_intent_fields(data: Dict[str, Any]) -> None:
 # ============================================================================
 
 # Fields that indicate live signal/target content - PROHIBITED in configs
-PROHIBITED_CONFIG_PATTERNS: Final[FrozenSet[str]] = frozenset({
-    # Signal/target fields (Design Doc 5.1)
-    "signal",
-    "signals",
-    "target_position",
-    "target_positions",
-    "target_qty",
-    "target_weight",
-    "live_signal",
-    "execute_now",
-
-    # Order-like fields (Design Doc 10.5)
-    "order",
-    "orders",
-    "place_order",
-    "submit_order",
-    "order_type",
-    "limit_price",
-    "stop_price",
-    "time_in_force",
-    "side",
-    "qty",
-    "quantity",
-
-    # Intent fields
-    "intent",
-    "trade_intent",
-    "execution_intent",
-})
+PROHIBITED_CONFIG_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    {
+        # Signal/target fields (Design Doc 5.1)
+        "signal",
+        "signals",
+        "target_position",
+        "target_positions",
+        "target_qty",
+        "target_weight",
+        "live_signal",
+        "execute_now",
+        # Order-like fields (Design Doc 10.5)
+        "order",
+        "orders",
+        "place_order",
+        "submit_order",
+        "order_type",
+        "limit_price",
+        "stop_price",
+        "time_in_force",
+        "side",
+        "qty",
+        "quantity",
+        # Intent fields
+        "intent",
+        "trade_intent",
+        "execution_intent",
+    }
+)
 
 
 class ConfigBoundaryValidator:
@@ -646,21 +656,25 @@ class ConfigBoundaryValidator:
 
                 # Check against prohibited patterns
                 if key_lower in PROHIBITED_CONFIG_PATTERNS:
-                    result.add_violation(BoundaryViolation(
-                        violation_type=BoundaryViolationType.PROHIBITED_FIELD,
-                        severity="critical",
-                        message=f"Prohibited config field '{key}' - potential signal/target injection",
-                        field_path=current_path,
-                    ))
+                    result.add_violation(
+                        BoundaryViolation(
+                            violation_type=BoundaryViolationType.PROHIBITED_FIELD,
+                            severity="critical",
+                            message=f"Prohibited config field '{key}' - potential signal/target injection",
+                            field_path=current_path,
+                        )
+                    )
 
                 # Also check against general prohibited fields
                 if key_lower in PROHIBITED_INTENT_FIELDS:
-                    result.add_violation(BoundaryViolation(
-                        violation_type=BoundaryViolationType.INTENT_INJECTION,
-                        severity="critical",
-                        message=f"Intent field '{key}' not allowed in config",
-                        field_path=current_path,
-                    ))
+                    result.add_violation(
+                        BoundaryViolation(
+                            violation_type=BoundaryViolationType.INTENT_INJECTION,
+                            severity="critical",
+                            message=f"Intent field '{key}' not allowed in config",
+                            field_path=current_path,
+                        )
+                    )
 
                 # Recurse
                 self._check_prohibited_patterns(value, current_path, result)
@@ -675,6 +689,7 @@ class ConfigBoundaryValidator:
         result: BoundaryValidationResult,
     ) -> None:
         """Check for signal/target-like structures."""
+
         # Pattern: lists of dicts with symbol + qty/weight/side
         def is_signal_like(items: list) -> bool:
             if not items or not isinstance(items[0], dict):
@@ -692,12 +707,14 @@ class ConfigBoundaryValidator:
                     current_path = f"{path}.{key}" if path else key
                     if isinstance(value, list) and value:
                         if is_signal_like(value):
-                            result.add_violation(BoundaryViolation(
-                                violation_type=BoundaryViolationType.INTENT_INJECTION,
-                                severity="critical",
-                                message=f"Signal-like structure detected at '{current_path}'",
-                                field_path=current_path,
-                            ))
+                            result.add_violation(
+                                BoundaryViolation(
+                                    violation_type=BoundaryViolationType.INTENT_INJECTION,
+                                    severity="critical",
+                                    message=f"Signal-like structure detected at '{current_path}'",
+                                    field_path=current_path,
+                                )
+                            )
                     check_lists(value, current_path)
             elif isinstance(obj, list):
                 for i, item in enumerate(obj):
@@ -716,6 +733,7 @@ CloudBoundaryValidator.validate_config = lambda self, config: ConfigBoundaryVali
 # Signal Isolation Validator (Design Doc 5.1)
 # ============================================================================
 
+
 class SignalIsolationValidator:
     """
     Validates that signal/target code is isolated from Cloud.
@@ -730,13 +748,15 @@ class SignalIsolationValidator:
     """
 
     # Import patterns that indicate signal handling
-    SIGNAL_IMPORT_PATTERNS: Final[FrozenSet[str]] = frozenset({
-        "api.spot_signals",
-        "service_signal_runner",
-        "signal_executor",
-        "target_position_manager",
-        "live_signal",
-    })
+    SIGNAL_IMPORT_PATTERNS: Final[FrozenSet[str]] = frozenset(
+        {
+            "api.spot_signals",
+            "service_signal_runner",
+            "signal_executor",
+            "target_position_manager",
+            "live_signal",
+        }
+    )
 
     def validate_no_signal_imports(
         self,
@@ -759,12 +779,14 @@ class SignalIsolationValidator:
             imported_lower = imported.lower()
             for pattern in self.SIGNAL_IMPORT_PATTERNS:
                 if pattern in imported_lower:
-                    result.add_violation(BoundaryViolation(
-                        violation_type=BoundaryViolationType.INTENT_INJECTION,
-                        severity="critical",
-                        message=f"Signal import '{imported}' not allowed in Cloud module '{module_name}'",
-                        field_path=f"import:{imported}",
-                    ))
+                    result.add_violation(
+                        BoundaryViolation(
+                            violation_type=BoundaryViolationType.INTENT_INJECTION,
+                            severity="critical",
+                            message=f"Signal import '{imported}' not allowed in Cloud module '{module_name}'",
+                            field_path=f"import:{imported}",
+                        )
+                    )
 
         return result
 

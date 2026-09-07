@@ -34,10 +34,11 @@ class DisclosureType(Enum):
 
     Each type corresponds to specific requirements under Article 50.
     """
-    AI_INTERACTION = "ai_interaction"       # Art. 50(1) - Basic AI interaction
+
+    AI_INTERACTION = "ai_interaction"  # Art. 50(1) - Basic AI interaction
     SYNTHETIC_CONTENT = "synthetic_content"  # Art. 50(2) - AI-generated content
     EMOTION_RECOGNITION = "emotion_recognition"  # Art. 50(3) - Emotion detection
-    DEEP_FAKE = "deep_fake"                 # Art. 50(4) - Manipulated media
+    DEEP_FAKE = "deep_fake"  # Art. 50(4) - Manipulated media
 
 
 class DisclosureContext(Enum):
@@ -46,6 +47,7 @@ class DisclosureContext(Enum):
 
     Different contexts may require different levels of disclosure.
     """
+
     REGISTRATION = "registration"
     STRATEGY_CREATION = "strategy_creation"
     LIVE_TRADING_ACTIVATION = "live_trading_activation"
@@ -57,6 +59,7 @@ class DisclosureContext(Enum):
 
 class DisclosureLanguage(Enum):
     """Supported languages for disclosure texts."""
+
     ENGLISH = "en"
     RUSSIAN = "ru"
     GERMAN = "de"
@@ -86,6 +89,7 @@ class AIDisclosure:
         ai_system_type: Type/architecture of the AI
         ai_purpose: Purpose of the AI system
     """
+
     disclosure_id: str
     disclosure_type: DisclosureType
     context: DisclosureContext
@@ -129,7 +133,7 @@ class AIDisclosure:
                 ),
                 "acknowledge": "I understand that I am interacting with an AI system",
                 "model_info": f"AI System: {self.ai_system_name}",
-                "footer": "This disclosure is provided pursuant to Article 50 of Regulation (EU) 2024/1689"
+                "footer": "This disclosure is provided pursuant to Article 50 of Regulation (EU) 2024/1689",
             },
             "ru": {
                 "header": "РАСКРЫТИЕ ИНФОРМАЦИИ ОБ ИИ-СИСТЕМЕ",
@@ -145,7 +149,7 @@ class AIDisclosure:
                 ),
                 "acknowledge": "Я понимаю, что взаимодействую с ИИ-системой",
                 "model_info": f"ИИ-система: {self.ai_system_name}",
-                "footer": "Данное раскрытие предоставлено в соответствии со Статьёй 50 Регламента (ЕС) 2024/1689"
+                "footer": "Данное раскрытие предоставлено в соответствии со Статьёй 50 Регламента (ЕС) 2024/1689",
             },
             "de": {
                 "header": "KI-SYSTEM OFFENLEGUNG",
@@ -161,7 +165,7 @@ class AIDisclosure:
                 ),
                 "acknowledge": "Ich verstehe, dass ich mit einem KI-System interagiere",
                 "model_info": f"KI-System: {self.ai_system_name}",
-                "footer": "Diese Offenlegung erfolgt gemäß Artikel 50 der Verordnung (EU) 2024/1689"
+                "footer": "Diese Offenlegung erfolgt gemäß Artikel 50 der Verordnung (EU) 2024/1689",
             },
             "fr": {
                 "header": "DIVULGATION DU SYSTEME D'IA",
@@ -179,7 +183,7 @@ class AIDisclosure:
                 ),
                 "acknowledge": "Je comprends que j'interagis avec un système d'IA",
                 "model_info": f"Système d'IA: {self.ai_system_name}",
-                "footer": "Cette divulgation est fournie conformément à l'article 50 du règlement (UE) 2024/1689"
+                "footer": "Cette divulgation est fournie conformément à l'article 50 du règlement (UE) 2024/1689",
             },
             "nl": {
                 "header": "AI-SYSTEEM BEKENDMAKING",
@@ -195,8 +199,8 @@ class AIDisclosure:
                 ),
                 "acknowledge": "Ik begrijp dat ik interactie heb met een AI-systeem",
                 "model_info": f"AI-systeem: {self.ai_system_name}",
-                "footer": "Deze bekendmaking wordt verstrekt op grond van artikel 50 van Verordening (EU) 2024/1689"
-            }
+                "footer": "Deze bekendmaking wordt verstrekt op grond van artikel 50 van Verordening (EU) 2024/1689",
+            },
         }
         return texts.get(language, texts["en"])
 
@@ -210,8 +214,7 @@ class AIDisclosure:
             "user_id": self.user_id,
             "acknowledged": self.acknowledged,
             "acknowledgment_timestamp": (
-                self.acknowledgment_timestamp.isoformat()
-                if self.acknowledgment_timestamp else None
+                self.acknowledgment_timestamp.isoformat() if self.acknowledgment_timestamp else None
             ),
             "ai_system_name": self.ai_system_name,
             "ai_system_type": self.ai_system_type,
@@ -231,7 +234,8 @@ class AIDisclosure:
             acknowledged=data.get("acknowledged", False),
             acknowledgment_timestamp=(
                 datetime.fromisoformat(data["acknowledgment_timestamp"])
-                if data.get("acknowledgment_timestamp") else None
+                if data.get("acknowledgment_timestamp")
+                else None
             ),
             ai_system_name=data.get("ai_system_name", "Distributional PPO Trading Model"),
             ai_system_type=data.get("ai_system_type", "Reinforcement Learning"),
@@ -252,6 +256,7 @@ class DisclosureRequirement:
         article_reference: The specific article/recital reference
         blocking: Whether to block access until acknowledged
     """
+
     context: DisclosureContext
     required: bool
     reason: str
@@ -266,49 +271,49 @@ DISCLOSURE_REQUIREMENTS: List[DisclosureRequirement] = [
         required=True,
         reason="User begins interaction with AI-powered platform",
         article_reference="Article 50(1)",
-        blocking=True
+        blocking=True,
     ),
     DisclosureRequirement(
         context=DisclosureContext.STRATEGY_CREATION,
         required=True,
         reason="AI system assists in strategy development",
         article_reference="Article 50(1)",
-        blocking=False
+        blocking=False,
     ),
     DisclosureRequirement(
         context=DisclosureContext.LIVE_TRADING_ACTIVATION,
         required=True,
         reason="AI system will execute real trades with financial impact",
         article_reference="Article 50(1)",
-        blocking=True
+        blocking=True,
     ),
     DisclosureRequirement(
         context=DisclosureContext.MODEL_OUTPUT,
         required=True,
         reason="AI-generated trading signals are presented",
         article_reference="Article 50(1), Article 50(2)",
-        blocking=False
+        blocking=False,
     ),
     DisclosureRequirement(
         context=DisclosureContext.API_RESPONSE,
         required=True,
         reason="Programmatic access to AI outputs",
         article_reference="Article 50(1), Recital 132",
-        blocking=False
+        blocking=False,
     ),
     DisclosureRequirement(
         context=DisclosureContext.DASHBOARD,
         required=True,
         reason="AI-generated analytics displayed to user",
         article_reference="Article 50(1)",
-        blocking=False
+        blocking=False,
     ),
     DisclosureRequirement(
         context=DisclosureContext.REPORT_GENERATION,
         required=True,
         reason="AI-generated content in reports",
         article_reference="Article 50(2)",
-        blocking=False
+        blocking=False,
     ),
 ]
 
@@ -316,6 +321,7 @@ DISCLOSURE_REQUIREMENTS: List[DisclosureRequirement] = [
 @dataclass
 class DisclosureAuditRecord:
     """Audit record for disclosure tracking."""
+
     record_id: str
     disclosure_id: str
     user_id: str
@@ -362,7 +368,7 @@ class TransparencyDisclosureManager:
         context: DisclosureContext,
         disclosure_type: DisclosureType = DisclosureType.AI_INTERACTION,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AIDisclosure:
         """
         Create new disclosure for user context.
@@ -386,7 +392,7 @@ class TransparencyDisclosureManager:
             timestamp=datetime.utcnow(),
             user_id=user_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
         self.disclosures[disclosure_id] = disclosure
@@ -406,7 +412,7 @@ class TransparencyDisclosureManager:
         disclosure_id: str,
         user_id: str,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> bool:
         """
         Record user acknowledgment of AI disclosure.
@@ -438,16 +444,12 @@ class TransparencyDisclosureManager:
             user_id,
             "acknowledged",
             disclosure.context,
-            metadata={"ip_address": ip_address, "user_agent": user_agent}
+            metadata={"ip_address": ip_address, "user_agent": user_agent},
         )
 
         return True
 
-    def check_disclosure_required(
-        self,
-        user_id: str,
-        context: DisclosureContext
-    ) -> bool:
+    def check_disclosure_required(self, user_id: str, context: DisclosureContext) -> bool:
         """
         Check if disclosure is required for this context.
 
@@ -471,9 +473,7 @@ class TransparencyDisclosureManager:
         return True
 
     def get_user_disclosures(
-        self,
-        user_id: str,
-        context: Optional[DisclosureContext] = None
+        self, user_id: str, context: Optional[DisclosureContext] = None
     ) -> List[AIDisclosure]:
         """
         Get all disclosures for a user.
@@ -486,11 +486,7 @@ class TransparencyDisclosureManager:
             List of AIDisclosure instances
         """
         disclosure_ids = self._user_disclosures.get(user_id, [])
-        disclosures = [
-            self.disclosures[did]
-            for did in disclosure_ids
-            if did in self.disclosures
-        ]
+        disclosures = [self.disclosures[did] for did in disclosure_ids if did in self.disclosures]
 
         if context:
             disclosures = [d for d in disclosures if d.context == context]
@@ -552,10 +548,7 @@ class TransparencyDisclosureManager:
             if not req.required:
                 continue
 
-            context_disclosures = [
-                d for d in user_disclosures
-                if d.context == req.context
-            ]
+            context_disclosures = [d for d in user_disclosures if d.context == req.context]
 
             if context_disclosures:
                 latest = max(context_disclosures, key=lambda d: d.timestamp)
@@ -573,10 +566,7 @@ class TransparencyDisclosureManager:
                     "blocking": req.blocking,
                 }
 
-        all_acknowledged = all(
-            s.get("acknowledged", False)
-            for s in compliance_status.values()
-        )
+        all_acknowledged = all(s.get("acknowledged", False) for s in compliance_status.values())
 
         return {
             "user_id": user_id,
@@ -589,7 +579,7 @@ class TransparencyDisclosureManager:
         self,
         user_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get audit trail for disclosures.
@@ -629,10 +619,7 @@ class TransparencyDisclosureManager:
         data = f"{user_id}:{context.value}"
         return hashlib.sha256(data.encode()).hexdigest()[:16]
 
-    def _get_requirement(
-        self,
-        context: DisclosureContext
-    ) -> Optional[DisclosureRequirement]:
+    def _get_requirement(self, context: DisclosureContext) -> Optional[DisclosureRequirement]:
         """Get requirement for a context."""
         for req in DISCLOSURE_REQUIREMENTS:
             if req.context == context:
@@ -645,7 +632,7 @@ class TransparencyDisclosureManager:
         user_id: str,
         action: str,
         context: DisclosureContext,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Log action to audit trail."""
         record = DisclosureAuditRecord(
@@ -657,7 +644,7 @@ class TransparencyDisclosureManager:
             action=action,
             timestamp=datetime.utcnow(),
             context=context,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
         self.audit_log.append(record)
 
@@ -722,7 +709,7 @@ class SyntheticContentMarker:
 
 
 def create_transparency_manager(
-    storage_backend: Optional[Dict] = None
+    storage_backend: Optional[Dict] = None,
 ) -> TransparencyDisclosureManager:
     """
     Create configured transparency manager.
@@ -748,10 +735,7 @@ def get_disclosure_requirements() -> List[DisclosureRequirement]:
     return DISCLOSURE_REQUIREMENTS.copy()
 
 
-def validate_disclosure_text(
-    disclosure: AIDisclosure,
-    language: str = "en"
-) -> Dict[str, bool]:
+def validate_disclosure_text(disclosure: AIDisclosure, language: str = "en") -> Dict[str, bool]:
     """
     Validate that disclosure text meets Article 50 requirements.
 
@@ -768,15 +752,18 @@ def validate_disclosure_text(
         "has_header": bool(text.get("header")),
         "has_body": bool(text.get("body")),
         "has_acknowledge": bool(text.get("acknowledge")),
-        "mentions_ai": "AI" in text.get("body", "") or "Artificial Intelligence" in text.get("body", ""),
+        "mentions_ai": "AI" in text.get("body", "")
+        or "Artificial Intelligence" in text.get("body", ""),
         "mentions_ml": (
-            "machine learning" in text.get("body", "").lower() or
-            "maschinell" in text.get("body", "").lower() or
-            "apprentissage" in text.get("body", "").lower() or
-            "машинного обучения" in text.get("body", "").lower()
+            "machine learning" in text.get("body", "").lower()
+            or "maschinell" in text.get("body", "").lower()
+            or "apprentissage" in text.get("body", "").lower()
+            or "машинного обучения" in text.get("body", "").lower()
         ),
-        "mentions_limitations": "limitation" in text.get("body", "").lower() or "ограничения" in text.get("body", "").lower(),
-        "mentions_responsibility": "responsibility" in text.get("body", "").lower() or "ответственность" in text.get("body", "").lower(),
+        "mentions_limitations": "limitation" in text.get("body", "").lower()
+        or "ограничения" in text.get("body", "").lower(),
+        "mentions_responsibility": "responsibility" in text.get("body", "").lower()
+        or "ответственность" in text.get("body", "").lower(),
     }
 
     checks["all_valid"] = all(checks.values())

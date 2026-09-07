@@ -46,6 +46,7 @@ from execution_providers import (
 # Flash Crash Scenarios
 # =============================================================================
 
+
 class TestFlashCrashScenarios:
     """Test flash crash conditions (CHF Jan 2015 style)."""
 
@@ -143,6 +144,7 @@ class TestFlashCrashScenarios:
 # NFP Release Scenarios
 # =============================================================================
 
+
 class TestNFPReleaseScenarios:
     """Test Non-Farm Payrolls release conditions."""
 
@@ -220,6 +222,7 @@ class TestNFPReleaseScenarios:
 # Weekend Gap Scenarios
 # =============================================================================
 
+
 class TestWeekendGapScenarios:
     """Test weekend gap conditions."""
 
@@ -294,6 +297,7 @@ class TestWeekendGapScenarios:
 # =============================================================================
 # Exotic Pair Stress Tests
 # =============================================================================
+
 
 class TestExoticPairStress:
     """Test exotic pair stress conditions."""
@@ -370,6 +374,7 @@ class TestExoticPairStress:
 # High Volume Stress Tests
 # =============================================================================
 
+
 class TestHighVolumeStress:
     """Test high volume order conditions."""
 
@@ -442,6 +447,7 @@ class TestHighVolumeStress:
 # Low Liquidity Session Stress Tests
 # =============================================================================
 
+
 class TestLowLiquidityStress:
     """Test low liquidity session conditions."""
 
@@ -508,6 +514,7 @@ class TestLowLiquidityStress:
 # =============================================================================
 # Carry Trade Stress Tests
 # =============================================================================
+
 
 class TestCarryTradeStress:
     """Test carry trade (interest rate differential) stress conditions."""
@@ -585,6 +592,7 @@ class TestCarryTradeStress:
 # News Cascade Stress Tests
 # =============================================================================
 
+
 class TestNewsCascadeStress:
     """Test multiple simultaneous news events."""
 
@@ -630,6 +638,7 @@ class TestNewsCascadeStress:
 # =============================================================================
 # Dealer Simulation Stress Tests
 # =============================================================================
+
 
 class TestDealerSimulationStress:
     """Test forex dealer simulation under stress."""

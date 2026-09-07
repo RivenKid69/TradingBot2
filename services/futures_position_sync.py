@@ -126,6 +126,7 @@ class FuturesSyncEventType(str, Enum):
 
 class ADLRiskLevel(str, Enum):
     """ADL (Auto-Deleveraging) risk level."""
+
     SAFE = "safe"
     WARNING = "warning"
     DANGER = "danger"
@@ -274,18 +275,12 @@ class FuturesSyncResult:
     @property
     def has_liquidations(self) -> bool:
         """Whether any liquidations were detected."""
-        return any(
-            e.event_type == FuturesSyncEventType.LIQUIDATION_DETECTED
-            for e in self.events
-        )
+        return any(e.event_type == FuturesSyncEventType.LIQUIDATION_DETECTED for e in self.events)
 
     @property
     def has_adl_events(self) -> bool:
         """Whether any ADL events were detected."""
-        return any(
-            e.event_type == FuturesSyncEventType.ADL_DETECTED
-            for e in self.events
-        )
+        return any(e.event_type == FuturesSyncEventType.ADL_DETECTED for e in self.events)
 
     @property
     def position_count_diff(self) -> int:
@@ -335,13 +330,9 @@ class FuturesSyncConfig:
     def __post_init__(self):
         """Validate configuration."""
         if self.sync_interval_sec < MIN_SYNC_INTERVAL_SEC:
-            raise ValueError(
-                f"sync_interval_sec must be >= {MIN_SYNC_INTERVAL_SEC}"
-            )
+            raise ValueError(f"sync_interval_sec must be >= {MIN_SYNC_INTERVAL_SEC}")
         if self.sync_interval_sec > MAX_SYNC_INTERVAL_SEC:
-            raise ValueError(
-                f"sync_interval_sec must be <= {MAX_SYNC_INTERVAL_SEC}"
-            )
+            raise ValueError(f"sync_interval_sec must be <= {MAX_SYNC_INTERVAL_SEC}")
 
 
 # =============================================================================
@@ -483,11 +474,12 @@ class FuturesPositionSynchronizer:
                     retry_count = attempt + 1
                     error = str(e)
                     logger.warning(
-                        f"Sync attempt {retry_count}/{self._config.max_retries} "
-                        f"failed: {e}"
+                        f"Sync attempt {retry_count}/{self._config.max_retries} " f"failed: {e}"
                     )
                     if attempt < self._config.max_retries - 1:
-                        time.sleep(RETRY_BACKOFF_SECONDS[min(attempt, len(RETRY_BACKOFF_SECONDS) - 1)])
+                        time.sleep(
+                            RETRY_BACKOFF_SECONDS[min(attempt, len(RETRY_BACKOFF_SECONDS) - 1)]
+                        )
 
             if retry_count == self._config.max_retries:
                 logger.error(f"Sync failed after {retry_count} retries: {error}")
@@ -510,27 +502,18 @@ class FuturesPositionSynchronizer:
                     remote_positions.pop(sym, None)
 
             # Compare positions and detect events
-            events = self._compare_positions(
-                local_positions,
-                remote_positions,
-                timestamp_ms
-            )
+            events = self._compare_positions(local_positions, remote_positions, timestamp_ms)
 
             # Check for liquidation events
             if self._config.enable_liquidation_detection:
                 liquidation_events = self._detect_liquidations(
-                    local_positions,
-                    remote_positions,
-                    timestamp_ms
+                    local_positions, remote_positions, timestamp_ms
                 )
                 events.extend(liquidation_events)
 
             # Check ADL indicators
             if self._config.enable_adl_monitoring and self._adl_provider:
-                adl_events = self._check_adl_indicators(
-                    remote_positions,
-                    timestamp_ms
-                )
+                adl_events = self._check_adl_indicators(remote_positions, timestamp_ms)
                 events.extend(adl_events)
 
             # Get open orders count
@@ -551,10 +534,16 @@ class FuturesPositionSynchronizer:
                 local_positions=local_positions,
                 remote_positions=remote_positions,
                 events=events,
-                account_balance=account_state.total_wallet_balance if account_state else Decimal("0"),
-                total_margin_used=account_state.total_initial_margin if account_state else Decimal("0"),
+                account_balance=(
+                    account_state.total_wallet_balance if account_state else Decimal("0")
+                ),
+                total_margin_used=(
+                    account_state.total_initial_margin if account_state else Decimal("0")
+                ),
                 margin_ratio=account_state.margin_ratio if account_state else Decimal("0"),
-                unrealized_pnl=account_state.total_unrealized_pnl if account_state else Decimal("0"),
+                unrealized_pnl=(
+                    account_state.total_unrealized_pnl if account_state else Decimal("0")
+                ),
                 open_orders_count=open_orders_count,
                 retry_count=retry_count,
             )
@@ -589,42 +578,48 @@ class FuturesPositionSynchronizer:
             if local_pos is None and remote_pos is not None:
                 # New position opened (or missed opening)
                 if abs(remote_pos.qty) > Decimal("0"):
-                    events.append(FuturesPositionDiff(
-                        symbol=symbol,
-                        event_type=FuturesSyncEventType.POSITION_OPENED,
-                        remote_qty=remote_pos.qty,
-                        remote_leverage=remote_pos.leverage,
-                        remote_entry_price=remote_pos.entry_price,
-                        remote_unrealized_pnl=remote_pos.unrealized_pnl,
-                        timestamp_ms=timestamp_ms,
-                        details="Position opened on exchange but not tracked locally",
-                    ))
+                    events.append(
+                        FuturesPositionDiff(
+                            symbol=symbol,
+                            event_type=FuturesSyncEventType.POSITION_OPENED,
+                            remote_qty=remote_pos.qty,
+                            remote_leverage=remote_pos.leverage,
+                            remote_entry_price=remote_pos.entry_price,
+                            remote_unrealized_pnl=remote_pos.unrealized_pnl,
+                            timestamp_ms=timestamp_ms,
+                            details="Position opened on exchange but not tracked locally",
+                        )
+                    )
 
             elif local_pos is not None and remote_pos is None:
                 # Position closed (could be liquidation/ADL)
-                events.append(FuturesPositionDiff(
-                    symbol=symbol,
-                    event_type=FuturesSyncEventType.POSITION_CLOSED,
-                    local_qty=local_pos.qty,
-                    local_leverage=local_pos.leverage,
-                    local_entry_price=local_pos.entry_price,
-                    local_unrealized_pnl=local_pos.unrealized_pnl,
-                    timestamp_ms=timestamp_ms,
-                    details="Position closed on exchange",
-                ))
+                events.append(
+                    FuturesPositionDiff(
+                        symbol=symbol,
+                        event_type=FuturesSyncEventType.POSITION_CLOSED,
+                        local_qty=local_pos.qty,
+                        local_leverage=local_pos.leverage,
+                        local_entry_price=local_pos.entry_price,
+                        local_unrealized_pnl=local_pos.unrealized_pnl,
+                        timestamp_ms=timestamp_ms,
+                        details="Position closed on exchange",
+                    )
+                )
 
             elif local_pos is not None and remote_pos is not None:
                 # Both exist - check for differences
                 if abs(remote_pos.qty) == Decimal("0"):
                     # Position fully closed
-                    events.append(FuturesPositionDiff(
-                        symbol=symbol,
-                        event_type=FuturesSyncEventType.POSITION_CLOSED,
-                        local_qty=local_pos.qty,
-                        remote_qty=Decimal("0"),
-                        timestamp_ms=timestamp_ms,
-                        details="Position quantity is zero on exchange",
-                    ))
+                    events.append(
+                        FuturesPositionDiff(
+                            symbol=symbol,
+                            event_type=FuturesSyncEventType.POSITION_CLOSED,
+                            local_qty=local_pos.qty,
+                            remote_qty=Decimal("0"),
+                            timestamp_ms=timestamp_ms,
+                            details="Position quantity is zero on exchange",
+                        )
+                    )
                     continue
 
                 # Check quantity mismatch
@@ -632,28 +627,35 @@ class FuturesPositionSynchronizer:
                 qty_tolerance = abs(local_pos.qty) * Decimal(str(self._config.qty_tolerance_pct))
 
                 if qty_diff > qty_tolerance:
-                    events.append(FuturesPositionDiff(
-                        symbol=symbol,
-                        event_type=FuturesSyncEventType.QTY_MISMATCH,
-                        local_qty=local_pos.qty,
-                        remote_qty=remote_pos.qty,
-                        local_entry_price=local_pos.entry_price,
-                        remote_entry_price=remote_pos.entry_price,
-                        timestamp_ms=timestamp_ms,
-                        details=f"Quantity mismatch: local={local_pos.qty}, remote={remote_pos.qty}",
-                    ))
+                    events.append(
+                        FuturesPositionDiff(
+                            symbol=symbol,
+                            event_type=FuturesSyncEventType.QTY_MISMATCH,
+                            local_qty=local_pos.qty,
+                            remote_qty=remote_pos.qty,
+                            local_entry_price=local_pos.entry_price,
+                            remote_entry_price=remote_pos.entry_price,
+                            timestamp_ms=timestamp_ms,
+                            details=f"Quantity mismatch: local={local_pos.qty}, remote={remote_pos.qty}",
+                        )
+                    )
 
                 # Check leverage mismatch
                 if local_pos.leverage != remote_pos.leverage:
-                    if abs(local_pos.leverage - remote_pos.leverage) > self._config.leverage_tolerance:
-                        events.append(FuturesPositionDiff(
-                            symbol=symbol,
-                            event_type=FuturesSyncEventType.LEVERAGE_MISMATCH,
-                            local_leverage=local_pos.leverage,
-                            remote_leverage=remote_pos.leverage,
-                            timestamp_ms=timestamp_ms,
-                            details=f"Leverage mismatch: local={local_pos.leverage}x, remote={remote_pos.leverage}x",
-                        ))
+                    if (
+                        abs(local_pos.leverage - remote_pos.leverage)
+                        > self._config.leverage_tolerance
+                    ):
+                        events.append(
+                            FuturesPositionDiff(
+                                symbol=symbol,
+                                event_type=FuturesSyncEventType.LEVERAGE_MISMATCH,
+                                local_leverage=local_pos.leverage,
+                                remote_leverage=remote_pos.leverage,
+                                timestamp_ms=timestamp_ms,
+                                details=f"Leverage mismatch: local={local_pos.leverage}x, remote={remote_pos.leverage}x",
+                            )
+                        )
 
         return events
 
@@ -667,7 +669,19 @@ class FuturesPositionSynchronizer:
         events: List[FuturesPositionDiff] = []
 
         for symbol, local_pos in local.items():
-            if symbol not in remote or abs(remote.get(symbol, FuturesPosition(symbol=symbol, side=PositionSide.BOTH, entry_price=Decimal("0"), qty=Decimal("0"), leverage=1, margin_mode=MarginMode.CROSS)).qty) == Decimal("0"):
+            if symbol not in remote or abs(
+                remote.get(
+                    symbol,
+                    FuturesPosition(
+                        symbol=symbol,
+                        side=PositionSide.BOTH,
+                        entry_price=Decimal("0"),
+                        qty=Decimal("0"),
+                        leverage=1,
+                        margin_mode=MarginMode.CROSS,
+                    ),
+                ).qty
+            ) == Decimal("0"):
                 # Position disappeared - check if it was a forced liquidation
                 # This is heuristic: sudden position close with high leverage
                 # and significant unrealized loss suggests liquidation
@@ -681,16 +695,18 @@ class FuturesPositionSynchronizer:
                     # Could be liquidation - mark for verification
                     if symbol not in self._pending_liquidations:
                         self._pending_liquidations.add(symbol)
-                        events.append(FuturesPositionDiff(
-                            symbol=symbol,
-                            event_type=FuturesSyncEventType.LIQUIDATION_DETECTED,
-                            local_qty=local_pos.qty,
-                            local_leverage=local_pos.leverage,
-                            local_entry_price=local_pos.entry_price,
-                            local_unrealized_pnl=local_pos.unrealized_pnl,
-                            timestamp_ms=timestamp_ms,
-                            details="Potential liquidation detected (position disappeared with high leverage)",
-                        ))
+                        events.append(
+                            FuturesPositionDiff(
+                                symbol=symbol,
+                                event_type=FuturesSyncEventType.LIQUIDATION_DETECTED,
+                                local_qty=local_pos.qty,
+                                local_leverage=local_pos.leverage,
+                                local_entry_price=local_pos.entry_price,
+                                local_unrealized_pnl=local_pos.unrealized_pnl,
+                                timestamp_ms=timestamp_ms,
+                                details="Potential liquidation detected (position disappeared with high leverage)",
+                            )
+                        )
                         self._liquidation_count += 1
 
         return events
@@ -710,8 +726,7 @@ class FuturesPositionSynchronizer:
             try:
                 # Get ADL indicator (1-5 lights on Binance)
                 adl_lights = self._adl_provider.get_adl_indicator(
-                    symbol,
-                    PositionSide.LONG if pos.qty > Decimal("0") else PositionSide.SHORT
+                    symbol, PositionSide.LONG if pos.qty > Decimal("0") else PositionSide.SHORT
                 )
 
                 # Convert to percentile (5 lights = 80-100%, 4 = 60-80%, etc.)
@@ -719,34 +734,42 @@ class FuturesPositionSynchronizer:
 
                 # Determine risk level
                 if adl_percentile >= self._config.adl_danger_threshold:
-                    risk_level = ADLRiskLevel.CRITICAL if adl_percentile >= ADL_CRITICAL_PERCENTILE else ADLRiskLevel.DANGER
+                    risk_level = (
+                        ADLRiskLevel.CRITICAL
+                        if adl_percentile >= ADL_CRITICAL_PERCENTILE
+                        else ADLRiskLevel.DANGER
+                    )
 
-                    events.append(FuturesPositionDiff(
-                        symbol=symbol,
-                        event_type=FuturesSyncEventType.ADL_DETECTED,
-                        remote_qty=pos.qty,
-                        remote_leverage=pos.leverage,
-                        adl_percentile=adl_percentile,
-                        adl_risk_level=risk_level,
-                        timestamp_ms=timestamp_ms,
-                        details=f"High ADL risk: {adl_lights}/5 lights ({adl_percentile:.0f}%)",
-                    ))
+                    events.append(
+                        FuturesPositionDiff(
+                            symbol=symbol,
+                            event_type=FuturesSyncEventType.ADL_DETECTED,
+                            remote_qty=pos.qty,
+                            remote_leverage=pos.leverage,
+                            adl_percentile=adl_percentile,
+                            adl_risk_level=risk_level,
+                            timestamp_ms=timestamp_ms,
+                            details=f"High ADL risk: {adl_lights}/5 lights ({adl_percentile:.0f}%)",
+                        )
+                    )
 
                     if symbol not in self._pending_adl:
                         self._pending_adl.add(symbol)
                         self._adl_count += 1
 
                 elif adl_percentile >= self._config.adl_warning_threshold:
-                    events.append(FuturesPositionDiff(
-                        symbol=symbol,
-                        event_type=FuturesSyncEventType.ADL_DETECTED,
-                        remote_qty=pos.qty,
-                        remote_leverage=pos.leverage,
-                        adl_percentile=adl_percentile,
-                        adl_risk_level=ADLRiskLevel.WARNING,
-                        timestamp_ms=timestamp_ms,
-                        details=f"ADL warning: {adl_lights}/5 lights ({adl_percentile:.0f}%)",
-                    ))
+                    events.append(
+                        FuturesPositionDiff(
+                            symbol=symbol,
+                            event_type=FuturesSyncEventType.ADL_DETECTED,
+                            remote_qty=pos.qty,
+                            remote_leverage=pos.leverage,
+                            adl_percentile=adl_percentile,
+                            adl_risk_level=ADLRiskLevel.WARNING,
+                            timestamp_ms=timestamp_ms,
+                            details=f"ADL warning: {adl_lights}/5 lights ({adl_percentile:.0f}%)",
+                        )
+                    )
 
             except Exception as e:
                 logger.warning(f"Failed to get ADL indicator for {symbol}: {e}")
@@ -839,9 +862,7 @@ class FuturesPositionSynchronizer:
 
         self._stop_event.clear()
         self._is_running = True
-        self._background_task = asyncio.create_task(
-            self._background_sync_loop_async()
-        )
+        self._background_task = asyncio.create_task(self._background_sync_loop_async())
         logger.info("Started async background futures position sync")
 
     async def stop_background_sync_async(self) -> None:
@@ -959,7 +980,17 @@ def create_crypto_futures_sync(
         account_provider=account_provider,
         local_state_getter=local_state_getter,
         config=config,
-        **{k: v for k, v in kwargs.items() if k not in ("sync_interval_sec", "enable_adl_monitoring", "enable_liquidation_detection", "enable_funding_tracking")}
+        **{
+            k: v
+            for k, v in kwargs.items()
+            if k
+            not in (
+                "sync_interval_sec",
+                "enable_adl_monitoring",
+                "enable_liquidation_detection",
+                "enable_funding_tracking",
+            )
+        },
     )
 
 
@@ -997,5 +1028,5 @@ def create_cme_futures_sync(
         account_provider=account_provider,
         local_state_getter=local_state_getter,
         config=config,
-        **{k: v for k, v in kwargs.items() if k != "sync_interval_sec"}
+        **{k: v for k, v in kwargs.items() if k != "sync_interval_sec"},
     )

@@ -219,7 +219,9 @@ class CloudSignatureVerifier:
                 if age > self._config.max_message_age_seconds:
                     self._stats["expired"] += 1
                     if self._config.log_failures:
-                        logger.warning(f"Signature verification failed: message expired (age={age}s)")
+                        logger.warning(
+                            f"Signature verification failed: message expired (age={age}s)"
+                        )
                     return VerificationResult(
                         valid=False,
                         key_id=key_id,

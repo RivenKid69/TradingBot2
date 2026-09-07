@@ -481,9 +481,7 @@ class SimExecutor(TradeExecutor):
             if isinstance(entry_mode_raw, ExecutionProfile):
                 resolved_profile = entry_mode_raw
             elif isinstance(entry_mode_raw, str):
-                profile_key = (
-                    entry_mode_raw.strip().replace("-", "_").replace(" ", "_").upper()
-                )
+                profile_key = entry_mode_raw.strip().replace("-", "_").replace(" ", "_").upper()
                 if profile_key in ExecutionProfile.__members__:
                     resolved_profile = ExecutionProfile[profile_key]
 
@@ -494,12 +492,8 @@ class SimExecutor(TradeExecutor):
                 clip_enabled_val = SimExecutor._bool_or_none(clip_cfg.get("enabled"))
                 strict_val = SimExecutor._bool_or_none(clip_cfg.get("strict_open_fill"))
             else:
-                clip_enabled_val = SimExecutor._bool_or_none(
-                    getattr(clip_cfg, "enabled", None)
-                )
-                strict_val = SimExecutor._bool_or_none(
-                    getattr(clip_cfg, "strict_open_fill", None)
-                )
+                clip_enabled_val = SimExecutor._bool_or_none(getattr(clip_cfg, "enabled", None))
+                strict_val = SimExecutor._bool_or_none(getattr(clip_cfg, "strict_open_fill", None))
         if clip_enabled_val is not None:
             clip_enabled = clip_enabled_val
         if strict_val is not None:
@@ -673,18 +667,14 @@ class SimExecutor(TradeExecutor):
                 register_fn(slippage.set_market_regime)
                 self._slippage_regime_listener_registered = True
             except Exception:
-                logger.debug(
-                    "Failed to register market regime listener", exc_info=True
-                )
+                logger.debug("Failed to register market regime listener", exc_info=True)
         if not getattr(self, "_slippage_regime_listener_registered", False):
             regime = getattr(self._sim, "_last_market_regime", None)
             if regime is not None:
                 try:
                     slippage.set_market_regime(regime)
                 except Exception:
-                    logger.debug(
-                        "Failed to seed slippage regime state", exc_info=True
-                    )
+                    logger.debug("Failed to seed slippage regime state", exc_info=True)
 
     def __init__(
         self,
@@ -893,17 +883,13 @@ class SimExecutor(TradeExecutor):
                 try:
                     setter(regime)
                 except Exception:
-                    logger.debug(
-                        "Failed to forward market regime to slippage", exc_info=True
-                    )
+                    logger.debug("Failed to forward market regime to slippage", exc_info=True)
         hint_fn = getattr(self._sim, "set_market_regime_hint", None)
         if callable(hint_fn):
             try:
                 hint_fn(regime)
             except Exception:
-                logger.debug(
-                    "Failed to update simulator regime hint", exc_info=True
-                )
+                logger.debug("Failed to update simulator regime hint", exc_info=True)
         else:
             try:
                 setattr(self._sim, "_last_market_regime", regime)
@@ -947,9 +933,7 @@ class SimExecutor(TradeExecutor):
         l_cfg.setdefault("symbol", symbol)
         l_impl = LatencyImpl.from_dict(l_cfg)
         r_impl = RiskBasicImpl.from_dict(getattr(run_config, "risk", None))
-        d_impl = DataDegradationConfig.from_dict(
-            getattr(run_config, "data_degradation", {}) or {}
-        )
+        d_impl = DataDegradationConfig.from_dict(getattr(run_config, "data_degradation", {}) or {})
 
         execution_cfg = getattr(run_config, "execution", None)
         exec_cfg_payload = SimExecutor._execution_dict(execution_cfg)
@@ -971,9 +955,11 @@ class SimExecutor(TradeExecutor):
                 pass
 
         default_profile = SimExecutor._coerce_execution_profile(
-            getattr(run_config, "execution_profile", ExecutionProfile.MKT_OPEN_NEXT_H1)
-            if run_config is not None
-            else ExecutionProfile.MKT_OPEN_NEXT_H1,
+            (
+                getattr(run_config, "execution_profile", ExecutionProfile.MKT_OPEN_NEXT_H1)
+                if run_config is not None
+                else ExecutionProfile.MKT_OPEN_NEXT_H1
+            ),
             ExecutionProfile.MKT_OPEN_NEXT_H1,
         )
         _, resolved_profile, _, _ = SimExecutor.configure_simulator_execution(
@@ -1026,7 +1012,9 @@ class SimExecutor(TradeExecutor):
         - LIMIT:  volume_frac аналогично; если price задан — кладём в proto.abs_price
         """
         qty = float(order.quantity)
-        base = float(self._ctx.max_position_abs_base) if self._ctx.max_position_abs_base > 0 else 1.0
+        base = (
+            float(self._ctx.max_position_abs_base) if self._ctx.max_position_abs_base > 0 else 1.0
+        )
         if base <= 0:
             base = 1.0
         vol_frac = max(0.0, abs(qty) / base)
@@ -1135,9 +1123,7 @@ class SimExecutor(TradeExecutor):
         report.ask = _safe_float(getattr(self._sim, "_last_ask", 0.0))
         report.latency_p50_ms = _safe_float(getattr(self._sim, "latency_p50_ms", 0.0))
         report.latency_p95_ms = _safe_float(getattr(self._sim, "latency_p95_ms", 0.0))
-        report.latency_timeout_ratio = _safe_float(
-            getattr(self._sim, "latency_timeout_ratio", 0.0)
-        )
+        report.latency_timeout_ratio = _safe_float(getattr(self._sim, "latency_timeout_ratio", 0.0))
         report.vol_factor = getattr(self._sim, "_last_vol_factor", None)
         report.liquidity = getattr(self._sim, "_last_liquidity", None)
 
@@ -1193,9 +1179,7 @@ class SimExecutor(TradeExecutor):
             {
                 "ts": int(order.ts),
                 "symbol": self._ctx.symbol,
-                "side": "BUY"
-                if str(order.side).upper().endswith("BUY")
-                else "SELL",
+                "side": "BUY" if str(order.side).upper().endswith("BUY") else "SELL",
                 "order_type": str(order.order_type),
                 "price": float(price_hint or 0.0),
                 "quantity": 0.0,
@@ -1246,7 +1230,11 @@ class SimExecutor(TradeExecutor):
             and ref_for_check is not None
         ):
             cfg = getattr(quantizer, "cfg", None)
-            enforce_ppbs = bool(getattr(cfg, "enforce_percent_price_by_side", False)) if cfg is not None else False
+            enforce_ppbs = (
+                bool(getattr(cfg, "enforce_percent_price_by_side", False))
+                if cfg is not None
+                else False
+            )
             try:
                 validation_result = quantizer.validate_order(
                     symbol,
@@ -1268,7 +1256,9 @@ class SimExecutor(TradeExecutor):
 
         if validation_result is not None:
             accepted = bool(getattr(validation_result, "accepted", True))
-            quantized_price = self._float_or_none(getattr(validation_result, "price", price_for_check))
+            quantized_price = self._float_or_none(
+                getattr(validation_result, "price", price_for_check)
+            )
             if quantized_price is None:
                 quantized_price = float(price_for_check or 0.0)
             quantized_qty = self._float_or_none(getattr(validation_result, "qty", abs(signed_qty)))
@@ -1373,24 +1363,26 @@ class SimExecutor(TradeExecutor):
 
         # Возвращаем первый отчёт; при необходимости вызывающая сторона может получить остальные из d.
         # Для остальных случаев сохраняем прежний NONE-fallback.
-        return ExecReport.from_dict({
-            "ts": int(order.ts),
-            "run_id": self._run_id,
-            "symbol": self._ctx.symbol,
-            "side": "BUY" if side_str.upper().endswith("BUY") else "SELL",
-            "order_type": "MARKET" if order_type_str.upper().endswith("MARKET") else "LIMIT",
-            "price": float(order.price) if getattr(order, "price", None) is not None else 0.0,
-            "quantity": 0.0,
-            "fee": 0.0,
-            "fee_asset": None,
-            "pnl": 0.0,
-            "exec_status": "NEW",
-            "liquidity": "UNKNOWN",
-            "client_order_id": str(getattr(order, "client_order_id", "") or ""),
-            "order_id": None,
-            "meta": {},
-            "execution_profile": str(self._exec_profile),
-        })
+        return ExecReport.from_dict(
+            {
+                "ts": int(order.ts),
+                "run_id": self._run_id,
+                "symbol": self._ctx.symbol,
+                "side": "BUY" if side_str.upper().endswith("BUY") else "SELL",
+                "order_type": "MARKET" if order_type_str.upper().endswith("MARKET") else "LIMIT",
+                "price": float(order.price) if getattr(order, "price", None) is not None else 0.0,
+                "quantity": 0.0,
+                "fee": 0.0,
+                "fee_asset": None,
+                "pnl": 0.0,
+                "exec_status": "NEW",
+                "liquidity": "UNKNOWN",
+                "client_order_id": str(getattr(order, "client_order_id", "") or ""),
+                "order_id": None,
+                "meta": {},
+                "execution_profile": str(self._exec_profile),
+            }
+        )
 
     def cancel(self, client_order_id: str) -> None:
         """

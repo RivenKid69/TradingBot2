@@ -91,17 +91,13 @@ def _discrete_cvar_reference(probs: np.ndarray, atoms: np.ndarray, alpha: float)
 
 
 def test_calculate_cvar_matches_reference() -> None:
-    probs = torch.tensor(
-        [[0.2, 0.3, 0.5], [0.05, 0.05, 0.9]], dtype=torch.float32
-    )
+    probs = torch.tensor([[0.2, 0.3, 0.5], [0.05, 0.05, 0.9]], dtype=torch.float32)
     atoms = torch.tensor([-2.0, -1.0, 0.5], dtype=torch.float32)
     alpha = 0.1
 
     result = calculate_cvar(probs, atoms, alpha).cpu().numpy()
 
-    expected = np.array(
-        [_discrete_cvar_reference(p, atoms.numpy(), alpha) for p in probs.numpy()]
-    )
+    expected = np.array([_discrete_cvar_reference(p, atoms.numpy(), alpha) for p in probs.numpy()])
 
     assert np.allclose(result, expected, atol=1e-6)
 
@@ -256,7 +252,9 @@ def test_cvar_penalty_turns_off_when_no_violation() -> None:
     assert nominal == pytest.approx(0.0)
     assert raw == pytest.approx(0.0)
 
-    fallback_nominal, fallback_raw, fallback_active = model._resolve_cvar_penalty_state(0.0, 0.0, 0.25)
+    fallback_nominal, fallback_raw, fallback_active = model._resolve_cvar_penalty_state(
+        0.0, 0.0, 0.25
+    )
     assert fallback_active
     assert fallback_nominal > 0.0
     assert fallback_raw == pytest.approx(fallback_nominal)
@@ -416,9 +414,7 @@ def test_cvar_penalty_active_unit_consistency(normalize_returns: bool) -> None:
     assert records["train/cvar_term"] == pytest.approx(cvar_term_unit)
     assert records["train/cvar_scale"] == pytest.approx(scale)
     assert records["train/cvar_loss"] == pytest.approx(records["train/cvar_loss_unit"] * scale)
-    assert records["train/cvar_term_raw"] == pytest.approx(
-        records["train/cvar_term"] * scale
-    )
+    assert records["train/cvar_term_raw"] == pytest.approx(records["train/cvar_term"] * scale)
     assert records["train/cvar_unit"] == pytest.approx(cvar_unit)
     assert records["train/cvar_limit_unit"] == pytest.approx(limit_unit)
 
@@ -435,7 +431,9 @@ def test_cvar_penalty_active_unit_consistency(normalize_returns: bool) -> None:
     assert cvar_unit_rescaled == pytest.approx(cvar_unit)
 
 
-@pytest.mark.skip(reason="Test requires complex internal state setup - covered by integration tests")
+@pytest.mark.skip(
+    reason="Test requires complex internal state setup - covered by integration tests"
+)
 def test_value_scale_snapshot_prevents_mismatch() -> None:
     returns_raw = np.array([100.0, 110.0, 90.0, 105.0], dtype=np.float32)
     snapshot_mean = 0.0
@@ -507,7 +505,9 @@ def test_value_scale_snapshot_prevents_mismatch() -> None:
     assert model._ret_std_value <= snapshot_std * (1.0 + model._value_scale_max_rel_step) + 1e-9
     assert model._ret_std_value >= snapshot_std / (1.0 + model._value_scale_max_rel_step) - 1e-9
 
-    max_mean_delta = max(abs(snapshot_mean), model._ret_std_value, fresh_std) * model._value_scale_max_rel_step
+    max_mean_delta = (
+        max(abs(snapshot_mean), model._ret_std_value, fresh_std) * model._value_scale_max_rel_step
+    )
     assert abs(model._ret_mean_value - snapshot_mean) <= max_mean_delta + 1e-8
 
     records = model.logger.records

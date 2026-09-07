@@ -13,6 +13,7 @@ Each test compares ddof=0 (wrong) vs ddof=1 (correct) to demonstrate the fix.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -22,6 +23,7 @@ import pytest
 # Check for optional dependencies
 try:
     import gymnasium
+
     HAS_GYMNASIUM = True
 except ImportError:
     HAS_GYMNASIUM = False
@@ -57,21 +59,26 @@ def test_advantage_normalization_numerical_impact():
 
         percent_diff = abs(mean_magnitude_ddof0 - mean_magnitude_ddof1) / mean_magnitude_ddof1 * 100
 
-        results.append({
-            'batch_size': batch_size,
-            'std_ratio': std_ddof0 / std_ddof1,
-            'gradient_impact': percent_diff
-        })
+        results.append(
+            {
+                "batch_size": batch_size,
+                "std_ratio": std_ddof0 / std_ddof1,
+                "gradient_impact": percent_diff,
+            }
+        )
 
-        print(f"  Batch size {batch_size:3d}: std ratio={std_ddof0/std_ddof1:.6f}, "
-              f"gradient impact={percent_diff:.3f}%")
+        print(
+            f"  Batch size {batch_size:3d}: std ratio={std_ddof0/std_ddof1:.6f}, "
+            f"gradient impact={percent_diff:.3f}%"
+        )
 
     # Verify the mathematical relationship
     for r in results:
-        n = r['batch_size']
+        n = r["batch_size"]
         expected_ratio = np.sqrt((n - 1) / n)
-        assert abs(r['std_ratio'] - expected_ratio) < 0.01, \
-            f"Std ratio should be sqrt({n-1}/{n})={expected_ratio:.6f}, got {r['std_ratio']:.6f}"
+        assert (
+            abs(r["std_ratio"] - expected_ratio) < 0.01
+        ), f"Std ratio should be sqrt({n-1}/{n})={expected_ratio:.6f}, got {r['std_ratio']:.6f}"
 
     print("  ✓ Advantage normalization impact quantified")
 
@@ -102,12 +109,14 @@ def test_sharpe_ratio_numerical_impact():
     # For positive returns: sharpe_ddof0 > sharpe_ddof1
     # For negative returns: sharpe_ddof0 < sharpe_ddof1 (both negative, less negative = higher)
     # In both cases: |sharpe_ddof0| > |sharpe_ddof1| (ddof=0 overestimates risk-adjusted return)
-    assert abs(sharpe_ddof0) > abs(sharpe_ddof1), \
-        "ddof=0 should overestimate |Sharpe| by underestimating std"
+    assert abs(sharpe_ddof0) > abs(
+        sharpe_ddof1
+    ), "ddof=0 should overestimate |Sharpe| by underestimating std"
 
     # For n=100, difference should be ~0.5%
-    assert 0.3 < percent_diff < 0.7, \
-        f"For n=100, expected ~0.5% difference, got {percent_diff:.3f}%"
+    assert (
+        0.3 < percent_diff < 0.7
+    ), f"For n=100, expected ~0.5% difference, got {percent_diff:.3f}%"
 
     print("  ✓ Sharpe ratio impact verified")
 
@@ -135,8 +144,9 @@ def test_sortino_ratio_numerical_impact():
     print(f"  Difference: {percent_diff:.3f}%")
 
     # For n=100, difference should be ~0.5%
-    assert 0.3 < percent_diff < 0.7, \
-        f"For n=100, expected ~0.5% difference, got {percent_diff:.3f}%"
+    assert (
+        0.3 < percent_diff < 0.7
+    ), f"For n=100, expected ~0.5% difference, got {percent_diff:.3f}%"
 
     print("  ✓ Sortino ratio impact verified")
 
@@ -170,16 +180,18 @@ def test_anomaly_detection_impact():
     print(f"  Anomaly (ddof=1): {is_anomaly_ddof1}")
 
     # ddof=0 underestimates sigma, so gives HIGHER z-scores
-    assert z_score_ddof0 > z_score_ddof1, \
-        "ddof=0 should give higher z-scores due to underestimated sigma"
+    assert (
+        z_score_ddof0 > z_score_ddof1
+    ), "ddof=0 should give higher z-scores due to underestimated sigma"
 
     # This could lead to false positives (detecting anomalies that aren't)
     percent_diff = (z_score_ddof0 - z_score_ddof1) / z_score_ddof1 * 100
     print(f"  Z-score inflation: {percent_diff:.3f}%")
 
     # For n=50, z-score should be inflated by ~1%
-    assert 0.5 < percent_diff < 2.5, \
-        f"For n=50, expected ~1% z-score inflation, got {percent_diff:.3f}%"
+    assert (
+        0.5 < percent_diff < 2.5
+    ), f"For n=50, expected ~1% z-score inflation, got {percent_diff:.3f}%"
 
     print("  ✓ Anomaly detection impact verified")
 
@@ -210,8 +222,7 @@ def test_garch_volatility_check_impact():
     print(f"  Volatility increase: {percent_diff:.3f}%")
 
     # For n=30, volatility should increase by ~1.7%
-    assert 1.5 < percent_diff < 2.0, \
-        f"For n=30, expected ~1.7% increase, got {percent_diff:.3f}%"
+    assert 1.5 < percent_diff < 2.0, f"For n=30, expected ~1.7% increase, got {percent_diff:.3f}%"
 
     print("  ✓ GARCH volatility check impact verified")
 
@@ -228,12 +239,10 @@ def test_cross_metric_consistency():
     source = inspect.getsource(DistributionalPPO)
 
     # Check advantage normalization
-    assert "np.std(advantages_flat, ddof=1)" in source, \
-        "Advantage normalization must use ddof=1"
+    assert "np.std(advantages_flat, ddof=1)" in source, "Advantage normalization must use ddof=1"
 
     # Check variance calculations
-    assert "np.var(true_vals, ddof=1)" in source, \
-        "Variance calculations must use ddof=1"
+    assert "np.var(true_vals, ddof=1)" in source, "Variance calculations must use ddof=1"
 
     print("  ✓ All DistributionalPPO metrics use ddof=1")
 
@@ -252,8 +261,9 @@ def test_cross_metric_consistency():
     sortino_end = train_source.find("\ndef ", sortino_start + 1)
     sortino_func = train_source[sortino_start:sortino_end]
 
-    assert sortino_func.count("ddof=1") >= 2, \
-        "Sortino ratio must use ddof=1 in all std calculations"
+    assert (
+        sortino_func.count("ddof=1") >= 2
+    ), "Sortino ratio must use ddof=1 in all std calculations"
 
     print("  ✓ All financial metrics use ddof=1")
 
@@ -261,8 +271,7 @@ def test_cross_metric_consistency():
     with open("pipeline.py", "r", encoding="utf-8") as f:
         pipeline_source = f.read()
 
-    assert "np.std(rets_arr[:-1], ddof=1)" in pipeline_source, \
-        "Anomaly detection must use ddof=1"
+    assert "np.std(rets_arr[:-1], ddof=1)" in pipeline_source, "Anomaly detection must use ddof=1"
 
     print("  ✓ Anomaly detection uses ddof=1")
 
@@ -270,8 +279,9 @@ def test_cross_metric_consistency():
     with open("transformers.py", "r", encoding="utf-8") as f:
         transformer_source = f.read()
 
-    assert "np.std(log_returns, ddof=1)" in transformer_source, \
-        "GARCH volatility check must use ddof=1"
+    assert (
+        "np.std(log_returns, ddof=1)" in transformer_source
+    ), "GARCH volatility check must use ddof=1"
 
     print("  ✓ GARCH volatility check uses ddof=1")
 
@@ -292,8 +302,9 @@ def test_edge_case_small_samples():
     ratio_n2 = std_ddof1_n2 / std_ddof0_n2
     expected_ratio_n2 = np.sqrt(2.0)
 
-    assert abs(ratio_n2 - expected_ratio_n2) < 1e-10, \
-        f"For n=2, ratio should be sqrt(2)={expected_ratio_n2:.6f}, got {ratio_n2:.6f}"
+    assert (
+        abs(ratio_n2 - expected_ratio_n2) < 1e-10
+    ), f"For n=2, ratio should be sqrt(2)={expected_ratio_n2:.6f}, got {ratio_n2:.6f}"
 
     print(f"  n=2: ratio={ratio_n2:.6f} (expected {expected_ratio_n2:.6f}) ✓")
 
@@ -306,15 +317,17 @@ def test_edge_case_small_samples():
     ratio_n10 = std_ddof1_n10 / std_ddof0_n10
     expected_ratio_n10 = np.sqrt(10.0 / 9.0)
 
-    assert abs(ratio_n10 - expected_ratio_n10) < 1e-10, \
-        f"For n=10, ratio should be sqrt(10/9)={expected_ratio_n10:.6f}, got {ratio_n10:.6f}"
+    assert (
+        abs(ratio_n10 - expected_ratio_n10) < 1e-10
+    ), f"For n=10, ratio should be sqrt(10/9)={expected_ratio_n10:.6f}, got {ratio_n10:.6f}"
 
     percent_diff_n10 = (1.0 - std_ddof0_n10 / std_ddof1_n10) * 100
     print(f"  n=10: underestimate={percent_diff_n10:.3f}% ✓")
 
     # For small samples, the impact is significant (>5%)
-    assert percent_diff_n10 > 5.0, \
-        f"For n=10, underestimate should be >5%, got {percent_diff_n10:.3f}%"
+    assert (
+        percent_diff_n10 > 5.0
+    ), f"For n=10, underestimate should be >5%, got {percent_diff_n10:.3f}%"
 
     print("  ✓ Edge cases handled correctly")
 
@@ -340,8 +353,9 @@ def test_large_sample_convergence():
         expected_diff = 100.0 / (2.0 * n)  # Approximation: (n-1)/n ≈ 1 - 1/n
 
         # Verify convergence
-        assert abs(percent_diff - expected_diff) < 0.1, \
-            f"For n={n}, expected ~{expected_diff:.4f}% difference"
+        assert (
+            abs(percent_diff - expected_diff) < 0.1
+        ), f"For n={n}, expected ~{expected_diff:.4f}% difference"
 
     print("  ✓ Converges correctly for large samples")
 

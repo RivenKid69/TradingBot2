@@ -2,9 +2,12 @@ import math
 import types
 
 import pytest
+
 torch = pytest.importorskip("torch")
 
-from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import (
+    test_distributional_ppo_raw_outliers,
+)  # noqa: F401  # ensure RL stubs are installed
 
 import distributional_ppo as distributional_ppo_module
 from distributional_ppo import DistributionalPPO

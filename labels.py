@@ -16,6 +16,7 @@ class LabelConfig:
       - price_col: колонка цены из price_df для оценки результата (например, mid/close/mark)
       - returns: "log" или "arith"
     """
+
     horizon_ms: int = 60_000
     price_col: str = "price"
     returns: str = "log"
@@ -35,10 +36,18 @@ class LabelBuilder:
     """
     Строит таргет, строго начиная с decision_ts.
     """
+
     def __init__(self, cfg: Optional[LabelConfig] = None):
         self.cfg = cfg or LabelConfig()
 
-    def build(self, base_with_decision: pd.DataFrame, price_df: pd.DataFrame, *, ts_col: str = "ts_ms", symbol_col: str = "symbol") -> pd.DataFrame:
+    def build(
+        self,
+        base_with_decision: pd.DataFrame,
+        price_df: pd.DataFrame,
+        *,
+        ts_col: str = "ts_ms",
+        symbol_col: str = "symbol",
+    ) -> pd.DataFrame:
         """
         Возвращает датафрейм base_with_decision + колонки:
           - label_t1_ts
@@ -52,7 +61,9 @@ class LabelBuilder:
           - price1 = ближайшая вперёд цена >= t1
         """
         if "decision_ts" not in base_with_decision.columns:
-            raise ValueError("ожидается колонка 'decision_ts'. Сначала вызови LeakGuard.attach_decision_time().")
+            raise ValueError(
+                "ожидается колонка 'decision_ts'. Сначала вызови LeakGuard.attach_decision_time()."
+            )
         if ts_col not in price_df.columns:
             raise ValueError(f"price_df не содержит '{ts_col}'")
         if symbol_col not in base_with_decision.columns or symbol_col not in price_df.columns:
@@ -95,7 +106,11 @@ class LabelBuilder:
         p0 = out["label_price0"].map(_safe_price)
         p1 = out["label_price1"].map(_safe_price)
         if self.cfg.returns.lower() == "log":
-            ret = (p1 / p0).map(lambda x: math.log(x) if (isinstance(x, float) and math.isfinite(x)) else float("nan"))
+            ret = (p1 / p0).map(
+                lambda x: (
+                    math.log(x) if (isinstance(x, float) and math.isfinite(x)) else float("nan")
+                )
+            )
         else:
             ret = p1 / p0 - 1.0
         out["label_ret"] = ret

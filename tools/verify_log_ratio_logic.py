@@ -44,7 +44,7 @@ def test_statistics_calculation():
     std = math.sqrt(var)
 
     # Expected std
-    expected_var = sum((x - mean)**2 for x in values) / (n - 1)
+    expected_var = sum((x - mean) ** 2 for x in values) / (n - 1)
     expected_std = math.sqrt(expected_var)
 
     assert abs(std - expected_std) < 1e-6, f"Std mismatch: {std} vs {expected_std}"
@@ -76,8 +76,9 @@ def test_warning_thresholds():
         else:
             level = None
 
-        assert level == expected_level, \
-            f"For max_abs={max_abs}: expected {expected_level}, got {level}"
+        assert (
+            level == expected_level
+        ), f"For max_abs={max_abs}: expected {expected_level}, got {level}"
         print(f"  ✓ max_abs={max_abs} → {level}")
 
 
@@ -183,8 +184,21 @@ def test_healthy_training_scenario():
     # Healthy training: log_ratio ~ N(0, 0.05)
     # Using deterministic values that approximate this
     log_ratios = [
-        0.05, -0.03, 0.02, -0.01, 0.04, -0.05, 0.01, -0.02,
-        0.03, -0.04, 0.00, 0.01, -0.01, 0.02, -0.03
+        0.05,
+        -0.03,
+        0.02,
+        -0.01,
+        0.04,
+        -0.05,
+        0.01,
+        -0.02,
+        0.03,
+        -0.04,
+        0.00,
+        0.01,
+        -0.01,
+        0.02,
+        -0.03,
     ]
 
     n = len(log_ratios)

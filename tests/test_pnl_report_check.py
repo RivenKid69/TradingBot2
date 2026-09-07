@@ -39,7 +39,9 @@ def _recompute_total(trades, bid, ask, mtm_price):
                     avg = None
             else:
                 new_pos = pos + qty
-                avg = (avg * pos + price * qty) / new_pos if pos > 0.0 and avg is not None else price
+                avg = (
+                    (avg * pos + price * qty) / new_pos if pos > 0.0 and avg is not None else price
+                )
                 pos = new_pos
         else:  # SELL
             if pos > 0.0:
@@ -55,7 +57,11 @@ def _recompute_total(trades, bid, ask, mtm_price):
                     avg = None
             else:
                 new_pos = pos - qty
-                avg = (avg * (-pos) + price * qty) / (-new_pos) if pos < 0.0 and avg is not None else price
+                avg = (
+                    (avg * (-pos) + price * qty) / (-new_pos)
+                    if pos < 0.0 and avg is not None
+                    else price
+                )
                 pos = new_pos
     mark_p = mtm_price or None
     if mark_p is None:

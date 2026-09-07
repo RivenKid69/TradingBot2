@@ -15,8 +15,8 @@ def calculate_close_to_close_volatility(close_prices, n):
     try:
         log_returns = []
         for i in range(1, len(prices)):
-            if prices[i-1] > 0 and prices[i] > 0:
-                log_returns.append(math.log(prices[i] / prices[i-1]))
+            if prices[i - 1] > 0 and prices[i] > 0:
+                log_returns.append(math.log(prices[i] / prices[i - 1]))
         if len(log_returns) < 2:
             return None
         mean_return = sum(log_returns) / len(log_returns)
@@ -130,7 +130,7 @@ def test_inf_and_nan():
     """EDGE CASE: Infinity и NaN в данных."""
     print("\n=== EDGE CASE 9: Inf/NaN в данных ===")
 
-    prices = [100.0, float('inf'), 102.0, 103.0, 104.0]
+    prices = [100.0, float("inf"), 102.0, 103.0, 104.0]
     vol = calculate_close_to_close_volatility(prices, 5)
 
     # Должен обработать без падения
@@ -144,6 +144,7 @@ def test_very_long_sequence():
 
     # 10000 точек данных
     import time
+
     prices = [100.0 + i * 0.01 + (i % 10) * 0.5 for i in range(10000)]
 
     start = time.time()
@@ -182,11 +183,13 @@ def run_all_edge_tests():
     except AssertionError as e:
         print(f"\n❌ EDGE CASE ТЕСТ ПРОВАЛЕН: {e}")
         import traceback
+
         traceback.print_exc()
         return False
     except Exception as e:
         print(f"\n❌ НЕОЖИДАННАЯ ОШИБКА: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

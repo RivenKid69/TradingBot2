@@ -42,6 +42,7 @@ class IntendedUse(Enum):
 
     Defines the approved applications for the model.
     """
+
     TRADING_SIGNALS = "trading_signal_generation"
     PORTFOLIO_OPTIMIZATION = "portfolio_optimization"
     RISK_ASSESSMENT = "risk_assessment"
@@ -56,6 +57,7 @@ class LimitationType(Enum):
 
     Categorizes limitations for clear documentation.
     """
+
     TECHNICAL = "technical"
     PERFORMANCE = "performance"
     ETHICAL = "ethical"
@@ -66,6 +68,7 @@ class LimitationType(Enum):
 
 class RiskLevel(Enum):
     """Risk level classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -74,6 +77,7 @@ class RiskLevel(Enum):
 
 class EvaluationDataset(Enum):
     """Types of evaluation datasets."""
+
     TRAINING = "training"
     VALIDATION = "validation"
     TEST = "test"
@@ -97,6 +101,7 @@ class ModelLimitation:
         affected_uses: Which use cases are affected
         technical_details: Additional technical information
     """
+
     limitation_type: LimitationType
     description: str
     severity: str
@@ -132,6 +137,7 @@ class PerformanceMetric:
         confidence_interval: Optional 95% CI bounds
         standard_error: Optional standard error
     """
+
     name: str
     value: float
     unit: str
@@ -167,6 +173,7 @@ class BiasAssessment:
         mitigation_status: Current mitigation status
         affected_groups: Groups affected by this bias
     """
+
     bias_type: str
     description: str
     impact: str
@@ -197,6 +204,7 @@ class EthicalConsideration:
         guidance: Guidance for addressing it
         relevant_articles: Relevant EU AI Act articles
     """
+
     category: str
     description: str
     guidance: str
@@ -227,6 +235,7 @@ class DownstreamRequirement:
         mandatory: Whether requirement is mandatory
         implementation_guidance: How to implement
     """
+
     requirement_id: str
     description: str
     article_reference: str
@@ -281,6 +290,7 @@ class GPAIModelCard:
         article_references: Relevant AI Act articles
         contact_info: Contact information
     """
+
     # Identity
     model_name: str
     model_version: str
@@ -328,31 +338,61 @@ class GPAIModelCard:
         Returns:
             Formatted markdown document
         """
-        limitations_text = "\n".join([
-            f"- **{l.limitation_type.value.title()}** ({l.severity}): {l.description}"
-            + (f"\n  - *Mitigation*: {l.mitigation}" if l.mitigation else "")
-            for l in self.limitations
-        ]) if self.limitations else "No limitations documented."
+        limitations_text = (
+            "\n".join(
+                [
+                    f"- **{l.limitation_type.value.title()}** ({l.severity}): {l.description}"
+                    + (f"\n  - *Mitigation*: {l.mitigation}" if l.mitigation else "")
+                    for l in self.limitations
+                ]
+            )
+            if self.limitations
+            else "No limitations documented."
+        )
 
-        biases_text = "\n".join([
-            f"- **{b.bias_type}**: {b.description}\n  - Impact: {b.impact}\n  - Status: {b.mitigation_status}"
-            for b in self.known_biases
-        ]) if self.known_biases else "No biases documented."
+        biases_text = (
+            "\n".join(
+                [
+                    f"- **{b.bias_type}**: {b.description}\n  - Impact: {b.impact}\n  - Status: {b.mitigation_status}"
+                    for b in self.known_biases
+                ]
+            )
+            if self.known_biases
+            else "No biases documented."
+        )
 
-        ethics_text = "\n".join([
-            f"- **{e.category}**: {e.description}\n  - Guidance: {e.guidance}"
-            for e in self.ethical_considerations
-        ]) if self.ethical_considerations else "No ethical considerations documented."
+        ethics_text = (
+            "\n".join(
+                [
+                    f"- **{e.category}**: {e.description}\n  - Guidance: {e.guidance}"
+                    for e in self.ethical_considerations
+                ]
+            )
+            if self.ethical_considerations
+            else "No ethical considerations documented."
+        )
 
-        downstream_text = "\n".join([
-            f"- **{r.requirement_id}** ({r.article_reference}): {r.description}\n  - {'Mandatory' if r.mandatory else 'Recommended'}: {r.implementation_guidance}"
-            for r in self.downstream_requirements
-        ]) if self.downstream_requirements else "No specific requirements."
+        downstream_text = (
+            "\n".join(
+                [
+                    f"- **{r.requirement_id}** ({r.article_reference}): {r.description}\n  - {'Mandatory' if r.mandatory else 'Recommended'}: {r.implementation_guidance}"
+                    for r in self.downstream_requirements
+                ]
+            )
+            if self.downstream_requirements
+            else "No specific requirements."
+        )
 
-        metrics_rows = "\n".join([
-            f"| {m.name} | {m.value} {m.unit} | {m.context} | {m.dataset.value} |"
-            for m in self.performance_metrics
-        ]) if self.performance_metrics else "| No metrics | - | - | - |"
+        metrics_rows = (
+            "\n".join(
+                [
+                    f"| {m.name} | {m.value} {m.unit} | {m.context} | {m.dataset.value} |"
+                    for m in self.performance_metrics
+                ]
+            )
+            if self.performance_metrics
+            else "| No metrics | - | - | - |"
+        )
 
         return f"""# GPAI Model Card
 
@@ -553,7 +593,9 @@ Per Article 14 of the EU AI Act, the following oversight measures are recommende
                 for r in data.get("downstream_requirements", [])
             ],
             human_oversight_recommendations=data.get("human_oversight_recommendations", []),
-            eu_ai_act_classification=data.get("eu_ai_act_classification", "General-Purpose AI Model (GPAI)"),
+            eu_ai_act_classification=data.get(
+                "eu_ai_act_classification", "General-Purpose AI Model (GPAI)"
+            ),
             article_references=data.get("article_references", []),
             contact_info=data.get("contact_info", {}),
         )
@@ -918,11 +960,13 @@ class ModelCardManager:
             True if update successful
         """
         # Store current version in history
-        self._version_history.append({
-            "version": self.current_card.card_version,
-            "timestamp": datetime.utcnow().isoformat(),
-            "data": self.current_card.to_dict(),
-        })
+        self._version_history.append(
+            {
+                "version": self.current_card.card_version,
+                "timestamp": datetime.utcnow().isoformat(),
+                "data": self.current_card.to_dict(),
+            }
+        )
 
         # Apply updates
         for key, value in updates.items():
@@ -964,9 +1008,7 @@ class ModelCardManager:
         ]
 
 
-def create_model_card_manager(
-    model_card: Optional[GPAIModelCard] = None
-) -> ModelCardManager:
+def create_model_card_manager(model_card: Optional[GPAIModelCard] = None) -> ModelCardManager:
     """
     Factory function to create ModelCardManager.
 

@@ -77,11 +77,18 @@ MIN_LEVERAGE = 1.0
 MAX_LEVERAGE = 500.0
 
 # Session names
-VALID_SESSIONS = frozenset({
-    "sydney", "tokyo", "london", "new_york",
-    "london_ny_overlap", "tokyo_london_overlap",
-    "off_hours", "weekend"
-})
+VALID_SESSIONS = frozenset(
+    {
+        "sydney",
+        "tokyo",
+        "london",
+        "new_york",
+        "london_ny_overlap",
+        "tokyo_london_overlap",
+        "off_hours",
+        "weekend",
+    }
+)
 
 # Pair categories
 VALID_PAIR_CATEGORIES = frozenset({"major", "minor", "cross", "exotic"})
@@ -94,6 +101,7 @@ VALID_PAIR_CATEGORIES = frozenset({"major", "minor", "cross", "exotic"})
 
 class ForexVendor(str, Enum):
     """Supported forex data vendors."""
+
     OANDA = "oanda"
     IG = "ig"
     DUKASCOPY = "dukascopy"
@@ -101,6 +109,7 @@ class ForexVendor(str, Enum):
 
 class ForexMarketType(str, Enum):
     """Forex market types."""
+
     SPOT = "spot"
     FORWARD = "forward"
     SWAP = "swap"
@@ -108,6 +117,7 @@ class ForexMarketType(str, Enum):
 
 class ForexFeeStructure(str, Enum):
     """Fee structure types."""
+
     SPREAD_ONLY = "spread_only"
     RAW_SPREAD_COMMISSION = "raw_spread_commission"
     ECN = "ecn"
@@ -115,12 +125,14 @@ class ForexFeeStructure(str, Enum):
 
 class ForexSlippageLevel(str, Enum):
     """Slippage model levels."""
+
     L2 = "L2"
     L2_PLUS = "L2+"
 
 
 class ForexJurisdiction(str, Enum):
     """Regulatory jurisdictions."""
+
     RETAIL_US = "retail_us"
     RETAIL_EU = "retail_eu"
     RETAIL_UK = "retail_uk"
@@ -131,6 +143,7 @@ class ForexJurisdiction(str, Enum):
 
 class ConfigValidationSeverity(str, Enum):
     """Validation message severity."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -144,6 +157,7 @@ class ConfigValidationSeverity(str, Enum):
 @dataclass
 class SessionConfig:
     """Individual session configuration."""
+
     start_utc: int
     end_utc: int
     liquidity_factor: float = 1.0
@@ -164,6 +178,7 @@ class SessionConfig:
 @dataclass
 class TradingSessionConfig:
     """Complete trading session configuration."""
+
     calendar: str = "forex_24x5"
     weekend_filter: bool = True
     rollover_time_et: int = 17
@@ -204,6 +219,7 @@ class TradingSessionConfig:
 @dataclass
 class SpreadProfile:
     """Spread profile for a pair category."""
+
     major: float = 0.3
     minor: float = 0.8
     cross: float = 1.5
@@ -223,6 +239,7 @@ class SpreadProfile:
 @dataclass
 class FeeConfig:
     """Fee configuration."""
+
     structure: ForexFeeStructure = ForexFeeStructure.SPREAD_ONLY
     maker_bps: float = 0.0
     taker_bps: float = 0.0
@@ -266,6 +283,7 @@ class FeeConfig:
 @dataclass
 class SlippageConfig:
     """Slippage model configuration."""
+
     level: ForexSlippageLevel = ForexSlippageLevel.L2_PLUS
     provider: str = "ForexParametricSlippageProvider"
     profile: str = "retail"
@@ -321,6 +339,7 @@ class SlippageConfig:
 @dataclass
 class DealerTierConfig:
     """Configuration for a dealer tier."""
+
     count: int = 2
     spread_factor: float = 1.0
     max_size_usd: float = 5_000_000.0
@@ -331,6 +350,7 @@ class DealerTierConfig:
 @dataclass
 class DealerSimulationConfig:
     """OTC dealer simulation configuration."""
+
     enabled: bool = True
     provider: str = "ForexDealerSimulator"
     num_dealers: int = 5
@@ -376,6 +396,7 @@ class DealerSimulationConfig:
 @dataclass
 class LeverageConfig:
     """Leverage configuration."""
+
     max_leverage: float = 50.0
     default_leverage: float = 30.0
     margin_warning: float = 1.20
@@ -395,9 +416,7 @@ class LeverageConfig:
                 f"default_leverage ({self.default_leverage}) cannot exceed max_leverage ({self.max_leverage})"
             )
         if not 0 < self.stop_out < self.margin_call < self.margin_warning:
-            raise ValueError(
-                f"Must have 0 < stop_out < margin_call < margin_warning"
-            )
+            raise ValueError(f"Must have 0 < stop_out < margin_call < margin_warning")
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LeverageConfig":
@@ -421,6 +440,7 @@ class LeverageConfig:
 @dataclass
 class PositionSyncConfig:
     """Position synchronization configuration."""
+
     enabled: bool = True
     interval_sec: float = 30.0
     position_tolerance_pct: float = 0.01
@@ -453,6 +473,7 @@ class PositionSyncConfig:
 @dataclass
 class DataSourcesConfig:
     """Data sources configuration."""
+
     price_data: str = "oanda"
     interest_rates: str = "fred"
     economic_calendar: str = "forexfactory"
@@ -483,6 +504,7 @@ class DataSourcesConfig:
 @dataclass
 class RateLimitConfig:
     """Rate limit configuration for a vendor."""
+
     requests_per_second: int = 120
     burst: int = 200
     streaming_connections: int = 20
@@ -522,6 +544,7 @@ class ForexConfig:
         pip_sizes: Pip sizes by pair type
         rate_limits: Rate limits by vendor
     """
+
     asset_class: str = "forex"
     data_vendor: ForexVendor = ForexVendor.OANDA
     market: ForexMarketType = ForexMarketType.SPOT
@@ -671,6 +694,7 @@ class ForexConfig:
 @dataclass
 class ValidationMessage:
     """Validation message."""
+
     severity: ConfigValidationSeverity
     field: str
     message: str
@@ -708,102 +732,124 @@ class ForexConfigValidator:
     def _validate_vendor(self, config: ForexConfig) -> None:
         """Validate vendor configuration."""
         if config.data_vendor.value not in SUPPORTED_VENDORS:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.ERROR,
-                field="data_vendor",
-                message=f"Unsupported vendor: {config.data_vendor.value}",
-                suggestion=f"Use one of: {', '.join(SUPPORTED_VENDORS)}",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.ERROR,
+                    field="data_vendor",
+                    message=f"Unsupported vendor: {config.data_vendor.value}",
+                    suggestion=f"Use one of: {', '.join(SUPPORTED_VENDORS)}",
+                )
+            )
 
     def _validate_leverage(self, config: ForexConfig) -> None:
         """Validate leverage configuration."""
         if config.leverage.max_leverage > 50:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.WARNING,
-                field="leverage.max_leverage",
-                message=f"Leverage {config.leverage.max_leverage} exceeds CFTC 50:1 limit for US retail",
-                suggestion="Set max_leverage <= 50 for US retail compliance",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.WARNING,
+                    field="leverage.max_leverage",
+                    message=f"Leverage {config.leverage.max_leverage} exceeds CFTC 50:1 limit for US retail",
+                    suggestion="Set max_leverage <= 50 for US retail compliance",
+                )
+            )
 
         if config.leverage.max_leverage > 500:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.ERROR,
-                field="leverage.max_leverage",
-                message=f"Leverage {config.leverage.max_leverage} exceeds maximum allowed (500:1)",
-                suggestion="Set max_leverage <= 500",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.ERROR,
+                    field="leverage.max_leverage",
+                    message=f"Leverage {config.leverage.max_leverage} exceeds maximum allowed (500:1)",
+                    suggestion="Set max_leverage <= 500",
+                )
+            )
 
     def _validate_session(self, config: ForexConfig) -> None:
         """Validate session configuration."""
         if not config.session.weekend_filter:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.WARNING,
-                field="session.weekend_filter",
-                message="Weekend filter disabled - forex markets are closed on weekends",
-                suggestion="Enable weekend_filter to avoid weekend gap risk",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.WARNING,
+                    field="session.weekend_filter",
+                    message="Weekend filter disabled - forex markets are closed on weekends",
+                    suggestion="Enable weekend_filter to avoid weekend gap risk",
+                )
+            )
 
         if config.session.rollover_time_et != 17:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.INFO,
-                field="session.rollover_time_et",
-                message=f"Non-standard rollover time: {config.session.rollover_time_et} ET (standard is 5pm/17)",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.INFO,
+                    field="session.rollover_time_et",
+                    message=f"Non-standard rollover time: {config.session.rollover_time_et} ET (standard is 5pm/17)",
+                )
+            )
 
     def _validate_slippage(self, config: ForexConfig) -> None:
         """Validate slippage configuration."""
         if config.slippage.impact_coef_base > 0.10:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.WARNING,
-                field="slippage.impact_coef_base",
-                message=f"High impact coefficient: {config.slippage.impact_coef_base} (typical forex is 0.02-0.05)",
-                suggestion="Consider lowering impact_coef_base for forex",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.WARNING,
+                    field="slippage.impact_coef_base",
+                    message=f"High impact coefficient: {config.slippage.impact_coef_base} (typical forex is 0.02-0.05)",
+                    suggestion="Consider lowering impact_coef_base for forex",
+                )
+            )
 
         if config.slippage.max_slippage_pips > 100:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.WARNING,
-                field="slippage.max_slippage_pips",
-                message=f"Very high max slippage: {config.slippage.max_slippage_pips} pips",
-                suggestion="Consider setting max_slippage_pips <= 50",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.WARNING,
+                    field="slippage.max_slippage_pips",
+                    message=f"Very high max slippage: {config.slippage.max_slippage_pips} pips",
+                    suggestion="Consider setting max_slippage_pips <= 50",
+                )
+            )
 
     def _validate_dealer_simulation(self, config: ForexConfig) -> None:
         """Validate dealer simulation configuration."""
         if not config.dealer_simulation.enabled:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.WARNING,
-                field="dealer_simulation.enabled",
-                message="Dealer simulation disabled - OTC market realism may be reduced",
-                suggestion="Enable dealer_simulation for realistic forex execution",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.WARNING,
+                    field="dealer_simulation.enabled",
+                    message="Dealer simulation disabled - OTC market realism may be reduced",
+                    suggestion="Enable dealer_simulation for realistic forex execution",
+                )
+            )
 
         if config.dealer_simulation.num_dealers < 1:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.ERROR,
-                field="dealer_simulation.num_dealers",
-                message=f"Invalid num_dealers: {config.dealer_simulation.num_dealers}",
-                suggestion="Set num_dealers >= 1",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.ERROR,
+                    field="dealer_simulation.num_dealers",
+                    message=f"Invalid num_dealers: {config.dealer_simulation.num_dealers}",
+                    suggestion="Set num_dealers >= 1",
+                )
+            )
 
     def _validate_fees(self, config: ForexConfig) -> None:
         """Validate fee configuration."""
         if config.fees.structure != ForexFeeStructure.SPREAD_ONLY:
             if config.fees.maker_bps == 0 and config.fees.taker_bps == 0:
-                self.messages.append(ValidationMessage(
-                    severity=ConfigValidationSeverity.INFO,
-                    field="fees",
-                    message=f"ECN fee structure but no commission set",
-                    suggestion="Set commission_per_lot for ECN mode",
-                ))
+                self.messages.append(
+                    ValidationMessage(
+                        severity=ConfigValidationSeverity.INFO,
+                        field="fees",
+                        message=f"ECN fee structure but no commission set",
+                        suggestion="Set commission_per_lot for ECN mode",
+                    )
+                )
 
         if not config.fees.swap_enabled:
-            self.messages.append(ValidationMessage(
-                severity=ConfigValidationSeverity.WARNING,
-                field="fees.swap_enabled",
-                message="Swap costs disabled - overnight positions won't account for financing",
-                suggestion="Enable swap_enabled for realistic cost modeling",
-            ))
+            self.messages.append(
+                ValidationMessage(
+                    severity=ConfigValidationSeverity.WARNING,
+                    field="fees.swap_enabled",
+                    message="Swap costs disabled - overnight positions won't account for financing",
+                    suggestion="Enable swap_enabled for realistic cost modeling",
+                )
+            )
 
     def is_valid(self) -> bool:
         """Check if configuration is valid (no errors)."""
@@ -1197,7 +1243,7 @@ def create_forex_fee_provider(config: ForexConfig) -> Any:
     if config.fees.structure == ForexFeeStructure.ECN:
         # Convert commission per lot to bps
         # Assuming 1 lot = $100,000 notional, commission per lot -> bps
-        if hasattr(config.fees, 'commission_per_lot') and config.fees.commission_per_lot:
+        if hasattr(config.fees, "commission_per_lot") and config.fees.commission_per_lot:
             # commission_per_lot is per $100k, convert to bps
             commission_bps = config.fees.commission_per_lot / 10.0
         else:
@@ -1428,7 +1474,8 @@ def main() -> int:
         help="Path to YAML configuration file",
     )
     validate_parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show all validation messages",
     )
@@ -1469,9 +1516,11 @@ def main() -> int:
             config = load_forex_config(args.path)
             if args.json:
                 import json
+
                 print(json.dumps(config.to_dict(), indent=2, default=str))
             else:
                 import yaml
+
                 print(yaml.dump(config.to_dict(), default_flow_style=False))
             return 0
         except Exception as e:
@@ -1484,4 +1533,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

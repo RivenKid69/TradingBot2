@@ -120,9 +120,7 @@ class TestMediatorExtractMarketData:
             raise ValueError(f"Invalid {param_name}: must be > 0")
         return numeric
 
-    def _extract_market_data_validated(
-        self, mark_price: float, prev_price: float
-    ):
+    def _extract_market_data_validated(self, mark_price: float, prev_price: float):
         """
         Simplified version of mediator._extract_market_data() with validation.
         """

@@ -50,8 +50,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class DORARegime(Enum):
     """Applicable DORA regime based on entity classification."""
+
     FULL = "full"  # Standard full requirements
     SIMPLIFIED = "simplified"  # Article 16 simplified framework
     MICROENTERPRISE = "microenterprise"  # Partial exemptions for microenterprises
@@ -59,8 +61,11 @@ class DORARegime(Enum):
 
 class ExemptionType(Enum):
     """Types of DORA exemptions."""
+
     # Article 16 simplified framework exemptions
-    SMALL_NON_INTERCONNECTED_INVESTMENT_FIRM = "small_non_interconnected_investment_firm"  # Art. 16(1)(a)
+    SMALL_NON_INTERCONNECTED_INVESTMENT_FIRM = (
+        "small_non_interconnected_investment_firm"  # Art. 16(1)(a)
+    )
     PSD2_EXEMPTED_PAYMENT_INSTITUTION = "psd2_exempted_payment_institution"  # Art. 16(1)(b)
     CRD_EXEMPTED_INSTITUTION = "crd_exempted_institution"  # Art. 16(1)(c)
     EMD2_EXEMPTED_E_MONEY_INSTITUTION = "emd2_exempted_e_money_institution"  # Art. 16(1)(d)
@@ -69,13 +74,16 @@ class ExemptionType(Enum):
     # Microenterprise exemptions
     MICROENTERPRISE_NO_TPP_STRATEGY = "microenterprise_no_tpp_strategy"  # Art. 28(2)
     MICROENTERPRISE_SIMPLIFIED_RISK = "microenterprise_simplified_risk"  # Art. 6(6)
-    MICROENTERPRISE_NO_RECURRING_INCIDENTS = "microenterprise_no_recurring_incidents"  # CDR 2024/1772 Art. 11(3)
+    MICROENTERPRISE_NO_RECURRING_INCIDENTS = (
+        "microenterprise_no_recurring_incidents"  # CDR 2024/1772 Art. 11(3)
+    )
     MICROENTERPRISE_NO_TRAINING_REQUIREMENT = "microenterprise_no_training"  # Art. 5(4)
 
 
 # =============================================================================
 # Data Structures
 # =============================================================================
+
 
 @dataclass
 class RegimeExemption:
@@ -84,6 +92,7 @@ class RegimeExemption:
 
     Documents which DORA requirements are modified or waived.
     """
+
     exemption_type: ExemptionType
     dora_article: str  # e.g., "Article 16(1)(a)"
     description: str
@@ -99,6 +108,7 @@ class EntityClassification:
 
     This determines which DORA regime applies to the entity.
     """
+
     classification_id: str = ""
     classification_date: str = ""
 
@@ -155,12 +165,8 @@ class EntityClassification:
 
         NOTE: The condition is OR for turnover/balance sheet, not AND.
         """
-        return (
-            self.employee_count < 10
-            and (
-                self.annual_turnover_eur < 2_000_000
-                or self.balance_sheet_eur < 2_000_000
-            )
+        return self.employee_count < 10 and (
+            self.annual_turnover_eur < 2_000_000 or self.balance_sheet_eur < 2_000_000
         )
 
     @property
@@ -170,12 +176,8 @@ class EntityClassification:
 
         Small enterprise = <50 employees AND (<€10M turnover OR <€10M balance sheet)
         """
-        return (
-            self.employee_count < 50
-            and (
-                self.annual_turnover_eur < 10_000_000
-                or self.balance_sheet_eur < 10_000_000
-            )
+        return self.employee_count < 50 and (
+            self.annual_turnover_eur < 10_000_000 or self.balance_sheet_eur < 10_000_000
         )
 
     @property
@@ -185,24 +187,22 @@ class EntityClassification:
 
         Medium enterprise = <250 employees AND (<€50M turnover OR <€43M balance sheet)
         """
-        return (
-            self.employee_count < 250
-            and (
-                self.annual_turnover_eur < 50_000_000
-                or self.balance_sheet_eur < 43_000_000
-            )
+        return self.employee_count < 250 and (
+            self.annual_turnover_eur < 50_000_000 or self.balance_sheet_eur < 43_000_000
         )
 
     @property
     def qualifies_for_simplified_framework(self) -> bool:
         """Check if entity qualifies for Article 16 simplified framework."""
-        return any([
-            self.is_small_non_interconnected,
-            self.is_psd2_exempted,
-            self.is_crd_exempted,
-            self.is_emd_exempted,
-            self.is_small_iorp,
-        ])
+        return any(
+            [
+                self.is_small_non_interconnected,
+                self.is_psd2_exempted,
+                self.is_crd_exempted,
+                self.is_emd_exempted,
+                self.is_small_iorp,
+            ]
+        )
 
     @property
     def applicable_regime(self) -> DORARegime:
@@ -225,6 +225,7 @@ class ProportionalityAssessment:
 
     Documents the entity classification, applicable regime, and exemptions.
     """
+
     assessment_id: str = ""
     assessment_date: str = ""
 
@@ -347,6 +348,7 @@ SIMPLIFIED_FRAMEWORK_REQUIREMENTS = {
 # Proportionality Assessor
 # =============================================================================
 
+
 class ProportionalityAssessor:
     """
     Assess which DORA regime applies to an entity.
@@ -416,9 +418,7 @@ class ProportionalityAssessor:
         # Generate recommendations
         assessment.recommended_actions = self._generate_recommendations(entity, regime)
 
-        logger.info(
-            f"Proportionality assessment completed: {entity.legal_name} -> {regime.value}"
-        )
+        logger.info(f"Proportionality assessment completed: {entity.legal_name} -> {regime.value}")
 
         return assessment
 
@@ -433,7 +433,9 @@ class ProportionalityAssessor:
             if entity.is_small_non_interconnected:
                 reasons.append("Small and non-interconnected investment firm (Article 16(1)(a))")
             if entity.is_psd2_exempted:
-                reasons.append("Payment institution exempted per PSD2 Article 32(1) (Article 16(1)(b))")
+                reasons.append(
+                    "Payment institution exempted per PSD2 Article 32(1) (Article 16(1)(b))"
+                )
             if entity.is_crd_exempted:
                 reasons.append("Institution exempted per CRD (Article 16(1)(c))")
             if entity.is_emd_exempted:
@@ -469,13 +471,15 @@ class ProportionalityAssessor:
         # Article 16 simplified framework exemptions
         if regime == DORARegime.SIMPLIFIED:
             if entity.is_small_non_interconnected:
-                exemptions.append(RegimeExemption(
-                    exemption_type=ExemptionType.SMALL_NON_INTERCONNECTED_INVESTMENT_FIRM,
-                    dora_article="Article 16(1)(a)",
-                    description="Small and non-interconnected investment firm - simplified ICT framework",
-                    affected_requirements=["Articles 5-15 replaced by Article 16 requirements"],
-                    conditions=["Qualification as small and non-interconnected per IFR"],
-                ))
+                exemptions.append(
+                    RegimeExemption(
+                        exemption_type=ExemptionType.SMALL_NON_INTERCONNECTED_INVESTMENT_FIRM,
+                        dora_article="Article 16(1)(a)",
+                        description="Small and non-interconnected investment firm - simplified ICT framework",
+                        affected_requirements=["Articles 5-15 replaced by Article 16 requirements"],
+                        conditions=["Qualification as small and non-interconnected per IFR"],
+                    )
+                )
             # Add other simplified framework exemptions as applicable
 
         # Microenterprise exemptions
@@ -553,9 +557,13 @@ class ProportionalityAssessor:
                 "employee_count": entity.employee_count,
                 "turnover_eur": entity.annual_turnover_eur,
                 "balance_sheet_eur": entity.balance_sheet_eur,
-                "category": "microenterprise" if entity.is_microenterprise else (
-                    "small" if entity.is_small_enterprise else (
-                        "medium" if entity.is_medium_enterprise else "large"
+                "category": (
+                    "microenterprise"
+                    if entity.is_microenterprise
+                    else (
+                        "small"
+                        if entity.is_small_enterprise
+                        else ("medium" if entity.is_medium_enterprise else "large")
                     )
                 ),
             },
@@ -590,25 +598,31 @@ class ProportionalityAssessor:
         recommendations.append("Seek legal review of entity classification")
 
         if regime == DORARegime.MICROENTERPRISE:
-            recommendations.extend([
-                "Document microenterprise qualification with financial evidence",
-                "Note exemptions in compliance documentation",
-                "Monitor size metrics - loss of microenterprise status triggers full requirements",
-            ])
+            recommendations.extend(
+                [
+                    "Document microenterprise qualification with financial evidence",
+                    "Note exemptions in compliance documentation",
+                    "Monitor size metrics - loss of microenterprise status triggers full requirements",
+                ]
+            )
 
         elif regime == DORARegime.SIMPLIFIED:
-            recommendations.extend([
-                "Document simplified framework qualification",
-                "Obtain NCA confirmation if required",
-                "Implement Article 16 requirements instead of Articles 5-15",
-            ])
+            recommendations.extend(
+                [
+                    "Document simplified framework qualification",
+                    "Obtain NCA confirmation if required",
+                    "Implement Article 16 requirements instead of Articles 5-15",
+                ]
+            )
 
         else:
-            recommendations.extend([
-                "Implement full DORA requirements",
-                "Consider proportionality in implementation approach",
-                "Document proportionality rationale for each requirement",
-            ])
+            recommendations.extend(
+                [
+                    "Implement full DORA requirements",
+                    "Consider proportionality in implementation approach",
+                    "Document proportionality rationale for each requirement",
+                ]
+            )
 
         # Register of Information always required
         recommendations.append(
@@ -637,15 +651,15 @@ class ProportionalityAssessor:
         Returns:
             True if entity qualifies as microenterprise
         """
-        return (
-            employee_count < 10
-            and (annual_turnover_eur < 2_000_000 or balance_sheet_eur < 2_000_000)
+        return employee_count < 10 and (
+            annual_turnover_eur < 2_000_000 or balance_sheet_eur < 2_000_000
         )
 
 
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_proportionality_assessor() -> ProportionalityAssessor:
     """

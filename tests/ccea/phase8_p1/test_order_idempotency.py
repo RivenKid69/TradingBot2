@@ -30,7 +30,9 @@ def test_deterministic_client_order_id_and_persistent_dedup(tmp_path):
         intent_id=intent_id,
     )
 
-    engine1 = LiveExecutionEngine(broker_submit=broker_submit, broker_name="demo", order_journal=journal)
+    engine1 = LiveExecutionEngine(
+        broker_submit=broker_submit, broker_name="demo", order_journal=journal
+    )
     r1 = engine1.execute(intent)
     assert r1.success is True
     assert r1.order is not None
@@ -50,10 +52,13 @@ def test_deterministic_client_order_id_and_persistent_dedup(tmp_path):
         return (True, "broker-2", None)
 
     # New engine (simulated restart) with same journal: must not resubmit
-    engine2 = LiveExecutionEngine(broker_submit=broker_submit2, broker_name="demo", order_journal=OrderJournal(db_path=journal_path))
+    engine2 = LiveExecutionEngine(
+        broker_submit=broker_submit2,
+        broker_name="demo",
+        order_journal=OrderJournal(db_path=journal_path),
+    )
     r3 = engine2.execute(intent)
     assert r3.success is True
     assert r3.order is not None
     assert r3.order.client_order_id == cid1
     assert submit_calls2["count"] == 0
-

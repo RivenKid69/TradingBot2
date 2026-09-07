@@ -382,6 +382,7 @@ class TestTUFRepository:
     @pytest.fixture
     def key_pairs(self):
         """Generate test key pairs (simplified for testing)."""
+
         # In real implementation, use proper ed25519 keys
         # Here we use placeholder bytes
         def make_key():
@@ -543,6 +544,7 @@ class TestTUFRepository:
         await repo.publish()
 
         import hashlib
+
         content_hash = hashlib.sha256(content).hexdigest()
 
         is_valid, error = await repo.verify_target(
@@ -581,6 +583,7 @@ class TestTUFRepository:
         await repo.publish()
 
         import hashlib
+
         content_hash = hashlib.sha256(content).hexdigest()
 
         is_valid, error = await repo.verify_target(
@@ -735,6 +738,7 @@ class TestRollbackProtection:
     @pytest.fixture
     def key_pairs(self):
         """Generate test key pairs."""
+
         def make_key():
             return (os.urandom(32), os.urandom(64))
 
@@ -764,9 +768,9 @@ class TestRollbackProtection:
 
         # Each publish should increment versions
         for i in range(1, len(versions_history)):
-            assert versions_history[i]["targets"] > versions_history[i-1]["targets"]
-            assert versions_history[i]["snapshot"] > versions_history[i-1]["snapshot"]
-            assert versions_history[i]["timestamp"] > versions_history[i-1]["timestamp"]
+            assert versions_history[i]["targets"] > versions_history[i - 1]["targets"]
+            assert versions_history[i]["snapshot"] > versions_history[i - 1]["snapshot"]
+            assert versions_history[i]["timestamp"] > versions_history[i - 1]["timestamp"]
 
 
 class TestFreezeProtection:
@@ -790,6 +794,7 @@ class TestFreezeProtection:
     @pytest.fixture
     def key_pairs(self):
         """Generate test key pairs."""
+
         def make_key():
             return (os.urandom(32), os.urandom(64))
 
@@ -817,9 +822,7 @@ class TestFreezeProtection:
         # Simulate expired metadata
         repo._timestamp.expires = datetime.utcnow() - timedelta(hours=1)
 
-        is_valid, error = await repo.verify_target(
-            "agent.tar.gz", "hash", 7
-        )
+        is_valid, error = await repo.verify_target("agent.tar.gz", "hash", 7)
 
         assert is_valid is False
         assert "expired" in error.lower()
@@ -872,6 +875,7 @@ class TestConsistentSnapshots:
     @pytest.fixture
     def key_pairs(self):
         """Generate test key pairs."""
+
         def make_key():
             return (os.urandom(32), os.urandom(64))
 

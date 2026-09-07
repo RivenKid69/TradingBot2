@@ -1,11 +1,13 @@
 import inspect
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import trading_patchnew
 
 distributional_ppo = pytest.importorskip(
-    "distributional_ppo", reason="distributional PPO module requires optional sb3_contrib dependency"
+    "distributional_ppo",
+    reason="distributional PPO module requires optional sb3_contrib dependency",
 )
 DistributionalPPO = distributional_ppo.DistributionalPPO
 
@@ -65,9 +67,7 @@ def test_return_scale_pipeline_fraction_units():
 
     buggy_last = float(mean_values_norm[-1] / base_scale)
     buggy_returns = _discounted_series(buffer_rewards, gamma, buggy_last)
-    buggy_raw, _ = algo._decode_returns_scale_only(
-        torch.tensor(buggy_returns, dtype=torch.float32)
-    )
+    buggy_raw, _ = algo._decode_returns_scale_only(torch.tensor(buggy_returns, dtype=torch.float32))
     assert not torch.allclose(buggy_raw, expected_raw, atol=1e-6)
 
 

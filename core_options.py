@@ -46,6 +46,7 @@ from core_errors import BotError
 # Options-Specific Enums (New, not in Alpaca adapter)
 # =============================================================================
 
+
 class ExerciseStyle(str, Enum):
     """
     Exercise style for options contracts.
@@ -54,6 +55,7 @@ class ExerciseStyle(str, Enum):
     EUROPEAN: Can only be exercised at expiration
     BERMUDAN: Can be exercised on specific dates (rare, not commonly supported)
     """
+
     AMERICAN = "american"
     EUROPEAN = "european"
     BERMUDAN = "bermudan"
@@ -66,6 +68,7 @@ class SettlementType(str, Enum):
     PHYSICAL: Delivery of underlying asset (most equity options)
     CASH: Cash settlement (SPX, VIX, most index options)
     """
+
     PHYSICAL = "physical"
     CASH = "cash"
 
@@ -76,17 +79,19 @@ class ExerciseDecision(str, Enum):
 
     Reference: Broadie & Detemple (1996) "American Option Valuation"
     """
-    HOLD = "hold"           # Continue holding the option
-    EXERCISE = "exercise"   # Exercise immediately
-    UNCERTAIN = "uncertain" # Near decision boundary
+
+    HOLD = "hold"  # Continue holding the option
+    EXERCISE = "exercise"  # Exercise immediately
+    UNCERTAIN = "uncertain"  # Near decision boundary
 
 
 class VolatilityType(str, Enum):
     """Type of volatility measure."""
-    IMPLIED = "implied"         # Market-implied volatility
-    HISTORICAL = "historical"   # Realized historical volatility
-    REALIZED = "realized"       # Same as historical, different naming
-    FORWARD = "forward"         # Forward-starting implied volatility
+
+    IMPLIED = "implied"  # Market-implied volatility
+    HISTORICAL = "historical"  # Realized historical volatility
+    REALIZED = "realized"  # Same as historical, different naming
+    FORWARD = "forward"  # Forward-starting implied volatility
 
 
 class MoneynessBucket(str, Enum):
@@ -95,16 +100,18 @@ class MoneynessBucket(str, Enum):
 
     Based on delta or strike-to-spot ratio.
     """
-    DEEP_ITM = "deep_itm"       # |delta| > 0.80
-    ITM = "itm"                 # 0.55 < |delta| <= 0.80
-    ATM = "atm"                 # 0.45 <= |delta| <= 0.55
-    OTM = "otm"                 # 0.20 <= |delta| < 0.45
-    DEEP_OTM = "deep_otm"       # |delta| < 0.20
+
+    DEEP_ITM = "deep_itm"  # |delta| > 0.80
+    ITM = "itm"  # 0.55 < |delta| <= 0.80
+    ATM = "atm"  # 0.45 <= |delta| <= 0.55
+    OTM = "otm"  # 0.20 <= |delta| < 0.45
+    DEEP_OTM = "deep_otm"  # |delta| < 0.20
 
 
 # =============================================================================
 # Options Contract Specification
 # =============================================================================
+
 
 @dataclass
 class OptionsContractSpec:
@@ -129,6 +136,7 @@ class OptionsContractSpec:
         root_symbol: Options root symbol (may differ from underlying)
         underlying_type: Type of underlying (equity, index, etf, futures)
     """
+
     symbol: str
     underlying: str
     option_type: OptionType
@@ -251,6 +259,7 @@ class OptionsContractSpec:
             Log-moneyness
         """
         import math
+
         return math.log(self.moneyness(spot))
 
     def intrinsic_value(self, spot: float) -> float:
@@ -376,7 +385,7 @@ class OptionsContractSpec:
             option_type=basic_contract.option_type,
             strike=Decimal(str(basic_contract.strike_price)),
             expiration=basic_contract.expiration_date,
-            **kwargs
+            **kwargs,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -420,6 +429,7 @@ class OptionsContractSpec:
 # Greeks Result
 # =============================================================================
 
+
 @dataclass
 class GreeksResult:
     """
@@ -449,23 +459,24 @@ class GreeksResult:
         - Taleb (1997): "Dynamic Hedging"
         - Haug (2007): "The Complete Guide to Option Pricing Formulas"
     """
+
     # First-order Greeks
     delta: float
     gamma: float
-    theta: float      # Per day (NOT per year)
-    vega: float       # Per 1% vol (0.01 absolute)
-    rho: float        # Per 1% rate
+    theta: float  # Per day (NOT per year)
+    vega: float  # Per 1% vol (0.01 absolute)
+    rho: float  # Per 1% rate
 
     # Second-order Greeks
-    vanna: float      # ∂Δ/∂σ = ∂ν/∂S
-    volga: float      # ∂ν/∂σ (Vomma)
-    charm: float      # ∂Δ/∂t (Delta bleed)
+    vanna: float  # ∂Δ/∂σ = ∂ν/∂S
+    volga: float  # ∂ν/∂σ (Vomma)
+    charm: float  # ∂Δ/∂t (Delta bleed)
 
     # Third-order Greeks (critical for MM risk)
-    speed: float      # ∂Γ/∂S
-    color: float      # ∂Γ/∂t
-    zomma: float      # ∂Γ/∂σ
-    ultima: float     # ∂Volga/∂σ
+    speed: float  # ∂Γ/∂S
+    color: float  # ∂Γ/∂t
+    zomma: float  # ∂Γ/∂σ
+    ultima: float  # ∂Volga/∂σ
 
     # Metadata
     timestamp_ns: int = 0
@@ -571,6 +582,7 @@ class GreeksResult:
 # Pricing Result
 # =============================================================================
 
+
 @dataclass
 class PricingResult:
     """
@@ -578,6 +590,7 @@ class PricingResult:
 
     Contains price, Greeks, and metadata about the pricing.
     """
+
     price: float
     greeks: GreeksResult
 
@@ -619,6 +632,7 @@ class PricingResult:
 # IV Result
 # =============================================================================
 
+
 @dataclass
 class IVResult:
     """
@@ -626,6 +640,7 @@ class IVResult:
 
     Contains IV value and solver metadata.
     """
+
     implied_volatility: float
     converged: bool
     iterations: int
@@ -655,6 +670,7 @@ class IVResult:
 # Early Exercise
 # =============================================================================
 
+
 @dataclass
 class EarlyExerciseResult:
     """
@@ -662,11 +678,12 @@ class EarlyExerciseResult:
 
     Reference: Broadie & Detemple (1996) "American Option Valuation"
     """
+
     decision: ExerciseDecision
     exercise_probability: float  # Probability of early exercise
-    optimal_boundary: float      # Optimal exercise boundary (spot level)
-    continuation_value: float    # Value of continuing to hold
-    exercise_value: float        # Value of immediate exercise
+    optimal_boundary: float  # Optimal exercise boundary (spot level)
+    continuation_value: float  # Value of continuing to hold
+    exercise_value: float  # Value of immediate exercise
 
     # Additional info
     time_to_expiry: float = 0.0
@@ -689,6 +706,7 @@ class EarlyExerciseResult:
 # Dividend Model
 # =============================================================================
 
+
 @dataclass
 class Dividend:
     """
@@ -696,6 +714,7 @@ class Dividend:
 
     Used for discrete dividend handling in American options pricing.
     """
+
     ex_date: date
     amount: float
     declared_date: Optional[date] = None
@@ -714,6 +733,7 @@ class Dividend:
             Present value of dividend
         """
         import math
+
         days = (self.ex_date - valuation_date).days
         if days <= 0:
             return 0.0
@@ -736,15 +756,22 @@ class Dividend:
         return cls(
             ex_date=date.fromisoformat(data["ex_date"]),
             amount=data["amount"],
-            declared_date=date.fromisoformat(data["declared_date"]) if data.get("declared_date") else None,
-            record_date=date.fromisoformat(data["record_date"]) if data.get("record_date") else None,
-            payment_date=date.fromisoformat(data["payment_date"]) if data.get("payment_date") else None,
+            declared_date=(
+                date.fromisoformat(data["declared_date"]) if data.get("declared_date") else None
+            ),
+            record_date=(
+                date.fromisoformat(data["record_date"]) if data.get("record_date") else None
+            ),
+            payment_date=(
+                date.fromisoformat(data["payment_date"]) if data.get("payment_date") else None
+            ),
         )
 
 
 # =============================================================================
 # Jump Parameters
 # =============================================================================
+
 
 @dataclass
 class JumpParams:
@@ -763,9 +790,10 @@ class JumpParams:
         - J = jump multiplier (lognormal)
         - N = Poisson process
     """
+
     lambda_intensity: float  # Jumps per year (λ)
-    mu_jump: float           # Mean log jump size (μ_J)
-    sigma_jump: float        # Jump size std dev (σ_J)
+    mu_jump: float  # Mean log jump size (μ_J)
+    sigma_jump: float  # Jump size std dev (σ_J)
     calibration_method: str = "earnings"
     calibration_date: Optional[date] = None
     confidence_interval: Optional[Tuple[float, float]] = None  # 95% CI for λ
@@ -781,14 +809,16 @@ class JumpParams:
     def expected_jump_size(self) -> float:
         """Expected relative jump size k = E[J-1] = exp(μ_J + σ_J²/2) - 1."""
         import math
-        return math.exp(self.mu_jump + 0.5 * self.sigma_jump ** 2) - 1
+
+        return math.exp(self.mu_jump + 0.5 * self.sigma_jump**2) - 1
 
     @property
     def jump_variance_contribution(self) -> float:
         """Variance contribution from jumps per year."""
         import math
+
         k = self.expected_jump_size
-        return self.lambda_intensity * (self.sigma_jump ** 2 + k ** 2)
+        return self.lambda_intensity * (self.sigma_jump**2 + k**2)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -797,8 +827,12 @@ class JumpParams:
             "mu_jump": self.mu_jump,
             "sigma_jump": self.sigma_jump,
             "calibration_method": self.calibration_method,
-            "calibration_date": self.calibration_date.isoformat() if self.calibration_date else None,
-            "confidence_interval": list(self.confidence_interval) if self.confidence_interval else None,
+            "calibration_date": (
+                self.calibration_date.isoformat() if self.calibration_date else None
+            ),
+            "confidence_interval": (
+                list(self.confidence_interval) if self.confidence_interval else None
+            ),
         }
 
     @classmethod
@@ -809,17 +843,23 @@ class JumpParams:
             mu_jump=data["mu_jump"],
             sigma_jump=data["sigma_jump"],
             calibration_method=data.get("calibration_method", "earnings"),
-            calibration_date=date.fromisoformat(data["calibration_date"]) if data.get("calibration_date") else None,
-            confidence_interval=tuple(data["confidence_interval"]) if data.get("confidence_interval") else None,
+            calibration_date=(
+                date.fromisoformat(data["calibration_date"])
+                if data.get("calibration_date")
+                else None
+            ),
+            confidence_interval=(
+                tuple(data["confidence_interval"]) if data.get("confidence_interval") else None
+            ),
         )
 
     @classmethod
     def default_equity(cls) -> "JumpParams":
         """Default jump parameters for equity options."""
         return cls(
-            lambda_intensity=1.0,   # 1 jump per year
-            mu_jump=-0.05,          # 5% down on average
-            sigma_jump=0.15,        # 15% jump volatility
+            lambda_intensity=1.0,  # 1 jump per year
+            mu_jump=-0.05,  # 5% down on average
+            sigma_jump=0.15,  # 15% jump volatility
             calibration_method="default",
         )
 
@@ -827,9 +867,9 @@ class JumpParams:
     def high_volatility(cls) -> "JumpParams":
         """Jump parameters for high volatility regimes (earnings, M&A)."""
         return cls(
-            lambda_intensity=3.0,   # 3 jumps per year
-            mu_jump=-0.08,          # 8% down on average
-            sigma_jump=0.25,        # 25% jump volatility
+            lambda_intensity=3.0,  # 3 jumps per year
+            mu_jump=-0.08,  # 8% down on average
+            sigma_jump=0.25,  # 25% jump volatility
             calibration_method="high_vol",
         )
 
@@ -837,6 +877,7 @@ class JumpParams:
 # =============================================================================
 # Variance Swap
 # =============================================================================
+
 
 @dataclass
 class VarianceSwapQuote:
@@ -848,7 +889,8 @@ class VarianceSwapQuote:
     Fair variance strike:
         K_var² = (2/T) × [∫₀^F (1/K²)P(K)dK + ∫_F^∞ (1/K²)C(K)dK]
     """
-    variance_strike: float       # K_var (in volatility terms, e.g., 0.20 for 20%)
+
+    variance_strike: float  # K_var (in volatility terms, e.g., 0.20 for 20%)
     variance_strike_squared: float  # K_var² (in variance terms)
     forward_price: float
     time_to_expiry: float

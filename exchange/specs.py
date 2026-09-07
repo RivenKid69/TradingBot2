@@ -73,7 +73,9 @@ def _round_to_step(x: float, step: float, *, mode: str = "nearest") -> float:
     return round(q) * step
 
 
-def round_price_to_tick(symbol: str, price: float, specs: ExchangeSpecs, *, side: Optional[str] = None) -> float:
+def round_price_to_tick(
+    symbol: str, price: float, specs: ExchangeSpecs, *, side: Optional[str] = None
+) -> float:
     rule = specs.get(symbol)
     if rule is None or rule.tick_size <= 0:
         return float(price)
@@ -87,7 +89,9 @@ def round_price_to_tick(symbol: str, price: float, specs: ExchangeSpecs, *, side
     return _round_to_step(float(price), rule.tick_size, mode="nearest")
 
 
-def round_qty_to_step(symbol: str, qty: float, specs: ExchangeSpecs, *, mode: str = "down") -> float:
+def round_qty_to_step(
+    symbol: str, qty: float, specs: ExchangeSpecs, *, mode: str = "down"
+) -> float:
     rule = specs.get(symbol)
     if rule is None or rule.step_size <= 0:
         return float(qty)

@@ -936,24 +936,28 @@ class TestForexDealerSimulatorFlicker:
 
     def test_simulate_quote_flicker_basic(self, simulator: ForexDealerSimulator) -> None:
         """Test basic quote flicker generation."""
-        quotes = list(simulator.simulate_quote_flicker(
-            symbol="EUR_USD",
-            base_mid=1.0850,
-            duration_ms=100,
-            tick_interval_ms=10,
-        ))
+        quotes = list(
+            simulator.simulate_quote_flicker(
+                symbol="EUR_USD",
+                base_mid=1.0850,
+                duration_ms=100,
+                tick_interval_ms=10,
+            )
+        )
 
         # Should generate 10 quotes (100ms / 10ms)
         assert len(quotes) == 10
 
     def test_simulate_quote_flicker_prices_vary(self, simulator: ForexDealerSimulator) -> None:
         """Test that quote prices vary due to random walk."""
-        quotes = list(simulator.simulate_quote_flicker(
-            symbol="EUR_USD",
-            base_mid=1.0850,
-            duration_ms=500,
-            tick_interval_ms=10,
-        ))
+        quotes = list(
+            simulator.simulate_quote_flicker(
+                symbol="EUR_USD",
+                base_mid=1.0850,
+                duration_ms=500,
+                tick_interval_ms=10,
+            )
+        )
 
         mids = [q.mid for q in quotes]
         # Prices should vary (not all identical)
@@ -961,12 +965,14 @@ class TestForexDealerSimulatorFlicker:
 
     def test_simulate_quote_flicker_jpy(self, simulator: ForexDealerSimulator) -> None:
         """Test quote flicker for JPY pair."""
-        quotes = list(simulator.simulate_quote_flicker(
-            symbol="USD_JPY",
-            base_mid=150.00,
-            duration_ms=50,
-            tick_interval_ms=10,
-        ))
+        quotes = list(
+            simulator.simulate_quote_flicker(
+                symbol="USD_JPY",
+                base_mid=150.00,
+                duration_ms=50,
+                tick_interval_ms=10,
+            )
+        )
 
         assert len(quotes) == 5
         for q in quotes:
@@ -1269,7 +1275,7 @@ class TestIntegrationHelpers:
         # Extreme case
         prob = estimate_rejection_probability(
             size_usd=100_000_000,  # Huge order
-            session_factor=0.1,    # Very low liquidity
+            session_factor=0.1,  # Very low liquidity
             volatility_regime="extreme",
         )
         assert 0.01 <= prob <= 0.95

@@ -6,6 +6,7 @@ Tests basic functionality without requiring pytest or complex dependencies.
 
 import pytest
 import sys
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 
@@ -23,6 +24,7 @@ def run_standalone_tests():
 
     try:
         from optimizers import UPGD, AdaptiveUPGD, UPGDW
+
         print("[OK] Successfully imported UPGD, AdaptiveUPGD, UPGDW")
     except ImportError as e:
         print(f"[FAIL] Failed to import UPGD optimizers: {e}")
@@ -48,26 +50,26 @@ def run_standalone_tests():
         # Test UPGD
         opt_upgd = UPGD(model.parameters())
         print("[OK] Created UPGD optimizer")
-        assert opt_upgd.param_groups[0]['lr'] == 1e-5
-        assert opt_upgd.param_groups[0]['weight_decay'] == 0.001
-        assert opt_upgd.param_groups[0]['beta_utility'] == 0.999
-        assert opt_upgd.param_groups[0]['sigma'] == 0.001
+        assert opt_upgd.param_groups[0]["lr"] == 1e-5
+        assert opt_upgd.param_groups[0]["weight_decay"] == 0.001
+        assert opt_upgd.param_groups[0]["beta_utility"] == 0.999
+        assert opt_upgd.param_groups[0]["sigma"] == 0.001
         print("  - Default parameters verified")
 
         # Test AdaptiveUPGD
         opt_adaptive = AdaptiveUPGD(model.parameters())
         print("[OK] Created AdaptiveUPGD optimizer")
-        assert opt_adaptive.param_groups[0]['lr'] == 1e-5
-        assert opt_adaptive.param_groups[0]['beta1'] == 0.9
-        assert opt_adaptive.param_groups[0]['beta2'] == 0.999
+        assert opt_adaptive.param_groups[0]["lr"] == 1e-5
+        assert opt_adaptive.param_groups[0]["beta1"] == 0.9
+        assert opt_adaptive.param_groups[0]["beta2"] == 0.999
         print("  - Default parameters verified")
 
         # Test UPGDW
         opt_upgdw = UPGDW(model.parameters())
         print("[OK] Created UPGDW optimizer")
-        assert opt_upgdw.param_groups[0]['lr'] == 1e-4
-        assert opt_upgdw.param_groups[0]['betas'] == (0.9, 0.999)
-        assert opt_upgdw.param_groups[0]['weight_decay'] == 0.01
+        assert opt_upgdw.param_groups[0]["lr"] == 1e-4
+        assert opt_upgdw.param_groups[0]["betas"] == (0.9, 0.999)
+        assert opt_upgdw.param_groups[0]["weight_decay"] == 0.01
         print("  - Default parameters verified")
 
     except Exception as e:
@@ -187,6 +189,7 @@ def run_standalone_tests():
 
     try:
         from distributional_ppo import DistributionalPPO
+
         print("[OK] DistributionalPPO imported successfully")
 
         # Check that _get_optimizer_class returns AdaptiveUPGD by default
@@ -200,6 +203,7 @@ def run_standalone_tests():
                 if optimizer_spec is None:
                     try:
                         from optimizers import AdaptiveUPGD
+
                         return AdaptiveUPGD
                     except ImportError:
                         return torch.optim.AdamW
@@ -235,15 +239,15 @@ def run_standalone_tests():
             beta_utility=0.99,
             beta1=0.95,
             beta2=0.998,
-            weight_decay=0.01
+            weight_decay=0.01,
         )
 
-        assert opt.param_groups[0]['lr'] == 3e-4
-        assert opt.param_groups[0]['sigma'] == 0.01
-        assert opt.param_groups[0]['beta_utility'] == 0.99
-        assert opt.param_groups[0]['beta1'] == 0.95
-        assert opt.param_groups[0]['beta2'] == 0.998
-        assert opt.param_groups[0]['weight_decay'] == 0.01
+        assert opt.param_groups[0]["lr"] == 3e-4
+        assert opt.param_groups[0]["sigma"] == 0.01
+        assert opt.param_groups[0]["beta_utility"] == 0.99
+        assert opt.param_groups[0]["beta1"] == 0.95
+        assert opt.param_groups[0]["beta2"] == 0.998
+        assert opt.param_groups[0]["weight_decay"] == 0.01
 
         print("[OK] Custom parameters set correctly")
 

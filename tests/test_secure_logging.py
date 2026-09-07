@@ -28,6 +28,7 @@ from services.secure_logging import (
 # Test mask_value
 # =============================================================================
 
+
 class TestMaskValue:
     """Tests for mask_value function."""
 
@@ -72,6 +73,7 @@ class TestMaskValue:
 # =============================================================================
 # Test mask_secrets
 # =============================================================================
+
 
 class TestMaskSecrets:
     """Tests for mask_secrets function."""
@@ -131,6 +133,7 @@ class TestMaskSecrets:
 # Test mask_dict
 # =============================================================================
 
+
 class TestMaskDict:
     """Tests for mask_dict function."""
 
@@ -163,27 +166,14 @@ class TestMaskDict:
 
     def test_mask_nested_dict(self):
         """Test masking in nested dictionaries."""
-        data = {
-            "config": {
-                "api_key": "nestedkey12345",
-                "endpoint": "https://api.example.com"
-            }
-        }
+        data = {"config": {"api_key": "nestedkey12345", "endpoint": "https://api.example.com"}}
         result = mask_dict(data)
         assert result["config"]["api_key"] == DEFAULT_MASK
         assert result["config"]["endpoint"] == "https://api.example.com"
 
     def test_mask_deeply_nested(self):
         """Test masking in deeply nested structures."""
-        data = {
-            "level1": {
-                "level2": {
-                    "level3": {
-                        "secret": "deeplynestedsecret"
-                    }
-                }
-            }
-        }
+        data = {"level1": {"level2": {"level3": {"secret": "deeplynestedsecret"}}}}
         result = mask_dict(data)
         assert result["level1"]["level2"]["level3"]["secret"] == DEFAULT_MASK
 
@@ -233,6 +223,7 @@ class TestMaskDict:
 # Test safe_repr
 # =============================================================================
 
+
 class TestSafeRepr:
     """Tests for safe_repr function."""
 
@@ -259,6 +250,7 @@ class TestSafeRepr:
 # =============================================================================
 # Test SecureLogFilter
 # =============================================================================
+
 
 class TestSecureLogFilter:
     """Tests for SecureLogFilter class."""
@@ -329,6 +321,7 @@ class TestSecureLogFilter:
 # Test SecureFormatter
 # =============================================================================
 
+
 class TestSecureFormatter:
     """Tests for SecureFormatter class."""
 
@@ -352,6 +345,7 @@ class TestSecureFormatter:
 # Test get_secure_logger
 # =============================================================================
 
+
 class TestGetSecureLogger:
     """Tests for get_secure_logger function."""
 
@@ -363,9 +357,7 @@ class TestGetSecureLogger:
     def test_get_secure_logger_has_filter(self):
         """Test that logger has secure filter."""
         logger = get_secure_logger("test_module_filtered")
-        has_secure_filter = any(
-            isinstance(f, SecureLogFilter) for f in logger.filters
-        )
+        has_secure_filter = any(isinstance(f, SecureLogFilter) for f in logger.filters)
         assert has_secure_filter
 
     def test_get_secure_logger_idempotent(self):
@@ -383,6 +375,7 @@ class TestGetSecureLogger:
 # Test configure_secure_logging
 # =============================================================================
 
+
 class TestConfigureSecureLogging:
     """Tests for configure_secure_logging function."""
 
@@ -392,15 +385,14 @@ class TestConfigureSecureLogging:
         initial_filters = len(logger.filters)
         configure_secure_logging(logger)
         assert len(logger.filters) == initial_filters + 1
-        has_secure_filter = any(
-            isinstance(f, SecureLogFilter) for f in logger.filters
-        )
+        has_secure_filter = any(isinstance(f, SecureLogFilter) for f in logger.filters)
         assert has_secure_filter
 
 
 # =============================================================================
 # Test validate_api_credentials
 # =============================================================================
+
 
 class TestValidateApiCredentials:
     """Tests for validate_api_credentials function."""
@@ -482,6 +474,7 @@ class TestValidateApiCredentials:
 # Test get_credential_summary
 # =============================================================================
 
+
 class TestGetCredentialSummary:
     """Tests for get_credential_summary function."""
 
@@ -532,6 +525,7 @@ class TestGetCredentialSummary:
 # =============================================================================
 # Integration test
 # =============================================================================
+
 
 class TestSecureLoggingIntegration:
     """Integration tests for secure logging."""

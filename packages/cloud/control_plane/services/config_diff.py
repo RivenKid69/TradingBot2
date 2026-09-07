@@ -25,6 +25,7 @@ from pathlib import Path
 
 class ChangeType(str, Enum):
     """Type of change in config diff."""
+
     ADDED = "added"
     REMOVED = "removed"
     MODIFIED = "modified"
@@ -33,6 +34,7 @@ class ChangeType(str, Enum):
 
 class ChangeImpact(str, Enum):
     """Impact level of config change."""
+
     TRADING_IMPACTING = "trading_impacting"
     NON_TRADING_IMPACTING = "non_trading_impacting"
     DOCUMENTATION_ONLY = "documentation_only"
@@ -82,6 +84,7 @@ SAFE_FIELDS: Final[Set[str]] = {
 @dataclass
 class ConfigChange:
     """Single change in config."""
+
     path: str  # JSON path: "risk.max_drawdown"
     change_type: ChangeType
     old_value: Any = None
@@ -119,6 +122,7 @@ class ConfigChange:
 @dataclass
 class ConfigDiffResult:
     """Result of config diff computation."""
+
     has_changes: bool = False
     old_digest: str = ""
     new_digest: str = ""
@@ -316,12 +320,14 @@ class ConfigDiffService:
         """Recursively compute diff."""
         if type(old) != type(new):
             # Type changed - treat as modification
-            result.changes.append(ConfigChange(
-                path=path,
-                change_type=ChangeType.MODIFIED,
-                old_value=old,
-                new_value=new,
-            ))
+            result.changes.append(
+                ConfigChange(
+                    path=path,
+                    change_type=ChangeType.MODIFIED,
+                    old_value=old,
+                    new_value=new,
+                )
+            )
             return
 
         if isinstance(old, dict) and isinstance(new, dict):
@@ -333,43 +339,49 @@ class ConfigDiffService:
 
                 if key not in old:
                     # Added
-                    result.changes.append(ConfigChange(
-                        path=new_path,
-                        change_type=ChangeType.ADDED,
-                        new_value=new[key],
-                    ))
+                    result.changes.append(
+                        ConfigChange(
+                            path=new_path,
+                            change_type=ChangeType.ADDED,
+                            new_value=new[key],
+                        )
+                    )
                 elif key not in new:
                     # Removed
-                    result.changes.append(ConfigChange(
-                        path=new_path,
-                        change_type=ChangeType.REMOVED,
-                        old_value=old[key],
-                    ))
+                    result.changes.append(
+                        ConfigChange(
+                            path=new_path,
+                            change_type=ChangeType.REMOVED,
+                            old_value=old[key],
+                        )
+                    )
                 else:
                     # Recurse
-                    self._compute_diff_recursive(
-                        old[key], new[key], new_path, result
-                    )
+                    self._compute_diff_recursive(old[key], new[key], new_path, result)
 
         elif isinstance(old, list) and isinstance(new, list):
             # Compare lists element by element
             if old != new:
-                result.changes.append(ConfigChange(
-                    path=path,
-                    change_type=ChangeType.MODIFIED,
-                    old_value=old,
-                    new_value=new,
-                ))
+                result.changes.append(
+                    ConfigChange(
+                        path=path,
+                        change_type=ChangeType.MODIFIED,
+                        old_value=old,
+                        new_value=new,
+                    )
+                )
 
         else:
             # Scalar comparison
             if old != new:
-                result.changes.append(ConfigChange(
-                    path=path,
-                    change_type=ChangeType.MODIFIED,
-                    old_value=old,
-                    new_value=new,
-                ))
+                result.changes.append(
+                    ConfigChange(
+                        path=path,
+                        change_type=ChangeType.MODIFIED,
+                        old_value=old,
+                        new_value=new,
+                    )
+                )
 
     def _add_all_as_new(
         self,
@@ -381,17 +393,21 @@ class ConfigDiffService:
         if isinstance(config, dict):
             for key, value in config.items():
                 new_path = f"{path}.{key}" if path else key
-                result.changes.append(ConfigChange(
-                    path=new_path,
-                    change_type=ChangeType.ADDED,
-                    new_value=value,
-                ))
+                result.changes.append(
+                    ConfigChange(
+                        path=new_path,
+                        change_type=ChangeType.ADDED,
+                        new_value=value,
+                    )
+                )
         else:
-            result.changes.append(ConfigChange(
-                path=path or "root",
-                change_type=ChangeType.ADDED,
-                new_value=config,
-            ))
+            result.changes.append(
+                ConfigChange(
+                    path=path or "root",
+                    change_type=ChangeType.ADDED,
+                    new_value=config,
+                )
+            )
 
     def _classify_changes(self, result: ConfigDiffResult) -> None:
         """Classify changes by impact level."""

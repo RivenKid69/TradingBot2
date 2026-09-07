@@ -27,6 +27,7 @@ import numpy as np
 # Helper to create minimal valid CommonRunConfig
 # =============================================================================
 
+
 def _minimal_component_spec(target: str = "test:TestClass"):
     """Return a minimal valid ComponentSpec dict."""
     return {"target": target, "params": {}}
@@ -46,6 +47,7 @@ def _minimal_components():
 # =============================================================================
 # Test CommonRunConfig Multi-Asset Fields
 # =============================================================================
+
 
 class TestCommonRunConfigMultiAsset:
     """Tests for asset_class, data_vendor, and extended_hours fields."""
@@ -115,6 +117,7 @@ class TestCommonRunConfigMultiAsset:
 # Test Mediator Provider Factory
 # =============================================================================
 
+
 class TestMediatorProviderFactory:
     """Tests for Mediator._create_providers factory method."""
 
@@ -167,11 +170,13 @@ class TestMediatorProviderFactory:
         # Check slippage provider has equity params
         if mediator.slippage_provider is not None:
             from execution_providers import StatisticalSlippageProvider
+
             assert isinstance(mediator.slippage_provider, StatisticalSlippageProvider)
 
         # Check fee provider is equity type
         if mediator.fee_provider is not None:
             from execution_providers import EquityFeeProvider
+
             assert isinstance(mediator.fee_provider, EquityFeeProvider)
 
     def test_is_market_open_crypto_always_true(self):
@@ -222,12 +227,14 @@ class TestMediatorProviderFactory:
 # Test Trading Hours Enforcement
 # =============================================================================
 
+
 class TestTradingHoursEnforcement:
     """Tests for trading hours enforcement in TradingEnv."""
 
     @pytest.fixture
     def mock_trading_env(self):
         """Create a mock TradingEnv for testing."""
+
         @dataclass
         class MockState:
             cash: float = 10000.0
@@ -364,6 +371,7 @@ class TestTradingHoursEnforcement:
 # Test Info Dict Market Closed Field
 # =============================================================================
 
+
 class TestInfoDictMarketClosed:
     """Tests for market_closed field in step() info dict."""
 
@@ -389,11 +397,13 @@ class TestInfoDictMarketClosed:
 # Test Counter Initialization and Reset
 # =============================================================================
 
+
 class TestCounterInitialization:
     """Tests for trading_hours_blocked_count counter."""
 
     def test_counter_starts_at_zero(self):
         """Test that counter initializes to zero."""
+
         class MockEnv:
             trading_hours_blocked_count = 0
 
@@ -402,6 +412,7 @@ class TestCounterInitialization:
 
     def test_counter_increments(self):
         """Test that counter increments on blocked trades."""
+
         class MockEnv:
             trading_hours_blocked_count = 0
 
@@ -415,6 +426,7 @@ class TestCounterInitialization:
 
     def test_counter_resets_on_episode(self):
         """Test that counter resets on new episode."""
+
         class MockEnv:
             trading_hours_blocked_count = 5  # Already has some blocks
 
@@ -429,6 +441,7 @@ class TestCounterInitialization:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestMultiAssetIntegration:
     """Integration tests for multi-asset support."""
@@ -480,6 +493,7 @@ class TestMultiAssetIntegration:
 # Test Asset Class Enum (if defined)
 # =============================================================================
 
+
 class TestAssetClassEnum:
     """Tests for AssetClass enum from execution_providers."""
 
@@ -509,6 +523,7 @@ class TestAssetClassEnum:
 # =============================================================================
 # Test Slippage Provider Factory with Asset Class
 # =============================================================================
+
 
 class TestSlippageProviderFactory:
     """Tests for slippage provider creation by asset class."""
@@ -541,6 +556,7 @@ class TestSlippageProviderFactory:
 # =============================================================================
 # Test Fee Provider Factory with Asset Class
 # =============================================================================
+
 
 class TestFeeProviderFactory:
     """Tests for fee provider creation by asset class."""

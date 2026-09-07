@@ -64,12 +64,13 @@ class DataQualityDimension(Enum):
 
     These dimensions align with ISO 8000 and DAMA-DMBOK data quality frameworks.
     """
-    COMPLETENESS = "completeness"        # No missing critical values
-    ACCURACY = "accuracy"                 # Values reflect reality
-    TIMELINESS = "timeliness"            # Data is current/not stale
-    CONSISTENCY = "consistency"           # Cross-field consistency
-    VALIDITY = "validity"                 # Values within valid domains
-    UNIQUENESS = "uniqueness"            # No unwanted duplicates
+
+    COMPLETENESS = "completeness"  # No missing critical values
+    ACCURACY = "accuracy"  # Values reflect reality
+    TIMELINESS = "timeliness"  # Data is current/not stale
+    CONSISTENCY = "consistency"  # Cross-field consistency
+    VALIDITY = "validity"  # Values within valid domains
+    UNIQUENESS = "uniqueness"  # No unwanted duplicates
     REPRESENTATIVENESS = "representativeness"  # Article 10(3) - statistical properties
 
 
@@ -79,18 +80,20 @@ class BiasType(Enum):
 
     Based on research on algorithmic bias in financial AI systems.
     """
-    TEMPORAL_BIAS = "temporal_bias"          # Over-representation of certain periods
-    SELECTION_BIAS = "selection_bias"        # Non-random data selection
+
+    TEMPORAL_BIAS = "temporal_bias"  # Over-representation of certain periods
+    SELECTION_BIAS = "selection_bias"  # Non-random data selection
     SURVIVORSHIP_BIAS = "survivorship_bias"  # Only surviving entities included
-    MEASUREMENT_BIAS = "measurement_bias"    # Systematic measurement errors
-    SAMPLING_BIAS = "sampling_bias"          # Non-representative sampling
-    LOOK_AHEAD_BIAS = "look_ahead_bias"      # Future information leakage
-    ASSET_BIAS = "asset_bias"                # Over/under-representation of assets
-    REGIME_BIAS = "regime_bias"              # Market regime over-representation
+    MEASUREMENT_BIAS = "measurement_bias"  # Systematic measurement errors
+    SAMPLING_BIAS = "sampling_bias"  # Non-representative sampling
+    LOOK_AHEAD_BIAS = "look_ahead_bias"  # Future information leakage
+    ASSET_BIAS = "asset_bias"  # Over/under-representation of assets
+    REGIME_BIAS = "regime_bias"  # Market regime over-representation
 
 
 class DataGapType(Enum):
     """Types of data gaps per Article 10(2)(f)."""
+
     MISSING_TIME_PERIODS = "missing_time_periods"
     MISSING_FEATURES = "missing_features"
     INSUFFICIENT_VOLUME = "insufficient_volume"
@@ -101,6 +104,7 @@ class DataGapType(Enum):
 
 class DatasetRole(Enum):
     """Dataset roles in ML pipeline."""
+
     TRAINING = "training"
     VALIDATION = "validation"
     TESTING = "testing"
@@ -115,6 +119,7 @@ class DatasetRole(Enum):
 @dataclass
 class QualityCheckResult:
     """Result of a single quality check."""
+
     check_id: str = ""
     dimension: str = ""
     check_name: str = ""
@@ -137,6 +142,7 @@ class QualityCheckResult:
 @dataclass
 class BiasCheckResult:
     """Result of a bias detection check."""
+
     check_id: str = ""
     bias_type: str = ""
     detected: bool = False
@@ -157,6 +163,7 @@ class BiasCheckResult:
 @dataclass
 class DataGap:
     """Identified data gap per Article 10(2)(f)."""
+
     gap_id: str = ""
     gap_type: str = ""
     description: str = ""
@@ -185,6 +192,7 @@ class DataQualityReport:
     - Statistical properties
     - Recommendations
     """
+
     report_id: str = ""
     dataset_name: str = ""
     dataset_role: str = ""
@@ -223,6 +231,7 @@ class DatasetMetadata:
 
     Required for Article 11 technical documentation.
     """
+
     dataset_id: str = ""
     name: str = ""
     description: str = ""
@@ -277,6 +286,7 @@ class DatasetMetadata:
 @dataclass
 class DataGovernanceConfig:
     """Configuration for Data Governance Framework."""
+
     # Quality thresholds
     completeness_threshold: float = 0.95
     accuracy_threshold: float = 0.95
@@ -372,13 +382,15 @@ class DataQualityAssessor:
                         results.append(result)
                 except Exception as e:
                     logger.warning(f"Quality check {check_func.__name__} failed: {e}")
-                    results.append(QualityCheckResult(
-                        dimension=dimension.value,
-                        check_name=check_func.__name__,
-                        passed=False,
-                        score=0.0,
-                        details={"error": str(e)},
-                    ))
+                    results.append(
+                        QualityCheckResult(
+                            dimension=dimension.value,
+                            check_name=check_func.__name__,
+                            passed=False,
+                            score=0.0,
+                            details={"error": str(e)},
+                        )
+                    )
 
         return results
 
@@ -407,8 +419,11 @@ class DataQualityAssessor:
             },
             affected_columns=columns_with_missing,
             affected_rows=int(df.isnull().any(axis=1).sum()),
-            recommendations=["Consider imputation or removal of rows with missing values"]
-            if completeness < self.config.completeness_threshold else [],
+            recommendations=(
+                ["Consider imputation or removal of rows with missing values"]
+                if completeness < self.config.completeness_threshold
+                else []
+            ),
         )
 
     def _check_null_prices(self, df: pd.DataFrame) -> Optional[QualityCheckResult]:
@@ -432,8 +447,9 @@ class DataQualityAssessor:
                 "price_columns_checked": price_cols,
             },
             affected_columns=price_cols if null_count > 0 else [],
-            recommendations=["Price data must be complete for trading decisions"]
-            if null_count > 0 else [],
+            recommendations=(
+                ["Price data must be complete for trading decisions"] if null_count > 0 else []
+            ),
         )
 
     # =========================================================================
@@ -469,8 +485,9 @@ class DataQualityAssessor:
                 "invalid_by_column": invalid_details,
             },
             affected_columns=list(invalid_details.keys()),
-            recommendations=["Remove or correct non-positive price values"]
-            if invalid_count > 0 else [],
+            recommendations=(
+                ["Remove or correct non-positive price values"] if invalid_count > 0 else []
+            ),
         )
 
     def _check_volume_validity(self, df: pd.DataFrame) -> Optional[QualityCheckResult]:
@@ -489,8 +506,9 @@ class DataQualityAssessor:
             threshold=1.0,
             details={"negative_volume_count": int(negative_count)},
             affected_columns=["volume"] if negative_count > 0 else [],
-            recommendations=["Volume cannot be negative - check data source"]
-            if negative_count > 0 else [],
+            recommendations=(
+                ["Volume cannot be negative - check data source"] if negative_count > 0 else []
+            ),
         )
 
     def _check_outliers(self, df: pd.DataFrame) -> QualityCheckResult:
@@ -518,7 +536,9 @@ class DataQualityAssessor:
                 outlier_counts[col] = int(outliers)
                 total_outliers += outliers
 
-        total_values = sum(len(df[c].dropna()) for c in numeric_cols if c not in ["timestamp", "symbol"])
+        total_values = sum(
+            len(df[c].dropna()) for c in numeric_cols if c not in ["timestamp", "symbol"]
+        )
         score = 1.0 - (total_outliers / total_values) if total_values > 0 else 1.0
 
         return QualityCheckResult(
@@ -533,8 +553,9 @@ class DataQualityAssessor:
                 "sigma_threshold": self.config.outlier_threshold_sigma,
             },
             affected_columns=list(outlier_counts.keys()),
-            recommendations=["Consider winsorization or outlier treatment"]
-            if total_outliers > 0 else [],
+            recommendations=(
+                ["Consider winsorization or outlier treatment"] if total_outliers > 0 else []
+            ),
         )
 
     # =========================================================================
@@ -574,8 +595,11 @@ class DataQualityAssessor:
                     "staleness_hours": round(staleness_hours, 2),
                     "max_staleness_hours": self.config.timeliness_max_staleness_hours,
                 },
-                recommendations=["Data may be stale - refresh from source"]
-                if staleness_hours > self.config.timeliness_max_staleness_hours else [],
+                recommendations=(
+                    ["Data may be stale - refresh from source"]
+                    if staleness_hours > self.config.timeliness_max_staleness_hours
+                    else []
+                ),
             )
         except Exception as e:
             logger.warning(f"Staleness check failed: {e}")
@@ -608,8 +632,9 @@ class DataQualityAssessor:
                     "large_gaps_count": int(large_gaps),
                     "median_time_diff_seconds": median_diff.total_seconds(),
                 },
-                recommendations=["Time series has gaps - check for missing data"]
-                if large_gaps > 0 else [],
+                recommendations=(
+                    ["Time series has gaps - check for missing data"] if large_gaps > 0 else []
+                ),
             )
         except Exception as e:
             logger.warning(f"Time gap check failed: {e}")
@@ -630,9 +655,7 @@ class DataQualityAssessor:
 
         # High should be >= Open, Close, Low
         high_violations = (
-            (df["high"] < df["open"]) |
-            (df["high"] < df["close"]) |
-            (df["high"] < df["low"])
+            (df["high"] < df["open"]) | (df["high"] < df["close"]) | (df["high"] < df["low"])
         ).sum()
         if high_violations > 0:
             details["high_violations"] = int(high_violations)
@@ -640,9 +663,7 @@ class DataQualityAssessor:
 
         # Low should be <= Open, Close, High
         low_violations = (
-            (df["low"] > df["open"]) |
-            (df["low"] > df["close"]) |
-            (df["low"] > df["high"])
+            (df["low"] > df["open"]) | (df["low"] > df["close"]) | (df["low"] > df["high"])
         ).sum()
         if low_violations > 0:
             details["low_violations"] = int(low_violations)
@@ -661,8 +682,9 @@ class DataQualityAssessor:
                 **details,
             },
             affected_columns=required_cols if inconsistencies > 0 else [],
-            recommendations=["OHLC relationships violated - check data source"]
-            if inconsistencies > 0 else [],
+            recommendations=(
+                ["OHLC relationships violated - check data source"] if inconsistencies > 0 else []
+            ),
         )
 
     def _check_timestamp_order(self, df: pd.DataFrame) -> Optional[QualityCheckResult]:
@@ -673,9 +695,11 @@ class DataQualityAssessor:
         try:
             timestamps = pd.to_datetime(df["timestamp"])
             is_sorted = timestamps.is_monotonic_increasing
-            out_of_order = (~timestamps.sort_values().reset_index(drop=True).eq(
-                timestamps.reset_index(drop=True)
-            )).sum()
+            out_of_order = (
+                ~timestamps.sort_values()
+                .reset_index(drop=True)
+                .eq(timestamps.reset_index(drop=True))
+            ).sum()
 
             return QualityCheckResult(
                 dimension=DataQualityDimension.CONSISTENCY.value,
@@ -687,8 +711,9 @@ class DataQualityAssessor:
                     "is_sorted": is_sorted,
                     "out_of_order_count": int(out_of_order),
                 },
-                recommendations=["Sort data by timestamp before processing"]
-                if not is_sorted else [],
+                recommendations=(
+                    ["Sort data by timestamp before processing"] if not is_sorted else []
+                ),
             )
         except Exception as e:
             logger.warning(f"Timestamp order check failed: {e}")
@@ -736,8 +761,11 @@ class DataQualityAssessor:
                 "columns_checked": len(numeric_cols),
             },
             affected_columns=list(distribution_issues.keys()),
-            recommendations=["Consider transformations for non-normal distributions"]
-            if distribution_issues else [],
+            recommendations=(
+                ["Consider transformations for non-normal distributions"]
+                if distribution_issues
+                else []
+            ),
         )
 
     def _check_variance(self, df: pd.DataFrame) -> QualityCheckResult:
@@ -769,8 +797,9 @@ class DataQualityAssessor:
                 "unique_ratio_threshold": threshold,
             },
             affected_columns=list(low_variance_cols.keys()),
-            recommendations=["Low variance columns may not be informative"]
-            if low_variance_cols else [],
+            recommendations=(
+                ["Low variance columns may not be informative"] if low_variance_cols else []
+            ),
         )
 
 
@@ -1001,7 +1030,9 @@ class BiasDetector:
 
             # Survivorship bias indicator: assets present at start but missing at end
             potential_delisted = missing_at_end - missing_at_start
-            survivorship_score = len(potential_delisted) / len(all_assets) if len(all_assets) > 0 else 0
+            survivorship_score = (
+                len(potential_delisted) / len(all_assets) if len(all_assets) > 0 else 0
+            )
 
             severity = "low"
             if survivorship_score > 0.3:
@@ -1076,7 +1107,9 @@ class BiasDetector:
             high_vol_threshold = rolling_vol.quantile(0.67)
 
             low_vol_count = (rolling_vol < low_vol_threshold).sum()
-            mid_vol_count = ((rolling_vol >= low_vol_threshold) & (rolling_vol < high_vol_threshold)).sum()
+            mid_vol_count = (
+                (rolling_vol >= low_vol_threshold) & (rolling_vol < high_vol_threshold)
+            ).sum()
             high_vol_count = (rolling_vol >= high_vol_threshold).sum()
 
             total = low_vol_count + mid_vol_count + high_vol_count
@@ -1086,9 +1119,9 @@ class BiasDetector:
             # Calculate regime imbalance
             expected = total / 3
             imbalance = (
-                abs(low_vol_count - expected) +
-                abs(mid_vol_count - expected) +
-                abs(high_vol_count - expected)
+                abs(low_vol_count - expected)
+                + abs(mid_vol_count - expected)
+                + abs(high_vol_count - expected)
             ) / (3 * expected)
 
             regime_score = min(imbalance, 1.0)
@@ -1144,7 +1177,9 @@ class BiasDetector:
         # Check if _z suffix columns exist without base columns being shifted
         z_columns = [c for c in df.columns if c.endswith("_z")]
         if z_columns:
-            warnings.append(f"Found {len(z_columns)} normalized columns - verify shifting is applied")
+            warnings.append(
+                f"Found {len(z_columns)} normalized columns - verify shifting is applied"
+            )
 
         detected = len(suspicious_columns) > 0
         severity = "high" if detected else "low"
@@ -1544,7 +1579,9 @@ class DataGovernanceFramework:
 
         # Calculate overall quality score
         if report.quality_checks:
-            report.overall_quality_score = sum(c.score for c in report.quality_checks) / len(report.quality_checks)
+            report.overall_quality_score = sum(c.score for c in report.quality_checks) / len(
+                report.quality_checks
+            )
 
         # Bias detection
         report.bias_checks = self._bias_detector.detect_biases(df, asset_column, timestamp_column)
@@ -1557,19 +1594,25 @@ class DataGovernanceFramework:
         report.statistical_properties = self._compute_statistical_properties(df)
 
         # Determine pass/fail
-        critical_failures = [c for c in report.quality_checks if not c.passed and c.threshold >= 0.95]
-        high_severity_biases = [b for b in report.bias_checks if b.detected and b.severity in ("high", "critical")]
+        critical_failures = [
+            c for c in report.quality_checks if not c.passed and c.threshold >= 0.95
+        ]
+        high_severity_biases = [
+            b for b in report.bias_checks if b.detected and b.severity in ("high", "critical")
+        ]
 
         report.passed = len(critical_failures) == 0 and len(high_severity_biases) == 0
 
         # Compile issues and recommendations
-        report.critical_issues = [
-            f"Quality: {c.check_name} - {c.details}" for c in critical_failures
-        ] + [
-            f"Bias: {b.bias_type} - {b.severity}" for b in high_severity_biases
-        ] + [
-            f"Gap: {g.gap_type} - {g.description}" for g in report.data_gaps if g.severity in ("high", "critical")
-        ]
+        report.critical_issues = (
+            [f"Quality: {c.check_name} - {c.details}" for c in critical_failures]
+            + [f"Bias: {b.bias_type} - {b.severity}" for b in high_severity_biases]
+            + [
+                f"Gap: {g.gap_type} - {g.description}"
+                for g in report.data_gaps
+                if g.severity in ("high", "critical")
+            ]
+        )
 
         report.recommendations = []
         for check in report.quality_checks:
@@ -1792,9 +1835,7 @@ class DataGovernanceFramework:
             "export_date": datetime.now(timezone.utc).isoformat(),
             "framework_version": "1.0.0",
             "article_10_compliance": True,
-            "datasets": {
-                name: asdict(meta) for name, meta in self._datasets.items()
-            },
+            "datasets": {name: asdict(meta) for name, meta in self._datasets.items()},
             "configuration": asdict(self.config),
         }
 
@@ -1867,5 +1908,7 @@ def create_bias_detector(
     elif isinstance(config, DataGovernanceConfig):
         return BiasDetector(config)
     else:
-        gov_config = DataGovernanceConfig(**{k: v for k, v in config.items() if hasattr(DataGovernanceConfig, k)})
+        gov_config = DataGovernanceConfig(
+            **{k: v for k, v in config.items() if hasattr(DataGovernanceConfig, k)}
+        )
         return BiasDetector(gov_config)

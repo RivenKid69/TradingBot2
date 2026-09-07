@@ -39,40 +39,46 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class BackupTier(Enum):
     """Backup tier classification."""
-    CRITICAL = "critical"      # 15 min RPO
-    STANDARD = "standard"      # 1 hour RPO
-    ARCHIVE = "archive"        # 24 hour RPO
+
+    CRITICAL = "critical"  # 15 min RPO
+    STANDARD = "standard"  # 1 hour RPO
+    ARCHIVE = "archive"  # 24 hour RPO
 
 
 class RPOLevel(Enum):
     """Recovery Point Objective levels."""
-    RPO_15MIN = "15min"        # 15 minutes
-    RPO_1HOUR = "1hour"        # 1 hour
-    RPO_4HOUR = "4hour"        # 4 hours
-    RPO_24HOUR = "24hour"      # 24 hours
+
+    RPO_15MIN = "15min"  # 15 minutes
+    RPO_1HOUR = "1hour"  # 1 hour
+    RPO_4HOUR = "4hour"  # 4 hours
+    RPO_24HOUR = "24hour"  # 24 hours
 
 
 class BackupStrategy(Enum):
     """Backup strategy types."""
-    CONTINUOUS = "continuous"              # CDP - Continuous Data Protection
-    SNAPSHOT = "snapshot"                  # Point-in-time snapshots
-    INCREMENTAL = "incremental"            # Incremental backups
-    DIFFERENTIAL = "differential"          # Differential backups
-    FULL = "full"                          # Full backups
+
+    CONTINUOUS = "continuous"  # CDP - Continuous Data Protection
+    SNAPSHOT = "snapshot"  # Point-in-time snapshots
+    INCREMENTAL = "incremental"  # Incremental backups
+    DIFFERENTIAL = "differential"  # Differential backups
+    FULL = "full"  # Full backups
 
 
 class ReplicationMode(Enum):
     """Replication modes."""
-    SYNCHRONOUS = "synchronous"            # Zero data loss (RPO=0)
-    ASYNCHRONOUS = "asynchronous"          # Near-zero data loss
+
+    SYNCHRONOUS = "synchronous"  # Zero data loss (RPO=0)
+    ASYNCHRONOUS = "asynchronous"  # Near-zero data loss
     SEMI_SYNCHRONOUS = "semi_synchronous"  # Balanced approach
-    SCHEDULED = "scheduled"                # Scheduled replication
+    SCHEDULED = "scheduled"  # Scheduled replication
 
 
 class BackupJobStatus(Enum):
     """Backup job status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -86,6 +92,7 @@ class BackupJobStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class TieredBackupPolicy:
     """
@@ -93,6 +100,7 @@ class TieredBackupPolicy:
 
     Defines backup behavior for a specific tier.
     """
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -160,6 +168,7 @@ class TieredBackupPolicy:
 @dataclass
 class BackupSchedule:
     """Backup schedule configuration."""
+
     schedule_id: str = ""
     policy_id: str = ""
 
@@ -189,6 +198,7 @@ class BackupSchedule:
 @dataclass
 class BackupExecution:
     """Backup job execution record."""
+
     execution_id: str = ""
     policy_id: str = ""
     schedule_id: str = ""
@@ -233,6 +243,7 @@ class BackupExecution:
 @dataclass
 class ReplicationConfig:
     """Replication configuration for backup targets."""
+
     config_id: str = ""
     name: str = ""
 
@@ -269,6 +280,7 @@ class ReplicationConfig:
 @dataclass
 class BackupMetrics:
     """Backup system metrics."""
+
     timestamp: str = ""
 
     # Volume metrics
@@ -314,6 +326,7 @@ class BackupMetrics:
 @dataclass
 class TieredBackupConfig:
     """Configuration for TieredBackupManager."""
+
     # Default RPO settings per tier
     critical_rpo_minutes: int = 15
     standard_rpo_minutes: int = 60
@@ -393,6 +406,7 @@ def get_tier_definitions() -> Dict[BackupTier, Dict[str, Any]]:
 # =============================================================================
 # Main Class
 # =============================================================================
+
 
 class TieredBackupManager:
     """
@@ -523,12 +537,15 @@ class TieredBackupManager:
             self._policies[policy.policy_id] = policy
 
         if not is_default:
-            self._log_event("policy_created", {
-                "policy_id": policy.policy_id,
-                "name": name,
-                "tier": tier.value,
-                "rpo_minutes": policy.rpo_minutes,
-            })
+            self._log_event(
+                "policy_created",
+                {
+                    "policy_id": policy.policy_id,
+                    "name": name,
+                    "tier": tier.value,
+                    "rpo_minutes": policy.rpo_minutes,
+                },
+            )
 
         return policy
 
@@ -558,10 +575,13 @@ class TieredBackupManager:
                     setattr(policy, key, value)
             policy.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("policy_updated", {
-            "policy_id": policy_id,
-            "updates": list(updates.keys()),
-        })
+        self._log_event(
+            "policy_updated",
+            {
+                "policy_id": policy_id,
+                "updates": list(updates.keys()),
+            },
+        )
 
         return policy
 
@@ -612,11 +632,14 @@ class TieredBackupManager:
         with self._lock:
             self._executions[execution.execution_id] = execution
 
-        self._log_event("backup_started", {
-            "execution_id": execution.execution_id,
-            "policy_id": policy_id,
-            "tier": policy.tier.value,
-        })
+        self._log_event(
+            "backup_started",
+            {
+                "execution_id": execution.execution_id,
+                "policy_id": policy_id,
+                "tier": policy.tier.value,
+            },
+        )
 
         # Simulate backup execution
         try:
@@ -640,29 +663,38 @@ class TieredBackupManager:
             if self.config.auto_verify_enabled:
                 self._verify_backup(execution)
 
-            self._log_event("backup_completed", {
-                "execution_id": execution.execution_id,
-                "policy_id": policy_id,
-                "bytes_transferred": execution.bytes_transferred,
-                "duration_seconds": execution.duration_seconds,
-            })
+            self._log_event(
+                "backup_completed",
+                {
+                    "execution_id": execution.execution_id,
+                    "policy_id": policy_id,
+                    "bytes_transferred": execution.bytes_transferred,
+                    "duration_seconds": execution.duration_seconds,
+                },
+            )
 
         except Exception as e:
             execution.status = BackupJobStatus.FAILED
             execution.error_message = str(e)
             execution.completed_at = datetime.now(timezone.utc).isoformat()
 
-            self._log_event("backup_failed", {
-                "execution_id": execution.execution_id,
-                "error": str(e),
-            })
+            self._log_event(
+                "backup_failed",
+                {
+                    "execution_id": execution.execution_id,
+                    "error": str(e),
+                },
+            )
 
             if self.config.alert_on_failure:
-                self._send_alert("backup_failed", {
-                    "execution_id": execution.execution_id,
-                    "policy_id": policy_id,
-                    "error": str(e),
-                })
+                self._send_alert(
+                    "backup_failed",
+                    {
+                        "execution_id": execution.execution_id,
+                        "policy_id": policy_id,
+                        "error": str(e),
+                    },
+                )
 
         return execution
 
@@ -739,12 +771,15 @@ class TieredBackupManager:
         with self._lock:
             self._replications[config.config_id] = config
 
-        self._log_event("replication_configured", {
-            "config_id": config.config_id,
-            "mode": mode.value,
-            "source": source_region,
-            "targets": target_regions,
-        })
+        self._log_event(
+            "replication_configured",
+            {
+                "config_id": config.config_id,
+                "mode": mode.value,
+                "source": source_region,
+                "targets": target_regions,
+            },
+        )
 
         return config
 
@@ -761,7 +796,9 @@ class TieredBackupManager:
                 "is_active": config.is_active,
                 "current_lag_seconds": config.current_lag_seconds,
                 "last_sync_time": config.last_sync_time,
-                "status": "healthy" if config.current_lag_seconds < config.max_lag_seconds else "lagging",
+                "status": (
+                    "healthy" if config.current_lag_seconds < config.max_lag_seconds else "lagging"
+                ),
             }
 
     # =========================================================================
@@ -778,8 +815,11 @@ class TieredBackupManager:
 
             # Get most recent successful backup
             recent = [
-                e for e in self._executions.values()
-                if e.policy_id == policy_id and e.status in (
+                e
+                for e in self._executions.values()
+                if e.policy_id == policy_id
+                and e.status
+                in (
                     BackupJobStatus.COMPLETED,
                     BackupJobStatus.VERIFIED,
                 )
@@ -876,16 +916,20 @@ class TieredBackupManager:
         def calc_success_rate(execs: List[BackupExecution]) -> float:
             if not execs:
                 return 100.0
-            successful = sum(1 for e in execs if e.status in (
-                BackupJobStatus.COMPLETED, BackupJobStatus.VERIFIED
-            ))
+            successful = sum(
+                1
+                for e in execs
+                if e.status in (BackupJobStatus.COMPLETED, BackupJobStatus.VERIFIED)
+            )
             return round(successful / len(execs) * 100, 2)
 
         metrics = BackupMetrics(
             total_backups_24h=len(exec_24h),
-            successful_backups_24h=sum(1 for e in exec_24h if e.status in (
-                BackupJobStatus.COMPLETED, BackupJobStatus.VERIFIED
-            )),
+            successful_backups_24h=sum(
+                1
+                for e in exec_24h
+                if e.status in (BackupJobStatus.COMPLETED, BackupJobStatus.VERIFIED)
+            ),
             failed_backups_24h=sum(1 for e in exec_24h if e.status == BackupJobStatus.FAILED),
             success_rate_24h=calc_success_rate(exec_24h),
             success_rate_7d=calc_success_rate(exec_7d),
@@ -901,7 +945,7 @@ class TieredBackupManager:
 
         # Storage metrics
         metrics.total_backup_size_gb = round(
-            sum(e.bytes_transferred for e in executions) / (1024 ** 3), 2
+            sum(e.bytes_transferred for e in executions) / (1024**3), 2
         )
 
         # Metrics by tier
@@ -911,9 +955,11 @@ class TieredBackupManager:
 
             metrics.metrics_by_tier[tier.value] = {
                 "total": len(tier_execs),
-                "successful": sum(1 for e in tier_execs if e.status in (
-                    BackupJobStatus.COMPLETED, BackupJobStatus.VERIFIED
-                )),
+                "successful": sum(
+                    1
+                    for e in tier_execs
+                    if e.status in (BackupJobStatus.COMPLETED, BackupJobStatus.VERIFIED)
+                ),
                 "failed": sum(1 for e in tier_execs if e.status == BackupJobStatus.FAILED),
                 "success_rate": calc_success_rate(tier_execs),
             }
@@ -939,8 +985,7 @@ class TieredBackupManager:
                 "total": len(policies),
                 "active": sum(1 for p in policies if p.is_active),
                 "by_tier": {
-                    tier.value: sum(1 for p in policies if p.tier == tier)
-                    for tier in BackupTier
+                    tier.value: sum(1 for p in policies if p.tier == tier) for tier in BackupTier
                 },
             },
             "metrics": asdict(metrics),
@@ -950,8 +995,14 @@ class TieredBackupManager:
                 "active": sum(1 for r in replications if r.is_active),
             },
             "dora_compliance": {
-                "article_12_status": "compliant" if rpo_compliance["non_compliant_policies"] == 0 else "non_compliant",
-                "geographic_redundancy": all(p.geo_redundancy_required for p in policies if p.is_active),
+                "article_12_status": (
+                    "compliant"
+                    if rpo_compliance["non_compliant_policies"] == 0
+                    else "non_compliant"
+                ),
+                "geographic_redundancy": all(
+                    p.geo_redundancy_required for p in policies if p.is_active
+                ),
                 "encryption_enabled": all(p.encryption_enabled for p in policies if p.is_active),
             },
         }
@@ -964,13 +1015,10 @@ class TieredBackupManager:
                 "article_reference": "Article 12",
                 "summary": self.get_backup_summary(),
                 "policies": [asdict(p) for p in self._policies.values()],
-                "recent_executions": [
-                    asdict(e) for e in list(self._executions.values())[-100:]
-                ],
+                "recent_executions": [asdict(e) for e in list(self._executions.values())[-100:]],
                 "replications": [asdict(r) for r in self._replications.values()],
                 "tier_definitions": {
-                    tier.value: definition
-                    for tier, definition in TIER_DEFINITIONS.items()
+                    tier.value: definition for tier, definition in TIER_DEFINITIONS.items()
                 },
             }
 
@@ -1010,6 +1058,7 @@ class TieredBackupManager:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_tiered_backup_manager(
     config: Optional[TieredBackupConfig] = None,

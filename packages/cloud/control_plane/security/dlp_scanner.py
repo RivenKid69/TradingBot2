@@ -28,8 +28,10 @@ from ccea.guardrails.intent_prohibition import PROHIBITED_INTENT_FIELDS
 # Constants - Secret Detection Patterns
 # ============================================================================
 
+
 class SecretType(str, Enum):
     """Types of secrets that can be detected."""
+
     API_KEY = "api_key"
     API_SECRET = "api_secret"
     PRIVATE_KEY = "private_key"
@@ -49,6 +51,7 @@ class SecretType(str, Enum):
 
 class ScanSeverity(str, Enum):
     """Severity of detected secret."""
+
     CRITICAL = "critical"  # API keys, private keys - immediate block
     HIGH = "high"  # Passwords, tokens - block
     MEDIUM = "medium"  # Suspicious patterns - warn
@@ -56,65 +59,68 @@ class ScanSeverity(str, Enum):
 
 
 # Secret field names that should NEVER appear in cloud config
-PROHIBITED_SECRET_FIELDS: Final[FrozenSet[str]] = frozenset({
-    # Broker/Exchange API keys - various naming conventions
-    "api_key",
-    "api_secret",
-    "apikey",
-    "apisecret",
-    "api-key",
-    "api-secret",
-    "secret_key",
-    "secretkey",
-    "access_key",
-    "accesskey",
-    "broker_key",
-    "broker_secret",
-    "exchange_key",
-    "exchange_secret",
-    # Passwords and credentials
-    "password",
-    "passwd",
-    "pwd",
-    "credential",
-    "credentials",
-    "auth_token",
-    "authtoken",
-    "bearer_token",
-    "token",  # Generic token field
-    # Private keys
-    "private_key",
-    "privatekey",
-    "priv_key",
-    "privkey",
-    "secret",
-    "signing_key",
-    "encryption_key",
-    "master_key",
-    # Database
-    "db_password",
-    "database_password",
-    "connection_string",
-    "database_url",
-    # AWS/Cloud
-    "aws_secret_access_key",
-    "aws_access_key_id",
-    "aws_key",
-    # Webhooks
-    "webhook_secret",
-    "callback_secret",
-    # JWT
-    "jwt_secret",
-    # Crypto
-    "seed_phrase",
-    "mnemonic",
-    "wallet_key",
-})
+PROHIBITED_SECRET_FIELDS: Final[FrozenSet[str]] = frozenset(
+    {
+        # Broker/Exchange API keys - various naming conventions
+        "api_key",
+        "api_secret",
+        "apikey",
+        "apisecret",
+        "api-key",
+        "api-secret",
+        "secret_key",
+        "secretkey",
+        "access_key",
+        "accesskey",
+        "broker_key",
+        "broker_secret",
+        "exchange_key",
+        "exchange_secret",
+        # Passwords and credentials
+        "password",
+        "passwd",
+        "pwd",
+        "credential",
+        "credentials",
+        "auth_token",
+        "authtoken",
+        "bearer_token",
+        "token",  # Generic token field
+        # Private keys
+        "private_key",
+        "privatekey",
+        "priv_key",
+        "privkey",
+        "secret",
+        "signing_key",
+        "encryption_key",
+        "master_key",
+        # Database
+        "db_password",
+        "database_password",
+        "connection_string",
+        "database_url",
+        # AWS/Cloud
+        "aws_secret_access_key",
+        "aws_access_key_id",
+        "aws_key",
+        # Webhooks
+        "webhook_secret",
+        "callback_secret",
+        # JWT
+        "jwt_secret",
+        # Crypto
+        "seed_phrase",
+        "mnemonic",
+        "wallet_key",
+    }
+)
 
 
 @dataclass
 class SecretPattern:
     """Pattern for detecting secrets in values."""
+
     name: str
     pattern: Pattern[str]
     secret_type: SecretType
@@ -235,9 +241,11 @@ SECRET_PATTERNS: Final[List[SecretPattern]] = [
 # Scan Results
 # ============================================================================
 
+
 @dataclass
 class SecretFinding:
     """A detected secret or sensitive data."""
+
     field_path: str
     secret_type: SecretType
     severity: ScanSeverity
@@ -264,6 +272,7 @@ class SecretFinding:
 @dataclass
 class DLPScanResult:
     """Result of DLP scan."""
+
     clean: bool = True
     blocked: bool = False
     findings: List[SecretFinding] = field(default_factory=list)
@@ -306,6 +315,7 @@ class DLPScanResult:
 # ============================================================================
 # DLP Scanner
 # ============================================================================
+
 
 class DLPScanner:
     """
@@ -358,6 +368,7 @@ class DLPScanner:
             DLPScanResult with findings
         """
         import time
+
         start_time = time.perf_counter()
 
         result = DLPScanResult()
@@ -383,27 +394,31 @@ class DLPScanner:
                 if key_lower in self._prohibited_fields:
                     severity = self._get_field_severity(key_lower)
                     should_block = self._should_block(severity)
-                    result.add_finding(SecretFinding(
-                        field_path=current_path,
-                        secret_type=self._guess_secret_type(key_lower),
-                        severity=severity,
-                        message=f"Prohibited field name '{key}' - secrets must stay in Agent",
-                        pattern_name="field_name_check",
-                        redacted_value=self._redact_value(value),
-                        blocked=should_block,
-                    ))
+                    result.add_finding(
+                        SecretFinding(
+                            field_path=current_path,
+                            secret_type=self._guess_secret_type(key_lower),
+                            severity=severity,
+                            message=f"Prohibited field name '{key}' - secrets must stay in Agent",
+                            pattern_name="field_name_check",
+                            redacted_value=self._redact_value(value),
+                            blocked=should_block,
+                        )
+                    )
 
                 # Check against intent fields (order-like payloads)
                 if key_lower in self._intent_fields:
-                    result.add_finding(SecretFinding(
-                        field_path=current_path,
-                        secret_type=SecretType.GENERIC_SECRET,
-                        severity=ScanSeverity.CRITICAL,
-                        message=f"Intent field '{key}' detected - order-like payloads forbidden",
-                        pattern_name="intent_field_check",
-                        redacted_value="[BLOCKED]",
-                        blocked=True,
-                    ))
+                    result.add_finding(
+                        SecretFinding(
+                            field_path=current_path,
+                            secret_type=SecretType.GENERIC_SECRET,
+                            severity=ScanSeverity.CRITICAL,
+                            message=f"Intent field '{key}' detected - order-like payloads forbidden",
+                            pattern_name="intent_field_check",
+                            redacted_value="[BLOCKED]",
+                            blocked=True,
+                        )
+                    )
 
                 # Recurse into value
                 self._scan_recursive(value, current_path, result)
@@ -436,28 +451,45 @@ class DLPScanner:
 
             if pattern.match(value):
                 should_block = self._should_block(pattern.severity)
-                result.add_finding(SecretFinding(
-                    field_path=path,
-                    secret_type=pattern.secret_type,
-                    severity=pattern.severity,
-                    message=pattern.description,
-                    pattern_name=pattern.name,
-                    redacted_value=self._redact_value(value),
-                    blocked=should_block,
-                ))
+                result.add_finding(
+                    SecretFinding(
+                        field_path=path,
+                        secret_type=pattern.secret_type,
+                        severity=pattern.severity,
+                        message=pattern.description,
+                        pattern_name=pattern.name,
+                        redacted_value=self._redact_value(value),
+                        blocked=should_block,
+                    )
+                )
                 # Don't report multiple patterns for same value
                 break
 
     def _get_field_severity(self, field_name: str) -> ScanSeverity:
         """Get severity based on field name."""
         critical_fields = {
-            "api_key", "api_secret", "private_key", "secret_key",
-            "broker_key", "broker_secret", "exchange_key", "exchange_secret",
-            "aws_secret_access_key", "master_key", "encryption_key",
+            "api_key",
+            "api_secret",
+            "private_key",
+            "secret_key",
+            "broker_key",
+            "broker_secret",
+            "exchange_key",
+            "exchange_secret",
+            "aws_secret_access_key",
+            "master_key",
+            "encryption_key",
         }
         high_fields = {
-            "password", "passwd", "pwd", "credential", "credentials",
-            "auth_token", "bearer_token", "jwt_secret", "database_password",
+            "password",
+            "passwd",
+            "pwd",
+            "credential",
+            "credentials",
+            "auth_token",
+            "bearer_token",
+            "jwt_secret",
+            "database_password",
         }
 
         if field_name in critical_fields:

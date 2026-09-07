@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 class ThirdPartyProviderType(Enum):
     """Types of ICT third-party service providers."""
+
     CLOUD_SERVICE_PROVIDER = "cloud_service_provider"
     SOFTWARE_VENDOR = "software_vendor"
     DATA_CENTER = "data_center"
@@ -48,6 +49,7 @@ class ThirdPartyProviderType(Enum):
 
 class ThirdPartyCriticality(Enum):
     """Criticality levels for third-party providers per DORA Article 28."""
+
     CRITICAL = "critical"
     IMPORTANT = "important"
     STANDARD = "standard"
@@ -56,6 +58,7 @@ class ThirdPartyCriticality(Enum):
 
 class ThirdPartyIncidentType(Enum):
     """Types of third-party related incidents."""
+
     SERVICE_OUTAGE = "service_outage"
     PERFORMANCE_DEGRADATION = "performance_degradation"
     SECURITY_BREACH = "security_breach"
@@ -72,6 +75,7 @@ class ThirdPartyIncidentType(Enum):
 
 class IncidentSeverity(Enum):
     """Severity levels for third-party incidents."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -80,6 +84,7 @@ class IncidentSeverity(Enum):
 
 class IncidentStatus(Enum):
     """Status of third-party incidents."""
+
     DETECTED = "detected"
     CONFIRMED = "confirmed"
     INVESTIGATING = "investigating"
@@ -91,6 +96,7 @@ class IncidentStatus(Enum):
 
 class ContractualSLAStatus(Enum):
     """Status of contractual SLA compliance during incident."""
+
     COMPLIANT = "compliant"
     AT_RISK = "at_risk"
     BREACHED = "breached"
@@ -100,6 +106,7 @@ class ContractualSLAStatus(Enum):
 
 class EscalationLevel(Enum):
     """Escalation levels for third-party incidents."""
+
     OPERATIONAL = "operational"
     MANAGEMENT = "management"
     EXECUTIVE = "executive"
@@ -109,6 +116,7 @@ class EscalationLevel(Enum):
 
 class CommunicationChannel(Enum):
     """Communication channels with third-party providers."""
+
     EMAIL = "email"
     PHONE = "phone"
     VIDEO_CONFERENCE = "video_conference"
@@ -121,6 +129,7 @@ class CommunicationChannel(Enum):
 @dataclass
 class ThirdPartyProvider:
     """ICT third-party service provider information."""
+
     provider_id: str
     name: str
     provider_type: ThirdPartyProviderType
@@ -148,13 +157,14 @@ class ThirdPartyProvider:
         # Critical or important per DORA Article 28(1)(b)
         self.is_critical_or_important = self.criticality in [
             ThirdPartyCriticality.CRITICAL,
-            ThirdPartyCriticality.IMPORTANT
+            ThirdPartyCriticality.IMPORTANT,
         ]
 
 
 @dataclass
 class AffectedService:
     """Service affected by third-party incident."""
+
     service_id: str
     service_name: str
     business_function: str
@@ -173,6 +183,7 @@ class AffectedService:
 @dataclass
 class SLAAssessment:
     """Assessment of SLA compliance during incident."""
+
     assessment_id: str
     provider_id: str
     incident_id: str
@@ -194,6 +205,7 @@ class SLAAssessment:
 @dataclass
 class CommunicationRecord:
     """Record of communication with third-party provider during incident."""
+
     record_id: str
     incident_id: str
     provider_id: str
@@ -216,6 +228,7 @@ class CommunicationRecord:
 @dataclass
 class EscalationRecord:
     """Record of incident escalation."""
+
     escalation_id: str
     incident_id: str
     from_level: EscalationLevel
@@ -236,6 +249,7 @@ class EscalationRecord:
 @dataclass
 class MitigationAction:
     """Mitigation action taken during third-party incident."""
+
     action_id: str
     incident_id: str
     action_type: str
@@ -259,6 +273,7 @@ class MitigationAction:
 @dataclass
 class ThirdPartyIncident:
     """Third-party ICT incident record."""
+
     incident_id: str
     provider: ThirdPartyProvider
     incident_type: ThirdPartyIncidentType
@@ -305,6 +320,7 @@ class ThirdPartyIncident:
 @dataclass
 class PostIncidentReview:
     """Post-incident review for third-party incidents."""
+
     review_id: str
     incident_id: str
     provider_id: str
@@ -344,12 +360,7 @@ class DORAThirdPartyIncidents:
     5. Conduct post-incident reviews
     """
 
-    def __init__(
-        self,
-        entity_id: str,
-        entity_name: str,
-        default_escalation_timeout_hours: int = 4
-    ):
+    def __init__(self, entity_id: str, entity_name: str, default_escalation_timeout_hours: int = 4):
         """
         Initialize the third-party incident manager.
 
@@ -380,12 +391,10 @@ class DORAThirdPartyIncidents:
             "incidents_by_severity": {},
             "average_resolution_time_hours": 0.0,
             "sla_breach_count": 0,
-            "major_incidents_count": 0
+            "major_incidents_count": 0,
         }
 
-        logger.info(
-            f"Initialized DORAThirdPartyIncidents for entity {entity_id}"
-        )
+        logger.info(f"Initialized DORAThirdPartyIncidents for entity {entity_id}")
 
     def register_provider(
         self,
@@ -404,7 +413,7 @@ class DORAThirdPartyIncidents:
         sla_resolution_time_hours: int = 24,
         jurisdiction: str = "EU",
         data_locations: Optional[list[str]] = None,
-        subcontractors: Optional[list[str]] = None
+        subcontractors: Optional[list[str]] = None,
     ) -> ThirdPartyProvider:
         """
         Register a third-party ICT service provider.
@@ -447,7 +456,7 @@ class DORAThirdPartyIncidents:
             sla_resolution_time_hours=sla_resolution_time_hours,
             jurisdiction=jurisdiction,
             data_locations=data_locations or [],
-            subcontractors=subcontractors or []
+            subcontractors=subcontractors or [],
         )
 
         self._providers[provider.provider_id] = provider
@@ -468,7 +477,7 @@ class DORAThirdPartyIncidents:
         reported_by_provider_at: Optional[datetime] = None,
         provider_incident_reference: Optional[str] = None,
         fourth_party_involved: bool = False,
-        fourth_party_name: Optional[str] = None
+        fourth_party_name: Optional[str] = None,
     ) -> ThirdPartyIncident:
         """
         Report a third-party ICT incident.
@@ -506,7 +515,7 @@ class DORAThirdPartyIncidents:
             affected_services=affected_services or [],
             provider_incident_reference=provider_incident_reference,
             fourth_party_involved=fourth_party_involved,
-            fourth_party_name=fourth_party_name
+            fourth_party_name=fourth_party_name,
         )
 
         # Determine if this is a major incident requiring regulatory notification
@@ -554,22 +563,25 @@ class DORAThirdPartyIncidents:
             if total_users_affected >= 5000:  # CDR 2024/1772 threshold
                 return True
 
-            total_revenue_impact = sum(s.revenue_impact_per_hour for s in incident.affected_services)
+            total_revenue_impact = sum(
+                s.revenue_impact_per_hour for s in incident.affected_services
+            )
             if total_revenue_impact >= 100000:  # €100,000 threshold
                 return True
 
         return False
 
     def _determine_initial_escalation(
-        self,
-        severity: IncidentSeverity,
-        provider_criticality: ThirdPartyCriticality
+        self, severity: IncidentSeverity, provider_criticality: ThirdPartyCriticality
     ) -> EscalationLevel:
         """Determine initial escalation level based on severity and criticality."""
         if severity == IncidentSeverity.CRITICAL:
             return EscalationLevel.EXECUTIVE
         if severity == IncidentSeverity.HIGH:
-            if provider_criticality in [ThirdPartyCriticality.CRITICAL, ThirdPartyCriticality.IMPORTANT]:
+            if provider_criticality in [
+                ThirdPartyCriticality.CRITICAL,
+                ThirdPartyCriticality.IMPORTANT,
+            ]:
                 return EscalationLevel.MANAGEMENT
             return EscalationLevel.OPERATIONAL
         return EscalationLevel.OPERATIONAL
@@ -580,16 +592,19 @@ class DORAThirdPartyIncidents:
         self._metrics["active_incidents"] += 1
 
         provider_name = incident.provider.name
-        self._metrics["incidents_by_provider"][provider_name] = \
+        self._metrics["incidents_by_provider"][provider_name] = (
             self._metrics["incidents_by_provider"].get(provider_name, 0) + 1
+        )
 
         incident_type = incident.incident_type.value
-        self._metrics["incidents_by_type"][incident_type] = \
+        self._metrics["incidents_by_type"][incident_type] = (
             self._metrics["incidents_by_type"].get(incident_type, 0) + 1
+        )
 
         severity = incident.severity.value
-        self._metrics["incidents_by_severity"][severity] = \
+        self._metrics["incidents_by_severity"][severity] = (
             self._metrics["incidents_by_severity"].get(severity, 0) + 1
+        )
 
         if incident.is_major_incident:
             self._metrics["major_incidents_count"] += 1
@@ -599,7 +614,7 @@ class DORAThirdPartyIncidents:
         incident_id: str,
         confirmed_by: str,
         business_impact_summary: str,
-        technical_impact_summary: str
+        technical_impact_summary: str,
     ) -> ThirdPartyIncident:
         """
         Confirm a reported incident after initial assessment.
@@ -631,7 +646,7 @@ class DORAThirdPartyIncidents:
         incident_id: str,
         new_status: IncidentStatus,
         updated_by: str,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
     ) -> ThirdPartyIncident:
         """
         Update incident status.
@@ -662,8 +677,7 @@ class DORAThirdPartyIncidents:
                 self._metrics["active_incidents"] -= 1
 
         logger.info(
-            f"Updated incident {incident_id} status: "
-            f"{old_status.value} -> {new_status.value}"
+            f"Updated incident {incident_id} status: " f"{old_status.value} -> {new_status.value}"
         )
 
         return incident
@@ -675,8 +689,9 @@ class DORAThirdPartyIncidents:
             current_avg = self._metrics["average_resolution_time_hours"]
             resolved_count = total - self._metrics["active_incidents"]
             if resolved_count > 0:
-                self._metrics["average_resolution_time_hours"] = \
-                    (current_avg * (resolved_count - 1) + incident.duration_hours) / resolved_count
+                self._metrics["average_resolution_time_hours"] = (
+                    current_avg * (resolved_count - 1) + incident.duration_hours
+                ) / resolved_count
 
     def assess_sla_compliance(
         self,
@@ -684,7 +699,7 @@ class DORAThirdPartyIncidents:
         sla_metric: str,
         sla_target: str,
         actual_value: str,
-        assessed_by: str
+        assessed_by: str,
     ) -> SLAAssessment:
         """
         Assess SLA compliance during incident.
@@ -714,7 +729,7 @@ class DORAThirdPartyIncidents:
             sla_target=sla_target,
             actual_value=actual_value,
             status=status,
-            assessed_at=datetime.utcnow()
+            assessed_at=datetime.utcnow(),
         )
 
         self._sla_assessments[incident_id].append(assessment)
@@ -722,18 +737,12 @@ class DORAThirdPartyIncidents:
         if status == ContractualSLAStatus.BREACHED:
             self._metrics["sla_breach_count"] += 1
 
-        logger.info(
-            f"SLA assessment for incident {incident_id}: "
-            f"{sla_metric} - {status.value}"
-        )
+        logger.info(f"SLA assessment for incident {incident_id}: " f"{sla_metric} - {status.value}")
 
         return assessment
 
     def _evaluate_sla_compliance(
-        self,
-        metric: str,
-        target: str,
-        actual: str
+        self, metric: str, target: str, actual: str
     ) -> ContractualSLAStatus:
         """Evaluate SLA compliance based on metric and values."""
         # Simple comparison logic - can be enhanced based on metric type
@@ -770,7 +779,7 @@ class DORAThirdPartyIncidents:
         full_content: Optional[str] = None,
         attachments: Optional[list[str]] = None,
         follow_up_required: bool = False,
-        follow_up_deadline: Optional[datetime] = None
+        follow_up_deadline: Optional[datetime] = None,
     ) -> CommunicationRecord:
         """
         Record communication with third-party provider.
@@ -805,14 +814,13 @@ class DORAThirdPartyIncidents:
             full_content=full_content,
             attachments=attachments or [],
             follow_up_required=follow_up_required,
-            follow_up_deadline=follow_up_deadline
+            follow_up_deadline=follow_up_deadline,
         )
 
         self._communications[incident_id].append(record)
 
         logger.info(
-            f"Recorded {direction} communication for incident {incident_id} "
-            f"via {channel.value}"
+            f"Recorded {direction} communication for incident {incident_id} " f"via {channel.value}"
         )
 
         return record
@@ -823,7 +831,7 @@ class DORAThirdPartyIncidents:
         to_level: EscalationLevel,
         escalated_by: str,
         reason: str,
-        stakeholders_to_notify: list[str]
+        stakeholders_to_notify: list[str],
     ) -> EscalationRecord:
         """
         Escalate incident to a higher level.
@@ -850,7 +858,7 @@ class DORAThirdPartyIncidents:
             escalated_by=escalated_by,
             escalated_at=datetime.utcnow(),
             reason=reason,
-            stakeholders_notified=stakeholders_to_notify
+            stakeholders_notified=stakeholders_to_notify,
         )
 
         incident.current_escalation_level = to_level
@@ -871,7 +879,7 @@ class DORAThirdPartyIncidents:
         assigned_to: str,
         priority: str,
         deadline: Optional[datetime] = None,
-        requires_provider_action: bool = False
+        requires_provider_action: bool = False,
     ) -> MitigationAction:
         """
         Create a mitigation action for the incident.
@@ -901,7 +909,7 @@ class DORAThirdPartyIncidents:
             priority=priority,
             created_at=datetime.utcnow(),
             deadline=deadline,
-            requires_provider_action=requires_provider_action
+            requires_provider_action=requires_provider_action,
         )
 
         self._mitigation_actions[incident_id].append(action)
@@ -910,19 +918,12 @@ class DORAThirdPartyIncidents:
         if incident.status == IncidentStatus.INVESTIGATING:
             incident.status = IncidentStatus.MITIGATING
 
-        logger.info(
-            f"Created mitigation action {action.action_id} "
-            f"for incident {incident_id}"
-        )
+        logger.info(f"Created mitigation action {action.action_id} " f"for incident {incident_id}")
 
         return action
 
     def complete_mitigation_action(
-        self,
-        incident_id: str,
-        action_id: str,
-        completed_by: str,
-        outcome: str
+        self, incident_id: str, action_id: str, completed_by: str, outcome: str
     ) -> MitigationAction:
         """
         Complete a mitigation action.
@@ -951,10 +952,7 @@ class DORAThirdPartyIncidents:
         return action
 
     def set_root_cause(
-        self,
-        incident_id: str,
-        root_cause: str,
-        determined_by: str
+        self, incident_id: str, root_cause: str, determined_by: str
     ) -> ThirdPartyIncident:
         """
         Set the root cause of an incident.
@@ -989,7 +987,7 @@ class DORAThirdPartyIncidents:
         action_items: list[dict[str, Any]],
         sla_review: dict[str, Any],
         contract_review_needed: bool = False,
-        contract_changes_proposed: Optional[list[str]] = None
+        contract_changes_proposed: Optional[list[str]] = None,
     ) -> PostIncidentReview:
         """
         Create a post-incident review.
@@ -1028,7 +1026,7 @@ class DORAThirdPartyIncidents:
             action_items=action_items,
             sla_review=sla_review,
             contract_review_needed=contract_review_needed,
-            contract_changes_proposed=contract_changes_proposed or []
+            contract_changes_proposed=contract_changes_proposed or [],
         )
 
         self._post_incident_reviews[incident_id] = review
@@ -1040,11 +1038,7 @@ class DORAThirdPartyIncidents:
 
         return review
 
-    def add_lessons_learned(
-        self,
-        incident_id: str,
-        lessons: list[str]
-    ) -> ThirdPartyIncident:
+    def add_lessons_learned(self, incident_id: str, lessons: list[str]) -> ThirdPartyIncident:
         """
         Add lessons learned to an incident.
 
@@ -1079,10 +1073,7 @@ class DORAThirdPartyIncidents:
 
     def get_incidents_by_provider(self, provider_id: str) -> list[ThirdPartyIncident]:
         """Get all incidents for a provider."""
-        return [
-            i for i in self._incidents.values()
-            if i.provider.provider_id == provider_id
-        ]
+        return [i for i in self._incidents.values() if i.provider.provider_id == provider_id]
 
     def get_major_incidents(self) -> list[ThirdPartyIncident]:
         """Get all major incidents."""
@@ -1091,7 +1082,8 @@ class DORAThirdPartyIncidents:
     def get_incidents_requiring_notification(self) -> list[ThirdPartyIncident]:
         """Get incidents requiring regulatory notification."""
         return [
-            i for i in self._incidents.values()
+            i
+            for i in self._incidents.values()
             if i.requires_regulatory_notification and i.is_active
         ]
 
@@ -1125,7 +1117,7 @@ class DORAThirdPartyIncidents:
             **self._metrics,
             "total_providers": len(self._providers),
             "critical_providers": len(self.get_critical_providers()),
-            "pending_notifications": len(self.get_incidents_requiring_notification())
+            "pending_notifications": len(self.get_incidents_requiring_notification()),
         }
 
     def generate_incident_report(self, incident_id: str) -> dict[str, Any]:
@@ -1160,21 +1152,21 @@ class DORAThirdPartyIncidents:
                 "detected_at": incident.detected_at.isoformat(),
                 "resolved_at": incident.resolved_at.isoformat() if incident.resolved_at else None,
                 "duration_hours": incident.duration_hours,
-                "root_cause": incident.root_cause
+                "root_cause": incident.root_cause,
             },
             "provider": {
                 "id": incident.provider.provider_id,
                 "name": incident.provider.name,
                 "type": incident.provider.provider_type.value,
                 "criticality": incident.provider.criticality.value,
-                "is_critical_or_important": incident.provider.is_critical_or_important
+                "is_critical_or_important": incident.provider.is_critical_or_important,
             },
             "affected_services": [
                 {
                     "name": s.service_name,
                     "impact_level": s.impact_level,
                     "is_critical": s.is_critical_service,
-                    "affected_users": s.affected_users
+                    "affected_users": s.affected_users,
                 }
                 for s in incident.affected_services
             ],
@@ -1185,10 +1177,10 @@ class DORAThirdPartyIncidents:
                         "channel": c.channel.value,
                         "direction": c.direction,
                         "timestamp": c.timestamp.isoformat(),
-                        "summary": c.summary
+                        "summary": c.summary,
                     }
                     for c in communications
-                ]
+                ],
             },
             "escalations": {
                 "current_level": incident.current_escalation_level.value,
@@ -1197,10 +1189,10 @@ class DORAThirdPartyIncidents:
                         "from": e.from_level.value,
                         "to": e.to_level.value,
                         "timestamp": e.escalated_at.isoformat(),
-                        "reason": e.reason
+                        "reason": e.reason,
                     }
                     for e in escalations
-                ]
+                ],
             },
             "mitigation_actions": {
                 "total": len(actions),
@@ -1210,10 +1202,10 @@ class DORAThirdPartyIncidents:
                         "id": a.action_id,
                         "type": a.action_type,
                         "status": a.status,
-                        "outcome": a.outcome
+                        "outcome": a.outcome,
                     }
                     for a in actions
-                ]
+                ],
             },
             "sla_compliance": {
                 "assessments": [
@@ -1221,26 +1213,30 @@ class DORAThirdPartyIncidents:
                         "metric": s.sla_metric,
                         "target": s.sla_target,
                         "actual": s.actual_value,
-                        "status": s.status.value
+                        "status": s.status.value,
                     }
                     for s in sla_assessments
                 ],
-                "breaches": len([s for s in sla_assessments if s.status == ContractualSLAStatus.BREACHED])
+                "breaches": len(
+                    [s for s in sla_assessments if s.status == ContractualSLAStatus.BREACHED]
+                ),
             },
-            "post_incident_review": {
-                "completed": review is not None,
-                "review_date": review.review_date.isoformat() if review else None,
-                "action_items_count": len(review.action_items) if review else 0,
-                "contract_review_needed": review.contract_review_needed if review else False
-            } if review else None,
-            "lessons_learned": incident.lessons_learned
+            "post_incident_review": (
+                {
+                    "completed": review is not None,
+                    "review_date": review.review_date.isoformat() if review else None,
+                    "action_items_count": len(review.action_items) if review else 0,
+                    "contract_review_needed": review.contract_review_needed if review else False,
+                }
+                if review
+                else None
+            ),
+            "lessons_learned": incident.lessons_learned,
         }
 
 
 def create_third_party_incidents(
-    entity_id: str,
-    entity_name: str,
-    default_escalation_timeout_hours: int = 4
+    entity_id: str, entity_name: str, default_escalation_timeout_hours: int = 4
 ) -> DORAThirdPartyIncidents:
     """
     Factory function to create a DORAThirdPartyIncidents instance.
@@ -1256,5 +1252,5 @@ def create_third_party_incidents(
     return DORAThirdPartyIncidents(
         entity_id=entity_id,
         entity_name=entity_name,
-        default_escalation_timeout_hours=default_escalation_timeout_hours
+        default_escalation_timeout_hours=default_escalation_timeout_hours,
     )

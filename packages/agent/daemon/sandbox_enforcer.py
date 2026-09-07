@@ -37,6 +37,7 @@ DEFAULT_MAX_EXECUTION_TIME: Final[int] = 300  # 5 minutes
 
 class PermissionViolationType(Enum):
     """Types of permission violations."""
+
     NETWORK_BLOCKED = auto()
     NETWORK_EGRESS_DENIED = auto()
     FILESYSTEM_WRITE_DENIED = auto()
@@ -52,6 +53,7 @@ class PermissionViolation:
     """
     Record of a permission violation.
     """
+
     violation_id: str = ""
     violation_type: PermissionViolationType = PermissionViolationType.RESOURCE_DENIED
     artifact_id: str = ""
@@ -85,6 +87,7 @@ class EnforcedPermissions:
     Combines manifest permissions with local policy.
     Local policy can RESTRICT, never EXPAND.
     """
+
     # Network
     network_enabled: bool = False
     egress_allowlist: List[str] = field(default_factory=list)
@@ -272,7 +275,9 @@ class SandboxPermissionsEnforcer:
 
         if local_memory is not None:
             permissions.max_memory_mb = min(manifest_memory, local_memory)
-            permissions.memory_source = source if local_memory < manifest_memory else PolicySource.MANIFEST
+            permissions.memory_source = (
+                source if local_memory < manifest_memory else PolicySource.MANIFEST
+            )
         else:
             permissions.max_memory_mb = manifest_memory
             permissions.memory_source = PolicySource.MANIFEST
@@ -465,8 +470,10 @@ class SandboxPermissionsEnforcer:
         if violation_type == PermissionViolationType.NETWORK_EGRESS_DENIED:
             return resource in self._current_manifest.egress_allowlist
 
-        if violation_type in (PermissionViolationType.FILESYSTEM_WRITE_DENIED,
-                             PermissionViolationType.FILESYSTEM_PATH_DENIED):
+        if violation_type in (
+            PermissionViolationType.FILESYSTEM_WRITE_DENIED,
+            PermissionViolationType.FILESYSTEM_PATH_DENIED,
+        ):
             return not self._current_manifest.filesystem_readonly
 
         return True
@@ -527,5 +534,7 @@ class SandboxPermissionsEnforcer:
             "has_permissions": self._current_permissions is not None,
             "artifact_id": self._artifact_id,
             "violation_count": len(self._violations),
-            "current_permissions": self._current_permissions.to_dict() if self._current_permissions else None,
+            "current_permissions": (
+                self._current_permissions.to_dict() if self._current_permissions else None
+            ),
         }

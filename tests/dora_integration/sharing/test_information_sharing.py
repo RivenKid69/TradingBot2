@@ -69,6 +69,7 @@ from services.dora_integration.sharing import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sharing_config():
     """Create a test sharing configuration."""
@@ -160,6 +161,7 @@ def sensitive_threat():
 # =============================================================================
 # Test 1: Constants and Enums
 # =============================================================================
+
 
 class TestConstants:
     """Test module constants."""
@@ -253,6 +255,7 @@ class TestEnums:
 # =============================================================================
 # Test 2: Data Structures
 # =============================================================================
+
 
 class TestSharingCommunity:
     """Test SharingCommunity dataclass."""
@@ -565,6 +568,7 @@ class TestNCANotification:
 # Test 3: DORAInformationSharing Service
 # =============================================================================
 
+
 class TestDORAInformationSharingInit:
     """Test DORAInformationSharing initialization."""
 
@@ -602,10 +606,7 @@ class TestCommunityManagement:
     def test_exit_community(self, sharing_service, test_community):
         """Test exiting a community."""
         sharing_service.join_community(test_community)
-        result = sharing_service.exit_community(
-            test_community.community_id,
-            reason="test_exit"
-        )
+        result = sharing_service.exit_community(test_community.community_id, reason="test_exit")
         assert result.membership_status == MembershipStatus.EXITED
         assert "test_exit" in result.notes
 
@@ -655,7 +656,9 @@ class TestThreatIntelligenceSharing:
         )
         assert result.outcome in {SharingOutcome.SUCCESS, SharingOutcome.SANITISED}
 
-    def test_share_threat_with_sanitization(self, sharing_service, active_community, sensitive_threat):
+    def test_share_threat_with_sanitization(
+        self, sharing_service, active_community, sensitive_threat
+    ):
         """Test threat sharing with automatic sanitization."""
         sharing_service.register_community(active_community)
         result = sharing_service.share_threat_intelligence(
@@ -788,7 +791,10 @@ class TestSanitization:
             threat,
             level=SanitizationLevel.AGGRESSIVE,
         )
-        assert "internal.local" not in sanitized.description.lower() or "[REDACTED]" in sanitized.description
+        assert (
+            "internal.local" not in sanitized.description.lower()
+            or "[REDACTED]" in sanitized.description
+        )
 
 
 class TestNCANotification:
@@ -969,6 +975,7 @@ class TestSTIXExport:
 # Test 4: Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Test factory functions."""
 
@@ -1045,6 +1052,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test 5: Edge Cases and Error Handling
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
@@ -1180,15 +1188,14 @@ class TestIntegration:
         assert stats["inbound_received"] >= 5
 
         # 3. Verify audit trail
-        audit = sharing_service.get_sharing_audit_log(
-            direction=IntelligenceDirection.INBOUND
-        )
+        audit = sharing_service.get_sharing_audit_log(direction=IntelligenceDirection.INBOUND)
         assert len(audit) >= 5
 
 
 # =============================================================================
 # Test 6: Import Validation
 # =============================================================================
+
 
 class TestImportValidation:
     """Test that all imports work correctly."""
@@ -1200,6 +1207,7 @@ class TestImportValidation:
             SharingCommunity,
             CyberThreatIntelligence,
         )
+
         assert DORAInformationSharing is not None
         assert SharingCommunity is not None
         assert CyberThreatIntelligence is not None
@@ -1212,6 +1220,7 @@ class TestImportValidation:
             CyberThreatIntelligence,
             create_information_sharing,
         )
+
         assert DORAInformationSharing is not None
         assert create_information_sharing is not None
 

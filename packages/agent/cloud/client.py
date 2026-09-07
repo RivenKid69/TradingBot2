@@ -274,7 +274,9 @@ class CloudClient:
             "last_run_id": str(last_run_id) if last_run_id else None,
             "health_metrics": health_metrics or {},
         }
-        resp = self._request("POST", "/api/v1/agent/heartbeat", json_body=payload, auth_required=True)
+        resp = self._request(
+            "POST", "/api/v1/agent/heartbeat", json_body=payload, auth_required=True
+        )
         data = resp.json()
         return AgentHeartbeatResult(
             server_time=datetime.fromisoformat(data["server_time"]),
@@ -492,7 +494,9 @@ class CloudClient:
         return CommandResultAck(
             command_id=UUID(str(data["command_id"])),
             status=str(data["status"]),
-            executed_at=datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None,
+            executed_at=(
+                datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None
+            ),
         )
 
     def send_telemetry(
@@ -555,7 +559,7 @@ class CloudClient:
         total_sent = 0
 
         for i in range(0, len(events), max_batch_size):
-            batch = events[i:i + max_batch_size]
+            batch = events[i : i + max_batch_size]
             if self.send_telemetry(batch):
                 total_sent += len(batch)
             else:
@@ -563,4 +567,3 @@ class CloudClient:
                 break
 
         return total_sent
-

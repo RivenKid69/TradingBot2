@@ -30,9 +30,7 @@ from runtime_flags import get_bool as _get_runtime_bool
 # the feature by setting it to a falsy value.
 
 
-NO_TRADE_FEATURES_DISABLED: bool = _get_runtime_bool(
-    "NO_TRADE_FEATURES_DISABLED", True
-)
+NO_TRADE_FEATURES_DISABLED: bool = _get_runtime_bool("NO_TRADE_FEATURES_DISABLED", True)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -182,9 +180,7 @@ def _get_earnings_events(
             result[symbol_upper] = events_list
 
         except ImportError:
-            LOGGER.warning(
-                "Could not import YahooEarningsAdapter; earnings filter disabled"
-            )
+            LOGGER.warning("Could not import YahooEarningsAdapter; earnings filter disabled")
             result[symbol_upper] = []
         except Exception as exc:
             LOGGER.warning(
@@ -240,13 +236,15 @@ def _build_earnings_blackout_windows(
                 start_ts_ms = base_ts_ms - (pre_bars * bar_duration_ms)
                 end_ts_ms = base_ts_ms + (post_bars * bar_duration_ms)
 
-                windows.append({
-                    "start_ts_ms": start_ts_ms,
-                    "end_ts_ms": end_ts_ms,
-                    "symbol": symbol,
-                    "reason": "earnings_blackout",
-                    "report_date": report_date,
-                })
+                windows.append(
+                    {
+                        "start_ts_ms": start_ts_ms,
+                        "end_ts_ms": end_ts_ms,
+                        "symbol": symbol,
+                        "reason": "earnings_blackout",
+                        "report_date": report_date,
+                    }
+                )
 
             except (ValueError, TypeError) as exc:
                 LOGGER.debug(
@@ -560,7 +558,9 @@ def _flatten_calendar_payload(payload: Any) -> List[Mapping[str, Any]]:
     return []
 
 
-def _normalise_calendar_records(records: Iterable[Mapping[str, Any]]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+def _normalise_calendar_records(
+    records: Iterable[Mapping[str, Any]]
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     normalised: List[Dict[str, Any]] = []
     total = 0
     discarded = 0
@@ -819,7 +819,7 @@ def _load_maintenance_calendar(cfg: NoTradeConfig) -> Tuple[Dict[str, Any], Dict
             load_format = "csv"
         else:
             LOGGER.warning(
-                "Unsupported maintenance calendar format: path=%s suffix=%s", 
+                "Unsupported maintenance calendar format: path=%s suffix=%s",
                 resolved_path,
                 suffix or "<none>",
             )
@@ -1237,11 +1237,19 @@ def _dynamic_guard_mask(
             vol_trigger = False
             spread_trigger = False
 
-            vol_upper_mult = getattr(vol_cfg, "upper_multiplier", None) if vol_cfg is not None else None
-            vol_lower_mult = getattr(vol_cfg, "lower_multiplier", None) if vol_cfg is not None else None
+            vol_upper_mult = (
+                getattr(vol_cfg, "upper_multiplier", None) if vol_cfg is not None else None
+            )
+            vol_lower_mult = (
+                getattr(vol_cfg, "lower_multiplier", None) if vol_cfg is not None else None
+            )
 
-            spread_upper_pct = getattr(spread_cfg, "upper_pctile", None) if spread_cfg is not None else None
-            spread_lower_pct = getattr(spread_cfg, "lower_pctile", None) if spread_cfg is not None else None
+            spread_upper_pct = (
+                getattr(spread_cfg, "upper_pctile", None) if spread_cfg is not None else None
+            )
+            spread_lower_pct = (
+                getattr(spread_cfg, "lower_pctile", None) if spread_cfg is not None else None
+            )
             if spread_lower_pct is None and spread_upper_pct is not None and hysteresis > 0:
                 spread_lower_pct = max(0.0, float(spread_upper_pct) - hysteresis)
 
@@ -1407,10 +1415,7 @@ def _dynamic_guard_mask(
                 reasons.at[label, "dyn_guard_state"] = True
 
             final_block = (
-                bool(triggered_reasons)
-                or guard_block
-                or blocked_by_next
-                or blocked_by_state
+                bool(triggered_reasons) or guard_block or blocked_by_next or blocked_by_state
             )
 
             if final_block:
@@ -1422,20 +1427,24 @@ def _dynamic_guard_mask(
                 dyn_mask.loc[label] = False
 
             last_snapshot = {
-                "vol_metric": float(vol_metric.loc[label])
-                if not np.isnan(vol_metric.loc[label])
-                else None,
+                "vol_metric": (
+                    float(vol_metric.loc[label]) if not np.isnan(vol_metric.loc[label]) else None
+                ),
                 "sigma": float(sigma.loc[label]) if not np.isnan(sigma.loc[label]) else None,
                 "ret_last": float(returns.loc[label]) if not np.isnan(returns.loc[label]) else None,
-                "vol_pctile": float(vol_pctile.loc[label])
-                if not np.isnan(vol_pctile.loc[label])
-                else None,
-                "spread": float(spread_proxy.loc[label])
-                if not np.isnan(spread_proxy.loc[label])
-                else None,
-                "spread_pctile": float(spread_pctile.loc[label])
-                if not np.isnan(spread_pctile.loc[label])
-                else None,
+                "vol_pctile": (
+                    float(vol_pctile.loc[label]) if not np.isnan(vol_pctile.loc[label]) else None
+                ),
+                "spread": (
+                    float(spread_proxy.loc[label])
+                    if not np.isnan(spread_proxy.loc[label])
+                    else None
+                ),
+                "spread_pctile": (
+                    float(spread_pctile.loc[label])
+                    if not np.isnan(spread_pctile.loc[label])
+                    else None
+                ),
                 "ts": int(ts_val) if ts_ok else None,
                 "ready": bool(guard_ready),
             }
@@ -1573,7 +1582,8 @@ def _compute_no_trade_components(
 
                 # Only fetch earnings for equity-like symbols (not crypto)
                 earnings_symbols = [
-                    s for s in earnings_symbols
+                    s
+                    for s in earnings_symbols
                     if s and not s.endswith("USDT") and not s.endswith("USD")
                 ]
 
@@ -1590,7 +1600,11 @@ def _compute_no_trade_components(
                     # Estimate bar duration from data
                     if len(ts_valid_values) > 1:
                         diffs = np.diff(np.sort(ts_valid_values))
-                        bar_duration_ms = int(np.median(diffs[diffs > 0])) if len(diffs[diffs > 0]) > 0 else 4 * 60 * 60 * 1000
+                        bar_duration_ms = (
+                            int(np.median(diffs[diffs > 0]))
+                            if len(diffs[diffs > 0]) > 0
+                            else 4 * 60 * 60 * 1000
+                        )
                     else:
                         bar_duration_ms = 4 * 60 * 60 * 1000  # Default 4h
 
@@ -1657,7 +1671,11 @@ def _compute_no_trade_components(
         dyn_state = dict(dyn_state or {})
         dyn_state.setdefault("anomaly_block_until_ts", dict(state_map))
         dyn_state.setdefault("dynamic_guard", {})
-        dyn_meta = getattr(dyn_reasons, "attrs", {}).get("meta") if isinstance(dyn_reasons, pd.DataFrame) else None
+        dyn_meta = (
+            getattr(dyn_reasons, "attrs", {}).get("meta")
+            if isinstance(dyn_reasons, pd.DataFrame)
+            else None
+        )
         if dyn_meta:
             meta["dynamic_guard"] = dyn_meta
     elif state_map or prev_dynamic_state:

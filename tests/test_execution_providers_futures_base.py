@@ -55,6 +55,7 @@ from core_futures import (
 # TEST FIXTURES
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @pytest.fixture
 def btc_contract() -> FuturesContractSpec:
     """Create BTC perpetual contract spec."""
@@ -166,6 +167,7 @@ def short_position() -> FuturesPosition:
 # ═══════════════════════════════════════════════════════════════════════════
 # MOCK PROVIDERS FOR TESTING
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class MockMarginProvider:
     """Mock margin provider for testing."""
@@ -306,6 +308,7 @@ class MockFundingProvider:
 # TESTS: FuturesMarketState
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestFuturesMarketState:
     """Tests for FuturesMarketState dataclass."""
 
@@ -382,6 +385,7 @@ class TestFuturesMarketState:
 # TESTS: ExecutionCostEstimate
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestExecutionCostEstimate:
     """Tests for ExecutionCostEstimate dataclass."""
 
@@ -417,6 +421,7 @@ class TestExecutionCostEstimate:
 # TESTS: Protocol Compliance
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class TestProtocolCompliance:
     """Tests that mock providers comply with protocols."""
 
@@ -425,24 +430,16 @@ class TestProtocolCompliance:
         provider = MockMarginProvider()
 
         # Test all protocol methods
-        im = provider.calculate_initial_margin(
-            btc_contract, Decimal("40000"), 10
-        )
+        im = provider.calculate_initial_margin(btc_contract, Decimal("40000"), 10)
         assert im == Decimal("4000")
 
-        mm = provider.calculate_maintenance_margin(
-            btc_contract, Decimal("40000")
-        )
+        mm = provider.calculate_maintenance_margin(btc_contract, Decimal("40000"))
         assert mm == Decimal("200")
 
-        liq_price = provider.calculate_liquidation_price(
-            long_position, Decimal("10000")
-        )
+        liq_price = provider.calculate_liquidation_price(long_position, Decimal("10000"))
         assert liq_price > Decimal("0")
 
-        mr = provider.calculate_margin_ratio(
-            long_position, Decimal("40000"), Decimal("10000")
-        )
+        mr = provider.calculate_margin_ratio(long_position, Decimal("40000"), Decimal("10000"))
         assert mr > Decimal("0")
 
         max_lev = provider.get_max_leverage(Decimal("100000"))
@@ -490,6 +487,7 @@ class TestProtocolCompliance:
 # ═══════════════════════════════════════════════════════════════════════════
 # TESTS: L2FuturesExecutionProvider
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestL2FuturesExecutionProvider:
     """Tests for L2 parametric execution provider."""
@@ -587,9 +585,7 @@ class TestL2FuturesExecutionProvider:
         expected_taker_fee = fill.avg_price * Decimal("0.0004")
         assert fill.commission < expected_taker_fee
 
-    def test_execute_closing_long_position(
-        self, l2_provider, market_state, long_position
-    ):
+    def test_execute_closing_long_position(self, l2_provider, market_state, long_position):
         """Test closing a long position."""
         order = FuturesOrder(
             symbol="BTCUSDT",
@@ -604,9 +600,7 @@ class TestL2FuturesExecutionProvider:
         # Should have realized PnL (profit since entry=39000, now ~40000)
         assert fill.realized_pnl > Decimal("0")
 
-    def test_execute_closing_short_position(
-        self, l2_provider, market_state, short_position
-    ):
+    def test_execute_closing_short_position(self, l2_provider, market_state, short_position):
         """Test closing a short position."""
         order = FuturesOrder(
             symbol="BTCUSDT",
@@ -679,17 +673,13 @@ class TestL2FuturesExecutionProvider:
         pnl = l2_provider.calculate_pnl(zero_pos, Decimal("50000"))
         assert pnl == Decimal("0")
 
-    def test_calculate_funding_payment_long(
-        self, l2_provider, market_state, long_position
-    ):
+    def test_calculate_funding_payment_long(self, l2_provider, market_state, long_position):
         """Test funding payment for long position."""
         payment = l2_provider.calculate_funding_payment(long_position, market_state)
         # Long pays when funding > 0
         assert payment > Decimal("0")
 
-    def test_calculate_funding_payment_short(
-        self, l2_provider, market_state, short_position
-    ):
+    def test_calculate_funding_payment_short(self, l2_provider, market_state, short_position):
         """Test funding payment for short position."""
         payment = l2_provider.calculate_funding_payment(short_position, market_state)
         # Short receives when funding > 0
@@ -711,6 +701,7 @@ class TestL2FuturesExecutionProvider:
 # ═══════════════════════════════════════════════════════════════════════════
 # TESTS: L3FuturesExecutionProvider
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestL3FuturesExecutionProvider:
     """Tests for L3 LOB execution provider."""
@@ -764,6 +755,7 @@ class TestL3FuturesExecutionProvider:
 # ═══════════════════════════════════════════════════════════════════════════
 # TESTS: Factory Function
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestFactoryFunction:
     """Tests for create_futures_execution_provider factory."""
@@ -841,6 +833,7 @@ class TestFactoryFunction:
 # ═══════════════════════════════════════════════════════════════════════════
 # TESTS: Integration
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestIntegration:
     """Integration tests combining multiple components."""
@@ -962,6 +955,7 @@ class TestIntegration:
 # ═══════════════════════════════════════════════════════════════════════════
 # TESTS: Edge Cases
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""

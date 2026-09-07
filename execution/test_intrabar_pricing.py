@@ -85,13 +85,18 @@ def test_intrabar_latency_ms_modes(
     ],
 )
 def test_intrabar_time_fraction_clamping(
-    bare_sim: ExecutionSimulator, latency: Optional[float], timeframe: Optional[float], expected: float
+    bare_sim: ExecutionSimulator,
+    latency: Optional[float],
+    timeframe: Optional[float],
+    expected: float,
 ) -> None:
     fraction = bare_sim._intrabar_time_fraction(latency, timeframe)
     assert fraction == pytest.approx(expected)
 
 
-def test_intrabar_latency_warning_throttle(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, bare_sim: ExecutionSimulator) -> None:
+def test_intrabar_latency_warning_throttle(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, bare_sim: ExecutionSimulator
+) -> None:
     bare_sim._intrabar_log_warnings = True
     bare_sim._intrabar_price_model = "linear"
 
@@ -171,7 +176,10 @@ def test_intrabar_price_from_path_interpolation_and_clipping(bare_sim: Execution
     assert price_end == pytest.approx(115.0)
     assert clipped_end is True
 
-    bare_sim._intrabar_path[0] = (bare_sim._intrabar_path_start_ts + 200, bare_sim._intrabar_path[0][1])
+    bare_sim._intrabar_path[0] = (
+        bare_sim._intrabar_path_start_ts + 200,
+        bare_sim._intrabar_path[0][1],
+    )
     assert (
         bare_sim._intrabar_price_from_path(
             side="BUY", time_fraction=0.5, fallback=None, bar_ts=bar_ts
@@ -222,7 +230,10 @@ def test_compute_intrabar_price_modes(
         rng = random.Random(rng_seed)
         std = float(sigma) * math.sqrt(fraction * (1.0 - fraction))
         noise = rng.gauss(0.0, std)
-        linear = bare_sim._last_bar_open + (bare_sim._last_bar_close - bare_sim._last_bar_open) * fraction
+        linear = (
+            bare_sim._last_bar_open
+            + (bare_sim._last_bar_close - bare_sim._last_bar_open) * fraction
+        )
         expected_price = max(min(linear + noise, bare_sim._last_bar_high), bare_sim._last_bar_low)
         expected_clipped = not (bare_sim._last_bar_low <= linear + noise <= bare_sim._last_bar_high)
 
@@ -349,7 +360,9 @@ def test_intrabar_debug_counter_reset_and_logging_gate(
     emit_intrabar_debug()
 
     assert bare_sim._intrabar_debug_logged == 1
-    assert sum("generic intrabar debug gate test" in record.message for record in caplog.records) == 1
+    assert (
+        sum("generic intrabar debug gate test" in record.message for record in caplog.records) == 1
+    )
 
     bare_sim._reset_intrabar_debug_counter()
     assert bare_sim._intrabar_debug_logged == 0
@@ -358,7 +371,9 @@ def test_intrabar_debug_counter_reset_and_logging_gate(
     caplog.clear()
     emit_intrabar_debug()
     assert bare_sim._intrabar_debug_logged == 1
-    assert sum("generic intrabar debug gate test" in record.message for record in caplog.records) == 1
+    assert (
+        sum("generic intrabar debug gate test" in record.message for record in caplog.records) == 1
+    )
 
     bare_sim._reset_intrabar_debug_counter()
     caplog.clear()
@@ -374,4 +389,3 @@ def test_intrabar_debug_counter_reset_and_logging_gate(
     assert bare_sim._intrabar_path_start_ts is None
     assert bare_sim._intrabar_path_bar_ts is None
     assert bare_sim._intrabar_path_timeframe_ms is None
-

@@ -24,6 +24,7 @@ def test_n_features_is_63():
     """Проверка что N_FEATURES = 84 (было 63, добавили 21 external_validity flags)"""
     # make_layout должен был вызваться при импорте
     from feature_config import N_FEATURES as computed_features
+
     assert computed_features == 84, f"Expected N_FEATURES=84, got {computed_features}"
 
 
@@ -34,15 +35,15 @@ def test_feature_layout_sum():
     # Updated for corrected block structure (2025-11-24)
     expected_sizes = {
         "bar": 3,
-        "ma5": 2,           # Split from old indicators (20)
-        "ma20": 2,          # Split from old indicators (20)
-        "indicators": 14,   # Split from old indicators (20): 7 indicators × 2 (value + flag)
-        "derived": 2,       # Moved from indices 3-4 to 21-22
+        "ma5": 2,  # Split from old indicators (20)
+        "ma20": 2,  # Split from old indicators (20)
+        "indicators": 14,  # Split from old indicators (20): 7 indicators × 2 (value + flag)
+        "derived": 2,  # Moved from indices 3-4 to 21-22
         "agent": 6,
         "microstructure": 3,
-        "bb_context": 2,    # Added (was missing!)
+        "bb_context": 2,  # Added (was missing!)
         "metadata": 5,
-        "external": 21,     # было 16, стало 21
+        "external": 21,  # было 16, стало 21
         "external_validity": 21,  # NEW: validity flags for external features
         "token_meta": 2,
         "token": 1,
@@ -53,8 +54,9 @@ def test_feature_layout_sum():
         name = block["name"]
         size = block["size"]
         if name in expected_sizes:
-            assert size == expected_sizes[name], \
-                f"Block '{name}' has size {size}, expected {expected_sizes[name]}"
+            assert (
+                size == expected_sizes[name]
+            ), f"Block '{name}' has size {size}, expected {expected_sizes[name]}"
         total += size
 
     assert total == 84, f"Total features = {total}, expected 84"
@@ -72,32 +74,34 @@ def test_mediator_extract_norm_cols_size():
     mediator = Mediator(mock_env, event_level=0)
 
     # Создаем mock row с всеми 24 техническими признаками (обновлено для 4h таймфрейма)
-    mock_row = pd.Series({
-        # Original 8
-        "cvd_24h": 1000.0,
-        "cvd_7d": 5000.0,  # было cvd_168h
-        "yang_zhang_48h": 0.05,  # было yang_zhang_24h
-        "yang_zhang_7d": 0.08,  # было yang_zhang_168h
-        "garch_200h": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
-        "garch_14d": 0.04,  # было garch_24h
-        "ret_12h": 0.001,  # было ret_15m
-        "ret_24h": 0.005,  # было ret_60m
-        # Additional 8 (43->51)
-        "ret_4h": 0.0005,  # было ret_5m
-        "sma_12000": 50000.0,  # было sma_60 (50 баров = 12000 минут = 200h для 4h)
-        "yang_zhang_30d": 0.12,  # было yang_zhang_720h
-        "parkinson_48h": 0.06,  # было parkinson_24h
-        "parkinson_7d": 0.09,  # было parkinson_168h
-        "garch_30d": 0.025,  # было garch_500m
-        "taker_buy_ratio": 0.52,
-        "taker_buy_ratio_sma_24h": 0.51,
-        # Additional 5 (51->63) - НОВЫЕ (обновлено для 4h)
-        "taker_buy_ratio_sma_8h": 0.53,  # было 6h
-        "taker_buy_ratio_sma_16h": 0.52,  # было 12h
-        "taker_buy_ratio_momentum_4h": 0.01,  # было 1h
-        "taker_buy_ratio_momentum_8h": 0.02,  # было 6h
-        "taker_buy_ratio_momentum_12h": 0.015,  # без изменений
-    })
+    mock_row = pd.Series(
+        {
+            # Original 8
+            "cvd_24h": 1000.0,
+            "cvd_7d": 5000.0,  # было cvd_168h
+            "yang_zhang_48h": 0.05,  # было yang_zhang_24h
+            "yang_zhang_7d": 0.08,  # было yang_zhang_168h
+            "garch_200h": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
+            "garch_14d": 0.04,  # было garch_24h
+            "ret_12h": 0.001,  # было ret_15m
+            "ret_24h": 0.005,  # было ret_60m
+            # Additional 8 (43->51)
+            "ret_4h": 0.0005,  # было ret_5m
+            "sma_12000": 50000.0,  # было sma_60 (50 баров = 12000 минут = 200h для 4h)
+            "yang_zhang_30d": 0.12,  # было yang_zhang_720h
+            "parkinson_48h": 0.06,  # было parkinson_24h
+            "parkinson_7d": 0.09,  # было parkinson_168h
+            "garch_30d": 0.025,  # было garch_500m
+            "taker_buy_ratio": 0.52,
+            "taker_buy_ratio_sma_24h": 0.51,
+            # Additional 5 (51->63) - НОВЫЕ (обновлено для 4h)
+            "taker_buy_ratio_sma_8h": 0.53,  # было 6h
+            "taker_buy_ratio_sma_16h": 0.52,  # было 12h
+            "taker_buy_ratio_momentum_4h": 0.01,  # было 1h
+            "taker_buy_ratio_momentum_8h": 0.02,  # было 6h
+            "taker_buy_ratio_momentum_12h": 0.015,  # без изменений
+        }
+    )
 
     norm_cols = mediator._extract_norm_cols(mock_row)
 
@@ -112,8 +116,9 @@ def test_mediator_extract_norm_cols_size():
 
     # Проверка что значения НЕ нормализованы через tanh (должны быть исходные значения)
     # Например, cvd_24h=1000.0 не должен стать ~1.0 после tanh
-    assert norm_cols[0] > 10.0, \
-        "norm_cols[0] (cvd_24h) seems to be already normalized, but should be raw"
+    assert (
+        norm_cols[0] > 10.0
+    ), "norm_cols[0] (cvd_24h) seems to be already normalized, but should be raw"
 
     return norm_cols
 
@@ -129,17 +134,20 @@ def test_mediator_norm_cols_no_double_tanh():
     mediator = Mediator(mock_env, event_level=0)
 
     # Большое значение для проверки
-    mock_row = pd.Series({
-        "cvd_24h": 1000.0,  # Должно остаться 1000.0, а не tanh(1000.0)≈1.0
-        **{f"feature_{i}": 0.0 for i in range(20)}  # Заполнение остальных
-    })
+    mock_row = pd.Series(
+        {
+            "cvd_24h": 1000.0,  # Должно остаться 1000.0, а не tanh(1000.0)≈1.0
+            **{f"feature_{i}": 0.0 for i in range(20)},  # Заполнение остальных
+        }
+    )
 
     norm_cols = mediator._extract_norm_cols(mock_row)
 
     # Если бы применялся tanh, значение было бы близко к 1.0
     # Без tanh значение должно остаться 1000.0
-    assert norm_cols[0] > 100.0, \
-        f"Expected raw value ~1000, got {norm_cols[0]} (seems like tanh was applied)"
+    assert (
+        norm_cols[0] > 100.0
+    ), f"Expected raw value ~1000, got {norm_cols[0]} (seems like tanh was applied)"
 
 
 def test_obs_builder_applies_tanh():
@@ -199,14 +207,17 @@ def test_obs_builder_applies_tanh():
     external_features = out[external_start:external_end]
 
     # После tanh все значения должны быть в диапазоне (-1, 1)
-    assert np.all(external_features >= -1.0), \
-        f"Some external features < -1: {external_features[external_features < -1.0]}"
-    assert np.all(external_features <= 1.0), \
-        f"Some external features > 1: {external_features[external_features > 1.0]}"
+    assert np.all(
+        external_features >= -1.0
+    ), f"Some external features < -1: {external_features[external_features < -1.0]}"
+    assert np.all(
+        external_features <= 1.0
+    ), f"Some external features > 1: {external_features[external_features > 1.0]}"
 
     # tanh(1000) ≈ 1.0, так что все должны быть близки к 1.0
-    assert np.all(external_features > 0.99), \
-        f"Expected ~1.0 after tanh(1000), got min={external_features.min()}"
+    assert np.all(
+        external_features > 0.99
+    ), f"Expected ~1.0 after tanh(1000), got min={external_features.min()}"
 
 
 def test_full_pipeline_integration():
@@ -241,7 +252,11 @@ def test_full_pipeline_integration():
         "parkinson_48h": [0.06, 0.062, 0.061],  # было parkinson_24h
         "parkinson_7d": [0.09, 0.092, 0.091],  # было parkinson_168h
         "garch_30d": [0.025, 0.026, 0.0255],  # было garch_500m
-        "garch_200h": [0.03, 0.031, 0.0305],  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
+        "garch_200h": [
+            0.03,
+            0.031,
+            0.0305,
+        ],  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
         "garch_14d": [0.04, 0.041, 0.0405],  # было garch_24h
         "taker_buy_ratio": [0.52, 0.53, 0.525],
         "taker_buy_ratio_sma_8h": [0.51, 0.52, 0.515],  # было 6h

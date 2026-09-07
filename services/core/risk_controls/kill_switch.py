@@ -51,39 +51,39 @@ class KillSwitchScope(str, Enum):
     The regulation requires ability to cancel orders at different granularities.
     """
 
-    ALL = "all"                     # All orders across all venues
-    VENUE = "venue"                 # Specific trading venue (MIC)
-    ALGORITHM = "algorithm"         # Specific algorithm ID
-    TRADER = "trader"               # Specific trader/desk
-    INSTRUMENT = "instrument"       # Specific instrument (ISIN)
-    ASSET_CLASS = "asset_class"     # Specific asset class
-    STRATEGY = "strategy"           # Specific trading strategy
+    ALL = "all"  # All orders across all venues
+    VENUE = "venue"  # Specific trading venue (MIC)
+    ALGORITHM = "algorithm"  # Specific algorithm ID
+    TRADER = "trader"  # Specific trader/desk
+    INSTRUMENT = "instrument"  # Specific instrument (ISIN)
+    ASSET_CLASS = "asset_class"  # Specific asset class
+    STRATEGY = "strategy"  # Specific trading strategy
 
 
 class KillSwitchTriggerReason(str, Enum):
     """Reason categories for kill switch activation."""
 
-    MANUAL = "manual"                           # Manual human intervention
-    ERROR_THRESHOLD = "error_threshold"         # Error count exceeded
-    RISK_LIMIT = "risk_limit"                   # Risk limit breached
-    CLOCK_DRIFT = "clock_drift"                 # RTS 25 clock drift excessive
-    MARKET_DISRUPTION = "market_disruption"     # Market circuit breaker
-    CONNECTIVITY = "connectivity"               # Connection loss
-    REGULATORY = "regulatory"                   # Regulatory requirement
-    SYSTEM_ERROR = "system_error"               # System malfunction
-    CAPITAL_BREACH = "capital_breach"           # Capital threshold breach
-    POSITION_LIMIT = "position_limit"           # Position limit exceeded
-    OTR_BREACH = "otr_breach"                   # Order-to-trade ratio breach
-    ALGORITHMIC_ERROR = "algorithmic_error"     # Algorithm malfunction
+    MANUAL = "manual"  # Manual human intervention
+    ERROR_THRESHOLD = "error_threshold"  # Error count exceeded
+    RISK_LIMIT = "risk_limit"  # Risk limit breached
+    CLOCK_DRIFT = "clock_drift"  # RTS 25 clock drift excessive
+    MARKET_DISRUPTION = "market_disruption"  # Market circuit breaker
+    CONNECTIVITY = "connectivity"  # Connection loss
+    REGULATORY = "regulatory"  # Regulatory requirement
+    SYSTEM_ERROR = "system_error"  # System malfunction
+    CAPITAL_BREACH = "capital_breach"  # Capital threshold breach
+    POSITION_LIMIT = "position_limit"  # Position limit exceeded
+    OTR_BREACH = "otr_breach"  # Order-to-trade ratio breach
+    ALGORITHMIC_ERROR = "algorithmic_error"  # Algorithm malfunction
 
 
 class KillSwitchState(str, Enum):
     """Current state of the kill switch system."""
 
-    ARMED = "armed"                 # Normal operation, ready to trigger
-    TRIGGERED = "triggered"         # Kill switch active, orders cancelled
-    DISARMED = "disarmed"           # Kill switch temporarily disabled
-    COOLDOWN = "cooldown"           # Post-trigger cooldown period
+    ARMED = "armed"  # Normal operation, ready to trigger
+    TRIGGERED = "triggered"  # Kill switch active, orders cancelled
+    DISARMED = "disarmed"  # Kill switch temporarily disabled
+    COOLDOWN = "cooldown"  # Post-trigger cooldown period
 
 
 @dataclass
@@ -101,7 +101,7 @@ class KillSwitchEvent:
     scope_id: str = ""
     reason: KillSwitchTriggerReason = KillSwitchTriggerReason.MANUAL
     reason_detail: str = ""
-    triggered_by: str = ""                    # Person or system identifier
+    triggered_by: str = ""  # Person or system identifier
     orders_cancelled: int = 0
     venues_affected: List[str] = field(default_factory=list)
     algorithms_affected: List[str] = field(default_factory=list)
@@ -148,20 +148,20 @@ class KillSwitchConfig:
     out_of_hours_phone: str = ""
 
     # Timing settings
-    cooldown_seconds: float = 300.0           # 5 minutes cooldown after trigger
-    auto_recovery_enabled: bool = False       # Auto-recover after cooldown
-    max_triggers_per_hour: int = 10           # Rate limit on triggers
+    cooldown_seconds: float = 300.0  # 5 minutes cooldown after trigger
+    auto_recovery_enabled: bool = False  # Auto-recover after cooldown
+    max_triggers_per_hour: int = 10  # Rate limit on triggers
 
     # Thresholds for automatic triggers
-    error_threshold_rest: int = 100           # REST API errors before trigger
-    error_threshold_ws: int = 50              # WebSocket errors before trigger
-    position_limit_pct: float = 95.0          # % of max position before trigger
-    capital_threshold_pct: float = 90.0       # % of capital used before warning
+    error_threshold_rest: int = 100  # REST API errors before trigger
+    error_threshold_ws: int = 50  # WebSocket errors before trigger
+    position_limit_pct: float = 95.0  # % of max position before trigger
+    capital_threshold_pct: float = 90.0  # % of capital used before warning
 
     # Integration settings
-    notify_venues: bool = True                # Send cancel to venues
-    notify_compliance: bool = True            # Notify compliance team
-    persist_events: bool = True               # Persist events to disk
+    notify_venues: bool = True  # Send cancel to venues
+    notify_compliance: bool = True  # Notify compliance team
+    persist_events: bool = True  # Persist events to disk
     event_log_path: str = "state/compliance/kill_switch_events.jsonl"
 
 
@@ -365,9 +365,7 @@ class EnhancedKillSwitch:
         with self._lock:
             # Check if disarmed
             if self._state == KillSwitchState.DISARMED:
-                raise RuntimeError(
-                    "Kill switch is disarmed. Cannot trigger in disarmed state."
-                )
+                raise RuntimeError("Kill switch is disarmed. Cannot trigger in disarmed state.")
 
             # Rate limiting
             if not self._check_rate_limit():
@@ -661,7 +659,9 @@ class EnhancedKillSwitch:
                 return True
             return (scope, scope_id) in self._active_scopes
 
-    def can_trade(self, venue: str = "", algorithm: str = "", instrument: str = "") -> Tuple[bool, str]:
+    def can_trade(
+        self, venue: str = "", algorithm: str = "", instrument: str = ""
+    ) -> Tuple[bool, str]:
         """
         Check if trading is allowed given current kill switch state.
 
@@ -751,14 +751,16 @@ class EnhancedKillSwitch:
         """
         contacts = []
         for contact in self._emergency_contacts:
-            contacts.append({
-                "name": contact.name,
-                "role": contact.role,
-                "email": contact.email,
-                "phone": contact.phone,
-                "available_24_7": contact.is_available_24_7,
-                "escalation_order": contact.escalation_order,
-            })
+            contacts.append(
+                {
+                    "name": contact.name,
+                    "role": contact.role,
+                    "email": contact.email,
+                    "phone": contact.phone,
+                    "available_24_7": contact.is_available_24_7,
+                    "escalation_order": contact.escalation_order,
+                }
+            )
 
         return {
             "contacts": contacts,
@@ -799,8 +801,7 @@ class EnhancedKillSwitch:
                 "triggers_by_reason": reasons,
                 "last_trigger_time": self._last_trigger_time,
                 "cooldown_remaining": max(
-                    0,
-                    self._config.cooldown_seconds - (time.time() - self._last_trigger_time)
+                    0, self._config.cooldown_seconds - (time.time() - self._last_trigger_time)
                 ),
             }
 
@@ -822,10 +823,7 @@ class EnhancedKillSwitch:
             "current_state": {
                 "state": self._state.value,
                 "is_triggered": self.is_triggered,
-                "active_scopes": [
-                    {"scope": s.value, "id": i}
-                    for s, i in self._active_scopes
-                ],
+                "active_scopes": [{"scope": s.value, "id": i} for s, i in self._active_scopes],
             },
             "configuration": {
                 "cooldown_seconds": self._config.cooldown_seconds,
@@ -849,9 +847,7 @@ class EnhancedKillSwitch:
         hour_ago = now - 3600
 
         # Clean old timestamps
-        self._trigger_timestamps = [
-            ts for ts in self._trigger_timestamps if ts > hour_ago
-        ]
+        self._trigger_timestamps = [ts for ts in self._trigger_timestamps if ts > hour_ago]
 
         return len(self._trigger_timestamps) < self._config.max_triggers_per_hour
 
@@ -896,6 +892,7 @@ class EnhancedKillSwitch:
 # =============================================================================
 # Factory Function
 # =============================================================================
+
 
 def create_enhanced_kill_switch(
     order_cancellation_callback: Callable[[KillSwitchScope, str], int],

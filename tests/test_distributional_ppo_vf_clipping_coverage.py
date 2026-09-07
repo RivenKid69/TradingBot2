@@ -31,17 +31,14 @@ from distributional_ppo import DistributionalPPO
 # Test Environment
 # =============================================================================
 
+
 class MinimalVFClipEnv(gymnasium.Env):
     """Minimal environment for VF clipping tests."""
 
     def __init__(self, seed: int = 42):
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
         self._max_steps = 8
@@ -55,7 +52,7 @@ class MinimalVFClipEnv(gymnasium.Env):
     def step(self, action):
         self._step_count += 1
         obs = self._rng.uniform(-1, 1, size=4).astype(np.float32)
-        reward = float(-np.sum(obs ** 2) * 0.01)
+        reward = float(-np.sum(obs**2) * 0.01)
         terminated = self._step_count >= self._max_steps
         return obs, reward, terminated, False, {"step": self._step_count}
 
@@ -68,6 +65,7 @@ def make_vec_env(n_envs=1, seed=42):
 # =============================================================================
 # Integration Tests: Train Loop VF Clipping (Quantile)
 # =============================================================================
+
 
 class TestTrainLoopVFClippingQuantile:
     """Integration tests for train loop VF clipping with quantile critics."""
@@ -220,6 +218,7 @@ class TestTrainLoopVFClippingQuantile:
 # Integration Tests: Train Loop VF Clipping with Twin Critics
 # =============================================================================
 
+
 class TestTrainLoopVFClippingTwinCritics:
     """Integration tests for train loop VF clipping with Twin Critics."""
 
@@ -361,6 +360,7 @@ class TestTrainLoopVFClippingTwinCritics:
 # =============================================================================
 # Integration Tests: Categorical Critic VF Clipping
 # =============================================================================
+
 
 class TestTrainLoopVFClippingCategorical:
     """Integration tests for categorical critic VF clipping."""
@@ -515,6 +515,7 @@ class TestTrainLoopVFClippingCategorical:
 # Integration Tests: Categorical Critic with Twin Critics VF Clipping
 # =============================================================================
 
+
 class TestTrainLoopVFClippingCategoricalTwin:
     """Integration tests for categorical critic with Twin Critics VF clipping."""
 
@@ -583,6 +584,7 @@ class TestTrainLoopVFClippingCategoricalTwin:
 # Integration Tests: VF Clip Warmup
 # =============================================================================
 
+
 class TestVFClipWarmup:
     """Integration tests for VF clipping warmup."""
 
@@ -629,6 +631,7 @@ class TestVFClipWarmup:
 # =============================================================================
 # Integration Tests: Various Configurations
 # =============================================================================
+
 
 class TestVariousConfigurations:
     """Integration tests for various model configurations."""

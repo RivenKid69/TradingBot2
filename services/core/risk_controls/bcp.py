@@ -336,7 +336,9 @@ class RecoveryProcedure:
             recovery_point_objective_minutes=data.get("recovery_point_objective_minutes", 0),
             dependencies=data.get("dependencies", []),
             status=RecoveryStatus(data.get("status", "not_tested")),
-            last_test_date=date.fromisoformat(data["last_test_date"]) if data.get("last_test_date") else None,
+            last_test_date=(
+                date.fromisoformat(data["last_test_date"]) if data.get("last_test_date") else None
+            ),
             last_test_result=data.get("last_test_result", ""),
             owner=data.get("owner", ""),
             notes=data.get("notes", ""),
@@ -419,9 +421,13 @@ class BCPScenario:
             self.recovery_procedure.last_test_date = date.today()
             self.recovery_procedure.last_test_result = result
             self.recovery_procedure.status = (
-                RecoveryStatus.TESTED_PASS if "success" in result.lower() or "pass" in result.lower()
-                else RecoveryStatus.TESTED_FAIL if "fail" in result.lower()
-                else RecoveryStatus.PARTIALLY_TESTED
+                RecoveryStatus.TESTED_PASS
+                if "success" in result.lower() or "pass" in result.lower()
+                else (
+                    RecoveryStatus.TESTED_FAIL
+                    if "fail" in result.lower()
+                    else RecoveryStatus.PARTIALLY_TESTED
+                )
             )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -435,7 +441,9 @@ class BCPScenario:
             "likelihood": self.likelihood.value,
             "risk_score": self.risk_score,
             "immediate_actions": self.immediate_actions,
-            "recovery_procedure": self.recovery_procedure.to_dict() if self.recovery_procedure else None,
+            "recovery_procedure": (
+                self.recovery_procedure.to_dict() if self.recovery_procedure else None
+            ),
             "responsible_roles": self.responsible_roles,
             "trading_halt_threshold": self.trading_halt_threshold,
             "resume_trading_criteria": self.resume_trading_criteria,
@@ -705,8 +713,7 @@ class BusinessContinuityPlan:
         self.modified_timestamp_ns = time.time_ns()
 
         logger.warning(
-            f"BCP Incident started: {incident.incident_id} "
-            f"- Alert Level: {alert_level.value}"
+            f"BCP Incident started: {incident.incident_id} " f"- Alert Level: {alert_level.value}"
         )
 
         return incident
@@ -760,10 +767,7 @@ class BusinessContinuityPlan:
             return 0
 
         cutoff_ns = time.time_ns() - (self.disruption_window_hours * 3600 * 1e9)
-        recent = [
-            i for i in self.incidents
-            if i.timestamp_start_ns >= cutoff_ns
-        ]
+        recent = [i for i in self.incidents if i.timestamp_start_ns >= cutoff_ns]
         return len(recent)
 
     def should_halt_trading(self) -> Tuple[bool, str]:
@@ -778,7 +782,7 @@ class BusinessContinuityPlan:
             return (
                 True,
                 f"Disruption threshold exceeded: {count} incidents in "
-                f"last {self.disruption_window_hours} hours (max: {self.max_disruptions_before_halt})"
+                f"last {self.disruption_window_hours} hours (max: {self.max_disruptions_before_halt})",
             )
         return (False, "")
 
@@ -794,9 +798,9 @@ class BusinessContinuityPlan:
 
         scenarios_by_impact = {}
         for impact in ImpactLevel:
-            scenarios_by_impact[impact.value] = len([
-                s for s in self.scenarios if s.impact == impact
-            ])
+            scenarios_by_impact[impact.value] = len(
+                [s for s in self.scenarios if s.impact == impact]
+            )
 
         needing_drill = self.get_scenarios_needing_drill()
         high_risk = self.get_high_risk_scenarios()
@@ -825,15 +829,21 @@ class BusinessContinuityPlan:
         """Get drill schedule for all scenarios."""
         schedule = []
         for scenario in self.scenarios:
-            schedule.append({
-                "scenario_id": scenario.scenario_id,
-                "name": scenario.name,
-                "category": scenario.category.value,
-                "last_drill": scenario.last_drill_date.isoformat() if scenario.last_drill_date else None,
-                "next_due": scenario.next_drill_due.isoformat() if scenario.next_drill_due else None,
-                "overdue": scenario.needs_drill(),
-                "risk_score": scenario.risk_score,
-            })
+            schedule.append(
+                {
+                    "scenario_id": scenario.scenario_id,
+                    "name": scenario.name,
+                    "category": scenario.category.value,
+                    "last_drill": (
+                        scenario.last_drill_date.isoformat() if scenario.last_drill_date else None
+                    ),
+                    "next_due": (
+                        scenario.next_drill_due.isoformat() if scenario.next_drill_due else None
+                    ),
+                    "overdue": scenario.needs_drill(),
+                    "risk_score": scenario.risk_score,
+                }
+            )
         return sorted(schedule, key=lambda x: (not x["overdue"], x.get("next_due") or "9999"))
 
     def generate_bcp_document(self) -> str:
@@ -989,11 +999,9 @@ Recent Disruptions:  {summary['recent_disruptions']} (in last {self.disruption_w
 
 """
         # Add recent incidents
-        recent_incidents = sorted(
-            self.incidents,
-            key=lambda x: x.timestamp_start_ns,
-            reverse=True
-        )[:5]
+        recent_incidents = sorted(self.incidents, key=lambda x: x.timestamp_start_ns, reverse=True)[
+            :5
+        ]
 
         for incident in recent_incidents:
             status = "RESOLVED" if incident.is_resolved else "ACTIVE"
@@ -1162,278 +1170,392 @@ def get_standard_bcp_scenarios() -> List[BCPScenario]:
     # SYSTEM FAILURE SCENARIOS
     # =========================================================================
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-SYS-001",
-        name="Primary Trading System Failure",
-        description="Complete failure of the primary trading system due to hardware, "
-                    "software, or operating system issues.",
-        category=ScenarioCategory.SYSTEM_FAILURE,
-        impact=ImpactLevel.CRITICAL,
-        likelihood=LikelihoodLevel.MEDIUM,
-        immediate_actions=[
-            "Activate kill switch to cancel all pending orders",
-            "Notify trading desk and compliance",
-            "Initiate failover to backup system",
-            "Alert IT support for root cause analysis",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="System Failover Procedure",
-            description="Failover to backup trading system",
-            recovery_time_objective_minutes=15,
-            recovery_point_objective_minutes=1,
-            steps=[
-                RecoveryStep(1, "Confirm primary system failure", "IT Operations", 2, "System status confirmed"),
-                RecoveryStep(2, "Activate kill switch", "Trading Desk", 1, "All orders cancelled"),
-                RecoveryStep(3, "Switch to backup system", "IT Operations", 5, "Backup system active"),
-                RecoveryStep(4, "Verify connectivity to venues", "IT Operations", 3, "All venues connected"),
-                RecoveryStep(5, "Resume trading with reduced limits", "Trading Desk", 2, "Trading resumed"),
-                RecoveryStep(6, "Monitor system stability", "IT Operations", 60, "No issues for 1 hour"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-SYS-001",
+            name="Primary Trading System Failure",
+            description="Complete failure of the primary trading system due to hardware, "
+            "software, or operating system issues.",
+            category=ScenarioCategory.SYSTEM_FAILURE,
+            impact=ImpactLevel.CRITICAL,
+            likelihood=LikelihoodLevel.MEDIUM,
+            immediate_actions=[
+                "Activate kill switch to cancel all pending orders",
+                "Notify trading desk and compliance",
+                "Initiate failover to backup system",
+                "Alert IT support for root cause analysis",
             ],
-        ),
-        responsible_roles=["Head of IT", "Trading Desk Manager", "Compliance Officer"],
-        trading_halt_threshold="Immediate upon detection of system failure",
-        resume_trading_criteria="Backup system stable for 15 minutes, all venues connected",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="System Failover Procedure",
+                description="Failover to backup trading system",
+                recovery_time_objective_minutes=15,
+                recovery_point_objective_minutes=1,
+                steps=[
+                    RecoveryStep(
+                        1,
+                        "Confirm primary system failure",
+                        "IT Operations",
+                        2,
+                        "System status confirmed",
+                    ),
+                    RecoveryStep(
+                        2, "Activate kill switch", "Trading Desk", 1, "All orders cancelled"
+                    ),
+                    RecoveryStep(
+                        3, "Switch to backup system", "IT Operations", 5, "Backup system active"
+                    ),
+                    RecoveryStep(
+                        4,
+                        "Verify connectivity to venues",
+                        "IT Operations",
+                        3,
+                        "All venues connected",
+                    ),
+                    RecoveryStep(
+                        5,
+                        "Resume trading with reduced limits",
+                        "Trading Desk",
+                        2,
+                        "Trading resumed",
+                    ),
+                    RecoveryStep(
+                        6, "Monitor system stability", "IT Operations", 60, "No issues for 1 hour"
+                    ),
+                ],
+            ),
+            responsible_roles=["Head of IT", "Trading Desk Manager", "Compliance Officer"],
+            trading_halt_threshold="Immediate upon detection of system failure",
+            resume_trading_criteria="Backup system stable for 15 minutes, all venues connected",
+        )
+    )
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-SYS-002",
-        name="Algorithm Malfunction",
-        description="Trading algorithm exhibits erroneous behavior such as excessive "
-                    "ordering, incorrect pricing, or unintended positions.",
-        category=ScenarioCategory.ALGORITHM_MALFUNCTION,
-        impact=ImpactLevel.CRITICAL,
-        likelihood=LikelihoodLevel.HIGH,
-        immediate_actions=[
-            "Activate kill switch for affected algorithm",
-            "Cancel all pending orders from the algorithm",
-            "Disable algorithm in production",
-            "Assess position impact and risk exposure",
-            "Notify compliance and risk management",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Algorithm Incident Response",
-            description="Response to algorithm malfunction",
-            recovery_time_objective_minutes=10,
-            recovery_point_objective_minutes=0,
-            steps=[
-                RecoveryStep(1, "Trigger algorithm-specific kill switch", "Trading Desk", 1, "Algorithm stopped"),
-                RecoveryStep(2, "Cancel all outstanding orders", "Trading System", 1, "Orders cancelled"),
-                RecoveryStep(3, "Assess current positions", "Risk Management", 5, "Positions documented"),
-                RecoveryStep(4, "Determine root cause", "Quant Team", 30, "Root cause identified"),
-                RecoveryStep(5, "Implement fix and test", "Quant Team", 120, "Fix validated"),
-                RecoveryStep(6, "Obtain approval for restart", "Compliance", 15, "Approval granted"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-SYS-002",
+            name="Algorithm Malfunction",
+            description="Trading algorithm exhibits erroneous behavior such as excessive "
+            "ordering, incorrect pricing, or unintended positions.",
+            category=ScenarioCategory.ALGORITHM_MALFUNCTION,
+            impact=ImpactLevel.CRITICAL,
+            likelihood=LikelihoodLevel.HIGH,
+            immediate_actions=[
+                "Activate kill switch for affected algorithm",
+                "Cancel all pending orders from the algorithm",
+                "Disable algorithm in production",
+                "Assess position impact and risk exposure",
+                "Notify compliance and risk management",
             ],
-        ),
-        responsible_roles=["Quant Developer", "Risk Manager", "Trading Desk Manager"],
-        trading_halt_threshold="Immediate when abnormal behavior detected",
-        resume_trading_criteria="Root cause identified, fix tested, compliance approval",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Algorithm Incident Response",
+                description="Response to algorithm malfunction",
+                recovery_time_objective_minutes=10,
+                recovery_point_objective_minutes=0,
+                steps=[
+                    RecoveryStep(
+                        1,
+                        "Trigger algorithm-specific kill switch",
+                        "Trading Desk",
+                        1,
+                        "Algorithm stopped",
+                    ),
+                    RecoveryStep(
+                        2, "Cancel all outstanding orders", "Trading System", 1, "Orders cancelled"
+                    ),
+                    RecoveryStep(
+                        3, "Assess current positions", "Risk Management", 5, "Positions documented"
+                    ),
+                    RecoveryStep(
+                        4, "Determine root cause", "Quant Team", 30, "Root cause identified"
+                    ),
+                    RecoveryStep(5, "Implement fix and test", "Quant Team", 120, "Fix validated"),
+                    RecoveryStep(
+                        6, "Obtain approval for restart", "Compliance", 15, "Approval granted"
+                    ),
+                ],
+            ),
+            responsible_roles=["Quant Developer", "Risk Manager", "Trading Desk Manager"],
+            trading_halt_threshold="Immediate when abnormal behavior detected",
+            resume_trading_criteria="Root cause identified, fix tested, compliance approval",
+        )
+    )
 
     # =========================================================================
     # MARKET DATA SCENARIOS
     # =========================================================================
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-MKT-001",
-        name="Market Data Feed Failure",
-        description="Loss of market data from primary data vendor affecting "
-                    "ability to price and execute orders.",
-        category=ScenarioCategory.MARKET_DATA,
-        impact=ImpactLevel.HIGH,
-        likelihood=LikelihoodLevel.HIGH,
-        immediate_actions=[
-            "Switch to backup market data feed",
-            "Reduce position limits until resolved",
-            "Alert trading desk of degraded mode",
-            "Contact data vendor for status",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Market Data Failover",
-            description="Switch to backup market data",
-            recovery_time_objective_minutes=5,
-            recovery_point_objective_minutes=0,
-            steps=[
-                RecoveryStep(1, "Detect data feed failure", "Market Data System", 1, "Failure confirmed"),
-                RecoveryStep(2, "Switch to backup feed", "IT Operations", 2, "Backup active"),
-                RecoveryStep(3, "Verify data quality", "Trading Desk", 2, "Data quality confirmed"),
-                RecoveryStep(4, "Resume normal operations", "Trading Desk", 1, "Normal mode"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-MKT-001",
+            name="Market Data Feed Failure",
+            description="Loss of market data from primary data vendor affecting "
+            "ability to price and execute orders.",
+            category=ScenarioCategory.MARKET_DATA,
+            impact=ImpactLevel.HIGH,
+            likelihood=LikelihoodLevel.HIGH,
+            immediate_actions=[
+                "Switch to backup market data feed",
+                "Reduce position limits until resolved",
+                "Alert trading desk of degraded mode",
+                "Contact data vendor for status",
             ],
-        ),
-        responsible_roles=["Market Data Manager", "IT Operations", "Trading Desk"],
-        trading_halt_threshold="If no backup feed available",
-        resume_trading_criteria="Reliable market data restored",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Market Data Failover",
+                description="Switch to backup market data",
+                recovery_time_objective_minutes=5,
+                recovery_point_objective_minutes=0,
+                steps=[
+                    RecoveryStep(
+                        1, "Detect data feed failure", "Market Data System", 1, "Failure confirmed"
+                    ),
+                    RecoveryStep(2, "Switch to backup feed", "IT Operations", 2, "Backup active"),
+                    RecoveryStep(
+                        3, "Verify data quality", "Trading Desk", 2, "Data quality confirmed"
+                    ),
+                    RecoveryStep(4, "Resume normal operations", "Trading Desk", 1, "Normal mode"),
+                ],
+            ),
+            responsible_roles=["Market Data Manager", "IT Operations", "Trading Desk"],
+            trading_halt_threshold="If no backup feed available",
+            resume_trading_criteria="Reliable market data restored",
+        )
+    )
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-MKT-002",
-        name="Market Data Stale/Delayed",
-        description="Market data becoming stale or significantly delayed, "
-                    "leading to incorrect pricing decisions.",
-        category=ScenarioCategory.MARKET_DATA,
-        impact=ImpactLevel.HIGH,
-        likelihood=LikelihoodLevel.MEDIUM,
-        immediate_actions=[
-            "Activate stale data alerts",
-            "Widen spreads or pause market making",
-            "Switch to backup data source if available",
-            "Reduce aggressive order types",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Stale Data Response",
-            description="Response to stale market data",
-            recovery_time_objective_minutes=3,
-            recovery_point_objective_minutes=0,
-            steps=[
-                RecoveryStep(1, "Detect stale data condition", "Market Data System", 1, "Staleness confirmed"),
-                RecoveryStep(2, "Enable conservative trading mode", "Trading System", 1, "Mode activated"),
-                RecoveryStep(3, "Attempt data feed refresh", "IT Operations", 2, "Feed status updated"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-MKT-002",
+            name="Market Data Stale/Delayed",
+            description="Market data becoming stale or significantly delayed, "
+            "leading to incorrect pricing decisions.",
+            category=ScenarioCategory.MARKET_DATA,
+            impact=ImpactLevel.HIGH,
+            likelihood=LikelihoodLevel.MEDIUM,
+            immediate_actions=[
+                "Activate stale data alerts",
+                "Widen spreads or pause market making",
+                "Switch to backup data source if available",
+                "Reduce aggressive order types",
             ],
-        ),
-        responsible_roles=["Market Data Manager", "Trading Desk"],
-        trading_halt_threshold="Data stale for more than 5 seconds during market hours",
-        resume_trading_criteria="Fresh data confirmed from reliable source",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Stale Data Response",
+                description="Response to stale market data",
+                recovery_time_objective_minutes=3,
+                recovery_point_objective_minutes=0,
+                steps=[
+                    RecoveryStep(
+                        1,
+                        "Detect stale data condition",
+                        "Market Data System",
+                        1,
+                        "Staleness confirmed",
+                    ),
+                    RecoveryStep(
+                        2, "Enable conservative trading mode", "Trading System", 1, "Mode activated"
+                    ),
+                    RecoveryStep(
+                        3, "Attempt data feed refresh", "IT Operations", 2, "Feed status updated"
+                    ),
+                ],
+            ),
+            responsible_roles=["Market Data Manager", "Trading Desk"],
+            trading_halt_threshold="Data stale for more than 5 seconds during market hours",
+            resume_trading_criteria="Fresh data confirmed from reliable source",
+        )
+    )
 
     # =========================================================================
     # NETWORK SCENARIOS
     # =========================================================================
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-NET-001",
-        name="Network Connectivity Loss",
-        description="Loss of network connectivity to trading venues, "
-                    "preventing order submission and management.",
-        category=ScenarioCategory.NETWORK_FAILURE,
-        impact=ImpactLevel.CRITICAL,
-        likelihood=LikelihoodLevel.MEDIUM,
-        immediate_actions=[
-            "Activate backup network connection",
-            "Notify venues of potential orphan orders",
-            "Contact network provider",
-            "Prepare for manual order management",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Network Failover",
-            description="Switch to backup network",
-            recovery_time_objective_minutes=5,
-            recovery_point_objective_minutes=0,
-            steps=[
-                RecoveryStep(1, "Detect network failure", "Network Monitoring", 1, "Failure confirmed"),
-                RecoveryStep(2, "Activate backup connection", "IT Operations", 2, "Backup active"),
-                RecoveryStep(3, "Verify venue connectivity", "Trading System", 2, "All venues connected"),
-                RecoveryStep(4, "Reconcile order status", "Trading Desk", 5, "Orders reconciled"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-NET-001",
+            name="Network Connectivity Loss",
+            description="Loss of network connectivity to trading venues, "
+            "preventing order submission and management.",
+            category=ScenarioCategory.NETWORK_FAILURE,
+            impact=ImpactLevel.CRITICAL,
+            likelihood=LikelihoodLevel.MEDIUM,
+            immediate_actions=[
+                "Activate backup network connection",
+                "Notify venues of potential orphan orders",
+                "Contact network provider",
+                "Prepare for manual order management",
             ],
-        ),
-        responsible_roles=["Network Manager", "IT Operations", "Trading Desk"],
-        trading_halt_threshold="No connectivity to any venue for 30 seconds",
-        resume_trading_criteria="Stable connection to all venues",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Network Failover",
+                description="Switch to backup network",
+                recovery_time_objective_minutes=5,
+                recovery_point_objective_minutes=0,
+                steps=[
+                    RecoveryStep(
+                        1, "Detect network failure", "Network Monitoring", 1, "Failure confirmed"
+                    ),
+                    RecoveryStep(
+                        2, "Activate backup connection", "IT Operations", 2, "Backup active"
+                    ),
+                    RecoveryStep(
+                        3, "Verify venue connectivity", "Trading System", 2, "All venues connected"
+                    ),
+                    RecoveryStep(
+                        4, "Reconcile order status", "Trading Desk", 5, "Orders reconciled"
+                    ),
+                ],
+            ),
+            responsible_roles=["Network Manager", "IT Operations", "Trading Desk"],
+            trading_halt_threshold="No connectivity to any venue for 30 seconds",
+            resume_trading_criteria="Stable connection to all venues",
+        )
+    )
 
     # =========================================================================
     # EXCHANGE CONNECTIVITY SCENARIOS
     # =========================================================================
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-EXC-001",
-        name="Exchange Connection Lost",
-        description="Loss of connection to one or more trading venues.",
-        category=ScenarioCategory.EXCHANGE_CONNECTIVITY,
-        impact=ImpactLevel.HIGH,
-        likelihood=LikelihoodLevel.MEDIUM,
-        immediate_actions=[
-            "Attempt reconnection",
-            "Route orders to alternative venues if available",
-            "Track orphan orders on affected venue",
-            "Contact exchange technical support",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Exchange Reconnection",
-            description="Reconnect to trading venue",
-            recovery_time_objective_minutes=10,
-            recovery_point_objective_minutes=0,
-            steps=[
-                RecoveryStep(1, "Detect disconnection", "Connection Monitor", 1, "Disconnection confirmed"),
-                RecoveryStep(2, "Attempt automatic reconnection", "Trading System", 3, "Reconnection status"),
-                RecoveryStep(3, "Verify order status on venue", "Trading Desk", 5, "Orders verified"),
-                RecoveryStep(4, "Resume normal routing", "Trading System", 1, "Normal operations"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-EXC-001",
+            name="Exchange Connection Lost",
+            description="Loss of connection to one or more trading venues.",
+            category=ScenarioCategory.EXCHANGE_CONNECTIVITY,
+            impact=ImpactLevel.HIGH,
+            likelihood=LikelihoodLevel.MEDIUM,
+            immediate_actions=[
+                "Attempt reconnection",
+                "Route orders to alternative venues if available",
+                "Track orphan orders on affected venue",
+                "Contact exchange technical support",
             ],
-        ),
-        responsible_roles=["Trading Technology", "Trading Desk"],
-        trading_halt_threshold="N/A - route to alternative venues",
-        resume_trading_criteria="Stable connection re-established",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Exchange Reconnection",
+                description="Reconnect to trading venue",
+                recovery_time_objective_minutes=10,
+                recovery_point_objective_minutes=0,
+                steps=[
+                    RecoveryStep(
+                        1,
+                        "Detect disconnection",
+                        "Connection Monitor",
+                        1,
+                        "Disconnection confirmed",
+                    ),
+                    RecoveryStep(
+                        2,
+                        "Attempt automatic reconnection",
+                        "Trading System",
+                        3,
+                        "Reconnection status",
+                    ),
+                    RecoveryStep(
+                        3, "Verify order status on venue", "Trading Desk", 5, "Orders verified"
+                    ),
+                    RecoveryStep(
+                        4, "Resume normal routing", "Trading System", 1, "Normal operations"
+                    ),
+                ],
+            ),
+            responsible_roles=["Trading Technology", "Trading Desk"],
+            trading_halt_threshold="N/A - route to alternative venues",
+            resume_trading_criteria="Stable connection re-established",
+        )
+    )
 
     # =========================================================================
     # CYBERSECURITY SCENARIOS
     # =========================================================================
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-SEC-001",
-        name="Cybersecurity Incident",
-        description="Suspected or confirmed cybersecurity breach affecting "
-                    "trading systems or data.",
-        category=ScenarioCategory.CYBERSECURITY,
-        impact=ImpactLevel.CRITICAL,
-        likelihood=LikelihoodLevel.LOW,
-        immediate_actions=[
-            "Isolate affected systems immediately",
-            "Activate kill switch",
-            "Notify Information Security team",
-            "Preserve evidence for forensic analysis",
-            "Notify regulators if required",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Cybersecurity Incident Response",
-            description="Response to security breach",
-            recovery_time_objective_minutes=60,
-            recovery_point_objective_minutes=60,
-            steps=[
-                RecoveryStep(1, "Isolate affected systems", "IT Security", 5, "Systems isolated"),
-                RecoveryStep(2, "Stop all trading activity", "Trading Desk", 2, "Trading stopped"),
-                RecoveryStep(3, "Conduct forensic analysis", "IT Security", 240, "Analysis complete"),
-                RecoveryStep(4, "Remediate vulnerabilities", "IT Security", 480, "Vulnerabilities fixed"),
-                RecoveryStep(5, "Restore from clean backup", "IT Operations", 120, "Systems restored"),
-                RecoveryStep(6, "Security verification", "IT Security", 60, "Security verified"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-SEC-001",
+            name="Cybersecurity Incident",
+            description="Suspected or confirmed cybersecurity breach affecting "
+            "trading systems or data.",
+            category=ScenarioCategory.CYBERSECURITY,
+            impact=ImpactLevel.CRITICAL,
+            likelihood=LikelihoodLevel.LOW,
+            immediate_actions=[
+                "Isolate affected systems immediately",
+                "Activate kill switch",
+                "Notify Information Security team",
+                "Preserve evidence for forensic analysis",
+                "Notify regulators if required",
             ],
-        ),
-        responsible_roles=["CISO", "IT Security", "Compliance Officer", "Legal"],
-        trading_halt_threshold="Immediate upon suspected breach",
-        resume_trading_criteria="Full security audit complete, regulator clearance if required",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Cybersecurity Incident Response",
+                description="Response to security breach",
+                recovery_time_objective_minutes=60,
+                recovery_point_objective_minutes=60,
+                steps=[
+                    RecoveryStep(
+                        1, "Isolate affected systems", "IT Security", 5, "Systems isolated"
+                    ),
+                    RecoveryStep(
+                        2, "Stop all trading activity", "Trading Desk", 2, "Trading stopped"
+                    ),
+                    RecoveryStep(
+                        3, "Conduct forensic analysis", "IT Security", 240, "Analysis complete"
+                    ),
+                    RecoveryStep(
+                        4, "Remediate vulnerabilities", "IT Security", 480, "Vulnerabilities fixed"
+                    ),
+                    RecoveryStep(
+                        5, "Restore from clean backup", "IT Operations", 120, "Systems restored"
+                    ),
+                    RecoveryStep(
+                        6, "Security verification", "IT Security", 60, "Security verified"
+                    ),
+                ],
+            ),
+            responsible_roles=["CISO", "IT Security", "Compliance Officer", "Legal"],
+            trading_halt_threshold="Immediate upon suspected breach",
+            resume_trading_criteria="Full security audit complete, regulator clearance if required",
+        )
+    )
 
     # =========================================================================
     # MARKET DISRUPTION SCENARIOS
     # =========================================================================
 
-    scenarios.append(BCPScenario(
-        scenario_id="BCP-MRK-001",
-        name="Market Circuit Breaker Triggered",
-        description="Exchange-wide or market-wide circuit breaker halts trading.",
-        category=ScenarioCategory.MARKET_DISRUPTION,
-        impact=ImpactLevel.MEDIUM,
-        likelihood=LikelihoodLevel.MEDIUM,
-        immediate_actions=[
-            "Acknowledge circuit breaker status",
-            "Review open positions and exposure",
-            "Prepare for market reopening",
-            "Monitor official announcements",
-        ],
-        recovery_procedure=RecoveryProcedure(
-            name="Circuit Breaker Response",
-            description="Response to market circuit breaker",
-            recovery_time_objective_minutes=60,
-            recovery_point_objective_minutes=0,
-            steps=[
-                RecoveryStep(1, "Confirm circuit breaker activation", "Trading Desk", 1, "Status confirmed"),
-                RecoveryStep(2, "Review position risk", "Risk Management", 10, "Risk assessed"),
-                RecoveryStep(3, "Prepare for reopening", "Trading Desk", 15, "Ready for reopening"),
-                RecoveryStep(4, "Resume trading on reopening", "Trading System", 1, "Trading resumed"),
+    scenarios.append(
+        BCPScenario(
+            scenario_id="BCP-MRK-001",
+            name="Market Circuit Breaker Triggered",
+            description="Exchange-wide or market-wide circuit breaker halts trading.",
+            category=ScenarioCategory.MARKET_DISRUPTION,
+            impact=ImpactLevel.MEDIUM,
+            likelihood=LikelihoodLevel.MEDIUM,
+            immediate_actions=[
+                "Acknowledge circuit breaker status",
+                "Review open positions and exposure",
+                "Prepare for market reopening",
+                "Monitor official announcements",
             ],
-        ),
-        responsible_roles=["Trading Desk", "Risk Management"],
-        trading_halt_threshold="Per exchange circuit breaker rules",
-        resume_trading_criteria="Market reopening confirmed by exchange",
-    ))
+            recovery_procedure=RecoveryProcedure(
+                name="Circuit Breaker Response",
+                description="Response to market circuit breaker",
+                recovery_time_objective_minutes=60,
+                recovery_point_objective_minutes=0,
+                steps=[
+                    RecoveryStep(
+                        1,
+                        "Confirm circuit breaker activation",
+                        "Trading Desk",
+                        1,
+                        "Status confirmed",
+                    ),
+                    RecoveryStep(2, "Review position risk", "Risk Management", 10, "Risk assessed"),
+                    RecoveryStep(
+                        3, "Prepare for reopening", "Trading Desk", 15, "Ready for reopening"
+                    ),
+                    RecoveryStep(
+                        4, "Resume trading on reopening", "Trading System", 1, "Trading resumed"
+                    ),
+                ],
+            ),
+            responsible_roles=["Trading Desk", "Risk Management"],
+            trading_halt_threshold="Per exchange circuit breaker rules",
+            resume_trading_criteria="Market reopening confirmed by exchange",
+        )
+    )
 
     return scenarios
 

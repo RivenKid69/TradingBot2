@@ -75,8 +75,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class LeadOverseer(Enum):
     """Lead Overseer ESA assignment."""
+
     EBA = "eba"  # European Banking Authority
     ESMA = "esma"  # European Securities and Markets Authority
     EIOPA = "eiopa"  # European Insurance and Occupational Pensions Authority
@@ -84,6 +86,7 @@ class LeadOverseer(Enum):
 
 class CTPPStatus(Enum):
     """CTPP designation status."""
+
     NOT_DESIGNATED = "not_designated"
     PENDING_DESIGNATION = "pending_designation"
     DESIGNATED = "designated"
@@ -93,6 +96,7 @@ class CTPPStatus(Enum):
 
 class OversightRecommendationType(Enum):
     """Types of oversight recommendations."""
+
     SECURITY = "security"
     RISK_MANAGEMENT = "risk_management"
     GOVERNANCE = "governance"
@@ -105,6 +109,7 @@ class OversightRecommendationType(Enum):
 
 class RecommendationStatus(Enum):
     """Status of oversight recommendation."""
+
     RECEIVED = "received"
     UNDER_REVIEW = "under_review"
     ACTION_REQUIRED = "action_required"
@@ -115,6 +120,7 @@ class RecommendationStatus(Enum):
 
 class ComplianceLevel(Enum):
     """CTPP-specific compliance level."""
+
     COMPLIANT = "compliant"
     PARTIALLY_COMPLIANT = "partially_compliant"
     NON_COMPLIANT = "non_compliant"
@@ -123,6 +129,7 @@ class ComplianceLevel(Enum):
 
 class OversightExerciseType(Enum):
     """Types of oversight exercises."""
+
     GENERAL_INVESTIGATION = "general_investigation"
     INSPECTION = "inspection"
     OFF_SITE_REVIEW = "off_site_review"
@@ -133,11 +140,13 @@ class OversightExerciseType(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class CTPPDesignation:
     """
     CTPP designation record per Article 31.
     """
+
     designation_id: str = ""
     provider_id: str = ""
     provider_name: str = ""
@@ -192,6 +201,7 @@ class OversightRecommendation:
     """
     Oversight recommendation from Lead Overseer.
     """
+
     recommendation_id: str = ""
     ctpp_id: str = ""  # Designation ID
     provider_name: str = ""
@@ -237,6 +247,7 @@ class OversightExercise:
     """
     Record of oversight exercise conducted by Lead Overseer.
     """
+
     exercise_id: str = ""
     ctpp_id: str = ""
     provider_name: str = ""
@@ -279,6 +290,7 @@ class CTPPRiskAssessment:
     """
     CTPP-specific risk assessment.
     """
+
     assessment_id: str = ""
     ctpp_id: str = ""
     provider_name: str = ""
@@ -324,6 +336,7 @@ class CTPPContractRequirement:
     """
     Additional contractual requirement for CTPP arrangements.
     """
+
     requirement_id: str = ""
     article_reference: str = ""
     requirement_name: str = ""
@@ -348,6 +361,7 @@ class EntityCTPPRelationship:
     """
     Financial entity's relationship with a CTPP.
     """
+
     relationship_id: str = ""
     ctpp_id: str = ""
     ctpp_name: str = ""
@@ -436,6 +450,7 @@ DESIGNATED_CTPPS_2025 = [
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class CTPPOversightConfig:
     """Configuration for CTPP Oversight management."""
@@ -468,6 +483,7 @@ class CTPPOversightConfig:
 # CTPP-Specific Requirements (Article 30(3) enhanced)
 # =============================================================================
 
+
 def get_ctpp_contract_requirements() -> List[CTPPContractRequirement]:
     """
     Get additional contractual requirements for CTPP arrangements.
@@ -476,61 +492,77 @@ def get_ctpp_contract_requirements() -> List[CTPPContractRequirement]:
     """
     requirements = []
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 28(7)",
-        requirement_name="CTPP Status Acknowledgment",
-        description="Contract acknowledges provider's CTPP designation status",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 28(7)",
+            requirement_name="CTPP Status Acknowledgment",
+            description="Contract acknowledges provider's CTPP designation status",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 33(2)",
-        requirement_name="Lead Overseer Access",
-        description="Contract ensures Lead Overseer access rights to CTPP",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 33(2)",
+            requirement_name="Lead Overseer Access",
+            description="Contract ensures Lead Overseer access rights to CTPP",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 34",
-        requirement_name="Cooperation with Oversight Exercises",
-        description="Contract requires CTPP cooperation with oversight exercises",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 34",
+            requirement_name="Cooperation with Oversight Exercises",
+            description="Contract requires CTPP cooperation with oversight exercises",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 35",
-        requirement_name="Cross-Border Coordination",
-        description="Provisions for coordination between NCAs and Lead Overseer",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 35",
+            requirement_name="Cross-Border Coordination",
+            description="Provisions for coordination between NCAs and Lead Overseer",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 36",
-        requirement_name="Recommendation Implementation",
-        description="CTPP commitment to implement oversight recommendations",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 36",
+            requirement_name="Recommendation Implementation",
+            description="CTPP commitment to implement oversight recommendations",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 31(12)",
-        requirement_name="Exit Strategy Enhanced",
-        description="Enhanced exit strategy requirements for CTPP services",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 31(12)",
+            requirement_name="Exit Strategy Enhanced",
+            description="Enhanced exit strategy requirements for CTPP services",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 28(8)",
-        requirement_name="Transition Support Commitment",
-        description="CTPP commitment to transition support if designation removed",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 28(8)",
+            requirement_name="Transition Support Commitment",
+            description="CTPP commitment to transition support if designation removed",
+            is_mandatory=True,
+        )
+    )
 
-    requirements.append(CTPPContractRequirement(
-        article_reference="Article 37",
-        requirement_name="Information Provision",
-        description="CTPP obligation to provide information to entity and overseer",
-        is_mandatory=True,
-    ))
+    requirements.append(
+        CTPPContractRequirement(
+            article_reference="Article 37",
+            requirement_name="Information Provision",
+            description="CTPP obligation to provide information to entity and overseer",
+            is_mandatory=True,
+        )
+    )
 
     return requirements
 
@@ -538,6 +570,7 @@ def get_ctpp_contract_requirements() -> List[CTPPContractRequirement]:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORACtppOversight:
     """
@@ -685,10 +718,7 @@ class DORACtppOversight:
     def get_all_designated_ctpps(self) -> List[CTPPDesignation]:
         """Get all currently designated CTPPs."""
         with self._lock:
-            return [
-                d for d in self._designations.values()
-                if d.status == CTPPStatus.DESIGNATED
-            ]
+            return [d for d in self._designations.values() if d.status == CTPPStatus.DESIGNATED]
 
     def get_ctpps_by_lead_overseer(
         self,
@@ -697,7 +727,8 @@ class DORACtppOversight:
         """Get CTPPs supervised by a specific lead overseer."""
         with self._lock:
             return [
-                d for d in self._designations.values()
+                d
+                for d in self._designations.values()
                 if d.status == CTPPStatus.DESIGNATED and d.lead_overseer == lead_overseer
             ]
 
@@ -733,11 +764,14 @@ class DORACtppOversight:
             self._recommendations_by_ctpp[designation.designation_id] = set()
             self._relationships_by_ctpp[designation.designation_id] = set()
 
-        self._log_event("ctpp_designation_added", {
-            "designation_id": designation.designation_id,
-            "provider_name": provider_name,
-            "lead_overseer": lead_overseer.value,
-        })
+        self._log_event(
+            "ctpp_designation_added",
+            {
+                "designation_id": designation.designation_id,
+                "provider_name": provider_name,
+                "lead_overseer": lead_overseer.value,
+            },
+        )
 
         return designation
 
@@ -808,11 +842,14 @@ class DORACtppOversight:
                 relationship.relationship_id
             )
 
-        self._log_event("ctpp_relationship_registered", {
-            "relationship_id": relationship.relationship_id,
-            "ctpp_name": designation.provider_name,
-            "services_count": len(services_used),
-        })
+        self._log_event(
+            "ctpp_relationship_registered",
+            {
+                "relationship_id": relationship.relationship_id,
+                "ctpp_name": designation.provider_name,
+                "services_count": len(services_used),
+            },
+        )
 
         return relationship
 
@@ -836,11 +873,7 @@ class DORACtppOversight:
         """Get all relationships with a specific CTPP."""
         with self._lock:
             rel_ids = self._relationships_by_ctpp.get(ctpp_id, set())
-            return [
-                self._relationships[rid]
-                for rid in rel_ids
-                if rid in self._relationships
-            ]
+            return [self._relationships[rid] for rid in rel_ids if rid in self._relationships]
 
     def update_relationship(
         self,
@@ -918,18 +951,24 @@ class DORACtppOversight:
         # Notify if configured
         if self.config.notify_on_new_recommendation:
             if self.config.notification_callback:
-                self.config.notification_callback("oversight_recommendation", {
-                    "recommendation_id": recommendation.recommendation_id,
-                    "ctpp_name": designation.provider_name,
-                    "title": title,
-                    "entity_actions": entity_actions_required or [],
-                })
+                self.config.notification_callback(
+                    "oversight_recommendation",
+                    {
+                        "recommendation_id": recommendation.recommendation_id,
+                        "ctpp_name": designation.provider_name,
+                        "title": title,
+                        "entity_actions": entity_actions_required or [],
+                    },
+                )
 
-        self._log_event("recommendation_recorded", {
-            "recommendation_id": recommendation.recommendation_id,
-            "ctpp_name": designation.provider_name,
-            "type": recommendation_type.value,
-        })
+        self._log_event(
+            "recommendation_recorded",
+            {
+                "recommendation_id": recommendation.recommendation_id,
+                "ctpp_name": designation.provider_name,
+                "type": recommendation_type.value,
+            },
+        )
 
         return recommendation
 
@@ -948,19 +987,17 @@ class DORACtppOversight:
         """Get all recommendations for a CTPP."""
         with self._lock:
             rec_ids = self._recommendations_by_ctpp.get(ctpp_id, set())
-            return [
-                self._recommendations[rid]
-                for rid in rec_ids
-                if rid in self._recommendations
-            ]
+            return [self._recommendations[rid] for rid in rec_ids if rid in self._recommendations]
 
     def get_recommendations_requiring_action(self) -> List[OversightRecommendation]:
         """Get recommendations requiring entity action."""
         with self._lock:
             return [
-                r for r in self._recommendations.values()
-                if r.impacts_financial_entities and
-                r.status not in [RecommendationStatus.IMPLEMENTED, RecommendationStatus.NOT_APPLICABLE]
+                r
+                for r in self._recommendations.values()
+                if r.impacts_financial_entities
+                and r.status
+                not in [RecommendationStatus.IMPLEMENTED, RecommendationStatus.NOT_APPLICABLE]
             ]
 
     def update_recommendation_status(
@@ -1041,17 +1078,23 @@ class DORACtppOversight:
         # Notify if participation required
         if entity_participation_required and self.config.notify_on_oversight_exercise:
             if self.config.notification_callback:
-                self.config.notification_callback("oversight_exercise", {
-                    "exercise_id": exercise.exercise_id,
-                    "ctpp_name": designation.provider_name,
-                    "participation_required": True,
-                })
+                self.config.notification_callback(
+                    "oversight_exercise",
+                    {
+                        "exercise_id": exercise.exercise_id,
+                        "ctpp_name": designation.provider_name,
+                        "participation_required": True,
+                    },
+                )
 
-        self._log_event("oversight_exercise_recorded", {
-            "exercise_id": exercise.exercise_id,
-            "ctpp_name": designation.provider_name,
-            "type": exercise_type.value,
-        })
+        self._log_event(
+            "oversight_exercise_recorded",
+            {
+                "exercise_id": exercise.exercise_id,
+                "ctpp_name": designation.provider_name,
+                "type": exercise_type.value,
+            },
+        )
 
         return exercise
 
@@ -1066,10 +1109,7 @@ class DORACtppOversight:
     def get_active_exercises(self) -> List[OversightExercise]:
         """Get active oversight exercises."""
         with self._lock:
-            return [
-                e for e in self._exercises.values()
-                if e.status in ["notified", "in_progress"]
-            ]
+            return [e for e in self._exercises.values() if e.status in ["notified", "in_progress"]]
 
     # =========================================================================
     # CTPP Risk Assessment
@@ -1164,11 +1204,14 @@ class DORACtppOversight:
 
             self._assessments[assessment.assessment_id] = assessment
 
-        self._log_event("ctpp_risk_assessed", {
-            "assessment_id": assessment.assessment_id,
-            "ctpp_name": relationship.ctpp_name,
-            "overall_risk": assessment.overall_risk_level,
-        })
+        self._log_event(
+            "ctpp_risk_assessed",
+            {
+                "assessment_id": assessment.assessment_id,
+                "ctpp_name": relationship.ctpp_name,
+                "overall_risk": assessment.overall_risk_level,
+            },
+        )
 
         return assessment
 
@@ -1221,24 +1264,28 @@ class DORACtppOversight:
                 is_present = contract_provisions.get(req.requirement_name, False)
                 status = ComplianceLevel.COMPLIANT if is_present else ComplianceLevel.NON_COMPLIANT
 
-                results["requirements_checked"].append({
-                    "requirement": req.requirement_name,
-                    "article": req.article_reference,
-                    "mandatory": req.is_mandatory,
-                    "present": is_present,
-                    "status": status.value,
-                })
+                results["requirements_checked"].append(
+                    {
+                        "requirement": req.requirement_name,
+                        "article": req.article_reference,
+                        "mandatory": req.is_mandatory,
+                        "present": is_present,
+                        "status": status.value,
+                    }
+                )
 
                 if is_present:
                     results["compliant_count"] += 1
                 else:
                     results["non_compliant_count"] += 1
                     if req.is_mandatory:
-                        results["gaps"].append({
-                            "requirement": req.requirement_name,
-                            "article": req.article_reference,
-                            "action": f"Add {req.requirement_name} clause to contract",
-                        })
+                        results["gaps"].append(
+                            {
+                                "requirement": req.requirement_name,
+                                "article": req.article_reference,
+                                "action": f"Add {req.requirement_name} clause to contract",
+                            }
+                        )
 
             # Determine overall compliance
             total = len(requirements)
@@ -1268,26 +1315,24 @@ class DORACtppOversight:
             return {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "ctpp_landscape": {
-                    "total_designated": len([
-                        d for d in designations
-                        if d.status == CTPPStatus.DESIGNATED
-                    ]),
+                    "total_designated": len(
+                        [d for d in designations if d.status == CTPPStatus.DESIGNATED]
+                    ),
                     "by_lead_overseer": {
-                        overseer.value: len([
-                            d for d in designations
-                            if d.lead_overseer == overseer and d.status == CTPPStatus.DESIGNATED
-                        ])
+                        overseer.value: len(
+                            [
+                                d
+                                for d in designations
+                                if d.lead_overseer == overseer and d.status == CTPPStatus.DESIGNATED
+                            ]
+                        )
                         for overseer in LeadOverseer
                     },
                 },
                 "entity_relationships": {
                     "total": len(relationships),
-                    "with_exit_plan": sum(
-                        1 for r in relationships if r.exit_plan_in_place
-                    ),
-                    "with_alternatives": sum(
-                        1 for r in relationships if r.alternative_providers
-                    ),
+                    "with_exit_plan": sum(1 for r in relationships if r.exit_plan_in_place),
+                    "with_alternatives": sum(1 for r in relationships if r.alternative_providers),
                     "by_dependency_level": {
                         level: sum(1 for r in relationships if r.dependency_level == level)
                         for level in ["low", "medium", "high", "critical"]
@@ -1301,13 +1346,16 @@ class DORACtppOversight:
                 },
                 "compliance_indicators": {
                     "all_ctpp_relationships_documented": len(relationships) > 0,
-                    "all_have_exit_plans": all(
-                        r.exit_plan_in_place for r in relationships
-                    ) if relationships else True,
-                    "all_have_alternatives": all(
-                        len(r.alternative_providers) > 0 for r in relationships
-                    ) if relationships else True,
-                    "no_pending_recommendations": len(self.get_recommendations_requiring_action()) == 0,
+                    "all_have_exit_plans": (
+                        all(r.exit_plan_in_place for r in relationships) if relationships else True
+                    ),
+                    "all_have_alternatives": (
+                        all(len(r.alternative_providers) > 0 for r in relationships)
+                        if relationships
+                        else True
+                    ),
+                    "no_pending_recommendations": len(self.get_recommendations_requiring_action())
+                    == 0,
                 },
             }
 
@@ -1349,7 +1397,8 @@ class DORACtppOversight:
                         "entity_actions": r.entity_actions_required,
                     }
                     for r in self._recommendations.values()
-                    if r.status not in [RecommendationStatus.IMPLEMENTED, RecommendationStatus.NOT_APPLICABLE]
+                    if r.status
+                    not in [RecommendationStatus.IMPLEMENTED, RecommendationStatus.NOT_APPLICABLE]
                 ],
                 "assessments": [
                     {
@@ -1393,6 +1442,7 @@ class DORACtppOversight:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ctpp_oversight(
     config: Optional[CTPPOversightConfig] = None,

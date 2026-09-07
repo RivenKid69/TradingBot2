@@ -21,10 +21,11 @@ Security:
 from __future__ import annotations
 
 import warnings as _warnings
+
 _warnings.warn(
     "ccea.agent.runner is deprecated. Use packages.agent.runner instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 import json
@@ -47,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 class RunState(str, Enum):
     """Run state."""
+
     INITIALIZING = "INITIALIZING"
     RUNNING = "RUNNING"
     PAUSED = "PAUSED"
@@ -63,6 +65,7 @@ class RunContext:
 
     Contains all information needed for execution.
     """
+
     run_id: str
     deployment_id: str
     artifact_digest: str
@@ -78,6 +81,7 @@ class RunContext:
 @dataclass
 class RunResult:
     """Result of a run."""
+
     run_id: str
     success: bool
     state: RunState
@@ -328,7 +332,7 @@ class ArtifactRunner:
 
         # Create a simple wrapper script
         wrapper_script = context.working_dir / "run_wrapper.py"
-        wrapper_content = f'''
+        wrapper_content = f"""
 import sys
 import json
 from pathlib import Path
@@ -350,7 +354,7 @@ for i in range(5):
     time.sleep(1)
 
 print("Hello Strategy Complete")
-'''
+"""
 
         with open(wrapper_script, "w") as f:
             f.write(wrapper_content)
@@ -370,6 +374,7 @@ print("Hello Strategy Complete")
 # ============================================================================
 # Hello Strategy (Phase 1 Test Artifact)
 # ============================================================================
+
 
 class HelloStrategy:
     """

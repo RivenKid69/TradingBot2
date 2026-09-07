@@ -72,7 +72,9 @@ def _wilson_interval(successes: int, total: int, confidence_level: float) -> tup
     return float(max(low, 0.0)), float(min(high, 1.0))
 
 
-def _clopper_pearson_interval(successes: int, total: int, confidence_level: float) -> tuple[float, float]:
+def _clopper_pearson_interval(
+    successes: int, total: int, confidence_level: float
+) -> tuple[float, float]:
     if total <= 0:
         return float("nan"), float("nan")
 
@@ -270,7 +272,9 @@ class WinRateAccumulator:
         self._lengths.clear()
 
 
-def extract_episode_win_payload(info: Mapping[str, object] | None) -> tuple[bool | None, int | None]:
+def extract_episode_win_payload(
+    info: Mapping[str, object] | None
+) -> tuple[bool | None, int | None]:
     """Extract win flag and length from a typical Gym episode info mapping."""
 
     if not info:
@@ -322,4 +326,3 @@ def extract_episode_win_payload(info: Mapping[str, object] | None) -> tuple[bool
             length_int = None
 
     return win_bool, length_int
-

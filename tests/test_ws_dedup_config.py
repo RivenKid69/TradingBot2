@@ -7,6 +7,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _orig_sys_path = list(sys.path)
 sys.path = [p for p in sys.path if p not in ("", str(REPO_ROOT))]
 import logging as std_logging  # type: ignore
+
 sys.modules["logging"] = std_logging
 sys.path = _orig_sys_path
 if str(REPO_ROOT) not in sys.path:

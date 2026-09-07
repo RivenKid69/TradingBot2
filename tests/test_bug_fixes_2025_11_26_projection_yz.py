@@ -8,6 +8,7 @@ These tests verify that the fixes are correctly implemented and prevent regressi
 
 import math
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -15,6 +16,7 @@ import numpy as np
 # ============================================================================
 # ISSUE #1 TESTS: Twin Critics Categorical VF Clipping Projection
 # ============================================================================
+
 
 class TestTwinCriticsCategoricalProjectionFix:
     """
@@ -43,7 +45,7 @@ class TestTwinCriticsCategoricalProjectionFix:
         # Create non-uniform distribution (e.g., peaked at center)
         probs = torch.zeros(batch_size, num_atoms)
         probs[:, 10] = 0.8  # Peak at center
-        probs[:, 9] = 0.1   # Some mass nearby
+        probs[:, 9] = 0.1  # Some mass nearby
         probs[:, 11] = 0.1
 
         # Shift atoms by a significant amount
@@ -59,8 +61,9 @@ class TestTwinCriticsCategoricalProjectionFix:
 
         # Key assertion: projected distribution should be DIFFERENT from original
         # (unless delta=0, which is not the case here)
-        assert not torch.allclose(projected, probs, atol=1e-3), \
-            "BUG: Projection returned identity! VF clipping is non-functional."
+        assert not torch.allclose(
+            projected, probs, atol=1e-3
+        ), "BUG: Projection returned identity! VF clipping is non-functional."
 
         # Projected should still be a valid probability distribution
         assert torch.allclose(projected.sum(dim=1), torch.ones(batch_size), atol=1e-5)
@@ -101,8 +104,9 @@ class TestTwinCriticsCategoricalProjectionFix:
         for i in range(batch_size):
             if abs(delta[i].item()) > 0.1:
                 # Distribution should be different after projection
-                assert not torch.allclose(clipped_probs_1[i], current_probs_1[i], atol=1e-3), \
-                    f"Sample {i}: Projection returned identity for delta={delta[i].item()}"
+                assert not torch.allclose(
+                    clipped_probs_1[i], current_probs_1[i], atol=1e-3
+                ), f"Sample {i}: Projection returned identity for delta={delta[i].item()}"
 
         # Distribution should remain valid
         assert torch.allclose(clipped_probs_1.sum(dim=1), torch.ones(batch_size), atol=1e-5)
@@ -144,6 +148,7 @@ class TestTwinCriticsCategoricalProjectionFix:
 # ISSUE #2 TESTS: Yang-Zhang Rogers-Satchell Denominator
 # ============================================================================
 
+
 class TestYangZhangRogersSatchellFix:
     """
     Tests for Issue #2: Rogers-Satchell used (n-1) instead of n.
@@ -171,17 +176,17 @@ class TestYangZhangRogersSatchellFix:
         # Generate bars where RS contribution can be calculated analytically
         for i in range(n):
             bar = {
-                'open': 100.0,
-                'high': 105.0,
-                'low': 95.0,
-                'close': 102.0,
+                "open": 100.0,
+                "high": 105.0,
+                "low": 95.0,
+                "close": 102.0,
             }
             bars.append(bar)
 
         # Calculate what RS should be with n
         # term = log(H/C)*log(H/O) + log(L/C)*log(L/O)
-        term1 = math.log(105/102) * math.log(105/100)
-        term2 = math.log(95/102) * math.log(95/100)
+        term1 = math.log(105 / 102) * math.log(105 / 100)
+        term2 = math.log(95 / 102) * math.log(95 / 100)
         expected_term = term1 + term2
         expected_rs_sq_with_n = expected_term  # Since all bars are identical, sum/n = term
 
@@ -230,8 +235,9 @@ class TestYangZhangRogersSatchellFix:
         error_with_bug = abs(result - buggy_result)
 
         # Result should match the correct formula (not the buggy one)
-        assert error_with_fix < error_with_bug, \
-            f"Result {result} is closer to buggy value {buggy_result} than correct {expected_result}"
+        assert (
+            error_with_fix < error_with_bug
+        ), f"Result {result} is closer to buggy value {buggy_result} than correct {expected_result}"
 
     def test_rs_inflation_quantified(self):
         """
@@ -246,13 +252,14 @@ class TestYangZhangRogersSatchellFix:
             (10, 1.111),  # 10/9 = 1.111
             (20, 1.053),  # 20/19 = 1.053
             (50, 1.020),  # 50/49 = 1.020
-            (100, 1.010), # 100/99 = 1.010
+            (100, 1.010),  # 100/99 = 1.010
         ]
 
         for n, expected_inflation in test_cases:
             actual_inflation = n / (n - 1)
-            assert abs(actual_inflation - expected_inflation) < 0.001, \
-                f"n={n}: expected inflation {expected_inflation}, got {actual_inflation}"
+            assert (
+                abs(actual_inflation - expected_inflation) < 0.001
+            ), f"n={n}: expected inflation {expected_inflation}, got {actual_inflation}"
 
     def test_yang_zhang_matches_academic_formula(self):
         """
@@ -281,12 +288,14 @@ class TestYangZhangRogersSatchellFix:
             low = open_price * (1 - np.random.uniform(0.001, 0.03))
             close = (high + low) / 2 * (1 + np.random.uniform(-0.01, 0.01))
 
-            bars.append({
-                'open': open_price,
-                'high': high,
-                'low': low,
-                'close': close,
-            })
+            bars.append(
+                {
+                    "open": open_price,
+                    "high": high,
+                    "low": low,
+                    "close": close,
+                }
+            )
             prev_close = close
 
         # Manual calculation following academic formula exactly
@@ -295,26 +304,28 @@ class TestYangZhangRogersSatchellFix:
         # σ²_o: overnight returns (centered, n-1)
         overnight_returns = []
         for i in range(1, len(bars)):
-            r = math.log(bars[i]['open'] / bars[i-1]['close'])
+            r = math.log(bars[i]["open"] / bars[i - 1]["close"])
             overnight_returns.append(r)
 
         mean_o = sum(overnight_returns) / len(overnight_returns)
-        sigma_o_sq = sum((r - mean_o)**2 for r in overnight_returns) / (len(overnight_returns) - 1)
+        sigma_o_sq = sum((r - mean_o) ** 2 for r in overnight_returns) / (
+            len(overnight_returns) - 1
+        )
 
         # σ²_c: open-close returns (centered, n-1)
         oc_returns = []
         for bar in bars:
-            r = math.log(bar['close'] / bar['open'])
+            r = math.log(bar["close"] / bar["open"])
             oc_returns.append(r)
 
         mean_c = sum(oc_returns) / len(oc_returns)
-        sigma_c_sq = sum((r - mean_c)**2 for r in oc_returns) / (len(oc_returns) - 1)
+        sigma_c_sq = sum((r - mean_c) ** 2 for r in oc_returns) / (len(oc_returns) - 1)
 
         # σ²_rs: Rogers-Satchell (uncentered, uses n NOT n-1)
         rs_sum = 0.0
         for bar in bars:
-            h, l, o, c = bar['high'], bar['low'], bar['open'], bar['close']
-            term = math.log(h/c) * math.log(h/o) + math.log(l/c) * math.log(l/o)
+            h, l, o, c = bar["high"], bar["low"], bar["open"], bar["close"]
+            term = math.log(h / c) * math.log(h / o) + math.log(l / c) * math.log(l / o)
             rs_sum += term
 
         # CRITICAL: RS uses n, not (n-1)
@@ -329,13 +340,15 @@ class TestYangZhangRogersSatchellFix:
 
         # Should match within floating point tolerance
         assert actual_result is not None
-        assert abs(actual_result - expected_result) < 1e-10, \
-            f"Implementation {actual_result} doesn't match academic formula {expected_result}"
+        assert (
+            abs(actual_result - expected_result) < 1e-10
+        ), f"Implementation {actual_result} doesn't match academic formula {expected_result}"
 
 
 # ============================================================================
 # REGRESSION TESTS: Ensure fixes don't break existing functionality
 # ============================================================================
+
 
 class TestRegressionPreventionProjection:
     """Regression tests for projection fix."""
@@ -385,10 +398,20 @@ class TestRegressionPreventionYangZhang:
         assert calculate_yang_zhang_volatility([], 10) is None
 
         # Insufficient data
-        assert calculate_yang_zhang_volatility([{'open': 100, 'high': 101, 'low': 99, 'close': 100}], 10) is None
+        assert (
+            calculate_yang_zhang_volatility(
+                [{"open": 100, "high": 101, "low": 99, "close": 100}], 10
+            )
+            is None
+        )
 
         # n < 2
-        assert calculate_yang_zhang_volatility([{'open': 100, 'high': 101, 'low': 99, 'close': 100}], 1) is None
+        assert (
+            calculate_yang_zhang_volatility(
+                [{"open": 100, "high": 101, "low": 99, "close": 100}], 1
+            )
+            is None
+        )
 
     def test_yang_zhang_returns_positive_volatility(self):
         """Yang-Zhang should always return positive volatility for valid data."""
@@ -402,7 +425,7 @@ class TestRegressionPreventionYangZhang:
             h = o * 1.01
             l = o * 0.99
             c = o * (1 + np.random.uniform(-0.005, 0.005))
-            bars.append({'open': o, 'high': h, 'low': l, 'close': c})
+            bars.append({"open": o, "high": h, "low": l, "close": c})
             price = c
 
         result = calculate_yang_zhang_volatility(bars, 20)

@@ -4,7 +4,12 @@ from __future__ import annotations
 import json
 
 from ccea.crypto.keys import KeyAlgorithm, generate_keypair
-from packages.agent.daemon.preflight import PreflightChecker, PreflightConfig, PreflightCheckType, PreflightCheckResult
+from packages.agent.daemon.preflight import (
+    PreflightChecker,
+    PreflightConfig,
+    PreflightCheckType,
+    PreflightCheckResult,
+)
 from packages.cloud.builder.artifact_builder import ArtifactBuilder, BuildConfig
 from packages.shared.contracts.manifest import ArtifactFormat
 
@@ -28,7 +33,9 @@ def test_preflight_requires_signature_when_artifact_present(tmp_path):
         signature=None,
     )
 
-    sig_check = next(c for c in result.checks if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION)
+    sig_check = next(
+        c for c in result.checks if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION
+    )
     assert sig_check.result == PreflightCheckResult.FAILED
     assert sig_check.required is True
 
@@ -72,11 +79,14 @@ def test_preflight_accepts_manifest_embedded_signature(tmp_path):
         signature=None,
     )
 
-    sig_check = next(c for c in result.checks if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION)
+    sig_check = next(
+        c for c in result.checks if c.check_type == PreflightCheckType.SIGNATURE_VERIFICATION
+    )
     # Design Doc compliance: Without ArtifactVerifier, signature presence returns WARNING
     # (crypto verification skipped), with ArtifactVerifier configured it would return PASSED
     assert sig_check.result in (PreflightCheckResult.PASSED, PreflightCheckResult.WARNING)
 
-    digest_check = next(c for c in result.checks if c.check_type == PreflightCheckType.DIGEST_VERIFICATION)
+    digest_check = next(
+        c for c in result.checks if c.check_type == PreflightCheckType.DIGEST_VERIFICATION
+    )
     assert digest_check.result == PreflightCheckResult.PASSED
-

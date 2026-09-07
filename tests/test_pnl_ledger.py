@@ -19,8 +19,13 @@ from packages.agent.accounting.pnl_ledger import PnLLedger, ledger_fill_callback
 def _identity_holds(led: PnLLedger) -> bool:
     # equity == starting_cash + realized + unrealized − fees − financing
     lhs = led.equity
-    rhs = (Decimal(str(led._starting_cash)) + led.realized_pnl + led.unrealized_pnl
-           - led._fees_cum - led._financing_cum)
+    rhs = (
+        Decimal(str(led._starting_cash))
+        + led.realized_pnl
+        + led.unrealized_pnl
+        - led._fees_cum
+        - led._financing_cum
+    )
     return abs(lhs - rhs) < Decimal("1e-9")
 
 
@@ -48,8 +53,8 @@ def test_round_trip_realized():
 
 def test_partial_reduction_average_cost():
     led = PnLLedger(starting_cash=100_000)
-    led.on_fill("AAPL", "buy", 100, 100)   # avg 100
-    led.on_fill("AAPL", "buy", 100, 120)   # avg 110
+    led.on_fill("AAPL", "buy", 100, 100)  # avg 100
+    led.on_fill("AAPL", "buy", 100, 120)  # avg 110
     p = led.position("AAPL")
     assert float(p.avg_cost) == pytest.approx(110.0)
     out = led.on_fill("AAPL", "sell", 50, 130)  # realized (130-110)*50 = 1000
@@ -61,7 +66,7 @@ def test_partial_reduction_average_cost():
 
 def test_short_position_realized():
     led = PnLLedger(starting_cash=100_000)
-    led.on_fill("XOM", "sell", 100, 100)   # open short @100
+    led.on_fill("XOM", "sell", 100, 100)  # open short @100
     led.mark("XOM", 90)
     assert float(led.unrealized_pnl) == pytest.approx(1000.0)  # short gains as price falls
     out = led.on_fill("XOM", "buy", 100, 90)  # cover: realized (100-90)*100 = 1000
@@ -72,8 +77,8 @@ def test_short_position_realized():
 
 def test_sign_flip_through_zero():
     led = PnLLedger(starting_cash=100_000)
-    led.on_fill("ES", "buy", 10, 4000)            # long 10 @4000
-    out = led.on_fill("ES", "sell", 15, 4100)      # close 10 (+1000), flip short 5 @4100
+    led.on_fill("ES", "buy", 10, 4000)  # long 10 @4000
+    out = led.on_fill("ES", "sell", 15, 4100)  # close 10 (+1000), flip short 5 @4100
     assert out["realized_delta"] == pytest.approx(1000.0)
     p = led.position("ES")
     assert float(p.quantity) == pytest.approx(-5.0)
@@ -177,14 +182,35 @@ def test_fillhandler_callback_increments():
     led = PnLLedger(starting_cash=100_000)
     cb = ledger_fill_callback(led)
     # cumulative partial fills for one order
-    cb({"client_order_id": "o1", "symbol": "BTC", "side": "buy",
-        "filled_qty": "0.05", "avg_fill_price": "50000"})
-    cb({"client_order_id": "o1", "symbol": "BTC", "side": "buy",
-        "filled_qty": "0.10", "avg_fill_price": "50000"})  # increment 0.05
+    cb(
+        {
+            "client_order_id": "o1",
+            "symbol": "BTC",
+            "side": "buy",
+            "filled_qty": "0.05",
+            "avg_fill_price": "50000",
+        }
+    )
+    cb(
+        {
+            "client_order_id": "o1",
+            "symbol": "BTC",
+            "side": "buy",
+            "filled_qty": "0.10",
+            "avg_fill_price": "50000",
+        }
+    )  # increment 0.05
     assert float(led.position("BTC").quantity) == pytest.approx(0.1)
     # a duplicate cumulative event applies no further increment
-    cb({"client_order_id": "o1", "symbol": "BTC", "side": "buy",
-        "filled_qty": "0.10", "avg_fill_price": "50000"})
+    cb(
+        {
+            "client_order_id": "o1",
+            "symbol": "BTC",
+            "side": "buy",
+            "filled_qty": "0.10",
+            "avg_fill_price": "50000",
+        }
+    )
     assert float(led.position("BTC").quantity) == pytest.approx(0.1)
 
 
@@ -199,6 +225,7 @@ def test_reconcile_against_broker():
 
 def test_snapshot_serializable():
     import json
+
     led = PnLLedger(starting_cash=100_000)
     led.on_fill("BTC", "buy", 0.1, 50_000)
     led.mark("BTC", 55_000)

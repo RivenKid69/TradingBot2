@@ -197,9 +197,9 @@ class TestLimitOrderFillWithTolerance:
 
         # A fill price $1 above limit should NOT fill
         fill_price_1_dollar_above = limit_price + 1.0
-        assert fill_price_1_dollar_above > limit_price + tolerance, (
-            "Fill $1 above limit should not satisfy tolerance"
-        )
+        assert (
+            fill_price_1_dollar_above > limit_price + tolerance
+        ), "Fill $1 above limit should not satisfy tolerance"
 
 
 class TestRegressionScenarios:
@@ -236,14 +236,12 @@ class TestRegressionScenarios:
         # Due to FP, this might not be exactly original_price
         diff = abs(price_after_ops - original_price)
 
-        tolerance = ExecutionSimulator._compute_price_tolerance(
-            original_price, price_after_ops
-        )
+        tolerance = ExecutionSimulator._compute_price_tolerance(original_price, price_after_ops)
 
         # Tolerance should accommodate this kind of roundoff error
-        assert tolerance > diff or diff < 1e-10, (
-            f"Tolerance {tolerance} should handle calculation chain error {diff}"
-        )
+        assert (
+            tolerance > diff or diff < 1e-10
+        ), f"Tolerance {tolerance} should handle calculation chain error {diff}"
 
 
 class TestEdgeCases:

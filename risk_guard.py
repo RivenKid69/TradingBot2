@@ -25,7 +25,18 @@ from dataclasses import dataclass, asdict
 from enum import IntEnum, auto
 import math
 import logging
-from typing import Optional, Deque, Tuple, Dict, Any, TYPE_CHECKING, Sequence, Callable, Mapping, List
+from typing import (
+    Optional,
+    Deque,
+    Tuple,
+    Dict,
+    Any,
+    TYPE_CHECKING,
+    Sequence,
+    Callable,
+    Mapping,
+    List,
+)
 from collections import deque
 from collections.abc import Mapping as MappingABC
 from clock import now_ms
@@ -39,12 +50,23 @@ if TYPE_CHECKING:
 try:
     import event_bus as eb
 except Exception:  # на случай отсутствия event_bus в окружении
+
     class _Stub:
-        def configure(self, *a, **k): return ""
-        def log_trade(self, *a, **k): pass
-        def log_risk(self, *a, **k): pass
-        def flush(self): pass
-        def run_dir(self): return ""
+        def configure(self, *a, **k):
+            return ""
+
+        def log_trade(self, *a, **k):
+            pass
+
+        def log_risk(self, *a, **k):
+            pass
+
+        def flush(self):
+            pass
+
+        def run_dir(self):
+            return ""
+
     eb = _Stub()  # type: ignore
 
 from action_proto import ActionProto, ActionType
@@ -54,23 +76,23 @@ logger = logging.getLogger(__name__)
 
 class RiskEvent(IntEnum):
     NONE = 0
-    POSITION_LIMIT = 1        # превышение лимита по абсолютной позиции (pre/post)
-    NOTIONAL_LIMIT = 2        # превышение лимита по ноционалу (post)
-    DRAWDOWN = 3              # превышение лимита по дроудауну (post)
-    BANKRUPTCY = 4            # cash ниже порога банкротства (post)
+    POSITION_LIMIT = 1  # превышение лимита по абсолютной позиции (pre/post)
+    NOTIONAL_LIMIT = 2  # превышение лимита по ноционалу (post)
+    DRAWDOWN = 3  # превышение лимита по дроудауну (post)
+    BANKRUPTCY = 4  # cash ниже порога банкротства (post)
     # Stock-specific events (Phase 6)
-    PDT_VIOLATION = 5         # Pattern Day Trader rule violation
-    MARGIN_CALL = 6           # Margin requirement violation
+    PDT_VIOLATION = 5  # Pattern Day Trader rule violation
+    MARGIN_CALL = 6  # Margin requirement violation
     SHORT_SALE_RESTRICTED = 7  # Short sale restriction (uptick rule, HTB)
-    CORPORATE_ACTION = 8      # Corporate action affecting position
+    CORPORATE_ACTION = 8  # Corporate action affecting position
     # Futures-specific events (Phase 6A)
-    LEVERAGE_VIOLATION = 9    # Leverage exceeds maximum allowed
+    LEVERAGE_VIOLATION = 9  # Leverage exceeds maximum allowed
     FUTURES_MARGIN_WARNING = 10  # Margin ratio below warning threshold
-    FUTURES_MARGIN_DANGER = 11   # Margin ratio critical - position reduction required
+    FUTURES_MARGIN_DANGER = 11  # Margin ratio critical - position reduction required
     FUTURES_MARGIN_LIQUIDATION = 12  # Margin ratio at liquidation level
-    FUNDING_EXPOSURE = 13     # Funding rate exposure exceeds threshold
+    FUNDING_EXPOSURE = 13  # Funding rate exposure exceeds threshold
     CONCENTRATION_LIMIT = 14  # Position concentration exceeds limits
-    ADL_RISK = 15             # Auto-deleveraging risk detected
+    ADL_RISK = 15  # Auto-deleveraging risk detected
 
 
 @dataclass
@@ -83,12 +105,12 @@ class RiskConfig:
     exposure_buffer_frac: float = 0.0
 
     # Дроудаун/устойчивость
-    max_drawdown_pct: float = 1.00        # разрешённая просадка (0.30 => 30%)
-    intrabar_dd_pct: float = 0.30         # «жёсткий» интра-барный триггер
-    dd_window: int = 500                  # размер окна для оценки пика equity
+    max_drawdown_pct: float = 1.00  # разрешённая просадка (0.30 => 30%)
+    intrabar_dd_pct: float = 0.30  # «жёсткий» интра-барный триггер
+    dd_window: int = 500  # размер окна для оценки пика equity
 
     # Ликвидация/банкротство
-    bankruptcy_cash_th: float = -1e12     # порог банкротства по кэшу
+    bankruptcy_cash_th: float = -1e12  # порог банкротства по кэшу
 
     # Технические опции
     ts_provider: Callable[[], int] = lambda: now_ms()
@@ -104,7 +126,9 @@ class RiskGuard:
 
     def __init__(self, cfg: Optional[RiskConfig] = None):
         self.cfg = cfg or RiskConfig()
-        self._nw_hist: Deque[Tuple[int, float]] = deque(maxlen=self.cfg.dd_window)  # (ts, net_worth)
+        self._nw_hist: Deque[Tuple[int, float]] = deque(
+            maxlen=self.cfg.dd_window
+        )  # (ts, net_worth)
         self._peak_nw_window: Deque[float] = deque(maxlen=self.cfg.dd_window)
         self._last_event: RiskEvent = RiskEvent.NONE
 
@@ -135,7 +159,9 @@ class RiskGuard:
             return 0.0
         return abs(float(state.units)) * price
 
-    def _update_equity_windows(self, ts: int, state, mid_price: float) -> Tuple[float, float, float]:
+    def _update_equity_windows(
+        self, ts: int, state, mid_price: float
+    ) -> Tuple[float, float, float]:
         """
         Возвращает (nw, peak, dd_pct) - net worth, rolling peak, drawdown percentage.
 
@@ -200,20 +226,22 @@ class RiskGuard:
 
         if abs(next_units) > cfg.max_abs_position + 1e-12:
             evt = RiskEvent.POSITION_LIMIT
-            eb.log_risk({
-                "ts": ts,
-                "type": "POSITION_LIMIT",
-                "stage": "pre_trade",
-                "units_curr": float(state.units),
-                "units_next": float(next_units),
-                "max_abs_position": float(cfg.max_abs_position),
-                "proto": {
-                    "type": int(proto.action_type),
-                    "volume_frac": float(proto.volume_frac),
-                    "ttl_steps": int(getattr(proto, "ttl_steps", 0) or 0),
-                    "client_order_id": int(getattr(proto, "client_order_id", 0) or 0),
-                },
-            })
+            eb.log_risk(
+                {
+                    "ts": ts,
+                    "type": "POSITION_LIMIT",
+                    "stage": "pre_trade",
+                    "units_curr": float(state.units),
+                    "units_next": float(next_units),
+                    "max_abs_position": float(cfg.max_abs_position),
+                    "proto": {
+                        "type": int(proto.action_type),
+                        "volume_frac": float(proto.volume_frac),
+                        "ttl_steps": int(getattr(proto, "ttl_steps", 0) or 0),
+                        "client_order_id": int(getattr(proto, "client_order_id", 0) or 0),
+                    },
+                }
+            )
             self._last_event = evt
             return evt
 
@@ -233,12 +261,14 @@ class RiskGuard:
         # 1) Банкротство (по кэшу)
         if float(state.cash) < cfg.bankruptcy_cash_th:
             evt = RiskEvent.BANKRUPTCY
-            eb.log_risk({
-                "ts": ts,
-                "type": "BANKRUPTCY",
-                "cash": float(state.cash),
-                "threshold": float(cfg.bankruptcy_cash_th),
-            })
+            eb.log_risk(
+                {
+                    "ts": ts,
+                    "type": "BANKRUPTCY",
+                    "cash": float(state.cash),
+                    "threshold": float(cfg.bankruptcy_cash_th),
+                }
+            )
             self._last_event = evt
             return evt
 
@@ -246,15 +276,17 @@ class RiskGuard:
         notion = self._notional(state, float(mid_price))
         if notion > cfg.max_notional + 1e-9:
             evt = RiskEvent.NOTIONAL_LIMIT
-            eb.log_risk({
-                "ts": ts,
-                "type": "NOTIONAL_LIMIT",
-                "notional": float(notion),
-                "max_notional": float(cfg.max_notional),
-                "units": float(state.units),
-                "mid": float(mid_price),
-                "cash": float(state.cash),
-            })
+            eb.log_risk(
+                {
+                    "ts": ts,
+                    "type": "NOTIONAL_LIMIT",
+                    "notional": float(notion),
+                    "max_notional": float(cfg.max_notional),
+                    "units": float(state.units),
+                    "mid": float(mid_price),
+                    "cash": float(state.cash),
+                }
+            )
             self._last_event = evt
             return evt
 
@@ -262,40 +294,46 @@ class RiskGuard:
         nw, peak, dd_pct = self._update_equity_windows(ts, state, float(mid_price))
         if dd_pct >= cfg.intrabar_dd_pct - 1e-12:
             evt = RiskEvent.DRAWDOWN
-            eb.log_risk({
-                "ts": ts,
-                "type": "DRAWDOWN_INTRABAR",
-                "drawdown_pct": float(dd_pct),
-                "intrabar_dd_pct": float(cfg.intrabar_dd_pct),
-                "nw": float(nw),
-                "peak": float(peak),
-            })
+            eb.log_risk(
+                {
+                    "ts": ts,
+                    "type": "DRAWDOWN_INTRABAR",
+                    "drawdown_pct": float(dd_pct),
+                    "intrabar_dd_pct": float(cfg.intrabar_dd_pct),
+                    "nw": float(nw),
+                    "peak": float(peak),
+                }
+            )
             self._last_event = evt
             return evt
 
         if dd_pct >= cfg.max_drawdown_pct - 1e-12:
             evt = RiskEvent.DRAWDOWN
-            eb.log_risk({
-                "ts": ts,
-                "type": "DRAWDOWN",
-                "drawdown_pct": float(dd_pct),
-                "max_drawdown_pct": float(cfg.max_drawdown_pct),
-                "nw": float(nw),
-                "peak": float(peak),
-            })
+            eb.log_risk(
+                {
+                    "ts": ts,
+                    "type": "DRAWDOWN",
+                    "drawdown_pct": float(dd_pct),
+                    "max_drawdown_pct": float(cfg.max_drawdown_pct),
+                    "nw": float(nw),
+                    "peak": float(peak),
+                }
+            )
             self._last_event = evt
             return evt
 
         # 4) Контроль «на всякий» по абсолютной позиции (post) — на случай внешних модификаций состояния
         if abs(float(state.units)) > cfg.max_abs_position + 1e-12:
             evt = RiskEvent.POSITION_LIMIT
-            eb.log_risk({
-                "ts": ts,
-                "type": "POSITION_LIMIT",
-                "stage": "post_trade",
-                "units": float(state.units),
-                "max_abs_position": float(cfg.max_abs_position),
-            })
+            eb.log_risk(
+                {
+                    "ts": ts,
+                    "type": "POSITION_LIMIT",
+                    "stage": "post_trade",
+                    "units": float(state.units),
+                    "max_abs_position": float(cfg.max_abs_position),
+                }
+            )
             self._last_event = evt
             return evt
 
@@ -732,6 +770,7 @@ class PortfolioLimitGuard:
 # Stock Risk Guard (Phase 6)
 # =========================
 
+
 @dataclass
 class StockRiskConfig:
     """Configuration for stock-specific risk management."""
@@ -870,9 +909,12 @@ class StockRiskGuard:
             # Import stock risk modules
             from services.pdt_tracker import PDTTracker, PDTTrackerConfig
             from services.stock_risk_guards import (
-                MarginGuard, MarginGuardConfig,
-                ShortSaleGuard, ShortSaleGuardConfig,
-                CorporateActionsHandler, CorporateActionsConfig,
+                MarginGuard,
+                MarginGuardConfig,
+                ShortSaleGuard,
+                ShortSaleGuardConfig,
+                CorporateActionsHandler,
+                CorporateActionsConfig,
             )
 
             # PDT Tracker
@@ -1007,12 +1049,14 @@ class StockRiskGuard:
             if not can_trade:
                 self._last_event = RiskEvent.PDT_VIOLATION
                 self._last_event_reason = reason
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "PDT_VIOLATION",
-                    "symbol": symbol,
-                    "reason": reason,
-                })
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "PDT_VIOLATION",
+                        "symbol": symbol,
+                        "reason": reason,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.PDT_VIOLATION
 
@@ -1024,15 +1068,17 @@ class StockRiskGuard:
             if not can_buy:
                 self._last_event = RiskEvent.MARGIN_CALL
                 self._last_event_reason = reason
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "MARGIN_VIOLATION",
-                    "symbol": symbol,
-                    "side": side,
-                    "quantity": quantity,
-                    "price": price,
-                    "reason": reason,
-                })
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "MARGIN_VIOLATION",
+                        "symbol": symbol,
+                        "side": side,
+                        "quantity": quantity,
+                        "price": price,
+                        "reason": reason,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.MARGIN_CALL
 
@@ -1045,12 +1091,14 @@ class StockRiskGuard:
             if not can_short:
                 self._last_event = RiskEvent.SHORT_SALE_RESTRICTED
                 self._last_event_reason = f"Short sale restricted: {status.restriction.value}"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "SHORT_SALE_RESTRICTED",
-                    "symbol": symbol,
-                    "restriction": status.restriction.value,
-                })
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "SHORT_SALE_RESTRICTED",
+                        "symbol": symbol,
+                        "restriction": status.restriction.value,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.SHORT_SALE_RESTRICTED
 
@@ -1091,9 +1139,7 @@ class StockRiskGuard:
         if self._short_sale_guard is None:
             return True, "Short sale guard not enabled"
 
-        can_short, status = self._short_sale_guard.can_short(
-            symbol, price, quantity, timestamp_ms
-        )
+        can_short, status = self._short_sale_guard.can_short(symbol, price, quantity, timestamp_ms)
         return can_short, status.restriction.value
 
     def check_day_trade(
@@ -1180,13 +1226,9 @@ class StockRiskGuard:
         if self._pdt_tracker is not None:
             if is_opening:
                 pdt_side = "LONG" if side == "BUY" else "SHORT"
-                self._pdt_tracker.record_open(
-                    symbol, pdt_side, quantity, price, timestamp_ms
-                )
+                self._pdt_tracker.record_open(symbol, pdt_side, quantity, price, timestamp_ms)
             else:
-                self._pdt_tracker.record_close(
-                    symbol, quantity, price, timestamp_ms
-                )
+                self._pdt_tracker.record_close(symbol, quantity, price, timestamp_ms)
 
         # Update short sale last price
         if self._short_sale_guard is not None:
@@ -1215,6 +1257,7 @@ class StockRiskGuard:
 
         if self._pdt_tracker is not None:
             from services.pdt_tracker import DayTradeType
+
             self._pdt_tracker.record_day_trade(
                 symbol=symbol,
                 timestamp_ms=timestamp_ms,
@@ -1263,9 +1306,7 @@ class StockRiskGuard:
             return
 
         if self._short_sale_guard is not None:
-            self._short_sale_guard.trigger_circuit_breaker(
-                symbol, timestamp_ms, duration_ms
-            )
+            self._short_sale_guard.trigger_circuit_breaker(symbol, timestamp_ms, duration_ms)
 
     def add_corporate_action(
         self,
@@ -1290,6 +1331,7 @@ class StockRiskGuard:
 
         if self._corporate_actions is not None:
             from services.stock_risk_guards import CorporateAction, CorporateActionType
+
             try:
                 action = CorporateAction(
                     symbol=symbol,
@@ -1382,6 +1424,7 @@ class StockRiskGuard:
 # Factory Functions
 # =========================
 
+
 def create_stock_risk_guard(
     market_type: str = "EQUITY",
     account_equity: float = 30_000.0,
@@ -1448,6 +1491,7 @@ def create_combined_risk_guard(
 # Crypto Futures Risk Guard (Phase 6A)
 # =========================
 
+
 @dataclass
 class CryptoFuturesRiskConfig:
     """Configuration for crypto futures risk management.
@@ -1467,7 +1511,7 @@ class CryptoFuturesRiskConfig:
     # Margin settings
     margin_enabled: bool = True
     margin_warning_threshold: float = 2.0  # 200% margin ratio
-    margin_danger_threshold: float = 1.5   # 150% margin ratio
+    margin_danger_threshold: float = 1.5  # 150% margin ratio
     margin_critical_threshold: float = 1.2  # 120% margin ratio
     margin_liquidation_threshold: float = 1.05  # 105% margin ratio
 
@@ -1791,6 +1835,7 @@ class CryptoFuturesRiskGuard:
         if self._leverage_guard is not None:
             # Create a position-like object for validation
             from types import SimpleNamespace
+
             proposed_position = SimpleNamespace(
                 symbol=symbol,
                 qty=Decimal(str(quantity)),
@@ -1806,14 +1851,16 @@ class CryptoFuturesRiskGuard:
             if not result.is_valid:
                 self._last_event = RiskEvent.LEVERAGE_VIOLATION
                 self._last_event_reason = result.error_message or "Leverage violation"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "LEVERAGE_VIOLATION",
-                    "symbol": symbol,
-                    "requested_leverage": leverage,
-                    "max_leverage": result.max_allowed_leverage,
-                    "reason": result.error_message,
-                })
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "LEVERAGE_VIOLATION",
+                        "symbol": symbol,
+                        "requested_leverage": leverage,
+                        "max_leverage": result.max_allowed_leverage,
+                        "reason": result.error_message,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.LEVERAGE_VIOLATION
 
@@ -1821,7 +1868,7 @@ class CryptoFuturesRiskGuard:
         if self._margin_guard is not None and account_equity is not None:
             required_margin = position_notional / leverage if leverage > 0 else position_notional
             margin_used = (total_margin_used or 0) + required_margin
-            margin_ratio = account_equity / margin_used if margin_used > 0 else float('inf')
+            margin_ratio = account_equity / margin_used if margin_used > 0 else float("inf")
 
             result = self._margin_guard.check_margin_ratio(
                 margin_ratio=margin_ratio,
@@ -1834,43 +1881,55 @@ class CryptoFuturesRiskGuard:
             if result.requires_liquidation:
                 self._last_event = RiskEvent.FUTURES_MARGIN_LIQUIDATION
                 self._last_event_reason = f"Margin ratio {margin_ratio:.2%} at liquidation level"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "FUTURES_MARGIN_LIQUIDATION",
-                    "symbol": symbol,
-                    "margin_ratio": margin_ratio,
-                    "level": result.level.value,
-                })
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "FUTURES_MARGIN_LIQUIDATION",
+                        "symbol": symbol,
+                        "margin_ratio": margin_ratio,
+                        "level": result.level.value,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.FUTURES_MARGIN_LIQUIDATION
 
             elif result.requires_reduction:
                 self._last_event = RiskEvent.FUTURES_MARGIN_DANGER
-                self._last_event_reason = f"Margin ratio {margin_ratio:.2%} requires position reduction"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "FUTURES_MARGIN_DANGER",
-                    "symbol": symbol,
-                    "margin_ratio": margin_ratio,
-                    "level": result.level.value,
-                })
+                self._last_event_reason = (
+                    f"Margin ratio {margin_ratio:.2%} requires position reduction"
+                )
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "FUTURES_MARGIN_DANGER",
+                        "symbol": symbol,
+                        "margin_ratio": margin_ratio,
+                        "level": result.level.value,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.FUTURES_MARGIN_DANGER
 
             elif result.level.value in ("warning", "danger"):
                 self._last_event = RiskEvent.FUTURES_MARGIN_WARNING
                 self._last_event_reason = f"Margin ratio {margin_ratio:.2%} below warning threshold"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "FUTURES_MARGIN_WARNING",
-                    "symbol": symbol,
-                    "margin_ratio": margin_ratio,
-                    "level": result.level.value,
-                })
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "FUTURES_MARGIN_WARNING",
+                        "symbol": symbol,
+                        "margin_ratio": margin_ratio,
+                        "level": result.level.value,
+                    }
+                )
                 # Don't block on warning, just log
 
         # 3. Funding Exposure Check
-        if self._funding_guard is not None and funding_rate is not None and account_equity is not None:
+        if (
+            self._funding_guard is not None
+            and funding_rate is not None
+            and account_equity is not None
+        ):
             result = self._funding_guard.check_funding_exposure(
                 funding_rate=funding_rate,
                 position_notional=position_notional,
@@ -1879,20 +1938,28 @@ class CryptoFuturesRiskGuard:
             )
             if not result.is_acceptable:
                 self._last_event = RiskEvent.FUNDING_EXPOSURE
-                self._last_event_reason = f"Funding exposure {result.exposure_pct:.2%} exceeds limit"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "FUNDING_EXPOSURE",
-                    "symbol": symbol,
-                    "funding_rate": funding_rate,
-                    "exposure_pct": result.exposure_pct,
-                    "level": result.level.value,
-                })
+                self._last_event_reason = (
+                    f"Funding exposure {result.exposure_pct:.2%} exceeds limit"
+                )
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "FUNDING_EXPOSURE",
+                        "symbol": symbol,
+                        "funding_rate": funding_rate,
+                        "exposure_pct": result.exposure_pct,
+                        "level": result.level.value,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.FUNDING_EXPOSURE
 
         # 4. Concentration Check
-        if self._concentration_guard is not None and positions is not None and account_equity is not None:
+        if (
+            self._concentration_guard is not None
+            and positions is not None
+            and account_equity is not None
+        ):
             result = self._concentration_guard.check_concentration(
                 symbol=symbol,
                 position_notional=position_notional,
@@ -1901,14 +1968,18 @@ class CryptoFuturesRiskGuard:
             )
             if not result.is_within_limits:
                 self._last_event = RiskEvent.CONCENTRATION_LIMIT
-                self._last_event_reason = f"Position concentration {result.symbol_concentration:.2%} exceeds limit"
-                eb.log_risk({
-                    "ts": timestamp_ms,
-                    "type": "CONCENTRATION_LIMIT",
-                    "symbol": symbol,
-                    "symbol_concentration": result.symbol_concentration,
-                    "group_concentration": result.group_concentration,
-                })
+                self._last_event_reason = (
+                    f"Position concentration {result.symbol_concentration:.2%} exceeds limit"
+                )
+                eb.log_risk(
+                    {
+                        "ts": timestamp_ms,
+                        "type": "CONCENTRATION_LIMIT",
+                        "symbol": symbol,
+                        "symbol_concentration": result.symbol_concentration,
+                        "group_concentration": result.group_concentration,
+                    }
+                )
                 if self._config.strict_mode and not self._config.simulation_mode:
                     return RiskEvent.CONCENTRATION_LIMIT
 
@@ -1950,14 +2021,16 @@ class CryptoFuturesRiskGuard:
         if result.level.value in ("critical", "high"):
             self._last_event = RiskEvent.ADL_RISK
             self._last_event_reason = f"ADL risk {result.level.value}: score={result.adl_score:.2f}"
-            eb.log_risk({
-                "ts": timestamp_ms,
-                "type": "ADL_RISK",
-                "adl_score": result.adl_score,
-                "pnl_percentile": pnl_percentile,
-                "leverage_percentile": leverage_percentile,
-                "level": result.level.value,
-            })
+            eb.log_risk(
+                {
+                    "ts": timestamp_ms,
+                    "type": "ADL_RISK",
+                    "adl_score": result.adl_score,
+                    "pnl_percentile": pnl_percentile,
+                    "leverage_percentile": leverage_percentile,
+                    "level": result.level.value,
+                }
+            )
             return RiskEvent.ADL_RISK
 
         return RiskEvent.NONE
@@ -2043,6 +2116,7 @@ class CryptoFuturesRiskGuard:
 # Crypto Futures Factory Functions
 # =========================
 
+
 def create_crypto_futures_risk_guard(
     market_type: str = "CRYPTO_FUTURES",
     max_account_leverage: float = 20.0,
@@ -2107,4 +2181,3 @@ def create_full_risk_guard(
         futures_guard = CryptoFuturesRiskGuard(futures_config)
 
     return risk_guard, stock_guard, futures_guard
-

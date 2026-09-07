@@ -57,6 +57,7 @@ from stock_features import (
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def sample_spy_prices() -> List[float]:
     """Generate sample SPY prices for testing."""
@@ -106,20 +107,23 @@ def sample_dataframe() -> pd.DataFrame:
     """Create sample DataFrame with stock data."""
     n = 100
     dates = pd.date_range("2024-01-01", periods=n, freq="4h")
-    df = pd.DataFrame({
-        "timestamp": dates,
-        "open": np.random.uniform(145, 155, n),
-        "high": np.random.uniform(155, 165, n),
-        "low": np.random.uniform(140, 150, n),
-        "close": np.cumsum(np.random.randn(n) * 0.5) + 150,
-        "volume": np.random.uniform(1e6, 5e6, n),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": dates,
+            "open": np.random.uniform(145, 155, n),
+            "high": np.random.uniform(155, 165, n),
+            "low": np.random.uniform(140, 150, n),
+            "close": np.cumsum(np.random.randn(n) * 0.5) + 150,
+            "volume": np.random.uniform(1e6, 5e6, n),
+        }
+    )
     return df
 
 
 # =============================================================================
 # VIX REGIME TESTS
 # =============================================================================
+
 
 class TestVIXRegime:
     """Test VIX regime classification."""
@@ -172,7 +176,7 @@ class TestVIXRegime:
 
     def test_vix_regime_invalid_nan(self):
         """Test NaN VIX returns default NORMAL regime."""
-        normalized, regime = calculate_vix_regime(float('nan'))
+        normalized, regime = calculate_vix_regime(float("nan"))
 
         assert regime == VIXRegime.NORMAL
         assert normalized == 0.5
@@ -215,18 +219,19 @@ class TestVIXNormalization:
 
     def test_normalize_vix_nan_returns_zero(self):
         """Test NaN VIX normalizes to 0."""
-        normalized = normalize_vix_value(float('nan'))
+        normalized = normalize_vix_value(float("nan"))
         assert normalized == 0.0
 
     def test_normalize_vix_inf_returns_zero(self):
         """Test Inf VIX normalizes to 0."""
-        normalized = normalize_vix_value(float('inf'))
+        normalized = normalize_vix_value(float("inf"))
         assert normalized == 0.0
 
 
 # =============================================================================
 # MARKET REGIME TESTS
 # =============================================================================
+
 
 class TestMarketRegime:
     """Test market regime classification."""
@@ -305,6 +310,7 @@ class TestMarketRegime:
 # =============================================================================
 # RELATIVE STRENGTH TESTS
 # =============================================================================
+
 
 class TestRelativeStrength:
     """Test relative strength calculations."""
@@ -390,6 +396,7 @@ class TestRelativeStrength:
 # SECTOR FEATURES TESTS
 # =============================================================================
 
+
 class TestSectorFeatures:
     """Test sector classification and momentum."""
 
@@ -452,6 +459,7 @@ class TestSectorFeatures:
 # =============================================================================
 # INTEGRATION TESTS
 # =============================================================================
+
 
 class TestStockFeaturesIntegration:
     """Integration tests for stock feature extraction."""
@@ -520,13 +528,9 @@ class TestDataFrameIntegration:
 
     def test_add_features_to_dataframe(self, sample_dataframe):
         """Test adding stock features to DataFrame."""
-        spy_df = pd.DataFrame({
-            "close": np.cumsum(np.random.randn(100) * 0.3) + 450
-        })
+        spy_df = pd.DataFrame({"close": np.cumsum(np.random.randn(100) * 0.3) + 450})
 
-        result = add_stock_features_to_dataframe(
-            sample_dataframe, "AAPL", spy_df=spy_df
-        )
+        result = add_stock_features_to_dataframe(sample_dataframe, "AAPL", spy_df=spy_df)
 
         # Check all new columns exist
         assert "vix_normalized" in result.columns
@@ -551,6 +555,7 @@ class TestDataFrameIntegration:
 # =============================================================================
 # BACKWARD COMPATIBILITY TESTS
 # =============================================================================
+
 
 class TestBackwardCompatibility:
     """Test backward compatibility with crypto data."""
@@ -589,12 +594,13 @@ class TestBackwardCompatibility:
 # EDGE CASE TESTS
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
     def test_nan_vix_in_row(self):
         """Test NaN VIX value is handled gracefully."""
-        row = {"vix": float('nan')}
+        row = {"vix": float("nan")}
 
         features = extract_stock_features(row=row)
 
@@ -604,7 +610,7 @@ class TestEdgeCases:
 
     def test_inf_price_in_rs_calculation(self):
         """Test Inf price in RS calculation returns invalid."""
-        stock = [100.0] * 20 + [float('inf')]
+        stock = [100.0] * 20 + [float("inf")]
         bench = [100.0] * 21
 
         rs, is_valid = calculate_relative_strength(stock, bench, window=20)
@@ -642,6 +648,7 @@ class TestEdgeCases:
 # FEATURE CONFIG TESTS
 # =============================================================================
 
+
 class TestFeatureConfig:
     """Test feature_config.py updates."""
 
@@ -673,6 +680,7 @@ class TestFeatureConfig:
 # =============================================================================
 # MEDIATOR INTEGRATION TESTS
 # =============================================================================
+
 
 class TestMediatorIntegration:
     """Test mediator._extract_norm_cols updates."""
@@ -754,11 +762,14 @@ class TestMediatorIntegration:
 # PERFORMANCE TESTS (optional)
 # =============================================================================
 
+
 class TestPerformance:
     """Performance tests for stock features."""
 
     @pytest.mark.slow
-    def test_feature_extraction_speed(self, sample_spy_prices, sample_qqq_prices, sample_stock_prices):
+    def test_feature_extraction_speed(
+        self, sample_spy_prices, sample_qqq_prices, sample_stock_prices
+    ):
         """Test feature extraction is fast enough for real-time use."""
         import time
 

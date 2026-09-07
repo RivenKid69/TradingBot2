@@ -109,7 +109,9 @@ class CostAllocation:
     method: CostAllocationMethod
     total_cost: float
     currency: str = "EUR"
-    participant_allocations: dict[str, float] = field(default_factory=dict)  # participant_id -> amount
+    participant_allocations: dict[str, float] = field(
+        default_factory=dict
+    )  # participant_id -> amount
     calculated_at: datetime = field(default_factory=datetime.utcnow)
     finalized: bool = False
     finalized_at: datetime | None = None

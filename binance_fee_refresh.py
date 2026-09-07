@@ -259,7 +259,10 @@ def fetch_exchange_symbols(timeout: int = 30) -> set[str]:
         status = str(item.get("status", "")).upper()
         if status != "TRADING":
             continue
-        if not (item.get("isSpotTradingAllowed") or "SPOT" in {str(p).upper() for p in item.get("permissions", [])}):
+        if not (
+            item.get("isSpotTradingAllowed")
+            or "SPOT" in {str(p).upper() for p in item.get("permissions", [])}
+        ):
             continue
         symbol = str(item.get("symbol", "")).strip().upper()
         if symbol:
@@ -293,7 +296,9 @@ def _collect_from_private(
         "recvWindow": 5000,
     }
     query = parse.urlencode(params, doseq=True)
-    signature = hmac.new(api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
+    signature = hmac.new(
+        api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
     signed_url = f"{PRIVATE_TRADE_FEE_URL}?{query}&signature={signature}"
     headers = {"X-MBX-APIKEY": api_key}
     payload = _http_get_json(signed_url, headers=headers, timeout=timeout)
@@ -555,8 +560,12 @@ def load_public_fee_snapshot(
     if account_overrides:
         metadata_overrides["account_overrides"] = account_overrides
         metadata_overrides.setdefault("use_bnb_discount", account_overrides.get("use_bnb_discount"))
-        metadata_overrides.setdefault("maker_discount_mult", account_overrides.get("maker_discount_mult"))
-        metadata_overrides.setdefault("taker_discount_mult", account_overrides.get("taker_discount_mult"))
+        metadata_overrides.setdefault(
+            "maker_discount_mult", account_overrides.get("maker_discount_mult")
+        )
+        metadata_overrides.setdefault(
+            "taker_discount_mult", account_overrides.get("taker_discount_mult")
+        )
 
     payload = _build_payload(
         records=records,

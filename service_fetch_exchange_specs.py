@@ -181,9 +181,7 @@ def run(
             if isinstance(payload, Mapping):
                 items = payload.get("symbols")
                 if isinstance(items, list):
-                    symbol_entries.extend(
-                        [item for item in items if isinstance(item, Mapping)]
-                    )
+                    symbol_entries.extend([item for item in items if isinstance(item, Mapping)])
     else:
         payload = session.get(
             url,
@@ -218,9 +216,7 @@ def run(
             elif typ == "LOT_SIZE":
                 step_size = float(f.get("stepSize", 0.0))
             elif typ in ("MIN_NOTIONAL", "NOTIONAL"):
-                min_notional = float(
-                    f.get("minNotional", f.get("notional", 0.0))
-                )
+                min_notional = float(f.get("minNotional", f.get("notional", 0.0)))
         if not sym:
             continue
         by_symbol[sym] = {
@@ -256,9 +252,7 @@ def run(
                         continue
         start_index = max(0, min(start_index, len(symbols_order)))
         if start_index > 0:
-            message = (
-                f"Resuming from checkpoint at position {start_index}/{len(symbols_order)}"
-            )
+            message = f"Resuming from checkpoint at position {start_index}/{len(symbols_order)}"
             if start_index < len(symbols_order):
                 message += f" (next={symbols_order[start_index]})"
             print(message)
@@ -288,11 +282,15 @@ def run(
     total_symbols = len(symbols_order)
     batches_total = max(1, math.ceil(total_symbols / batch_size)) if total_symbols else 1
 
-    def _save_checkpoint(position: int, *, last_symbol: str | None, completed: bool = False) -> None:
+    def _save_checkpoint(
+        position: int, *, last_symbol: str | None, completed: bool = False
+    ) -> None:
         nonlocal checkpoint_payload
         state["position"] = position
         state["last_symbol"] = last_symbol
-        done_pct = 100.0 if completed else (100.0 * position / total_symbols if total_symbols else 0.0)
+        done_pct = (
+            100.0 if completed else (100.0 * position / total_symbols if total_symbols else 0.0)
+        )
         batches_completed = 0
         if total_symbols:
             batches_completed = min(batches_total, math.ceil(position / batch_size))
@@ -335,7 +333,9 @@ def run(
             raise KeyboardInterrupt
         raise SystemExit(128 + signum)
 
-    _save_checkpoint(start_index, last_symbol=state.get("last_symbol"), completed=total_symbols == 0)
+    _save_checkpoint(
+        start_index, last_symbol=state.get("last_symbol"), completed=total_symbols == 0
+    )
 
     if install_signal_handlers:
         for sig in (signal.SIGINT, getattr(signal, "SIGTERM", None)):
@@ -417,7 +417,9 @@ def run(
                 except (ValueError, OSError):  # pragma: no cover - platform dependent
                     pass
 
-    _save_checkpoint(len(symbols_order), last_symbol=symbols_order[-1] if symbols_order else None, completed=True)
+    _save_checkpoint(
+        len(symbols_order), last_symbol=symbols_order[-1] if symbols_order else None, completed=True
+    )
 
     if volume_threshold > 0.0:
         before = len(by_symbol)
@@ -427,9 +429,7 @@ def run(
             if avg_quote_vol.get(sym, 0.0) >= volume_threshold
         }
         dropped = before - len(by_symbol)
-        print(
-            f"Dropped {dropped} symbols below volume threshold {volume_threshold}"
-        )
+        print(f"Dropped {dropped} symbols below volume threshold {volume_threshold}")
 
     if volume_out:
         _ensure_dir(volume_out)

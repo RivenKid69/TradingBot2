@@ -87,8 +87,8 @@ class RejectionReason(str, Enum):
 class ControlSeverity(str, Enum):
     """Severity level of control breach."""
 
-    INFO = "info"           # Informational only
-    WARNING = "warning"     # Warning, may proceed
+    INFO = "info"  # Informational only
+    WARNING = "warning"  # Warning, may proceed
     SOFT_REJECT = "soft_reject"  # Rejected but can be overridden
     HARD_REJECT = "hard_reject"  # Rejected, cannot proceed
 
@@ -127,7 +127,7 @@ class PreTradeControlsConfig:
     """
 
     # ==== Price Collars (Art. 15(1)) ====
-    price_collar_pct: float = 5.0           # Max deviation from reference (%)
+    price_collar_pct: float = 5.0  # Max deviation from reference (%)
     price_collar_enabled: bool = True
 
     # Fat finger protection (stricter than collar)
@@ -140,11 +140,11 @@ class PreTradeControlsConfig:
     min_order_value_eur: Decimal = Decimal("0")
 
     # ==== Maximum Order Volumes (Art. 15(3)) ====
-    max_order_volume: Decimal = Decimal("10000")      # Units
+    max_order_volume: Decimal = Decimal("10000")  # Units
     max_order_volume_enabled: bool = True
 
     # ADV-based limits
-    max_volume_vs_adv_pct: float = 10.0    # Max % of ADV per order
+    max_volume_vs_adv_pct: float = 10.0  # Max % of ADV per order
     adv_check_enabled: bool = True
 
     # ==== Message Rate Limits (Art. 15(4)) ====
@@ -165,7 +165,7 @@ class PreTradeControlsConfig:
     daily_loss_check_enabled: bool = True
 
     max_notional_per_instrument: Decimal = Decimal("5000000")
-    max_concentration_pct: float = 25.0     # Max % of portfolio in one position
+    max_concentration_pct: float = 25.0  # Max % of portfolio in one position
 
     # ==== Venue-specific limits ====
     venue_specific_limits: Dict[str, Dict[str, Any]] = field(default_factory=dict)
@@ -181,7 +181,7 @@ class TraderAuthorization:
     trader_id: str
     name: str
     authorized_instruments: Set[str] = field(default_factory=set)  # ISIN set or "*" for all
-    authorized_venues: Set[str] = field(default_factory=set)       # MIC set or "*" for all
+    authorized_venues: Set[str] = field(default_factory=set)  # MIC set or "*" for all
     max_order_value_eur: Optional[Decimal] = None
     max_position_notional: Optional[Decimal] = None
     valid_from: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -363,19 +363,15 @@ class PreTradeControls:
         checks = [
             # 1. Rate limits (fast rejection)
             lambda: self._check_message_rate(venue),
-
             # 2. Authorization checks
             lambda: self._check_trader_authorization(trader_id, instrument_isin, venue),
-
             # 3. Price controls (fat finger first - catches extreme errors)
             lambda: self._check_fat_finger_price(price, reference_price),
             lambda: self._check_price_collar(price, reference_price),
-
             # 4. Value/Volume controls
             lambda: self._check_max_order_value(order_value, venue, trader_id),
             lambda: self._check_max_order_volume(quantity, venue),
             lambda: self._check_adv_limit(quantity, adv),
-
             # 5. Risk controls
             lambda: self._check_position_limit(current_position, quantity, side),
             lambda: self._check_concentration(order_value, portfolio_notional),
@@ -940,13 +936,14 @@ class PreTradeControls:
 
             if result.rejection_reason:
                 reason = result.rejection_reason.value
-                self._stats["rejections_by_reason"][reason] = \
+                self._stats["rejections_by_reason"][reason] = (
                     self._stats["rejections_by_reason"].get(reason, 0) + 1
+                )
 
         # Log the rejection
         log_extra = result.to_dict()
         # Remove 'message' key to avoid conflict with LogRecord
-        log_extra.pop('message', None)
+        log_extra.pop("message", None)
         logger.warning(
             f"Pre-trade control REJECTED: {result.rejection_reason.value if result.rejection_reason else 'unknown'} - {result.message}",
             extra=log_extra,
@@ -1019,6 +1016,7 @@ class PreTradeControls:
 # =============================================================================
 # Factory Function
 # =============================================================================
+
 
 def create_pre_trade_controls(
     config: Optional[Dict[str, Any]] = None,

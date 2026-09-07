@@ -47,6 +47,7 @@ from typing import (
 # Try to import numpy for better distribution sampling
 try:
     import numpy as np
+
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
@@ -56,21 +57,21 @@ class LatencyDistribution(IntEnum):
     """Distribution types for latency sampling."""
 
     CONSTANT = 0  # Fixed latency (for testing)
-    UNIFORM = 1   # Uniform distribution
+    UNIFORM = 1  # Uniform distribution
     LOGNORMAL = 2  # Log-normal (typical for network latency)
-    PARETO = 3    # Heavy-tailed (for rare spikes)
-    GAMMA = 4     # Gamma distribution (flexible shape)
+    PARETO = 3  # Heavy-tailed (for rare spikes)
+    GAMMA = 4  # Gamma distribution (flexible shape)
     EMPIRICAL = 5  # Sample from historical data
 
 
 class LatencyProfile(IntEnum):
     """Pre-configured latency profiles."""
 
-    COLOCATED = 0      # Co-located HFT: ~10-50us total
-    PROXIMITY = 1      # Proximity hosting: ~100-500us
-    RETAIL = 2         # Retail broker: ~1-10ms
+    COLOCATED = 0  # Co-located HFT: ~10-50us total
+    PROXIMITY = 1  # Proximity hosting: ~100-500us
+    RETAIL = 2  # Retail broker: ~1-10ms
     INSTITUTIONAL = 3  # Institutional: ~200us-2ms
-    CUSTOM = 4         # Custom configuration
+    CUSTOM = 4  # Custom configuration
 
 
 @dataclass
@@ -95,7 +96,7 @@ class LatencyConfig:
     min_us: float = 1.0
     max_us: float = 100_000.0  # 100ms cap
     spike_prob: float = 0.001  # 0.1% spike probability
-    spike_mult: float = 10.0   # 10x during spikes
+    spike_mult: float = 10.0  # 10x during spikes
     pareto_alpha: float = 2.5  # Pareto shape (higher = lighter tail)
     pareto_xmin_us: float = 10.0  # Pareto minimum
 
@@ -284,10 +285,10 @@ class LatencySampler:
                 return cfg.mean_us
 
             mean = max(1.0, cfg.mean_us)
-            var = cfg.std_us ** 2
+            var = cfg.std_us**2
 
-            k = mean ** 2 / var  # shape
-            theta = var / mean   # scale
+            k = mean**2 / var  # shape
+            theta = var / mean  # scale
 
             if HAS_NUMPY and self._np_rng is not None:
                 return float(self._np_rng.gamma(k, theta))
@@ -382,7 +383,9 @@ class LatencySampler:
 
             return {
                 "count": self._sample_count,
-                "spike_rate": self._spike_count / self._sample_count if self._sample_count > 0 else 0.0,
+                "spike_rate": (
+                    self._spike_count / self._sample_count if self._sample_count > 0 else 0.0
+                ),
                 "mean_us": mean_val,
                 "std_us": math.sqrt(var_val),
                 "p50_us": percentile(0.5),
@@ -424,7 +427,9 @@ class LatencyModelConfig:
     seed: Optional[int] = None
 
     @classmethod
-    def from_profile(cls, profile: LatencyProfile, seed: Optional[int] = None) -> "LatencyModelConfig":
+    def from_profile(
+        cls, profile: LatencyProfile, seed: Optional[int] = None
+    ) -> "LatencyModelConfig":
         """Create config from pre-defined profile."""
         if profile == LatencyProfile.COLOCATED:
             # Co-located HFT: ~10-50us

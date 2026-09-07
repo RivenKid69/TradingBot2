@@ -35,7 +35,14 @@ def _nan_series(panel: Panel, name: str) -> pd.Series:
 class CryptoMomentum(BaseSignal):
     """Momentum: price[t-skip] / price[t-lookback] − 1 (по символу)."""
 
-    def __init__(self, name: str = "crypto_mom", *, lookback: int = 90, skip: int = 7, price_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "crypto_mom",
+        *,
+        lookback: int = 90,
+        skip: int = 7,
+        price_col: str = "close",
+    ) -> None:
         self.name = name
         self.lookback = int(lookback)
         self.skip = int(skip)
@@ -51,7 +58,9 @@ class CryptoMomentum(BaseSignal):
 class ShortTermReversal(BaseSignal):
     """Краткосрочный разворот: −(price[t] / price[t-window] − 1)."""
 
-    def __init__(self, name: str = "reversal", *, window: int = 5, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "reversal", *, window: int = 5, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.window = int(window)
         self.price_col = price_col
@@ -82,8 +91,14 @@ class Basis(BaseSignal):
     Берёт колонку ``basis_col`` если есть; иначе считает из ``perp_col``/``spot_col``.
     """
 
-    def __init__(self, name: str = "basis", *, basis_col: str = "basis",
-                 perp_col: str = "perp_close", spot_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "basis",
+        *,
+        basis_col: str = "basis",
+        perp_col: str = "perp_close",
+        spot_col: str = "close",
+    ) -> None:
         self.name = name
         self.basis_col = basis_col
         self.perp_col = perp_col
@@ -93,7 +108,10 @@ class Basis(BaseSignal):
         if self.basis_col in panel.columns:
             return (-panel[self.basis_col].astype("float64")).rename(self.name)
         if self.perp_col in panel.columns and self.spot_col in panel.columns:
-            basis = panel[self.perp_col].astype("float64") / panel[self.spot_col].astype("float64") - 1.0
+            basis = (
+                panel[self.perp_col].astype("float64") / panel[self.spot_col].astype("float64")
+                - 1.0
+            )
             return (-basis).rename(self.name)
         return _nan_series(panel, self.name)
 
@@ -145,6 +163,12 @@ def build_crypto_signal(kind: str, name: str, **kwargs: Any) -> BaseSignal:
 CRYPTO_SIGNAL_KINDS = tuple(_KINDS.keys())
 
 __all__ = [
-    "CryptoMomentum", "ShortTermReversal", "FundingCarry", "Basis", "Size", "OnChain",
-    "build_crypto_signal", "CRYPTO_SIGNAL_KINDS",
+    "CryptoMomentum",
+    "ShortTermReversal",
+    "FundingCarry",
+    "Basis",
+    "Size",
+    "OnChain",
+    "build_crypto_signal",
+    "CRYPTO_SIGNAL_KINDS",
 ]

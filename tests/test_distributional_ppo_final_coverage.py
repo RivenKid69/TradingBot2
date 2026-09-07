@@ -144,8 +144,10 @@ class TestComputeGroupedExplainedVarianceEdgeCases:
         y_true = [1.0, 2.0, 3.0]
         y_pred = [1.0, 2.0, 3.0]
         groups = ["0", "0", "0"]
-        weights = [float('inf'), 1.0, 1.0]
-        result, summary = dppo.compute_grouped_explained_variance(y_true, y_pred, groups, weights=weights)
+        weights = [float("inf"), 1.0, 1.0]
+        result, summary = dppo.compute_grouped_explained_variance(
+            y_true, y_pred, groups, weights=weights
+        )
         assert "0" in result
 
     def test_weight_sum_zero(self):
@@ -154,7 +156,9 @@ class TestComputeGroupedExplainedVarianceEdgeCases:
         y_pred = [1.0, 2.0, 3.0]
         groups = ["0", "0", "0"]
         weights = [0.0, 0.0, 0.0]  # All zero
-        result, summary = dppo.compute_grouped_explained_variance(y_true, y_pred, groups, weights=weights)
+        result, summary = dppo.compute_grouped_explained_variance(
+            y_true, y_pred, groups, weights=weights
+        )
         assert "0" in result
 
 
@@ -171,7 +175,7 @@ class TestPopArtControllerEdgeCases:
         """Line 1024-1027: _weighted_mean_std with inf sum."""
         ctrl = dppo.PopArtController(enabled=True, mode="shadow")
         returns = torch.tensor([1.0, 2.0, 3.0])
-        weights = torch.tensor([float('inf'), 1.0, 1.0])
+        weights = torch.tensor([float("inf"), 1.0, 1.0])
         mean, std = ctrl._weighted_mean_std(returns, weights)
         assert math.isnan(mean) or math.isfinite(mean)
         assert math.isnan(std) or math.isfinite(std)
@@ -182,8 +186,10 @@ class TestCfgGetEdgeCases:
 
     def test_cfg_get_exception_handling(self):
         """Lines 242-243: exception in _cfg_get."""
+
         class BadConfig:
             """Config that raises on asdict."""
+
             pass
 
         result = dppo._cfg_get(BadConfig(), "key", "default")
@@ -203,7 +209,7 @@ class TestUnwrapVecNormalizeEdgeCases:
         mock_env = MagicMock()
         mock_env.spec = None
         result = dppo.unwrap_vec_normalize(mock_env)
-        assert result is None or hasattr(result, 'normalize')
+        assert result is None or hasattr(result, "normalize")
 
 
 class TestClipBoundsHitRateDirect:
@@ -378,7 +384,7 @@ class TestDistributionalPPOBasicInit:
 
     def test_dppo_class_exists(self):
         """DistributionalPPO class is accessible."""
-        assert hasattr(dppo, 'DistributionalPPO')
+        assert hasattr(dppo, "DistributionalPPO")
         assert issubclass(dppo.DistributionalPPO, dppo.RecurrentPPO)
 
 
@@ -467,7 +473,7 @@ class TestPopArtControllerNanHandling:
     def test_weighted_mean_std_nan_returns(self):
         """_weighted_mean_std with NaN returns."""
         ctrl = dppo.PopArtController(enabled=True, mode="shadow")
-        returns = torch.tensor([float('nan'), 1.0, 2.0])
+        returns = torch.tensor([float("nan"), 1.0, 2.0])
         weights = torch.tensor([1.0, 1.0, 1.0])
         mean, std = ctrl._weighted_mean_std(returns, weights)
         # Should handle NaN gracefully
@@ -607,7 +613,7 @@ class TestComputeGroupedEVMoreEdgeCases:
 
     def test_group_with_all_nan_values(self):
         """Group with all NaN values."""
-        y_true = [float('nan'), float('nan')]
+        y_true = [float("nan"), float("nan")]
         y_pred = [1.0, 2.0]
         groups = ["A", "A"]
         result, summary = dppo.compute_grouped_explained_variance(y_true, y_pred, groups)
@@ -615,7 +621,7 @@ class TestComputeGroupedEVMoreEdgeCases:
 
     def test_group_with_inf_values(self):
         """Group with inf values."""
-        y_true = [float('inf'), float('-inf')]
+        y_true = [float("inf"), float("-inf")]
         y_pred = [1.0, 2.0]
         groups = ["A", "A"]
         result, summary = dppo.compute_grouped_explained_variance(y_true, y_pred, groups)
@@ -627,7 +633,9 @@ class TestComputeGroupedEVMoreEdgeCases:
         y_pred = [1.0, 2.0, 3.0]
         groups = ["A", "A", "A"]
         weights = [0.0, 0.0, 0.0]
-        result, summary = dppo.compute_grouped_explained_variance(y_true, y_pred, groups, weights=weights)
+        result, summary = dppo.compute_grouped_explained_variance(
+            y_true, y_pred, groups, weights=weights
+        )
         assert "A" in result
         # Should be nan due to zero weights
         assert math.isnan(result["A"])
@@ -691,8 +699,10 @@ class TestCfgGetMoreEdgeCases:
 
     def test_cfg_get_with_object(self):
         """_cfg_get with plain object."""
+
         class Config:
             key = "value"
+
         result = dppo._cfg_get(Config(), "key", "default")
         # _cfg_get can access attrs via getattr or asdict
         assert result in ["value", "default"]

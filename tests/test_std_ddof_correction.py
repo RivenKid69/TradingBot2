@@ -17,6 +17,7 @@ so ddof=1 is statistically correct.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -46,14 +47,16 @@ def test_sample_vs_population_variance():
 
     # ddof=1 should be closer to true population variance (unbiased)
     # ddof=0 will systematically underestimate
-    assert abs(mean_estimate_ddof1 - pop_var) < abs(mean_estimate_ddof0 - pop_var), \
-        f"ddof=1 estimate ({mean_estimate_ddof1:.4f}) should be closer to true variance ({pop_var:.4f}) than ddof=0 ({mean_estimate_ddof0:.4f})"
+    assert abs(mean_estimate_ddof1 - pop_var) < abs(
+        mean_estimate_ddof0 - pop_var
+    ), f"ddof=1 estimate ({mean_estimate_ddof1:.4f}) should be closer to true variance ({pop_var:.4f}) than ddof=0 ({mean_estimate_ddof0:.4f})"
 
     # Verify the mathematical relationship: ddof=0 underestimates by factor of (n-1)/n
     expected_ratio = (sample_size - 1) / sample_size
     actual_ratio = mean_estimate_ddof0 / mean_estimate_ddof1
-    assert abs(actual_ratio - expected_ratio) < 0.05, \
-        f"Ratio of ddof=0/ddof=1 should be ~{expected_ratio:.4f}, got {actual_ratio:.4f}"
+    assert (
+        abs(actual_ratio - expected_ratio) < 0.05
+    ), f"Ratio of ddof=0/ddof=1 should be ~{expected_ratio:.4f}, got {actual_ratio:.4f}"
 
 
 def test_advantage_normalization_uses_ddof1():
@@ -71,20 +74,23 @@ def test_advantage_normalization_uses_ddof1():
     normalized_ddof1 = (advantages - mean) / std_ddof1
 
     # Verify they are different
-    assert not np.allclose(normalized_ddof0, normalized_ddof1), \
-        "Normalization should differ between ddof=0 and ddof=1"
+    assert not np.allclose(
+        normalized_ddof0, normalized_ddof1
+    ), "Normalization should differ between ddof=0 and ddof=1"
 
     # Verify the magnitude difference
     ratio = std_ddof0 / std_ddof1
     expected_ratio = np.sqrt((len(advantages) - 1) / len(advantages))
-    assert abs(ratio - expected_ratio) < 1e-10, \
-        f"Std ratio should be {expected_ratio:.6f}, got {ratio:.6f}"
+    assert (
+        abs(ratio - expected_ratio) < 1e-10
+    ), f"Std ratio should be {expected_ratio:.6f}, got {ratio:.6f}"
 
     # For small batches, the difference is significant
     # n=5: sqrt(4/5) = 0.8944, so ddof=0 underestimates std by ~10.6%
     percent_difference = abs(std_ddof1 - std_ddof0) / std_ddof1 * 100
-    assert percent_difference > 10.0, \
-        f"For n=5, difference should be >10%, got {percent_difference:.2f}%"
+    assert (
+        percent_difference > 10.0
+    ), f"For n=5, difference should be >10%, got {percent_difference:.2f}%"
 
 
 def test_impact_on_policy_gradient():
@@ -107,13 +113,13 @@ def test_impact_on_policy_gradient():
     mean_magnitude_ddof1 = float(np.mean(np.abs(norm_adv_ddof1)))
 
     # ddof=0 gives larger normalized values (over-normalization)
-    assert mean_magnitude_ddof0 > mean_magnitude_ddof1, \
-        "ddof=0 should result in larger normalized advantage magnitudes"
+    assert (
+        mean_magnitude_ddof0 > mean_magnitude_ddof1
+    ), "ddof=0 should result in larger normalized advantage magnitudes"
 
     # For n=50, the difference is ~1%
     percent_diff = abs(mean_magnitude_ddof0 - mean_magnitude_ddof1) / mean_magnitude_ddof1 * 100
-    assert 0.5 < percent_diff < 3.0, \
-        f"For n=50, expected ~1-2% difference, got {percent_diff:.2f}%"
+    assert 0.5 < percent_diff < 3.0, f"For n=50, expected ~1-2% difference, got {percent_diff:.2f}%"
 
 
 def test_small_batch_behavior():
@@ -129,8 +135,9 @@ def test_small_batch_behavior():
     expected_ratio = np.sqrt(2.0)
     actual_ratio = std_ddof1 / std_ddof0
 
-    assert abs(actual_ratio - expected_ratio) < 1e-10, \
-        f"For n=2, std_ddof1/std_ddof0 should be sqrt(2)={expected_ratio:.6f}, got {actual_ratio:.6f}"
+    assert (
+        abs(actual_ratio - expected_ratio) < 1e-10
+    ), f"For n=2, std_ddof1/std_ddof0 should be sqrt(2)={expected_ratio:.6f}, got {actual_ratio:.6f}"
 
     # Verify actual values
     # Mean = 2.0, deviations = [-1, 1], squared = [1, 1], sum = 2
@@ -149,15 +156,13 @@ def test_variance_vs_std_consistency():
     var_ddof1 = float(np.var(values, ddof=1))
     std_ddof1 = float(np.std(values, ddof=1))
 
-    assert abs(std_ddof1 - np.sqrt(var_ddof1)) < 1e-10, \
-        "std should equal sqrt(var) with same ddof"
+    assert abs(std_ddof1 - np.sqrt(var_ddof1)) < 1e-10, "std should equal sqrt(var) with same ddof"
 
     # Test ddof=0 (for comparison)
     var_ddof0 = float(np.var(values, ddof=0))
     std_ddof0 = float(np.std(values, ddof=0))
 
-    assert abs(std_ddof0 - np.sqrt(var_ddof0)) < 1e-10, \
-        "std should equal sqrt(var) with same ddof"
+    assert abs(std_ddof0 - np.sqrt(var_ddof0)) < 1e-10, "std should equal sqrt(var) with same ddof"
 
 
 def test_weighted_mean_std_uses_ddof1():
@@ -181,13 +186,14 @@ def test_single_value_handling():
 
     # NumPy will give warning and return NaN or 0 depending on version
     # We just verify it doesn't crash
-    with np.errstate(all='ignore'):  # Suppress warnings
+    with np.errstate(all="ignore"):  # Suppress warnings
         var_result = np.var(single_value, ddof=1)
         std_result = np.std(single_value, ddof=1)
 
     # Result should be NaN (division by zero)
-    assert not np.isfinite(var_result) or var_result == 0.0, \
-        "Variance with n=1 and ddof=1 should be NaN or 0"
+    assert (
+        not np.isfinite(var_result) or var_result == 0.0
+    ), "Variance with n=1 and ddof=1 should be NaN or 0"
 
 
 def test_logging_metrics_accuracy():
@@ -216,8 +222,9 @@ def test_logging_metrics_accuracy():
     # At minimum, verify the mathematical relationship
     ratio = sample_std_ddof1 / sample_std_ddof0
     expected_ratio = np.sqrt(batch_size / (batch_size - 1))
-    assert abs(ratio - expected_ratio) < 0.01, \
-        f"Std ratio should be {expected_ratio:.6f}, got {ratio:.6f}"
+    assert (
+        abs(ratio - expected_ratio) < 0.01
+    ), f"Std ratio should be {expected_ratio:.6f}, got {ratio:.6f}"
 
 
 def test_real_world_impact_calculation():
@@ -235,26 +242,28 @@ def test_real_world_impact_calculation():
         expected_ratio = np.sqrt((n - 1) / n)
         percent_underestimate = (1.0 - expected_ratio) * 100
 
-        results.append({
-            'n': n,
-            'description': description,
-            'underestimate_percent': percent_underestimate
-        })
+        results.append(
+            {"n": n, "description": description, "underestimate_percent": percent_underestimate}
+        )
 
         # Verify the math
         if n == 50:
             # For n=50: sqrt(49/50) ≈ 0.9899, so ~1.01% underestimate
-            assert 0.9 < percent_underestimate < 1.1, \
-                f"n=50 should underestimate by ~1%, got {percent_underestimate:.2f}%"
+            assert (
+                0.9 < percent_underestimate < 1.1
+            ), f"n=50 should underestimate by ~1%, got {percent_underestimate:.2f}%"
         elif n == 100:
             # For n=100: sqrt(99/100) ≈ 0.995, so ~0.5% underestimate
-            assert 0.4 < percent_underestimate < 0.6, \
-                f"n=100 should underestimate by ~0.5%, got {percent_underestimate:.2f}%"
+            assert (
+                0.4 < percent_underestimate < 0.6
+            ), f"n=100 should underestimate by ~0.5%, got {percent_underestimate:.2f}%"
 
     # Print summary for documentation
     print("\nImpact of ddof=0 vs ddof=1:")
     for r in results:
-        print(f"  n={r['n']:4d} ({r['description']:17s}): {r['underestimate_percent']:5.2f}% systematic underestimate")
+        print(
+            f"  n={r['n']:4d} ({r['description']:17s}): {r['underestimate_percent']:5.2f}% systematic underestimate"
+        )
 
 
 def test_code_uses_ddof1():
@@ -266,16 +275,19 @@ def test_code_uses_ddof1():
     source = inspect.getsource(DistributionalPPO)
 
     # Check for advantage normalization
-    assert "np.std(advantages_flat, ddof=1)" in source, \
-        "Advantage normalization should use np.std with ddof=1"
+    assert (
+        "np.std(advantages_flat, ddof=1)" in source
+    ), "Advantage normalization should use np.std with ddof=1"
 
     # Check for value prediction logging
-    assert "np.std(y_pred_np, ddof=1)" in source or "ddof=1" in source, \
-        "Value prediction logging should use ddof=1"
+    assert (
+        "np.std(y_pred_np, ddof=1)" in source or "ddof=1" in source
+    ), "Value prediction logging should use ddof=1"
 
     # Check for variance calculations
-    assert "np.var(true_vals, ddof=1)" in source or "ddof=1" in source, \
-        "Variance calculations should use ddof=1"
+    assert (
+        "np.var(true_vals, ddof=1)" in source or "ddof=1" in source
+    ), "Variance calculations should use ddof=1"
 
 
 if __name__ == "__main__":

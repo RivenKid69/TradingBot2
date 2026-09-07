@@ -22,24 +22,30 @@ from uuid import UUID
 
 
 # Command types that reference artifacts
-ARTIFACT_COMMANDS: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_START_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-])
+ARTIFACT_COMMANDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_START_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+    ]
+)
 
 # Command types that reference config blobs
-CONFIG_COMMANDS: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_UPDATE_CONFIG",
-    "REQUEST_START_RUN",
-])
+CONFIG_COMMANDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_UPDATE_CONFIG",
+        "REQUEST_START_RUN",
+    ]
+)
 
 # Commands that are purely operational (no artifact/config)
-OPERATIONAL_COMMANDS: Final[FrozenSet[str]] = frozenset([
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-])
+OPERATIONAL_COMMANDS: Final[FrozenSet[str]] = frozenset(
+    [
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    ]
+)
 
 
 def generate_deterministic_idempotency_key(

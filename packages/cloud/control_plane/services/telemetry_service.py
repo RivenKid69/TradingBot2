@@ -119,7 +119,7 @@ class TelemetryService:
                     "event_id": event_id,
                     "event_type": event_type,
                     "agent_id": str(agent_id),
-                }
+                },
             )
             return event_id
 
@@ -133,7 +133,7 @@ class TelemetryService:
                     "agent_id": str(agent_id),
                     "workspace_id": str(workspace_id),
                     "data": event_data,
-                }
+                },
             )
             return event_id
 
@@ -196,9 +196,7 @@ class TelemetryService:
         try:
             from ..models import TelemetryEvent
 
-            query = select(TelemetryEvent).where(
-                TelemetryEvent.workspace_id == workspace_id
-            )
+            query = select(TelemetryEvent).where(TelemetryEvent.workspace_id == workspace_id)
 
             if event_type:
                 query = query.where(TelemetryEvent.event_type == event_type)
@@ -265,9 +263,11 @@ class TelemetryService:
             else:
                 group_col = TelemetryEvent.event_type
 
-            query = select(group_col, func.count()).where(
-                TelemetryEvent.workspace_id == workspace_id
-            ).group_by(group_col)
+            query = (
+                select(group_col, func.count())
+                .where(TelemetryEvent.workspace_id == workspace_id)
+                .group_by(group_col)
+            )
 
             if start_time:
                 query = query.where(TelemetryEvent.timestamp >= start_time)
@@ -315,7 +315,7 @@ class TelemetryService:
                 extra={
                     "workspace_id": str(workspace_id),
                     "before": before.isoformat(),
-                }
+                },
             )
             return deleted
 

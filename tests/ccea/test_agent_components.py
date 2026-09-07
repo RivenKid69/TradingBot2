@@ -20,6 +20,7 @@ class TestLocalVault:
     def vault(self, tmp_path):
         """Create a vault for testing."""
         from packages.agent.vault.local_vault import LocalVault, VaultConfig
+
         config = VaultConfig(vault_path=tmp_path / "vault.enc")
         vault = LocalVault(config=config)
         vault.initialize("test_master_key_12345678901234567890")

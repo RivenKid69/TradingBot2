@@ -48,6 +48,7 @@ References:
 import math
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 from collections import deque
 
@@ -97,8 +98,9 @@ class TestBug1ReturnCalculationFix:
 
         # Verify correct calculation
         expected_ret_1 = math.log(110.0 / 100.0)
-        assert abs(ret_4h_1 - expected_ret_1) < 1e-6, \
-            f"ret_4h should be {expected_ret_1:.6f}, got {ret_4h_1:.6f}"
+        assert (
+            abs(ret_4h_1 - expected_ret_1) < 1e-6
+        ), f"ret_4h should be {expected_ret_1:.6f}, got {ret_4h_1:.6f}"
 
         # Third bar: ret_4h should be log(121/110) ≈ 0.0953
         ret_4h_2 = features3["ret_4h"]
@@ -106,8 +108,9 @@ class TestBug1ReturnCalculationFix:
         assert ret_4h_2 != 0.0, "ret_4h should NOT be zero"
 
         expected_ret_2 = math.log(121.0 / 110.0)
-        assert abs(ret_4h_2 - expected_ret_2) < 1e-6, \
-            f"ret_4h should be {expected_ret_2:.6f}, got {ret_4h_2:.6f}"
+        assert (
+            abs(ret_4h_2 - expected_ret_2) < 1e-6
+        ), f"ret_4h should be {expected_ret_2:.6f}, got {ret_4h_2:.6f}"
 
         print(f"[OK] ret_4h correct: {ret_4h_1:.6f} (expected {expected_ret_1:.6f})")
         print(f"[OK] ret_4h correct: {ret_4h_2:.6f} (expected {expected_ret_2:.6f})")
@@ -140,14 +143,16 @@ class TestBug1ReturnCalculationFix:
         # NOT log(146.41 / 146.41) which would be 0
         ret_4h = features["ret_4h"]
         expected_4h = math.log(146.41 / 133.1)
-        assert abs(ret_4h - expected_4h) < 1e-6, \
-            f"ret_4h should use price from 1 bar ago: {expected_4h:.6f}, got {ret_4h:.6f}"
+        assert (
+            abs(ret_4h - expected_4h) < 1e-6
+        ), f"ret_4h should use price from 1 bar ago: {expected_4h:.6f}, got {ret_4h:.6f}"
 
         # ret_8h should be log(146.41 / 121.0) - uses seq[-(2+1)] = seq[-3]
         ret_8h = features["ret_8h"]
         expected_8h = math.log(146.41 / 121.0)
-        assert abs(ret_8h - expected_8h) < 1e-6, \
-            f"ret_8h should use price from 2 bars ago: {expected_8h:.6f}, got {ret_8h:.6f}"
+        assert (
+            abs(ret_8h - expected_8h) < 1e-6
+        ), f"ret_8h should use price from 2 bars ago: {expected_8h:.6f}, got {ret_8h:.6f}"
 
         print(f"[OK] ret_4h uses seq[-2]: {ret_4h:.6f} (expected {expected_4h:.6f})")
         print(f"[OK] ret_8h uses seq[-3]: {ret_8h:.6f} (expected {expected_8h:.6f})")
@@ -162,15 +167,18 @@ class TestBug1ReturnCalculationFix:
 
         # Two bars with same price: 100.0
         transformer.update(symbol="BTCUSDT", ts_ms=1000000, close=100.0)
-        features = transformer.update(symbol="BTCUSDT", ts_ms=1000000 + 240*60*1000, close=100.0)
+        features = transformer.update(
+            symbol="BTCUSDT", ts_ms=1000000 + 240 * 60 * 1000, close=100.0
+        )
 
         # In this case, ret_4h SHOULD be 0 (log(100/100) = 0)
         ret_4h = features["ret_4h"]
-        assert abs(ret_4h) < 1e-10, \
-            f"ret_4h should be 0 for flat prices, got {ret_4h:.6f}"
+        assert abs(ret_4h) < 1e-10, f"ret_4h should be 0 for flat prices, got {ret_4h:.6f}"
 
         # Now price changes to 110
-        features2 = transformer.update(symbol="BTCUSDT", ts_ms=1000000 + 2*240*60*1000, close=110.0)
+        features2 = transformer.update(
+            symbol="BTCUSDT", ts_ms=1000000 + 2 * 240 * 60 * 1000, close=110.0
+        )
         ret_4h_2 = features2["ret_4h"]
         assert ret_4h_2 != 0.0, "ret_4h should NOT be 0 after price change"
 
@@ -189,13 +197,12 @@ class TestBug1ReturnCalculationFix:
         transformer.update(symbol="BTCUSDT", ts_ms=1000000, close=100.0)
 
         # Second bar: invalid price (0)
-        features = transformer.update(symbol="BTCUSDT", ts_ms=1000000 + 240*60*1000, close=0.0)
+        features = transformer.update(symbol="BTCUSDT", ts_ms=1000000 + 240 * 60 * 1000, close=0.0)
 
         # ret_4h should be NaN (not 0) because log(0/100) is undefined
         ret_4h = features.get("ret_4h")
         if ret_4h is not None:
-            assert math.isnan(ret_4h), \
-                f"ret_4h should be NaN for invalid price, got {ret_4h}"
+            assert math.isnan(ret_4h), f"ret_4h should be NaN for invalid price, got {ret_4h}"
             print(f"[OK] ret_4h is NaN for invalid price (as expected)")
 
 
@@ -205,9 +212,7 @@ class TestBug2RSIEdgeCasesFix:
     def test_rsi_is_100_for_pure_uptrend(self):
         """Test that RSI = 100 when avg_loss = 0 (pure uptrend)."""
         spec = FeatureSpec(
-            lookbacks_prices=[240],  # Minimal config
-            rsi_period=14,
-            bar_duration_minutes=240
+            lookbacks_prices=[240], rsi_period=14, bar_duration_minutes=240  # Minimal config
         )
         transformer = OnlineFeatureTransformer(spec)
 
@@ -224,18 +229,13 @@ class TestBug2RSIEdgeCasesFix:
         rsi = features.get("rsi")
         assert rsi is not None, "RSI should be present"
         assert not math.isnan(rsi), "RSI should NOT be NaN for pure uptrend"
-        assert abs(rsi - 100.0) < 1e-6, \
-            f"RSI should be 100.0 for pure uptrend, got {rsi:.6f}"
+        assert abs(rsi - 100.0) < 1e-6, f"RSI should be 100.0 for pure uptrend, got {rsi:.6f}"
 
         print(f"[OK] RSI for pure uptrend: {rsi:.6f} (expected 100.0)")
 
     def test_rsi_is_0_for_pure_downtrend(self):
         """Test that RSI = 0 when avg_gain = 0 (pure downtrend)."""
-        spec = FeatureSpec(
-            lookbacks_prices=[240],
-            rsi_period=14,
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[240], rsi_period=14, bar_duration_minutes=240)
         transformer = OnlineFeatureTransformer(spec)
 
         # Create pure downtrend: 15 bars with monotonically decreasing price
@@ -251,18 +251,13 @@ class TestBug2RSIEdgeCasesFix:
         rsi = features.get("rsi")
         assert rsi is not None, "RSI should be present"
         assert not math.isnan(rsi), "RSI should NOT be NaN for pure downtrend"
-        assert abs(rsi - 0.0) < 1e-6, \
-            f"RSI should be 0.0 for pure downtrend, got {rsi:.6f}"
+        assert abs(rsi - 0.0) < 1e-6, f"RSI should be 0.0 for pure downtrend, got {rsi:.6f}"
 
         print(f"[OK] RSI for pure downtrend: {rsi:.6f} (expected 0.0)")
 
     def test_rsi_is_50_for_no_movement(self):
         """Test that RSI = 50 when both avg_gain and avg_loss = 0."""
-        spec = FeatureSpec(
-            lookbacks_prices=[240],
-            rsi_period=14,
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[240], rsi_period=14, bar_duration_minutes=240)
         transformer = OnlineFeatureTransformer(spec)
 
         # Create flat market: 15 bars with same price
@@ -277,18 +272,13 @@ class TestBug2RSIEdgeCasesFix:
         rsi = features.get("rsi")
         assert rsi is not None, "RSI should be present"
         assert not math.isnan(rsi), "RSI should NOT be NaN for flat market"
-        assert abs(rsi - 50.0) < 1e-6, \
-            f"RSI should be 50.0 for flat market, got {rsi:.6f}"
+        assert abs(rsi - 50.0) < 1e-6, f"RSI should be 50.0 for flat market, got {rsi:.6f}"
 
         print(f"[OK] RSI for flat market: {rsi:.6f} (expected 50.0)")
 
     def test_rsi_normal_case(self):
         """Test that RSI works correctly in normal case (mixed gains/losses)."""
-        spec = FeatureSpec(
-            lookbacks_prices=[240],
-            rsi_period=14,
-            bar_duration_minutes=240
-        )
+        spec = FeatureSpec(lookbacks_prices=[240], rsi_period=14, bar_duration_minutes=240)
         transformer = OnlineFeatureTransformer(spec)
 
         # Create mixed market: alternating gains and losses
@@ -304,8 +294,7 @@ class TestBug2RSIEdgeCasesFix:
         rsi = features.get("rsi")
         assert rsi is not None, "RSI should be present"
         assert not math.isnan(rsi), "RSI should NOT be NaN in normal case"
-        assert 0.0 <= rsi <= 100.0, \
-            f"RSI should be between 0 and 100, got {rsi:.6f}"
+        assert 0.0 <= rsi <= 100.0, f"RSI should be between 0 and 100, got {rsi:.6f}"
 
         print(f"[OK] RSI for mixed market: {rsi:.6f} (in valid range [0, 100])")
 
@@ -314,7 +303,7 @@ class TestBug2RSIEdgeCasesFix:
         spec = FeatureSpec(
             lookbacks_prices=[240],
             rsi_period=5,  # Shorter period for faster test
-            bar_duration_minutes=240
+            bar_duration_minutes=240,
         )
         transformer = OnlineFeatureTransformer(spec)
 
@@ -359,16 +348,15 @@ class TestBug3TwinCriticsGAEFix:
         source = inspect.getsource(distributional_ppo.DistributionalPPO.collect_rollouts)
 
         # Verify that the code contains the TWIN CRITICS FIX comment
-        assert "TWIN CRITICS FIX" in source, \
-            "collect_rollouts should contain TWIN CRITICS FIX comment"
+        assert (
+            "TWIN CRITICS FIX" in source
+        ), "collect_rollouts should contain TWIN CRITICS FIX comment"
 
         # Verify that predict_values is called (not direct access to last_value_quantiles)
-        assert "predict_values(" in source, \
-            "collect_rollouts should call predict_values()"
+        assert "predict_values(" in source, "collect_rollouts should call predict_values()"
 
         # Verify the fix comment mentions min(Q1, Q2)
-        assert "min(Q1, Q2)" in source, \
-            "TWIN CRITICS FIX should mention min(Q1, Q2)"
+        assert "min(Q1, Q2)" in source, "TWIN CRITICS FIX should mention min(Q1, Q2)"
 
         print("[OK] collect_rollouts contains TWIN CRITICS FIX")
         print("[OK] collect_rollouts calls predict_values() for GAE")
@@ -378,16 +366,19 @@ class TestBug3TwinCriticsGAEFix:
         from custom_policy_patch1 import CustomActorCriticPolicy
 
         # Verify method exists
-        assert hasattr(CustomActorCriticPolicy, 'predict_values'), \
-            "CustomActorCriticPolicy should have predict_values method"
+        assert hasattr(
+            CustomActorCriticPolicy, "predict_values"
+        ), "CustomActorCriticPolicy should have predict_values method"
 
         # Get method
         import inspect
+
         source = inspect.getsource(CustomActorCriticPolicy.predict_values)
 
         # Verify it mentions Twin Critics or min
-        assert ("twin" in source.lower() or "min(" in source), \
-            "predict_values should implement min(Q1, Q2) for Twin Critics"
+        assert (
+            "twin" in source.lower() or "min(" in source
+        ), "predict_values should implement min(Q1, Q2) for Twin Critics"
 
         print("[OK] predict_values method exists")
         print("[OK] predict_values implements min(Q1, Q2) logic")
@@ -399,9 +390,9 @@ class TestAllBugsVerification:
 
     def test_all_bugs_are_fixed(self):
         """Meta-test to confirm all three bugs are verified as fixed."""
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("VERIFICATION SUMMARY: All Reported Bugs Are ALREADY FIXED")
-        print("="*80)
+        print("=" * 80)
 
         print("\n[PASS] BUG #1: ret_4h always 0")
         print("   STATUS: FIXED (transformers.py:1026-1041)")
@@ -422,9 +413,9 @@ class TestAllBugsVerification:
         print("   - Terminal bootstrap also uses predict_values()")
         print("   - Comprehensive tests in test_twin_critics_gae_fix.py")
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("CONCLUSION: No action needed - all bugs already fixed")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ This test suite performs deep analysis of the fix to ensure:
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -18,6 +19,7 @@ import numpy as np
 
 class DeepTestResults:
     """Track deep test results."""
+
     def __init__(self):
         self.passed = 0
         self.failed = 0
@@ -96,7 +98,7 @@ def test_critical_range_analysis():
             if behavior == "SKIP" and actual_std >= ADV_STD_FLOOR:
                 results.record_warning(
                     "critical_range_skip",
-                    f"std={actual_std:.1e} >= floor but normalization skipped"
+                    f"std={actual_std:.1e} >= floor but normalization skipped",
                 )
 
         results.record_pass("test_critical_range_analysis")
@@ -127,7 +129,7 @@ def test_skip_threshold_too_high():
         if actual_std >= 2 * ADV_STD_FLOOR and will_skip:
             results.record_warning(
                 "skip_threshold_too_high",
-                f"std={actual_std:.1e} is 2x floor but we skip normalization"
+                f"std={actual_std:.1e} is 2x floor but we skip normalization",
             )
 
         results.record_pass("test_skip_threshold_too_high")
@@ -166,8 +168,7 @@ def test_alternative_strategy():
             # If alternatives differ, this is a critical decision point
             if current != alt1:
                 results.record_warning(
-                    "strategy_difference",
-                    f"{case_name}: current={current}, alt={alt1}"
+                    "strategy_difference", f"{case_name}: current={current}, alt={alt1}"
                 )
 
         results.record_pass("test_alternative_strategy")
@@ -201,7 +202,7 @@ def test_ppo_expectation():
             if abs(result_mean) > 0.01:
                 results.record_warning(
                     "ppo_expectation_violation",
-                    f"Skipped normalization leaves mean={result_mean:.2e} (expected ~0)"
+                    f"Skipped normalization leaves mean={result_mean:.2e} (expected ~0)",
                 )
 
         results.record_pass("test_ppo_expectation")
@@ -238,9 +239,11 @@ def test_gradient_safety_all_ranges():
                 norm_new = (advantages - mean) / std_new
                 max_new = np.max(np.abs(norm_new))
 
-            improvement = max_old / max_new if max_new > 0 else float('inf')
+            improvement = max_old / max_new if max_new > 0 else float("inf")
 
-            print(f"    {actual_std:<10.1e} {max_old:<15.2e} {max_new:<15.2e} {improvement:<15.1f}x")
+            print(
+                f"    {actual_std:<10.1e} {max_old:<15.2e} {max_new:<15.2e} {improvement:<15.1f}x"
+            )
 
         results.record_pass("test_gradient_safety_all_ranges")
     except Exception as e:
@@ -258,10 +261,10 @@ def test_real_world_scenario():
 
         # Simulate 10 rollouts with different variance levels
         rollouts = [
-            ("early_training", 0.001, 1e-3),   # High variance
-            ("mid_training", 0.001, 5e-4),     # Medium variance
-            ("converged", 0.001, 1e-4),        # Low variance
-            ("stuck", 0.001, 1e-5),            # Very low variance
+            ("early_training", 0.001, 1e-3),  # High variance
+            ("mid_training", 0.001, 5e-4),  # Medium variance
+            ("converged", 0.001, 1e-4),  # Low variance
+            ("stuck", 0.001, 1e-5),  # Very low variance
         ]
 
         print(f"\n    {'Stage':<20} {'Std':<10} {'Behavior':<12} {'Max':<15}")
@@ -373,7 +376,7 @@ def test_recommended_threshold():
         if actual_ratio > 5:
             results.record_warning(
                 "skip_threshold_high",
-                f"SKIP/FLOOR ratio = {actual_ratio:.0f}x may skip normalization too often"
+                f"SKIP/FLOOR ratio = {actual_ratio:.0f}x may skip normalization too often",
             )
 
         results.record_pass("test_recommended_threshold")
@@ -387,14 +390,14 @@ def test_other_locations_in_code():
         print("\n    Checking for other 1e-8 usages in code...")
 
         # Read the main file
-        with open('distributional_ppo.py', 'r') as f:
+        with open("distributional_ppo.py", "r") as f:
             content = f.read()
-            lines = content.split('\n')
+            lines = content.split("\n")
 
         # Search for 1e-8 or similar patterns
         suspicious_lines = []
         for i, line in enumerate(lines, 1):
-            if '1e-8' in line or '1e-08' in line:
+            if "1e-8" in line or "1e-08" in line:
                 # Skip if it's in our fixed section (around line 6635)
                 if i < 6620 or i > 6700:
                     suspicious_lines.append((i, line.strip()))
@@ -405,8 +408,7 @@ def test_other_locations_in_code():
                 print(f"        Line {line_no}: {line[:60]}...")
 
             results.record_warning(
-                "other_1e8_usages",
-                f"Found {len(suspicious_lines)} other 1e-8 usages to review"
+                "other_1e8_usages", f"Found {len(suspicious_lines)} other 1e-8 usages to review"
             )
         else:
             print(f"      No other 1e-8 usages found (good!)")

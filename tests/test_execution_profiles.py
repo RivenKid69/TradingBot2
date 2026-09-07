@@ -101,7 +101,9 @@ class DummyRisk:
         pass
 
     def _emit(self, ts_ms, code, message, **data):
-        self.events.append(DummyRiskEvent(ts_ms=int(ts_ms), code=str(code), message=str(message), data=dict(data)))
+        self.events.append(
+            DummyRiskEvent(ts_ms=int(ts_ms), code=str(code), message=str(message), data=dict(data))
+        )
 
     def attach_to(self, sim):
         sim.risk = self
@@ -304,6 +306,8 @@ def test_vwap_current_h1_profile(base_sim):
     qty_total = sum(t.qty for t in rep.trades)
     assert rep.position_qty == pytest.approx(qty_total)
     assert rep.fee_total == pytest.approx(sum(t.price * t.qty for t in rep.trades) * 0.001)
+
+
 def test_limit_mid_bps_params_build(base_sim):
     sim = base_sim
     params = {"limit_offset_bps": 50, "ttl_steps": 7, "tif": "IOC"}
@@ -318,7 +322,16 @@ def test_limit_mid_bps_params_build(base_sim):
     from core_config import ExecutionParams, ExecutionProfile
 
     class _AP:
-        def __init__(self, action_type, volume_frac, price_offset_ticks=0, ttl_steps=0, abs_price=None, tif="GTC", client_tag=None):
+        def __init__(
+            self,
+            action_type,
+            volume_frac,
+            price_offset_ticks=0,
+            ttl_steps=0,
+            abs_price=None,
+            tif="GTC",
+            client_tag=None,
+        ):
             self.action_type = action_type
             self.volume_frac = volume_frac
             self.price_offset_ticks = price_offset_ticks
@@ -364,12 +377,14 @@ def test_sim_executor_close_lag_from_run_config():
     sim.latency_steps = 0
 
     from types import SimpleNamespace
+
     run_config = SimpleNamespace(
         run_id="close-lag-test",
         timing=SimpleNamespace(close_lag_ms=1500, enforce_closed_bars=True),
     )
 
     import impl_sim_executor as impl_mod
+
     executor = impl_mod.SimExecutor(
         sim,
         symbol="BTCUSDT",

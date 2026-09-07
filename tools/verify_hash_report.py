@@ -7,6 +7,7 @@ invoked by `make verify-hash` and CI to guarantee that:
 - all built extension modules are covered by the report
 - builds are performed with Python 3.12.x (reproducibility policy)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -42,9 +43,7 @@ def find_built_artifacts(roots: Iterable[Path]) -> set[Path]:
     return {path.resolve() for path in artifacts if path.exists()}
 
 
-def validate_report(
-    report_path: Path, artifact_roots: Iterable[Path], require_all: bool
-) -> dict:
+def validate_report(report_path: Path, artifact_roots: Iterable[Path], require_all: bool) -> dict:
     data = load_report(report_path)
 
     build_info = data.get("build_info", {})
@@ -81,9 +80,7 @@ def validate_report(
     if require_all:
         built_artifacts = find_built_artifacts(artifact_roots)
         unreported = [
-            str(path)
-            for path in built_artifacts
-            if path not in set(recorded_paths.values())
+            str(path) for path in built_artifacts if path not in set(recorded_paths.values())
         ]
         if unreported:
             mismatches.append(

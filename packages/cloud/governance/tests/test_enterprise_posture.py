@@ -54,6 +54,7 @@ from packages.cloud.governance.enterprise_posture import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def workspace_id() -> str:
     """Test workspace ID."""
@@ -81,8 +82,10 @@ def audit_events() -> List[PostureAuditEvent]:
 @pytest.fixture
 def on_event(audit_events: List[PostureAuditEvent]):
     """Event callback that collects events."""
+
     def callback(event: PostureAuditEvent):
         audit_events.append(event)
+
     return callback
 
 
@@ -113,6 +116,7 @@ def evidence_exporter(on_event) -> EnterpriseEvidencePackExporter:
 # =============================================================================
 # Test EnterprisePostureConfig
 # =============================================================================
+
 
 class TestEnterprisePostureConfig:
     """Tests for EnterprisePostureConfig data class."""
@@ -170,10 +174,13 @@ class TestEnterprisePostureConfig:
 # Test TelemetryLocalModeService
 # =============================================================================
 
+
 class TestTelemetryLocalModeService:
     """Tests for TelemetryLocalModeService."""
 
-    def test_enable_local_mode(self, telemetry_local_service, workspace_id, principal_id, audit_events):
+    def test_enable_local_mode(
+        self, telemetry_local_service, workspace_id, principal_id, audit_events
+    ):
         """Test enabling telemetry local mode."""
         config = TelemetryLocalModeConfig(
             storage_path="/data/telemetry",
@@ -248,6 +255,7 @@ class TestTelemetryLocalModeService:
 # Test EnterprisePostureValidator
 # =============================================================================
 
+
 class TestEnterprisePostureValidator:
     """Tests for EnterprisePostureValidator."""
 
@@ -279,7 +287,8 @@ class TestEnterprisePostureValidator:
 
         # Check for residency violations
         residency_failures = [
-            c for c in report.checks
+            c
+            for c in report.checks
             if c.category == "residency" and c.result == PostureCheckResult.FAIL
         ]
         assert len(residency_failures) > 0
@@ -410,6 +419,7 @@ class TestEnterprisePostureValidator:
 # Test EnterpriseEvidencePackExporter
 # =============================================================================
 
+
 class TestEnterpriseEvidencePackExporter:
     """Tests for EnterpriseEvidencePackExporter."""
 
@@ -520,10 +530,13 @@ class TestEnterpriseEvidencePackExporter:
 # Test EnterprisePostureService
 # =============================================================================
 
+
 class TestEnterprisePostureService:
     """Tests for EnterprisePostureService."""
 
-    def test_configure_on_prem(self, posture_service, workspace_id, organization_id, principal_id, audit_events):
+    def test_configure_on_prem(
+        self, posture_service, workspace_id, organization_id, principal_id, audit_events
+    ):
         """Test configuring on-prem deployment."""
         config = posture_service.configure(
             workspace_id=workspace_id,
@@ -543,7 +556,9 @@ class TestEnterprisePostureService:
         mode_events = [e for e in audit_events if e.action == AuditAction.MODE_CONFIGURED]
         assert len(mode_events) >= 1
 
-    def test_configure_air_gapped(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_configure_air_gapped(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test configuring air-gapped deployment."""
         config = posture_service.configure(
             workspace_id=workspace_id,
@@ -557,7 +572,9 @@ class TestEnterprisePostureService:
         assert config.offline_verification_enabled is True
         assert config.update_source == UpdateSource.OFFLINE
 
-    def test_configure_enterprise_cloud(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_configure_enterprise_cloud(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test configuring enterprise cloud deployment."""
         config = posture_service.configure(
             workspace_id=workspace_id,
@@ -569,7 +586,9 @@ class TestEnterprisePostureService:
         assert config.deployment_mode == EnterpriseDeploymentMode.ENTERPRISE_CLOUD
         assert config.key_management == KeyManagementType.CUSTOMER_MANAGED
 
-    def test_configure_vpc_managed(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_configure_vpc_managed(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test configuring VPC managed deployment."""
         config = posture_service.configure(
             workspace_id=workspace_id,
@@ -611,7 +630,9 @@ class TestEnterprisePostureService:
 
         assert updated.evidence_export_path == "/new/path"
 
-    def test_enable_raw_telemetry(self, posture_service, workspace_id, organization_id, principal_id, audit_events):
+    def test_enable_raw_telemetry(
+        self, posture_service, workspace_id, organization_id, principal_id, audit_events
+    ):
         """Test enabling RAW telemetry for enterprise."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -638,7 +659,9 @@ class TestEnterprisePostureService:
         raw_events = [e for e in audit_events if e.action == AuditAction.RAW_TELEMETRY_ENABLED]
         assert len(raw_events) == 1
 
-    def test_enable_raw_telemetry_saas_fails(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_enable_raw_telemetry_saas_fails(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test RAW telemetry fails for SaaS deployment."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -657,7 +680,9 @@ class TestEnterprisePostureService:
         assert success is False
         assert "not available for SaaS" in error
 
-    def test_disable_raw_telemetry(self, posture_service, workspace_id, organization_id, principal_id, audit_events):
+    def test_disable_raw_telemetry(
+        self, posture_service, workspace_id, organization_id, principal_id, audit_events
+    ):
         """Test disabling RAW telemetry."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -684,7 +709,9 @@ class TestEnterprisePostureService:
         config = posture_service.get_config(workspace_id)
         assert config.raw_telemetry_enabled is False
 
-    def test_is_telemetry_local_mode(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_is_telemetry_local_mode(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test checking telemetry local mode."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -695,7 +722,9 @@ class TestEnterprisePostureService:
 
         assert posture_service.is_telemetry_local_mode(workspace_id) is True
 
-    def test_validate_telemetry_destination(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_validate_telemetry_destination(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test validating telemetry destination."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -704,14 +733,14 @@ class TestEnterprisePostureService:
             configured_by=principal_id,
         )
 
-        allowed, error = posture_service.validate_telemetry_destination(
-            workspace_id, "cloud"
-        )
+        allowed, error = posture_service.validate_telemetry_destination(workspace_id, "cloud")
 
         assert allowed is False
         assert error is not None
 
-    def test_export_evidence_offline(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_export_evidence_offline(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test offline evidence export through service."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -758,7 +787,9 @@ class TestEnterprisePostureService:
 
         assert report.overall_result == PostureCheckResult.FAIL
 
-    def test_export_posture_evidence(self, posture_service, workspace_id, organization_id, principal_id):
+    def test_export_posture_evidence(
+        self, posture_service, workspace_id, organization_id, principal_id
+    ):
         """Test exporting posture evidence for evidence pack."""
         posture_service.configure(
             workspace_id=workspace_id,
@@ -791,6 +822,7 @@ class TestEnterprisePostureService:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -827,14 +859,19 @@ class TestFactoryFunctions:
 # Test Constants
 # =============================================================================
 
+
 class TestConstants:
     """Tests for module constants."""
 
     def test_eu_regions_contains_expected(self):
         """Test EU_REGIONS contains expected regions."""
         expected = [
-            "eu-west-1", "eu-west-2", "eu-central-1",
-            "europe-west1", "westeurope", "northeurope",
+            "eu-west-1",
+            "eu-west-2",
+            "eu-central-1",
+            "europe-west1",
+            "westeurope",
+            "northeurope",
         ]
         for region in expected:
             assert region in EU_REGIONS
@@ -849,6 +886,7 @@ class TestConstants:
 # =============================================================================
 # Test Data Class Serialization
 # =============================================================================
+
 
 class TestDataClassSerialization:
     """Tests for data class to_dict methods."""
@@ -919,6 +957,7 @@ class TestDataClassSerialization:
 # =============================================================================
 # Test Integrity Hashing
 # =============================================================================
+
 
 class TestIntegrityHashing:
     """Tests for integrity hash computation."""

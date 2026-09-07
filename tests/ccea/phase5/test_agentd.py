@@ -336,6 +336,7 @@ class TestAgentDaemon:
         daemon.start()
 
         import time
+
         time.sleep(0.1)
 
         status = daemon.get_status()

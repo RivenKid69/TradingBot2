@@ -15,12 +15,15 @@ References:
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 from typing import Tuple
+
 
 # Mock the necessary parts of distributional_ppo for testing
 class MockRolloutBuffer:
     """Mock rollout buffer for testing."""
+
     def __init__(self):
         self.advantages = None
         self.returns = None
@@ -119,6 +122,7 @@ def compute_gae_with_clamping(
 # Test 1: Normal Case (No Overflow)
 # ============================================================================
 
+
 def test_gae_normal_case():
     """Test GAE computation with normal reward values (no overflow risk)."""
     buffer_size = 64
@@ -159,6 +163,7 @@ def test_gae_normal_case():
 # Test 2: High Rewards Case (Near Overflow Risk)
 # ============================================================================
 
+
 def test_gae_high_rewards():
     """Test GAE computation with high but realistic reward values."""
     buffer_size = 256
@@ -193,12 +198,15 @@ def test_gae_high_rewards():
     # Theoretical max: 100 * (1 - 0.99^256) / (1 - 0.99) ≈ 10,000
     assert np.all(advantages < 20000), "Advantages should be < 20,000 (theoretical max ~10,000)"
 
-    print(f"[PASS] High rewards case: advantages in [{advantages.min():.2f}, {advantages.max():.2f}]")
+    print(
+        f"[PASS] High rewards case: advantages in [{advantages.min():.2f}, {advantages.max():.2f}]"
+    )
 
 
 # ============================================================================
 # Test 3: Extreme Case (Would Overflow Without Clamping)
 # ============================================================================
+
 
 def test_gae_extreme_case_with_clamping():
     """Test GAE computation with extreme rewards that would overflow without clamping."""
@@ -234,13 +242,18 @@ def test_gae_extreme_case_with_clamping():
     clamped_count = np.sum(np.abs(advantages) >= 1e6 * 0.99)  # Within 1% of threshold
     assert clamped_count > buffer_size * n_envs * 0.5, "Most advantages should be clamped"
 
-    print(f"[PASS] Extreme case: advantages clamped at [{advantages.min():.2e}, {advantages.max():.2e}]")
-    print(f"       Clamped: {clamped_count}/{buffer_size * n_envs} ({100*clamped_count/(buffer_size*n_envs):.1f}%)")
+    print(
+        f"[PASS] Extreme case: advantages clamped at [{advantages.min():.2e}, {advantages.max():.2e}]"
+    )
+    print(
+        f"       Clamped: {clamped_count}/{buffer_size * n_envs} ({100*clamped_count/(buffer_size*n_envs):.1f}%)"
+    )
 
 
 # ============================================================================
 # Test 4: Negative Rewards (Downside Overflow Risk)
 # ============================================================================
+
 
 def test_gae_negative_rewards():
     """Test GAE computation with sustained negative rewards (downside overflow)."""
@@ -277,12 +290,15 @@ def test_gae_negative_rewards():
     clamped_count = np.sum(advantages <= -1e6 * 0.99)
     assert clamped_count > 0, "Some advantages should be clamped at negative threshold"
 
-    print(f"[PASS] Negative rewards: advantages in [{advantages.min():.2e}, {advantages.max():.2e}]")
+    print(
+        f"[PASS] Negative rewards: advantages in [{advantages.min():.2e}, {advantages.max():.2e}]"
+    )
 
 
 # ============================================================================
 # Test 5: Mixed Signs (Positive and Negative Rewards)
 # ============================================================================
+
 
 def test_gae_mixed_signs():
     """Test GAE computation with mixed positive and negative extreme rewards."""
@@ -291,7 +307,7 @@ def test_gae_mixed_signs():
 
     # Alternating extreme rewards: +1e5, -1e5, +1e5, -1e5, ...
     rewards = np.zeros((buffer_size, n_envs), dtype=np.float32)
-    rewards[::2] = 1e5   # Even steps: +1e5
+    rewards[::2] = 1e5  # Even steps: +1e5
     rewards[1::2] = -1e5  # Odd steps: -1e5
 
     values = np.zeros((buffer_size, n_envs), dtype=np.float32)
@@ -329,6 +345,7 @@ def test_gae_mixed_signs():
 # Test 6: Episode Boundaries (Reset GAE Accumulation)
 # ============================================================================
 
+
 def test_gae_episode_boundaries():
     """Test that GAE accumulation resets correctly at episode boundaries."""
     buffer_size = 32
@@ -364,12 +381,15 @@ def test_gae_episode_boundaries():
     # Env 0 should have different advantage profile due to episode boundary
     # (This is hard to test rigorously, but at least check it doesn't crash)
 
-    print(f"[PASS] Episode boundaries: advantages in [{advantages.min():.2e}, {advantages.max():.2e}]")
+    print(
+        f"[PASS] Episode boundaries: advantages in [{advantages.min():.2e}, {advantages.max():.2e}]"
+    )
 
 
 # ============================================================================
 # Test 7: Integration with Existing Validation (NaN/Inf Inputs)
 # ============================================================================
+
 
 def test_gae_input_validation_nan():
     """Test that input validation catches NaN values (existing protection)."""
@@ -425,6 +445,7 @@ def test_gae_input_validation_inf():
 # Test 8: Clamping Does Not Trigger on Normal Values
 # ============================================================================
 
+
 def test_gae_clamping_does_not_trigger_normal():
     """Test that clamping does NOT trigger on normal reward values."""
     buffer_size = 64
@@ -456,12 +477,15 @@ def test_gae_clamping_does_not_trigger_normal():
     # Typical GAE advantages for normal rewards: [-100, 100]
     assert np.all(np.abs(advantages) < 1000), "Advantages should be < 1000 for normal rewards"
 
-    print(f"[PASS] No false triggers: advantages in [{advantages.min():.2f}, {advantages.max():.2f}]")
+    print(
+        f"[PASS] No false triggers: advantages in [{advantages.min():.2f}, {advantages.max():.2f}]"
+    )
 
 
 # ============================================================================
 # Test 9: Float32 Dtype Preservation
 # ============================================================================
+
 
 def test_gae_float32_dtype():
     """Test that GAE computation preserves float32 dtype (memory efficiency)."""
@@ -492,6 +516,7 @@ def test_gae_float32_dtype():
 # ============================================================================
 # Test 10: Edge Case - Single Step
 # ============================================================================
+
 
 def test_gae_single_step():
     """Test GAE computation with buffer_size=1 (edge case)."""
@@ -527,9 +552,9 @@ def test_gae_single_step():
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("GAE Overflow Protection Tests (Bug #4)")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     tests = [
         ("Normal Case", test_gae_normal_case),
@@ -558,11 +583,12 @@ if __name__ == "__main__":
             print(f"[FAIL] {e}")
             failed += 1
             import traceback
+
             traceback.print_exc()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print(f"Results: {passed}/{len(tests)} passed, {failed}/{len(tests)} failed")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     if failed > 0:
         exit(1)

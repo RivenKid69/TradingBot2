@@ -26,6 +26,7 @@ from uuid import UUID, uuid4
 # 1. Telemetry Agent→Cloud Pipeline Tests
 # =============================================================================
 
+
 class TestTelemetryPipeline:
     """Tests for end-to-end telemetry pipeline."""
 
@@ -44,7 +45,9 @@ class TestTelemetryPipeline:
 
         config = CloudClientConfig(base_url="https://test.example.com")
         client = CloudClient(config)
-        assert hasattr(client, "send_telemetry_batch"), "CloudClient must have send_telemetry_batch method"
+        assert hasattr(
+            client, "send_telemetry_batch"
+        ), "CloudClient must have send_telemetry_batch method"
         assert callable(client.send_telemetry_batch), "send_telemetry_batch must be callable"
 
     def test_send_telemetry_empty_events_returns_true(self):
@@ -60,8 +63,9 @@ class TestTelemetryPipeline:
         """AgentDaemon should have _flush_telemetry_to_cloud method."""
         from packages.agent.daemon.agentd import AgentDaemon
 
-        assert hasattr(AgentDaemon, "_flush_telemetry_to_cloud"), \
-            "AgentDaemon must have _flush_telemetry_to_cloud method"
+        assert hasattr(
+            AgentDaemon, "_flush_telemetry_to_cloud"
+        ), "AgentDaemon must have _flush_telemetry_to_cloud method"
 
     def test_agent_telemetry_endpoint_models(self):
         """Agent telemetry endpoint models should exist."""
@@ -97,7 +101,7 @@ class TestTelemetryPipeline:
             "data": {
                 "secret_token": "token789",
                 "value": 42,
-            }
+            },
         }
 
         redacted = _redact_telemetry_event(event)
@@ -111,6 +115,7 @@ class TestTelemetryPipeline:
 # =============================================================================
 # 2. Manifest Permissions Block Tests
 # =============================================================================
+
 
 class TestManifestPermissions:
     """Tests for manifest permissions block."""
@@ -206,7 +211,7 @@ class TestManifestPermissions:
                 "network": {"enabled": True, "egress_allowlist": ["api.test.com"]},
                 "filesystem": {"readonly": False},
                 "resources": {"max_memory_mb": 2048},
-            }
+            },
         }
 
         manifest = ArtifactManifest.from_dict(data)
@@ -220,6 +225,7 @@ class TestManifestPermissions:
 # =============================================================================
 # 3. Governance DB Persistence Tests
 # =============================================================================
+
 
 class TestGovernanceDBPersistence:
     """Tests for DB-backed governance persistence."""
@@ -287,6 +293,7 @@ class TestGovernanceDBPersistence:
 # 4. Research Jobs Workspace Dependency Tests
 # =============================================================================
 
+
 class TestResearchJobsWorkspace:
     """Tests for research jobs workspace dependency."""
 
@@ -325,6 +332,7 @@ class TestResearchJobsWorkspace:
 # 5. SBOM Enforcement Tests
 # =============================================================================
 
+
 class TestSBOMEnforcement:
     """Tests for SBOM enforcement by default."""
 
@@ -333,8 +341,7 @@ class TestSBOMEnforcement:
         from ccea.artifact.verifier import ArtifactVerifier
 
         verifier = ArtifactVerifier()
-        assert verifier._require_sbom is True, \
-            "ArtifactVerifier should require SBOM by default"
+        assert verifier._require_sbom is True, "ArtifactVerifier should require SBOM by default"
 
     def test_artifact_verifier_can_disable_sbom_requirement(self):
         """ArtifactVerifier should allow disabling SBOM requirement."""
@@ -352,8 +359,9 @@ class TestSBOMEnforcement:
         require_sbom_param = sig.parameters.get("require_sbom")
 
         assert require_sbom_param is not None
-        assert require_sbom_param.default is True, \
-            "create_verifier_from_key_manager should default require_sbom=True"
+        assert (
+            require_sbom_param.default is True
+        ), "create_verifier_from_key_manager should default require_sbom=True"
 
     def test_missing_sbom_rejection_reason_exists(self):
         """MISSING_SBOM rejection reason should exist."""
@@ -365,6 +373,7 @@ class TestSBOMEnforcement:
 # =============================================================================
 # 6. SignatureAlgorithm Terminology Tests
 # =============================================================================
+
 
 class TestSignatureAlgorithmTerminology:
     """Tests for SignatureAlgorithm terminology fix."""
@@ -426,6 +435,7 @@ class TestSignatureAlgorithmTerminology:
 # 7. Telemetry Service Tests
 # =============================================================================
 
+
 class TestTelemetryService:
     """Tests for TelemetryService."""
 
@@ -454,6 +464,7 @@ class TestTelemetryService:
 # Integration Tests
 # =============================================================================
 
+
 class TestIntegrationManifestPermissions:
     """Integration tests for manifest with permissions."""
 
@@ -481,7 +492,10 @@ class TestIntegrationManifestPermissions:
 
         assert restored.strategy_name == original.strategy_name
         assert restored.permissions.network.enabled == original.permissions.network.enabled
-        assert restored.permissions.network.egress_allowlist == original.permissions.network.egress_allowlist
+        assert (
+            restored.permissions.network.egress_allowlist
+            == original.permissions.network.egress_allowlist
+        )
 
     def test_manifest_json_serialization_with_permissions(self):
         """Manifest should serialize to JSON with permissions."""

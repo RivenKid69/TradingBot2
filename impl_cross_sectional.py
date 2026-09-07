@@ -34,7 +34,9 @@ Step = Union[str, Tuple[str, Dict[str, Any]], Dict[str, Any]]
 # ---------------------------------------------------------------------------
 # Pure cross-section transforms (Series index=symbol -> Series)
 # ---------------------------------------------------------------------------
-def rank(s: pd.Series, *, pct: bool = True, center: bool = False, ascending: bool = True) -> pd.Series:
+def rank(
+    s: pd.Series, *, pct: bool = True, center: bool = False, ascending: bool = True
+) -> pd.Series:
     """Кросс-секционный ранг. ``pct`` → [0,1]; ``center`` → вычесть 0.5 → [-0.5,0.5]."""
     r = s.rank(pct=pct, ascending=ascending)
     if pct and center:
@@ -158,7 +160,9 @@ def _parse_step(step: Step) -> Tuple[str, Dict[str, Any]]:
     raise TypeError(f"unsupported transform step: {step!r}")
 
 
-def _neutralize_panel(values: pd.Series, factor_panel: Optional[pd.DataFrame], by: Sequence[str]) -> pd.Series:
+def _neutralize_panel(
+    values: pd.Series, factor_panel: Optional[pd.DataFrame], by: Sequence[str]
+) -> pd.Series:
     by = [c for c in (by or []) if factor_panel is not None and c in factor_panel.columns]
     if not by or factor_panel is None:
         return values

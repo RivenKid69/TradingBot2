@@ -464,9 +464,7 @@ class TestOnCallManagementService:
     def test_get_engineer(self) -> None:
         """Test getting engineer by ID."""
         service = OnCallManagementService()
-        engineer = service.add_engineer(
-            "John", "john@example.com", "+1", "UTC", EscalationLevel.L1
-        )
+        engineer = service.add_engineer("John", "john@example.com", "+1", "UTC", EscalationLevel.L1)
         retrieved = service.get_engineer(engineer.engineer_id)
         assert retrieved is not None
         assert retrieved.name == "John"

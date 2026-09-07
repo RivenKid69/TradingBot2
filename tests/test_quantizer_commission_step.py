@@ -12,7 +12,7 @@ def test_commission_step_from_quote_commission_precision():
         }
     }
     quantizer = Quantizer(filters, strict=True)
-    assert math.isclose(quantizer.get_commission_step("BTCUSDT"), 10.0 ** -4)
+    assert math.isclose(quantizer.get_commission_step("BTCUSDT"), 10.0**-4)
 
 
 def test_commission_step_falls_back_to_quote_precision():
@@ -23,7 +23,7 @@ def test_commission_step_falls_back_to_quote_precision():
         }
     }
     quantizer = Quantizer(filters, strict=True)
-    assert math.isclose(quantizer.get_commission_step("ETHUSDT"), 10.0 ** -5)
+    assert math.isclose(quantizer.get_commission_step("ETHUSDT"), 10.0**-5)
 
 
 def test_commission_step_uses_direct_value_when_present():
@@ -40,4 +40,3 @@ def test_commission_step_uses_direct_value_when_present():
 def test_commission_step_missing_symbol_returns_zero():
     quantizer = Quantizer({}, strict=True)
     assert quantizer.get_commission_step("UNKNOWN") == 0.0
-

@@ -43,9 +43,7 @@ class RiskParams:
     use_atr_stop: bool = False  # Включить статический ATR-stop (стоп-лосс по ATR)
     atr_multiplier: float = 1.5  # Множитель ATR для статического стоп-лосса
     use_trailing_stop: bool = False  # Включить трейлинг-стоп
-    trailing_atr_mult: float = (
-        2.0  # Множитель ATR для трейлинг-стопа (от пикового значения)
-    )
+    trailing_atr_mult: float = 2.0  # Множитель ATR для трейлинг-стопа (от пикового значения)
     tp_atr_mult: float = 0.0  # Множитель ATR для тейк-профита (0 = не использовать)
     terminate_on_sl_tp: bool = False  # Завершать эпизод при срабатывании SL/TP
     use_dynamic_risk: bool = (

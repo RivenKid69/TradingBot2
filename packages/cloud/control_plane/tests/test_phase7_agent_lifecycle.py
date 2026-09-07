@@ -32,6 +32,7 @@ sys.path.insert(0, str(PACKAGE_ROOT))
 # Router Registration Tests
 # ============================================================================
 
+
 class TestAgentLifecycleRouterRegistration:
     """Tests for router registration in app."""
 
@@ -43,8 +44,9 @@ class TestAgentLifecycleRouterRegistration:
         routes = [route.path for route in app.routes]
 
         # Check for agent lifecycle routes
-        assert any("/agent" in route for route in routes), \
-            "Agent lifecycle router should be registered"
+        assert any(
+            "/agent" in route for route in routes
+        ), "Agent lifecycle router should be registered"
 
     def test_router_has_correct_prefix(self):
         """Test that router has /api/v1/agent prefix."""
@@ -76,6 +78,7 @@ class TestAgentLifecycleRouterRegistration:
 # ============================================================================
 # Request/Response Model Tests
 # ============================================================================
+
 
 class TestAgentLifecycleModels:
     """Tests for request/response models."""
@@ -197,6 +200,7 @@ class TestAgentLifecycleModels:
 # Authentication Tests
 # ============================================================================
 
+
 class TestAgentAuthentication:
     """Tests for agent authentication requirements."""
 
@@ -236,6 +240,7 @@ class TestAgentAuthentication:
 # ============================================================================
 # Agent Verification Tests
 # ============================================================================
+
 
 class TestAgentVerification:
     """Tests for verify_agent_enrolled function."""
@@ -373,6 +378,7 @@ class TestAgentVerification:
 # Endpoint Behavior Tests
 # ============================================================================
 
+
 class TestHeartbeatBehavior:
     """Tests for heartbeat endpoint behavior."""
 
@@ -477,6 +483,7 @@ class TestLocalApprovalBehavior:
 # Integration Tests
 # ============================================================================
 
+
 class TestEndpointIntegration:
     """Integration tests for agent lifecycle endpoints."""
 
@@ -531,6 +538,7 @@ class TestEndpointIntegration:
 # ============================================================================
 # Security Tests
 # ============================================================================
+
 
 class TestSecurityRequirements:
     """Tests for security requirements."""

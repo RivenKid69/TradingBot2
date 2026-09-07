@@ -77,11 +77,11 @@ def _value_from_fundamentals(
     if mcaps and earnings:
         mc = pd.Series({s: float(mcaps.get(s, np.nan)) for s in symbols}).replace(0.0, np.nan)
         e = pd.Series({s: float(earnings.get(s, np.nan)) for s in symbols})
-        parts.append(_standardize(e / mc))                 # earnings yield E/P
+        parts.append(_standardize(e / mc))  # earnings yield E/P
     if mcaps and book:
         mc = pd.Series({s: float(mcaps.get(s, np.nan)) for s in symbols}).replace(0.0, np.nan)
         b = pd.Series({s: float(book.get(s, np.nan)) for s in symbols})
-        parts.append(_standardize(b / mc))                 # book-to-price B/P
+        parts.append(_standardize(b / mc))  # book-to-price B/P
     if not parts:
         return None
     return _standardize(pd.concat(parts, axis=1).mean(axis=1))
@@ -93,9 +93,9 @@ def build_equity_exposures(
     sectors: Optional[Dict[str, str]] = None,
     mcaps: Optional[Dict[str, float]] = None,
     values: Optional[Dict[str, float]] = None,
-    earnings: Optional[Dict[str, float]] = None,   # P2 #17: build value from fundamentals
+    earnings: Optional[Dict[str, float]] = None,  # P2 #17: build value from fundamentals
     book: Optional[Dict[str, float]] = None,
-    roe: Optional[Dict[str, float]] = None,        # P2 #17: quality factor
+    roe: Optional[Dict[str, float]] = None,  # P2 #17: quality factor
     market_symbol: Optional[str] = None,
     momentum_lookback: int = 60,
     vol_lookback: int = 60,
@@ -160,8 +160,12 @@ def build_equity_risk_model(
     from service_risk_model import FactorRiskModel
 
     B = build_equity_exposures(
-        returns_wide, sectors=sectors, mcaps=mcaps, values=values,
-        market_symbol=market_symbol, momentum_lookback=momentum_lookback,
+        returns_wide,
+        sectors=sectors,
+        mcaps=mcaps,
+        values=values,
+        market_symbol=market_symbol,
+        momentum_lookback=momentum_lookback,
     )
     return FactorRiskModel(B, factor_cov_method=factor_cov_method)
 

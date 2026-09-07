@@ -4,19 +4,19 @@ Test VF clipping logic WITHOUT dependencies (no torch, numpy, etc).
 This tests the CORE logic that determines whether VF clipping is enabled.
 """
 
+
 def test_logic_default_none():
     """Test: mode=None (default) should DISABLE VF clipping."""
-    print("="*70)
+    print("=" * 70)
     print("TEST: Default mode=None should DISABLE VF clipping")
-    print("="*70)
+    print("=" * 70)
 
     clip_range_vf_value = 0.5
     distributional_vf_clip_mode = None  # DEFAULT
 
     # This is the EXACT logic from distributional_ppo.py:8713-8716
     distributional_vf_clip_enabled = (
-        clip_range_vf_value is not None
-        and distributional_vf_clip_mode not in (None, "disable")
+        clip_range_vf_value is not None and distributional_vf_clip_mode not in (None, "disable")
     )
 
     print(f"Input:")
@@ -25,7 +25,9 @@ def test_logic_default_none():
     print(f"")
     print(f"Logic:")
     print(f"  clip_range_vf_value is not None = {clip_range_vf_value is not None}")
-    print(f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}")
+    print(
+        f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}"
+    )
     print(f"  AND = {distributional_vf_clip_enabled}")
     print(f"")
     print(f"Result: distributional_vf_clip_enabled = {distributional_vf_clip_enabled}")
@@ -40,16 +42,15 @@ def test_logic_default_none():
 
 def test_logic_disable():
     """Test: mode='disable' should DISABLE VF clipping."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: mode='disable' should DISABLE VF clipping")
-    print("="*70)
+    print("=" * 70)
 
     clip_range_vf_value = 0.5
     distributional_vf_clip_mode = "disable"
 
     distributional_vf_clip_enabled = (
-        clip_range_vf_value is not None
-        and distributional_vf_clip_mode not in (None, "disable")
+        clip_range_vf_value is not None and distributional_vf_clip_mode not in (None, "disable")
     )
 
     print(f"Input:")
@@ -58,7 +59,9 @@ def test_logic_disable():
     print(f"")
     print(f"Logic:")
     print(f"  clip_range_vf_value is not None = {clip_range_vf_value is not None}")
-    print(f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}")
+    print(
+        f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}"
+    )
     print(f"  AND = {distributional_vf_clip_enabled}")
     print(f"")
     print(f"Result: distributional_vf_clip_enabled = {distributional_vf_clip_enabled}")
@@ -73,16 +76,15 @@ def test_logic_disable():
 
 def test_logic_mean_only():
     """Test: mode='mean_only' should ENABLE VF clipping."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: mode='mean_only' should ENABLE VF clipping")
-    print("="*70)
+    print("=" * 70)
 
     clip_range_vf_value = 0.5
     distributional_vf_clip_mode = "mean_only"
 
     distributional_vf_clip_enabled = (
-        clip_range_vf_value is not None
-        and distributional_vf_clip_mode not in (None, "disable")
+        clip_range_vf_value is not None and distributional_vf_clip_mode not in (None, "disable")
     )
 
     print(f"Input:")
@@ -91,7 +93,9 @@ def test_logic_mean_only():
     print(f"")
     print(f"Logic:")
     print(f"  clip_range_vf_value is not None = {clip_range_vf_value is not None}")
-    print(f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}")
+    print(
+        f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}"
+    )
     print(f"  AND = {distributional_vf_clip_enabled}")
     print(f"")
     print(f"Result: distributional_vf_clip_enabled = {distributional_vf_clip_enabled}")
@@ -106,16 +110,15 @@ def test_logic_mean_only():
 
 def test_logic_mean_and_variance():
     """Test: mode='mean_and_variance' should ENABLE VF clipping."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: mode='mean_and_variance' should ENABLE VF clipping")
-    print("="*70)
+    print("=" * 70)
 
     clip_range_vf_value = 0.5
     distributional_vf_clip_mode = "mean_and_variance"
 
     distributional_vf_clip_enabled = (
-        clip_range_vf_value is not None
-        and distributional_vf_clip_mode not in (None, "disable")
+        clip_range_vf_value is not None and distributional_vf_clip_mode not in (None, "disable")
     )
 
     print(f"Input:")
@@ -124,7 +127,9 @@ def test_logic_mean_and_variance():
     print(f"")
     print(f"Logic:")
     print(f"  clip_range_vf_value is not None = {clip_range_vf_value is not None}")
-    print(f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}")
+    print(
+        f"  distributional_vf_clip_mode not in (None, 'disable') = {distributional_vf_clip_mode not in (None, 'disable')}"
+    )
     print(f"  AND = {distributional_vf_clip_enabled}")
     print(f"")
     print(f"Result: distributional_vf_clip_enabled = {distributional_vf_clip_enabled}")
@@ -139,16 +144,16 @@ def test_logic_mean_and_variance():
 
 def test_logic_no_clip_range():
     """Test: clip_range_vf=None should DISABLE regardless of mode."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: clip_range_vf=None should DISABLE regardless of mode")
-    print("="*70)
+    print("=" * 70)
 
     clip_range_vf_value = None
 
     for mode in [None, "disable", "mean_only", "mean_and_variance"]:
-        distributional_vf_clip_enabled = (
-            clip_range_vf_value is not None
-            and mode not in (None, "disable")
+        distributional_vf_clip_enabled = clip_range_vf_value is not None and mode not in (
+            None,
+            "disable",
         )
 
         print(f"  mode='{mode}': enabled={distributional_vf_clip_enabled}")
@@ -163,9 +168,9 @@ def test_logic_no_clip_range():
 
 def test_backward_compatibility():
     """Test backward compatibility scenario."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Backward compatibility")
-    print("="*70)
+    print("=" * 70)
 
     print("Scenario 1: Old code (implicit behavior)")
     print("  User code: DistributionalPPO(clip_range_vf=0.5)")
@@ -176,12 +181,13 @@ def test_backward_compatibility():
     distributional_vf_clip_mode = None  # Not specified by user
 
     distributional_vf_clip_enabled = (
-        clip_range_vf_value is not None
-        and distributional_vf_clip_mode not in (None, "disable")
+        clip_range_vf_value is not None and distributional_vf_clip_mode not in (None, "disable")
     )
 
     print(f"    distributional_vf_clip_enabled = {distributional_vf_clip_enabled}")
-    print(f"    Result: VF clipping is {'ENABLED' if distributional_vf_clip_enabled else 'DISABLED'}")
+    print(
+        f"    Result: VF clipping is {'ENABLED' if distributional_vf_clip_enabled else 'DISABLED'}"
+    )
 
     if distributional_vf_clip_enabled:
         print("  ❌ BREAKING CHANGE NOT IMPLEMENTED: Should be DISABLED by default!")
@@ -190,16 +196,19 @@ def test_backward_compatibility():
     print("  ⚠️  BREAKING CHANGE: VF clipping now DISABLED by default")
 
     print("\nScenario 2: Restore old behavior")
-    print("  User code: DistributionalPPO(clip_range_vf=0.5, distributional_vf_clip_mode='mean_only')")
+    print(
+        "  User code: DistributionalPPO(clip_range_vf=0.5, distributional_vf_clip_mode='mean_only')"
+    )
 
     distributional_vf_clip_mode = "mean_only"
     distributional_vf_clip_enabled = (
-        clip_range_vf_value is not None
-        and distributional_vf_clip_mode not in (None, "disable")
+        clip_range_vf_value is not None and distributional_vf_clip_mode not in (None, "disable")
     )
 
     print(f"    distributional_vf_clip_enabled = {distributional_vf_clip_enabled}")
-    print(f"    Result: VF clipping is {'ENABLED' if distributional_vf_clip_enabled else 'DISABLED'}")
+    print(
+        f"    Result: VF clipping is {'ENABLED' if distributional_vf_clip_enabled else 'DISABLED'}"
+    )
 
     if not distributional_vf_clip_enabled:
         print("  ❌ FAIL: Should be ENABLED with mode='mean_only'!")
@@ -211,9 +220,9 @@ def test_backward_compatibility():
 
 def run_all_tests():
     """Run all logic tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TESTING DISTRIBUTIONAL VF CLIPPING LOGIC (NO DEPENDENCIES)")
-    print("="*70)
+    print("=" * 70)
     print("\nThese tests verify the core logic that determines whether")
     print("VF clipping is enabled for distributional critics.")
     print("")
@@ -240,9 +249,9 @@ def run_all_tests():
             print(f"❌ ERROR in {test.__name__}: {e}")
             failed += 1
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("RESULTS")
-    print("="*70)
+    print("=" * 70)
     print(f"Passed: {passed}/{len(tests)}")
     print(f"Failed: {failed}/{len(tests)}")
 
@@ -267,4 +276,5 @@ def run_all_tests():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(run_all_tests())

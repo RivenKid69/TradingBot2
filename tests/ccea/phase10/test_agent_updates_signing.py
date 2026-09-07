@@ -79,9 +79,7 @@ class TestAgentUpdateSigning:
         assert update.signed_at is not None
 
     @pytest.mark.asyncio
-    async def test_signed_update_contains_json_signature(
-        self, update_manager, signing_key
-    ):
+    async def test_signed_update_contains_json_signature(self, update_manager, signing_key):
         """Test that signature is proper JSON format."""
         update = update_manager.create_update(
             version="1.2.0",
@@ -190,9 +188,7 @@ class TestUpdateReleaseWithSignature:
         config = AgentUpdateConfig(
             require_signatures=True,
             enable_staged_rollout=False,
-            trusted_signing_keys=[
-                base64.b64encode(signing_key.public_key_bytes).decode()
-            ],
+            trusted_signing_keys=[base64.b64encode(signing_key.public_key_bytes).decode()],
         )
         manager = AgentUpdateManager(config)
 
@@ -236,9 +232,7 @@ class TestTrustedSigningKeys:
 
         config = AgentUpdateConfig(
             require_signatures=True,
-            trusted_signing_keys=[
-                base64.b64encode(signing_key.public_key_bytes).decode()
-            ],
+            trusted_signing_keys=[base64.b64encode(signing_key.public_key_bytes).decode()],
         )
         manager = AgentUpdateManager(config)
 
@@ -306,7 +300,7 @@ class TestCryptoFallbackInUpdates:
             artifact_url="https://example.com/update.tar.gz",
         )
 
-        with patch('packages.cloud.enterprise.agent_updates.CRYPTO_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.agent_updates.CRYPTO_AVAILABLE", False):
             success = await manager.sign_update(
                 update.id,
                 b"fake-key-bytes" + b"\x00" * 20,  # 32 bytes total
@@ -328,7 +322,7 @@ class TestCryptoFallbackInUpdates:
         )
         update.signature = "fake-signature"
 
-        with patch('packages.cloud.enterprise.agent_updates.CRYPTO_AVAILABLE', False):
+        with patch("packages.cloud.enterprise.agent_updates.CRYPTO_AVAILABLE", False):
             is_valid, error = await manager.verify_update_signature(update.id)
 
         # Should return True (verification skipped)
@@ -346,9 +340,7 @@ class TestUpdateWorkflowWithSigning:
         config = AgentUpdateConfig(
             require_signatures=True,
             enable_staged_rollout=True,
-            trusted_signing_keys=[
-                base64.b64encode(signing_key.public_key_bytes).decode()
-            ],
+            trusted_signing_keys=[base64.b64encode(signing_key.public_key_bytes).decode()],
         )
         manager = AgentUpdateManager(config)
 
@@ -418,6 +410,7 @@ class TestSigningAlgorithmDetails:
 
         sig_data = json.loads(update.signature)
         import base64
+
         sig_bytes = base64.b64decode(sig_data["signature"])
 
         assert len(sig_bytes) == 64  # Ed25519 signature size

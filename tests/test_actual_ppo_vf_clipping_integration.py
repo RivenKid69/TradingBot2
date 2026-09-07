@@ -12,6 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 import pytest
@@ -53,10 +54,11 @@ class TestQuantileHuberLoss:
         predicted = torch.randn(batch_size, num_quantiles, requires_grad=True)
         targets = torch.randn(batch_size, 1)
 
-        loss = ppo._quantile_huber_loss(predicted, targets, reduction='none')
+        loss = ppo._quantile_huber_loss(predicted, targets, reduction="none")
 
-        assert loss.shape == (batch_size,), \
-            f"reduction='none' should return [{batch_size}], got {loss.shape}"
+        assert loss.shape == (
+            batch_size,
+        ), f"reduction='none' should return [{batch_size}], got {loss.shape}"
         assert torch.all(torch.isfinite(loss)), "All losses should be finite"
         print(f"✓ reduction='none' shape: {loss.shape}")
         print(f"✓ loss values: {loss.tolist()}")
@@ -71,10 +73,9 @@ class TestQuantileHuberLoss:
         predicted = torch.randn(batch_size, num_quantiles, requires_grad=True)
         targets = torch.randn(batch_size, 1)
 
-        loss = ppo._quantile_huber_loss(predicted, targets, reduction='mean')
+        loss = ppo._quantile_huber_loss(predicted, targets, reduction="mean")
 
-        assert loss.shape == (), \
-            f"reduction='mean' should return scalar, got {loss.shape}"
+        assert loss.shape == (), f"reduction='mean' should return scalar, got {loss.shape}"
         assert torch.isfinite(loss), "Loss should be finite"
         print(f"✓ reduction='mean' shape: {loss.shape}")
         print(f"✓ loss value: {loss.item():.6f}")
@@ -89,10 +90,9 @@ class TestQuantileHuberLoss:
         predicted = torch.randn(batch_size, num_quantiles, requires_grad=True)
         targets = torch.randn(batch_size, 1)
 
-        loss = ppo._quantile_huber_loss(predicted, targets, reduction='sum')
+        loss = ppo._quantile_huber_loss(predicted, targets, reduction="sum")
 
-        assert loss.shape == (), \
-            f"reduction='sum' should return scalar, got {loss.shape}"
+        assert loss.shape == (), f"reduction='sum' should return scalar, got {loss.shape}"
         assert torch.isfinite(loss), "Loss should be finite"
         print(f"✓ reduction='sum' shape: {loss.shape}")
         print(f"✓ loss value: {loss.item():.6f}")
@@ -107,17 +107,21 @@ class TestQuantileHuberLoss:
         predicted = torch.randn(batch_size, num_quantiles, requires_grad=True)
         targets = torch.randn(batch_size, 1)
 
-        loss_none = ppo._quantile_huber_loss(predicted, targets, reduction='none')
-        loss_mean = ppo._quantile_huber_loss(predicted, targets, reduction='mean')
-        loss_sum = ppo._quantile_huber_loss(predicted, targets, reduction='sum')
+        loss_none = ppo._quantile_huber_loss(predicted, targets, reduction="none")
+        loss_mean = ppo._quantile_huber_loss(predicted, targets, reduction="mean")
+        loss_sum = ppo._quantile_huber_loss(predicted, targets, reduction="sum")
 
         # Verify mathematical relationships
-        assert torch.allclose(loss_mean, loss_none.mean(), atol=1e-6), \
-            "reduction='mean' should equal mean of reduction='none'"
-        assert torch.allclose(loss_sum, loss_none.sum(), atol=1e-6), \
-            "reduction='sum' should equal sum of reduction='none'"
+        assert torch.allclose(
+            loss_mean, loss_none.mean(), atol=1e-6
+        ), "reduction='mean' should equal mean of reduction='none'"
+        assert torch.allclose(
+            loss_sum, loss_none.sum(), atol=1e-6
+        ), "reduction='sum' should equal sum of reduction='none'"
 
-        print(f"✓ mean relationship verified: {loss_mean.item():.6f} == {loss_none.mean().item():.6f}")
+        print(
+            f"✓ mean relationship verified: {loss_mean.item():.6f} == {loss_none.mean().item():.6f}"
+        )
         print(f"✓ sum relationship verified: {loss_sum.item():.6f} == {loss_none.sum().item():.6f}")
 
     def test_backward_compatibility_default_mean(self, setup_method_vars):
@@ -134,13 +138,16 @@ class TestQuantileHuberLoss:
         loss_default = ppo._quantile_huber_loss(predicted, targets)
 
         # Call with explicit reduction='mean'
-        loss_explicit = ppo._quantile_huber_loss(predicted, targets, reduction='mean')
+        loss_explicit = ppo._quantile_huber_loss(predicted, targets, reduction="mean")
 
-        assert torch.allclose(loss_default, loss_explicit), \
-            "Default should equal explicit reduction='mean'"
+        assert torch.allclose(
+            loss_default, loss_explicit
+        ), "Default should equal explicit reduction='mean'"
         assert loss_default.shape == (), "Default should return scalar"
 
-        print(f"✓ Default matches explicit mean: {loss_default.item():.6f} == {loss_explicit.item():.6f}")
+        print(
+            f"✓ Default matches explicit mean: {loss_default.item():.6f} == {loss_explicit.item():.6f}"
+        )
 
     def test_invalid_reduction_raises_error(self, setup_method_vars):
         """Test that invalid reduction mode raises ValueError."""
@@ -150,7 +157,7 @@ class TestQuantileHuberLoss:
         targets = torch.randn(3, 1)
 
         with pytest.raises(ValueError, match="Invalid reduction mode"):
-            ppo._quantile_huber_loss(predicted, targets, reduction='invalid')
+            ppo._quantile_huber_loss(predicted, targets, reduction="invalid")
 
         print("✓ Invalid reduction correctly raises ValueError")
 
@@ -158,25 +165,29 @@ class TestQuantileHuberLoss:
         """Test that gradients flow correctly for all reduction modes."""
         ppo = setup_method_vars
 
-        for reduction in ['none', 'mean', 'sum']:
+        for reduction in ["none", "mean", "sum"]:
             predicted = torch.randn(4, 5, requires_grad=True)
             targets = torch.randn(4, 1)
 
             loss = ppo._quantile_huber_loss(predicted, targets, reduction=reduction)
 
             # Compute scalar for backward (if needed)
-            if reduction == 'none':
+            if reduction == "none":
                 loss = loss.mean()
 
             loss.backward()
 
             assert predicted.grad is not None, f"Gradients should exist for reduction={reduction}"
-            assert torch.all(torch.isfinite(predicted.grad)), \
-                f"Gradients should be finite for reduction={reduction}"
-            assert predicted.grad.norm() > 0, \
-                f"Gradients should be non-zero for reduction={reduction}"
+            assert torch.all(
+                torch.isfinite(predicted.grad)
+            ), f"Gradients should be finite for reduction={reduction}"
+            assert (
+                predicted.grad.norm() > 0
+            ), f"Gradients should be non-zero for reduction={reduction}"
 
-            print(f"✓ Gradients flow correctly for reduction='{reduction}': norm={predicted.grad.norm().item():.6f}")
+            print(
+                f"✓ Gradients flow correctly for reduction='{reduction}': norm={predicted.grad.norm().item():.6f}"
+            )
 
     def test_per_sample_shapes_various_batch_sizes(self, setup_method_vars):
         """Test per-sample loss shapes for various batch sizes."""
@@ -189,10 +200,11 @@ class TestQuantileHuberLoss:
             predicted = torch.randn(batch_size, num_quantiles)
             targets = torch.randn(batch_size, 1)
 
-            loss = ppo._quantile_huber_loss(predicted, targets, reduction='none')
+            loss = ppo._quantile_huber_loss(predicted, targets, reduction="none")
 
-            assert loss.shape == (batch_size,), \
-                f"Batch {batch_size}: expected shape ({batch_size},), got {loss.shape}"
+            assert loss.shape == (
+                batch_size,
+            ), f"Batch {batch_size}: expected shape ({batch_size},), got {loss.shape}"
 
             print(f"✓ Batch size {batch_size:3d}: loss shape {loss.shape}")
 
@@ -208,25 +220,31 @@ class TestQuantileHuberLoss:
         num_quantiles = 5
 
         # Create test data where mean(max) != max(mean)
-        predicted_unclipped = torch.tensor([
-            [1.0, 1.5, 2.0, 2.5, 3.0],
-            [5.0, 5.1, 5.2, 5.3, 5.4],
-            [3.0, 3.0, 3.0, 3.0, 3.0],
-            [0.0, 1.0, 2.0, 3.0, 4.0],
-        ], dtype=torch.float32)
+        predicted_unclipped = torch.tensor(
+            [
+                [1.0, 1.5, 2.0, 2.5, 3.0],
+                [5.0, 5.1, 5.2, 5.3, 5.4],
+                [3.0, 3.0, 3.0, 3.0, 3.0],
+                [0.0, 1.0, 2.0, 3.0, 4.0],
+            ],
+            dtype=torch.float32,
+        )
 
-        predicted_clipped = torch.tensor([
-            [1.5, 2.0, 2.5, 3.0, 3.5],
-            [4.0, 4.5, 5.0, 5.5, 6.0],
-            [3.0, 3.0, 3.0, 3.0, 3.0],
-            [1.0, 2.0, 3.0, 4.0, 5.0],
-        ], dtype=torch.float32)
+        predicted_clipped = torch.tensor(
+            [
+                [1.5, 2.0, 2.5, 3.0, 3.5],
+                [4.0, 4.5, 5.0, 5.5, 6.0],
+                [3.0, 3.0, 3.0, 3.0, 3.0],
+                [1.0, 2.0, 3.0, 4.0, 5.0],
+            ],
+            dtype=torch.float32,
+        )
 
         targets = torch.tensor([[2.0], [5.0], [3.0], [10.0]], dtype=torch.float32)
 
         # Get per-sample losses
-        loss_unclipped = ppo._quantile_huber_loss(predicted_unclipped, targets, reduction='none')
-        loss_clipped = ppo._quantile_huber_loss(predicted_clipped, targets, reduction='none')
+        loss_unclipped = ppo._quantile_huber_loss(predicted_unclipped, targets, reduction="none")
+        loss_clipped = ppo._quantile_huber_loss(predicted_clipped, targets, reduction="none")
 
         # CORRECT: mean(max(...))
         correct_vf_loss = torch.mean(torch.max(loss_unclipped, loss_clipped))
@@ -241,8 +259,9 @@ class TestQuantileHuberLoss:
         print(f"Difference: {abs(correct_vf_loss.item() - incorrect_vf_loss.item()):.6f}")
 
         # Verify they are different (proving the bug matters)
-        assert not torch.allclose(correct_vf_loss, incorrect_vf_loss, atol=1e-4), \
-            "Correct and incorrect should differ in this scenario"
+        assert not torch.allclose(
+            correct_vf_loss, incorrect_vf_loss, atol=1e-4
+        ), "Correct and incorrect should differ in this scenario"
 
         print("✓ mean(max) correctly differs from max(mean)")
 

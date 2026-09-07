@@ -71,10 +71,14 @@ def _stub_external_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def env_factory(monkeypatch: pytest.MonkeyPatch) -> Callable[[pd.DataFrame | None, Any | None], trading_patchnew.TradingEnv]:
+def env_factory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[pd.DataFrame | None, Any | None], trading_patchnew.TradingEnv]:
     """Return a factory producing :class:`TradingEnv` instances with a dummy mediator."""
 
-    def _factory(df: pd.DataFrame | None = None, exec_sim: Any | None = None) -> trading_patchnew.TradingEnv:
+    def _factory(
+        df: pd.DataFrame | None = None, exec_sim: Any | None = None
+    ) -> trading_patchnew.TradingEnv:
         class _DummyMediator:
             def __init__(self, env: trading_patchnew.TradingEnv):
                 self.env = env
@@ -106,13 +110,19 @@ def env_factory(monkeypatch: pytest.MonkeyPatch) -> Callable[[pd.DataFrame | Non
         ),
         pytest.param(lambda df: df, 60_000, id="timestamp_ms_diff"),
         pytest.param(
-            lambda df: df.drop(columns=["ts_ms", "decision_ts"]).assign(open_ts=[0, 60, 120, 180, 240]),
+            lambda df: df.drop(columns=["ts_ms", "decision_ts"]).assign(
+                open_ts=[0, 60, 120, 180, 240]
+            ),
             60_000,
             id="open_ts_seconds",
         ),
     ],
 )
-def test_infer_bar_interval_from_dataframe(env_factory: Callable[..., trading_patchnew.TradingEnv], mutator: Callable[[pd.DataFrame], pd.DataFrame], expected: int) -> None:
+def test_infer_bar_interval_from_dataframe(
+    env_factory: Callable[..., trading_patchnew.TradingEnv],
+    mutator: Callable[[pd.DataFrame], pd.DataFrame],
+    expected: int,
+) -> None:
     """``TradingEnv._infer_bar_interval_from_dataframe`` honours explicit columns and diffs."""
 
     df = mutator(_make_base_dataframe())
@@ -126,13 +136,17 @@ def test_infer_bar_interval_from_dataframe(env_factory: Callable[..., trading_pa
         (b"[1, 2, 3]", [1, 2, 3]),
         (pd.Series([1.0, np.nan, 2.0]), [1.0, 2.0]),
         (np.array([1.0, np.nan, 3.0]), [1.0, 3.0]),
-        ("{\"path\": [4, 5, null]}", [4, 5]),
+        ('{"path": [4, 5, null]}', [4, 5]),
         ({"data": [None, 7.0]}, [7.0]),
         ("not json", None),
         ([None, float("nan")], None),
     ],
 )
-def test_normalize_intrabar_payload(env_factory: Callable[..., trading_patchnew.TradingEnv], payload: Any, expected: list[Any] | None) -> None:
+def test_normalize_intrabar_payload(
+    env_factory: Callable[..., trading_patchnew.TradingEnv],
+    payload: Any,
+    expected: list[Any] | None,
+) -> None:
     """Ensure ``_normalize_intrabar_path_payload`` accepts multiple payload types."""
 
     env = env_factory()
@@ -148,6 +162,7 @@ class _RecordingExecSim:
     def __getattr__(self, name: str) -> Any:
         self.lookup_counts[name] = self.lookup_counts.get(name, 0) + 1
         if name == "set_intrabar_path":
+
             def _setter(payload: list[Any]) -> None:
                 self.calls.append(payload)
 
@@ -155,7 +170,9 @@ class _RecordingExecSim:
         raise AttributeError(name)
 
 
-def test_forward_intrabar_path_caches_method(env_factory: Callable[..., trading_patchnew.TradingEnv]) -> None:
+def test_forward_intrabar_path_caches_method(
+    env_factory: Callable[..., trading_patchnew.TradingEnv]
+) -> None:
     """``_maybe_forward_intrabar_path`` normalizes payloads and caches the resolved method."""
 
     env = env_factory()
@@ -185,7 +202,9 @@ class _TimeframeExecSim:
         self._intrabar_timeframe_ms = value
 
 
-def test_configure_exec_timeframe_respects_existing_value(env_factory: Callable[..., trading_patchnew.TradingEnv]) -> None:
+def test_configure_exec_timeframe_respects_existing_value(
+    env_factory: Callable[..., trading_patchnew.TradingEnv]
+) -> None:
     """``_maybe_configure_exec_timeframe`` sets the timeframe once and respects cached state."""
 
     exec_sim = _TimeframeExecSim()
@@ -202,4 +221,3 @@ def test_configure_exec_timeframe_respects_existing_value(env_factory: Callable[
     exec_sim._intrabar_timeframe_ms = 10_000
     env._maybe_configure_exec_timeframe()
     assert exec_sim.received == [15_000]
-

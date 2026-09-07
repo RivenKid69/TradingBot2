@@ -55,6 +55,7 @@ from ..retention_service import (
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def workspace_id() -> str:
     """Generate a workspace ID."""
@@ -76,9 +77,11 @@ def audit_log() -> List[Dict[str, Any]]:
 @pytest.fixture
 def audit_callback(audit_log: List[Dict[str, Any]]):
     """Create audit callback that captures events."""
+
     def callback(action: str, details: Dict[str, Any]):
         # Store action separately to avoid overwrite by nested "action" keys
         audit_log.append({"_action": action, **details})
+
     return callback
 
 
@@ -103,6 +106,7 @@ def purge_results() -> Dict[str, int]:
 @pytest.fixture
 def purge_handler(purge_results: Dict[str, int]):
     """Create a mock purge handler."""
+
     def handler(
         workspace_id: str,
         data_type: str,
@@ -114,6 +118,7 @@ def purge_handler(purge_results: Dict[str, int]):
         count = 100  # Simulated count
         purge_results["count"] += count
         return count
+
     return handler
 
 
@@ -126,8 +131,10 @@ def purge_events() -> List[PurgeEvent]:
 @pytest.fixture
 def purge_callback(purge_events: List[PurgeEvent]):
     """Create purge callback that captures events."""
+
     def callback(event: PurgeEvent):
         purge_events.append(event)
+
     return callback
 
 
@@ -156,6 +163,7 @@ def scheduler(
 # ============================================================================
 # RetentionPolicy Data Class Tests
 # ============================================================================
+
 
 class TestRetentionPolicy:
     """Tests for RetentionPolicy data class."""
@@ -251,6 +259,7 @@ class TestRetentionPolicy:
 # LegalHold Data Class Tests
 # ============================================================================
 
+
 class TestLegalHold:
     """Tests for LegalHold data class."""
 
@@ -322,6 +331,7 @@ class TestLegalHold:
 # PurgeEvent Data Class Tests
 # ============================================================================
 
+
 class TestPurgeEvent:
     """Tests for PurgeEvent data class."""
 
@@ -389,6 +399,7 @@ class TestPurgeEvent:
 # ============================================================================
 # RetentionPolicyRegistry Tests
 # ============================================================================
+
 
 class TestRetentionPolicyRegistry:
     """Tests for RetentionPolicyRegistry."""
@@ -647,6 +658,7 @@ class TestRetentionPolicyRegistry:
 # ============================================================================
 # LegalHoldService Tests
 # ============================================================================
+
 
 class TestLegalHoldService:
     """Tests for LegalHoldService."""
@@ -964,6 +976,7 @@ class TestLegalHoldService:
 # AutoPurgeScheduler Tests
 # ============================================================================
 
+
 class TestAutoPurgeScheduler:
     """Tests for AutoPurgeScheduler."""
 
@@ -1177,6 +1190,7 @@ class TestAutoPurgeScheduler:
 # Integration Tests
 # ============================================================================
 
+
 class TestIntegration:
     """Integration tests for the retention system."""
 
@@ -1375,6 +1389,7 @@ class TestIntegration:
 # Constant Validation Tests
 # ============================================================================
 
+
 class TestConstants:
     """Tests for module constants."""
 
@@ -1384,8 +1399,9 @@ class TestConstants:
 
         for category in COMPLIANCE_DATA_CATEGORIES:
             assert category in MIN_RETENTION_DAYS
-            assert MIN_RETENTION_DAYS[category] >= seven_years, \
-                f"{category} should have at least 7-year minimum"
+            assert (
+                MIN_RETENTION_DAYS[category] >= seven_years
+            ), f"{category} should have at least 7-year minimum"
 
     def test_all_categories_in_constants(self):
         """Test that all categories are properly defined."""
@@ -1396,8 +1412,7 @@ class TestConstants:
 
             # Customer-controlled data might not have min
             if category not in {"strategy_versions", "backtest_results", "research_artifacts"}:
-                assert has_default or has_min, \
-                    f"{category} missing from retention constants"
+                assert has_default or has_min, f"{category} missing from retention constants"
 
     def test_max_greater_than_min(self):
         """Test that max retention is always greater than min."""
@@ -1406,8 +1421,9 @@ class TestConstants:
                 continue  # Indefinite is always valid
 
             min_days = MIN_RETENTION_DAYS.get(category, 1)
-            assert max_days >= min_days, \
-                f"{category}: max ({max_days}) should be >= min ({min_days})"
+            assert (
+                max_days >= min_days
+            ), f"{category}: max ({max_days}) should be >= min ({min_days})"
 
     def test_default_within_bounds(self):
         """Test that defaults are within min/max bounds."""
@@ -1415,9 +1431,11 @@ class TestConstants:
             min_days = MIN_RETENTION_DAYS.get(category, 1)
             max_days = MAX_RETENTION_DAYS.get(category)
 
-            assert default >= min_days, \
-                f"{category}: default ({default}) should be >= min ({min_days})"
+            assert (
+                default >= min_days
+            ), f"{category}: default ({default}) should be >= min ({min_days})"
 
             if max_days is not None:
-                assert default <= max_days, \
-                    f"{category}: default ({default}) should be <= max ({max_days})"
+                assert (
+                    default <= max_days
+                ), f"{category}: default ({default}) should be <= max ({max_days})"

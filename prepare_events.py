@@ -37,6 +37,7 @@ import pandas as pd
 
 # ------------------------- утилиты логирования -------------------------
 
+
 def _log(msg: str) -> None:
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S%z")
     print(f"[{ts}] {msg}", flush=True)
@@ -44,9 +45,11 @@ def _log(msg: str) -> None:
 
 # ------------------------- investpy с фолбэками -------------------------
 
+
 def _try_import_investpy():
     try:
         import investpy  # type: ignore
+
         return investpy
     except Exception as e:
         _log(f"~ investpy не найден или не импортируется: {e!r}. Пропущу обновление событий.")
@@ -111,8 +114,15 @@ def _norm_importance(x: str) -> Tuple[str, int]:
     return s, -1
 
 
-def _fetch_calendar(inv, d_from: date, d_to: date, countries: List[str], importances: List[str],
-                    retries: int = 3, backoff: float = 0.8) -> Optional[pd.DataFrame]:
+def _fetch_calendar(
+    inv,
+    d_from: date,
+    d_to: date,
+    countries: List[str],
+    importances: List[str],
+    retries: int = 3,
+    backoff: float = 0.8,
+) -> Optional[pd.DataFrame]:
     """
     Надёжная загрузка календаря: несколько попыток, разумные паузы.
     Возвращает DataFrame или None при окончательной неудаче.
@@ -133,7 +143,17 @@ def _fetch_calendar(inv, d_from: date, d_to: date, countries: List[str], importa
                 raise RuntimeError("investpy.economic_calendar returned non-DataFrame")
             # Иногда investpy возвращает пустой DF без колонок — нормализуем
             if df.empty:
-                cols = ["date", "time", "country", "event", "importance", "zone", "actual", "forecast", "previous"]
+                cols = [
+                    "date",
+                    "time",
+                    "country",
+                    "event",
+                    "importance",
+                    "zone",
+                    "actual",
+                    "forecast",
+                    "previous",
+                ]
                 for c in cols:
                     if c not in df.columns:
                         df[c] = pd.Series(dtype="object")
@@ -244,8 +264,12 @@ def _normalize_calendar(df: pd.DataFrame) -> pd.DataFrame:
         "forecast",
         "previous",
     ]
-    df = df.loc[:, cols].sort_values(["timestamp", "importance_level", "country", "name"], ascending=[True, False, True, True])
-    df = df.drop_duplicates(subset=["timestamp", "name", "country", "importance_level"], keep="last").reset_index(drop=True)
+    df = df.loc[:, cols].sort_values(
+        ["timestamp", "importance_level", "country", "name"], ascending=[True, False, True, True]
+    )
+    df = df.drop_duplicates(
+        subset=["timestamp", "name", "country", "importance_level"], keep="last"
+    ).reset_index(drop=True)
     return df
 
 
@@ -265,11 +289,17 @@ def _merge_with_existing(new_df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
                     old[c] = pd.Series(dtype=new_df[c].dtype)
             old = old[need_cols]
             merged = pd.concat([old, new_df], ignore_index=True)
-            merged = merged.drop_duplicates(subset=["timestamp", "name", "country", "importance_level"], keep="last")
-            merged = merged.sort_values(["timestamp", "importance_level"], ascending=[True, False]).reset_index(drop=True)
+            merged = merged.drop_duplicates(
+                subset=["timestamp", "name", "country", "importance_level"], keep="last"
+            )
+            merged = merged.sort_values(
+                ["timestamp", "importance_level"], ascending=[True, False]
+            ).reset_index(drop=True)
             return merged
         except Exception as e:
-            _log(f"~ failed to read/merge existing CSV ({out_path}): {e!r}; will overwrite with new data")
+            _log(
+                f"~ failed to read/merge existing CSV ({out_path}): {e!r}; will overwrite with new data"
+            )
     return new_df
 
 
@@ -280,11 +310,24 @@ def _atomic_write_csv(df: pd.DataFrame, path: Path) -> None:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Fetch & normalize macro events from investpy into data/economic_events.csv")
+    p = argparse.ArgumentParser(
+        description="Fetch & normalize macro events from investpy into data/economic_events.csv"
+    )
     p.add_argument("--from", dest="date_from", type=str, required=True, help="YYYY-MM-DD")
     p.add_argument("--to", dest="date_to", type=str, required=True, help="YYYY-MM-DD")
-    p.add_argument("--countries", type=str, default="united states,euro zone,china", help="comma-separated investpy country names")
-    p.add_argument("--min-importance", type=str, default="medium", choices=["low", "medium", "high"], help="minimum importance to keep")
+    p.add_argument(
+        "--countries",
+        type=str,
+        default="united states,euro zone,china",
+        help="comma-separated investpy country names",
+    )
+    p.add_argument(
+        "--min-importance",
+        type=str,
+        default="medium",
+        choices=["low", "medium", "high"],
+        help="minimum importance to keep",
+    )
     p.add_argument("--out", type=str, default="data/economic_events.csv")
     args = p.parse_args()
 

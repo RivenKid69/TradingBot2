@@ -40,21 +40,24 @@ from uuid import uuid4
 # Enums and Constants
 # ============================================================================
 
+
 class SensitivityLevel(Enum):
     """Data sensitivity classification levels."""
-    PUBLIC = 0           # Can be shared freely
-    INTERNAL = 1         # Internal use only
-    CONFIDENTIAL = 2     # Restricted access
-    SENSITIVE = 3        # Highly sensitive (PII, financial)
-    CRITICAL = 4         # Critical secrets (keys, credentials)
+
+    PUBLIC = 0  # Can be shared freely
+    INTERNAL = 1  # Internal use only
+    CONFIDENTIAL = 2  # Restricted access
+    SENSITIVE = 3  # Highly sensitive (PII, financial)
+    CRITICAL = 4  # Critical secrets (keys, credentials)
 
 
 class DLPAction(Enum):
     """Actions to take when DLP rule is triggered."""
-    ALLOW = auto()       # Allow with logging
-    MASK = auto()        # Mask sensitive portions
-    BLOCK = auto()       # Block transmission entirely
-    ALERT = auto()       # Allow but generate alert
+
+    ALLOW = auto()  # Allow with logging
+    MASK = auto()  # Mask sensitive portions
+    BLOCK = auto()  # Block transmission entirely
+    ALERT = auto()  # Allow but generate alert
     QUARANTINE = auto()  # Store locally, don't transmit
 
 
@@ -69,17 +72,19 @@ DEFAULT_SENSITIVITY_ACTIONS: Final[Dict[SensitivityLevel, DLPAction]] = {
 
 
 # Critical patterns that MUST be blocked
-CRITICAL_PATTERNS: Final[FrozenSet[str]] = frozenset({
-    "private_key",
-    "secret_key",
-    "api_secret",
-    "master_password",
-    "encryption_key",
-    "signing_key",
-    "seed_phrase",
-    "mnemonic",
-    "wallet_key",
-})
+CRITICAL_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    {
+        "private_key",
+        "secret_key",
+        "api_secret",
+        "master_password",
+        "encryption_key",
+        "signing_key",
+        "seed_phrase",
+        "mnemonic",
+        "wallet_key",
+    }
+)
 
 
 @dataclass
@@ -98,6 +103,7 @@ class DLPRule:
         is_mandatory: Cannot be disabled (for CRITICAL rules)
         enabled: Whether rule is active
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     description: str = ""
@@ -151,6 +157,7 @@ class DLPViolation:
         timestamp: When violation occurred
         masked_preview: Masked preview of content (for audit)
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     rule_id: str = ""
     rule_name: str = ""
@@ -188,6 +195,7 @@ class DLPConfig:
         max_preview_length: Max length for masked previews
         strict_mode: Block on any uncertainty
     """
+
     custom_rules: List[DLPRule] = field(default_factory=list)
     default_action: DLPAction = DLPAction.ALLOW
     enable_audit_log: bool = True
@@ -211,6 +219,7 @@ class DLPResult:
         blocked: Whether transmission was blocked
         action: Overall action taken
     """
+
     data: Dict[str, Any]
     violations: List[DLPViolation] = field(default_factory=list)
     blocked: bool = False
@@ -268,83 +277,123 @@ class DLPService:
         rules = []
 
         # Mandatory critical rules (cannot be disabled)
-        rules.append(DLPRule(
-            name="critical_secrets",
-            description="Block critical secrets like private keys",
-            sensitivity=SensitivityLevel.CRITICAL,
-            field_patterns=CRITICAL_PATTERNS,
-            action=DLPAction.BLOCK,
-            is_mandatory=True,
-        ))
+        rules.append(
+            DLPRule(
+                name="critical_secrets",
+                description="Block critical secrets like private keys",
+                sensitivity=SensitivityLevel.CRITICAL,
+                field_patterns=CRITICAL_PATTERNS,
+                action=DLPAction.BLOCK,
+                is_mandatory=True,
+            )
+        )
 
         # API credentials rule
-        rules.append(DLPRule(
-            name="api_credentials",
-            description="Block API credentials",
-            sensitivity=SensitivityLevel.CRITICAL,
-            field_patterns=frozenset({
-                "api_key", "api_secret", "apikey", "apisecret",
-                "access_key", "secret_key", "auth_token",
-            }),
-            value_patterns=[
-                re.compile(r"(?:AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}"),  # AWS
-                re.compile(r"sk-[a-zA-Z0-9]{20,}"),  # OpenAI-style
-                re.compile(r"xox[baprs]-[a-zA-Z0-9-]+"),  # Slack
-            ],
-            action=DLPAction.BLOCK,
-            is_mandatory=True,
-        ))
+        rules.append(
+            DLPRule(
+                name="api_credentials",
+                description="Block API credentials",
+                sensitivity=SensitivityLevel.CRITICAL,
+                field_patterns=frozenset(
+                    {
+                        "api_key",
+                        "api_secret",
+                        "apikey",
+                        "apisecret",
+                        "access_key",
+                        "secret_key",
+                        "auth_token",
+                    }
+                ),
+                value_patterns=[
+                    re.compile(r"(?:AKIA|ABIA|ACCA|ASIA)[A-Z0-9]{16}"),  # AWS
+                    re.compile(r"sk-[a-zA-Z0-9]{20,}"),  # OpenAI-style
+                    re.compile(r"xox[baprs]-[a-zA-Z0-9-]+"),  # Slack
+                ],
+                action=DLPAction.BLOCK,
+                is_mandatory=True,
+            )
+        )
 
         # Financial data rule
-        rules.append(DLPRule(
-            name="financial_data",
-            description="Mask financial identifiers",
-            sensitivity=SensitivityLevel.SENSITIVE,
-            field_patterns=frozenset({
-                "account_number", "routing_number", "card_number",
-                "credit_card", "bank_account", "iban", "swift",
-            }),
-            value_patterns=[
-                re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"),  # Card
-                re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b"),  # IBAN
-            ],
-            action=DLPAction.MASK,
-            is_mandatory=True,
-        ))
+        rules.append(
+            DLPRule(
+                name="financial_data",
+                description="Mask financial identifiers",
+                sensitivity=SensitivityLevel.SENSITIVE,
+                field_patterns=frozenset(
+                    {
+                        "account_number",
+                        "routing_number",
+                        "card_number",
+                        "credit_card",
+                        "bank_account",
+                        "iban",
+                        "swift",
+                    }
+                ),
+                value_patterns=[
+                    re.compile(r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"),  # Card
+                    re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b"),  # IBAN
+                ],
+                action=DLPAction.MASK,
+                is_mandatory=True,
+            )
+        )
 
         # PII rule
-        rules.append(DLPRule(
-            name="pii_data",
-            description="Mask personally identifiable information",
-            sensitivity=SensitivityLevel.SENSITIVE,
-            field_patterns=frozenset({
-                "ssn", "social_security", "tax_id", "national_id",
-                "passport", "driver_license", "drivers_license",
-            }),
-            value_patterns=[
-                re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),  # SSN
-                re.compile(r"\b\d{9}\b"),  # Tax ID
-            ],
-            action=DLPAction.MASK,
-            is_mandatory=True,
-        ))
+        rules.append(
+            DLPRule(
+                name="pii_data",
+                description="Mask personally identifiable information",
+                sensitivity=SensitivityLevel.SENSITIVE,
+                field_patterns=frozenset(
+                    {
+                        "ssn",
+                        "social_security",
+                        "tax_id",
+                        "national_id",
+                        "passport",
+                        "driver_license",
+                        "drivers_license",
+                    }
+                ),
+                value_patterns=[
+                    re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),  # SSN
+                    re.compile(r"\b\d{9}\b"),  # Tax ID
+                ],
+                action=DLPAction.MASK,
+                is_mandatory=True,
+            )
+        )
 
         # Contact info rule
-        rules.append(DLPRule(
-            name="contact_info",
-            description="Mask contact information",
-            sensitivity=SensitivityLevel.CONFIDENTIAL,
-            field_patterns=frozenset({
-                "email", "phone", "phone_number", "mobile",
-                "address", "street", "city", "zip", "postal",
-            }),
-            value_patterns=[
-                re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"),
-                re.compile(r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b"),
-            ],
-            action=DLPAction.MASK,
-            is_mandatory=False,
-        ))
+        rules.append(
+            DLPRule(
+                name="contact_info",
+                description="Mask contact information",
+                sensitivity=SensitivityLevel.CONFIDENTIAL,
+                field_patterns=frozenset(
+                    {
+                        "email",
+                        "phone",
+                        "phone_number",
+                        "mobile",
+                        "address",
+                        "street",
+                        "city",
+                        "zip",
+                        "postal",
+                    }
+                ),
+                value_patterns=[
+                    re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"),
+                    re.compile(r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b"),
+                ],
+                action=DLPAction.MASK,
+                is_mandatory=False,
+            )
+        )
 
         # Add custom rules
         rules.extend(self.config.custom_rules)
@@ -366,8 +415,8 @@ class DLPService:
 
         # Determine overall action
         blocked = any(v.action_taken == DLPAction.BLOCK for v in violations)
-        overall_action = DLPAction.BLOCK if blocked else (
-            DLPAction.MASK if violations else DLPAction.ALLOW
+        overall_action = (
+            DLPAction.BLOCK if blocked else (DLPAction.MASK if violations else DLPAction.ALLOW)
         )
 
         # Log violations
@@ -398,9 +447,7 @@ class DLPService:
 
                 if rule:
                     action = self._get_action(rule, sensitivity)
-                    violation = self._create_violation(
-                        rule, current_path, value, action
-                    )
+                    violation = self._create_violation(rule, current_path, value, action)
                     violations.append(violation)
 
                     # Apply action
@@ -411,13 +458,9 @@ class DLPService:
                     elif action == DLPAction.QUARANTINE:
                         result[key] = "[QUARANTINED]"
                     else:
-                        result[key] = self._process_recursive(
-                            value, violations, current_path
-                        )
+                        result[key] = self._process_recursive(value, violations, current_path)
                 else:
-                    result[key] = self._process_recursive(
-                        value, violations, current_path
-                    )
+                    result[key] = self._process_recursive(value, violations, current_path)
             return result
 
         elif isinstance(obj, list):
@@ -444,9 +487,7 @@ class DLPService:
         return obj
 
     def _match_rules(
-        self,
-        field_name: str,
-        value: Any
+        self, field_name: str, value: Any
     ) -> tuple[Optional[DLPRule], SensitivityLevel]:
         """Match field/value against rules."""
         for rule in self._rules:
@@ -464,11 +505,7 @@ class DLPService:
 
         return None, SensitivityLevel.PUBLIC
 
-    def _get_action(
-        self,
-        rule: DLPRule,
-        sensitivity: SensitivityLevel
-    ) -> DLPAction:
+    def _get_action(self, rule: DLPRule, sensitivity: SensitivityLevel) -> DLPAction:
         """Determine action based on rule and sensitivity."""
         # Critical sensitivity always blocks
         if sensitivity == SensitivityLevel.CRITICAL:
@@ -479,23 +516,17 @@ class DLPService:
             return rule.action
 
         # Fall back to sensitivity-based action
-        return self.config.sensitivity_actions.get(
-            sensitivity, self.config.default_action
-        )
+        return self.config.sensitivity_actions.get(sensitivity, self.config.default_action)
 
     def _create_violation(
-        self,
-        rule: DLPRule,
-        path: str,
-        value: Any,
-        action: DLPAction
+        self, rule: DLPRule, path: str, value: Any, action: DLPAction
     ) -> DLPViolation:
         """Create violation record."""
         # Create masked preview
         str_value = str(value)
         max_len = self.config.max_preview_length
         if len(str_value) > max_len:
-            masked_preview = str_value[:max_len // 2] + "..." + str_value[-(max_len // 2):]
+            masked_preview = str_value[: max_len // 2] + "..." + str_value[-(max_len // 2) :]
         else:
             masked_preview = str_value
 
@@ -580,6 +611,7 @@ class DLPService:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def create_dlp_service(strict: bool = False) -> DLPService:
     """

@@ -79,10 +79,10 @@ SESSION_LIQUIDITY: Dict[str, float] = {
 
 # Session times (UTC hours, approximate)
 SESSION_TIMES_UTC: Dict[str, Tuple[int, int]] = {
-    "sydney": (21, 6),      # 21:00 - 06:00 UTC
-    "tokyo": (0, 9),        # 00:00 - 09:00 UTC
-    "london": (7, 16),      # 07:00 - 16:00 UTC
-    "new_york": (12, 21),   # 12:00 - 21:00 UTC
+    "sydney": (21, 6),  # 21:00 - 06:00 UTC
+    "tokyo": (0, 9),  # 00:00 - 09:00 UTC
+    "london": (7, 16),  # 07:00 - 16:00 UTC
+    "new_york": (12, 21),  # 12:00 - 21:00 UTC
 }
 
 # Default swap rates by pair category (pips/day, negative = cost)
@@ -95,28 +95,55 @@ DEFAULT_SWAP_RATES: Dict[str, Dict[str, float]] = {
 }
 
 # Pair classification
-MAJOR_PAIRS = frozenset({
-    "EUR_USD", "GBP_USD", "USD_JPY", "USD_CHF",
-    "AUD_USD", "USD_CAD", "NZD_USD",
-})
-MINOR_PAIRS = frozenset({
-    "EUR_GBP", "EUR_CHF", "GBP_CHF", "EUR_AUD",
-    "EUR_CAD", "EUR_NZD", "GBP_AUD", "GBP_CAD",
-})
-EXOTIC_PAIRS = frozenset({
-    "USD_TRY", "USD_ZAR", "USD_MXN", "USD_PLN",
-    "USD_HUF", "USD_CZK", "USD_SGD", "USD_HKD",
-    "USD_NOK", "USD_SEK", "USD_DKK",
-})
+MAJOR_PAIRS = frozenset(
+    {
+        "EUR_USD",
+        "GBP_USD",
+        "USD_JPY",
+        "USD_CHF",
+        "AUD_USD",
+        "USD_CAD",
+        "NZD_USD",
+    }
+)
+MINOR_PAIRS = frozenset(
+    {
+        "EUR_GBP",
+        "EUR_CHF",
+        "GBP_CHF",
+        "EUR_AUD",
+        "EUR_CAD",
+        "EUR_NZD",
+        "GBP_AUD",
+        "GBP_CAD",
+    }
+)
+EXOTIC_PAIRS = frozenset(
+    {
+        "USD_TRY",
+        "USD_ZAR",
+        "USD_MXN",
+        "USD_PLN",
+        "USD_HUF",
+        "USD_CZK",
+        "USD_SGD",
+        "USD_HKD",
+        "USD_NOK",
+        "USD_SEK",
+        "USD_DKK",
+    }
+)
 
 
 # =============================================================================
 # SWAP RATE PROVIDER
 # =============================================================================
 
+
 @dataclass
 class SwapRate:
     """Swap rate for a currency pair."""
+
     pair: str
     long_swap: float  # Pips/day for long positions (negative = cost)
     short_swap: float  # Pips/day for short positions (negative = cost)
@@ -188,6 +215,7 @@ class SwapRateProvider:
 
         elif filepath.suffix.lower() == ".csv":
             import csv
+
             with open(filepath, "r") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
@@ -220,6 +248,7 @@ class SwapRateProvider:
         historical: Dict[str, List[SwapRate]] = {}
 
         import glob
+
         for filepath in glob.glob(str(directory / pattern)):
             try:
                 provider = cls.from_file(filepath)
@@ -307,6 +336,7 @@ class SwapRateProvider:
 # DST-AWARE ROLLOVER TIME
 # =============================================================================
 
+
 def get_rollover_hour_utc(timestamp: int) -> int:
     """
     Get the rollover hour in UTC for a given timestamp, accounting for DST.
@@ -377,6 +407,7 @@ def is_dst_in_effect(timestamp: int) -> bool:
 # =============================================================================
 # OPTIMIZED ROLLOVER COUNTER
 # =============================================================================
+
 
 def count_rollovers_optimized(
     prev_ts: int,
@@ -451,6 +482,7 @@ def count_rollovers_optimized(
 # =============================================================================
 # FOREX ENVIRONMENT WRAPPER
 # =============================================================================
+
 
 class ForexEnvWrapper(gym.Wrapper):
     """
@@ -698,9 +730,7 @@ class ForexEnvWrapper(gym.Wrapper):
         info["is_session_overlap"] = "overlap" in session
         info["is_weekend"] = session == "weekend"
         info["dst_in_effect"] = is_dst_in_effect(timestamp) if self.dst_aware else None
-        info["rollover_hour_utc"] = (
-            get_rollover_hour_utc(timestamp) if self.dst_aware else 21
-        )
+        info["rollover_hour_utc"] = get_rollover_hour_utc(timestamp) if self.dst_aware else 21
 
         return info
 
@@ -708,6 +738,7 @@ class ForexEnvWrapper(gym.Wrapper):
 # =============================================================================
 # FOREX LEVERAGE WRAPPER
 # =============================================================================
+
 
 class ForexLeverageWrapper(gym.Wrapper):
     """
@@ -762,10 +793,7 @@ class ForexLeverageWrapper(gym.Wrapper):
             else:
                 action = 0.0
 
-            logger.warning(
-                f"Stop out triggered: level={margin_level:.2f}, "
-                f"forcing liquidation"
-            )
+            logger.warning(f"Stop out triggered: level={margin_level:.2f}, " f"forcing liquidation")
 
         # Check margin call
         elif margin_level < self.margin_call_level:
@@ -776,8 +804,7 @@ class ForexLeverageWrapper(gym.Wrapper):
                 action = float(action) * 0.5
 
             logger.warning(
-                f"Margin call triggered: level={margin_level:.2f}, "
-                f"reducing position"
+                f"Margin call triggered: level={margin_level:.2f}, " f"reducing position"
             )
 
         return self.env.step(action)
@@ -786,6 +813,7 @@ class ForexLeverageWrapper(gym.Wrapper):
 # =============================================================================
 # FACTORY FUNCTION
 # =============================================================================
+
 
 def create_forex_env(
     df,

@@ -23,8 +23,10 @@ Example of catastrophic failure (if bug not fixed):
 
 See: CONCEPTUAL_BUGS_VERIFICATION_REPORT_2025_11_24.md for full analysis
 """
+
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 
 from distributional_ppo import DistributionalPPO
@@ -43,13 +45,15 @@ class TestTargetClippingFix:
         """
         # Create mock rollout buffer with EXTREME returns
         # These values are intentionally outside typical clip ranges (e.g., ±0.2)
-        extreme_returns = torch.tensor([
-            [-10.0],  # Large loss (e.g., -1000% return)
-            [10.0],   # Large profit (e.g., +1000% return)
-            [0.5],    # Normal return
-            [-5.0],   # Medium loss
-            [5.0],    # Medium profit
-        ])
+        extreme_returns = torch.tensor(
+            [
+                [-10.0],  # Large loss (e.g., -1000% return)
+                [10.0],  # Large profit (e.g., +1000% return)
+                [0.5],  # Normal return
+                [-5.0],  # Medium loss
+                [5.0],  # Medium profit
+            ]
+        )
 
         # Mock PPO instance (simplified for testing)
         # In real code, this would be a full DistributionalPPO instance
@@ -96,15 +100,14 @@ class TestTargetClippingFix:
             target_returns_norm = target_returns_norm_raw  # NO CLIPPING!
         else:
             target_returns_norm_raw = (
-                (target_returns_raw / float(base_scale_safe))
-                * ppo._value_target_scale_effective
-            )
+                target_returns_raw / float(base_scale_safe)
+            ) * ppo._value_target_scale_effective
             target_returns_norm = target_returns_norm_raw  # NO CLIPPING!
 
         # CRITICAL ASSERTION: Targets should be IDENTICAL to original (unclipped)
-        assert torch.allclose(target_returns_norm, extreme_returns), (
-            f"Targets were clipped! Expected {extreme_returns}, got {target_returns_norm}"
-        )
+        assert torch.allclose(
+            target_returns_norm, extreme_returns
+        ), f"Targets were clipped! Expected {extreme_returns}, got {target_returns_norm}"
 
         # Verify NO values were clamped to clip_range bounds
         clip_limit = ppo._value_clip_limit_unscaled
@@ -176,14 +179,12 @@ class TestTargetClippingFix:
         # Setup
         old_values = torch.tensor([[0.0], [0.0], [0.0]])
         target_returns = torch.tensor([[5.0], [-5.0], [0.5]])  # Large targets (outside clip range)
-        value_pred = torch.tensor([[2.0], [-2.0], [0.3]])      # Moderate predictions
+        value_pred = torch.tensor([[2.0], [-2.0], [0.3]])  # Moderate predictions
         clip_range_vf = 0.2  # Typical PPO epsilon
 
         # CORRECT PPO VF CLIPPING (clip predictions, not targets)
         value_pred_clipped = old_values + torch.clamp(
-            value_pred - old_values,
-            -clip_range_vf,
-            +clip_range_vf
+            value_pred - old_values, -clip_range_vf, +clip_range_vf
         )
 
         # Expected clipped predictions
@@ -200,16 +201,18 @@ class TestTargetClippingFix:
         loss = torch.max(loss_unclipped, loss_clipped)  # Element-wise max
 
         # CRITICAL ASSERTION: Targets were NOT modified
-        assert torch.allclose(target_returns, torch.tensor([[5.0], [-5.0], [0.5]])), (
-            "Targets were modified! PPO VF clipping should NEVER change targets."
-        )
+        assert torch.allclose(
+            target_returns, torch.tensor([[5.0], [-5.0], [0.5]])
+        ), "Targets were modified! PPO VF clipping should NEVER change targets."
 
         # Verify loss computation used original targets
-        expected_loss_unclipped = torch.tensor([
-            [(2.0 - 5.0)**2],   # 9.0
-            [(-2.0 - (-5.0))**2],  # 9.0
-            [(0.3 - 0.5)**2],   # 0.04
-        ])
+        expected_loss_unclipped = torch.tensor(
+            [
+                [(2.0 - 5.0) ** 2],  # 9.0
+                [(-2.0 - (-5.0)) ** 2],  # 9.0
+                [(0.3 - 0.5) ** 2],  # 0.04
+            ]
+        )
         assert torch.allclose(loss_unclipped, expected_loss_unclipped, atol=1e-5), (
             f"Unclipped loss incorrect! Expected {expected_loss_unclipped}, "
             f"got {loss_unclipped}"
@@ -273,9 +276,9 @@ class TestTargetClippingFix:
         target_returns_norm = target_returns_raw  # NO CLIPPING!
 
         # CRITICAL ASSERTION: Targets preserved exactly
-        assert torch.allclose(target_returns_norm, extreme_returns), (
-            "Targets were modified when value_clip_limit=None!"
-        )
+        assert torch.allclose(
+            target_returns_norm, extreme_returns
+        ), "Targets were modified when value_clip_limit=None!"
 
 
 class TestTargetClippingDocumentation:
@@ -287,18 +290,19 @@ class TestTargetClippingDocumentation:
             code = f.read()
 
         # Check for fix comments in EV reserve method
-        assert "FIX (2025-11-24): REMOVED target clipping" in code, (
-            "Missing FIX comment in EV reserve method"
-        )
+        assert (
+            "FIX (2025-11-24): REMOVED target clipping" in code
+        ), "Missing FIX comment in EV reserve method"
 
         # Check for fix comments in training loop
-        assert "FIX (2025-11-24): Use UNCLIPPED targets everywhere" in code, (
-            "Missing FIX comment in training loop"
-        )
+        assert (
+            "FIX (2025-11-24): Use UNCLIPPED targets everywhere" in code
+        ), "Missing FIX comment in training loop"
 
         # Check that NO torch.clamp(target_returns_*, ...) exists
         # (Allow torch.clamp for predictions, just not targets)
         import re
+
         target_clipping_pattern = r"target_returns\w*\s*=\s*torch\.clamp\(target_returns"
         matches = re.findall(target_clipping_pattern, code)
 

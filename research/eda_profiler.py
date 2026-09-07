@@ -79,7 +79,7 @@ def _skewness(arr: np.ndarray) -> Optional[float]:
     if std == 0 or not math.isfinite(std):
         return None
     m3 = np.mean((arr - mean) ** 3)
-    g1 = m3 / (std ** 3)
+    g1 = m3 / (std**3)
     # Adjust to the unbiased (Fisher-Pearson) estimator to match scipy bias=False
     adj = math.sqrt(n * (n - 1)) / (n - 2)
     return _json_safe_float(adj * g1)
@@ -101,7 +101,7 @@ def _kurtosis(arr: np.ndarray) -> Optional[float]:
     if std == 0 or not math.isfinite(std):
         return None
     m4 = np.mean((arr - mean) ** 4)
-    g2 = m4 / (std ** 4) - 3.0
+    g2 = m4 / (std**4) - 3.0
     # Unbiased estimator matching scipy bias=False
     num = (n - 1) / ((n - 2) * (n - 3))
     adj = num * ((n + 1) * g2 + 6)
@@ -111,9 +111,7 @@ def _kurtosis(arr: np.ndarray) -> Optional[float]:
 def _profile_numeric_column(name: str, series: pd.Series) -> Dict[str, Any]:
     """Build the descriptive stats block for a numeric column."""
     n_total = len(series)
-    missing_pct = (
-        100.0 * float(series.isna().sum()) / n_total if n_total else 0.0
-    )
+    missing_pct = 100.0 * float(series.isna().sum()) / n_total if n_total else 0.0
     values = pd.to_numeric(series, errors="coerce").to_numpy(dtype="float64")
     finite = values[np.isfinite(values)]
 
@@ -176,9 +174,7 @@ def _profile_numeric_column(name: str, series: pd.Series) -> Dict[str, Any]:
 def _profile_non_numeric_column(name: str, series: pd.Series) -> Dict[str, Any]:
     """Build the minimal block for a non-numeric column."""
     n_total = len(series)
-    missing_pct = (
-        100.0 * float(series.isna().sum()) / n_total if n_total else 0.0
-    )
+    missing_pct = 100.0 * float(series.isna().sum()) / n_total if n_total else 0.0
     return {
         "name": name,
         "dtype": str(series.dtype),
@@ -188,14 +184,10 @@ def _profile_non_numeric_column(name: str, series: pd.Series) -> Dict[str, Any]:
 
 
 def _is_numeric(series: pd.Series) -> bool:
-    return pd.api.types.is_numeric_dtype(series) and not pd.api.types.is_bool_dtype(
-        series
-    )
+    return pd.api.types.is_numeric_dtype(series) and not pd.api.types.is_bool_dtype(series)
 
 
-def _per_symbol_block(
-    sub: pd.DataFrame, symbol: str, time_col: Optional[str]
-) -> Dict[str, Any]:
+def _per_symbol_block(sub: pd.DataFrame, symbol: str, time_col: Optional[str]) -> Dict[str, Any]:
     """Compute interval/coverage/gap stats for one symbol partition."""
     block: Dict[str, Any] = {
         "symbol": symbol,
@@ -241,9 +233,7 @@ def _per_symbol_block(
         expected = span / median_interval + 1.0
         block["expected_rows"] = _json_safe_float(expected)
         if expected > 0:
-            block["coverage_pct"] = _json_safe_float(
-                100.0 * float(len(sub)) / expected
-            )
+            block["coverage_pct"] = _json_safe_float(100.0 * float(len(sub)) / expected)
 
     return block
 
@@ -273,9 +263,7 @@ def _ohlc_violations(df: pd.DataFrame) -> Optional[int]:
     low = pd.to_numeric(df[cols["low"]], errors="coerce").to_numpy(dtype="float64")
     c = pd.to_numeric(df[cols["close"]], errors="coerce").to_numpy(dtype="float64")
 
-    valid_present = (
-        np.isfinite(o) & np.isfinite(h) & np.isfinite(low) & np.isfinite(c)
-    )
+    valid_present = np.isfinite(o) & np.isfinite(h) & np.isfinite(low) & np.isfinite(c)
 
     high_ok = h >= np.maximum.reduce([o, c, low])
     low_ok = low <= np.minimum.reduce([o, c, h])
@@ -305,9 +293,7 @@ def _duplicate_timestamps(
     return int(df.duplicated(subset=keys, keep="first").sum())
 
 
-def _distributions(
-    df: pd.DataFrame, numeric_cols: List[str], n_bins: int
-) -> Dict[str, Any]:
+def _distributions(df: pd.DataFrame, numeric_cols: List[str], n_bins: int) -> Dict[str, Any]:
     """Build histograms for up to _MAX_DISTRIBUTION_COLS numeric columns."""
     out: Dict[str, Any] = {}
     for name in numeric_cols[:_MAX_DISTRIBUTION_COLS]:
@@ -368,9 +354,7 @@ def profile_dataset(
     per_symbol: List[Dict[str, Any]] = []
     if has_symbol:
         for symbol, sub in df.groupby(symbol_col, sort=True):
-            per_symbol.append(
-                _per_symbol_block(sub, str(symbol), effective_time)
-            )
+            per_symbol.append(_per_symbol_block(sub, str(symbol), effective_time))
     else:
         per_symbol.append(_per_symbol_block(df, "ALL", effective_time))
     report["per_symbol"] = per_symbol
@@ -398,9 +382,7 @@ def _read_dataframe(path: str) -> pd.DataFrame:
         return pd.read_parquet(path)
     if ext in (".csv", ".txt"):
         return pd.read_csv(path)
-    raise ValueError(
-        f"Unsupported input extension '{ext}'. Use .parquet or .csv."
-    )
+    raise ValueError(f"Unsupported input extension '{ext}'. Use .parquet or .csv.")
 
 
 def _run_cli(args: argparse.Namespace) -> int:
@@ -499,18 +481,18 @@ def _selftest() -> int:
 
     # Missing pct > 0 for the NaN column (feat_a)
     feat_a = next(c for c in report["columns"] if c["name"] == "feat_a")
-    assert feat_a["missing_pct"] and feat_a["missing_pct"] > 0, (
-        f"expected missing_pct>0 for feat_a, got {feat_a['missing_pct']}"
-    )
+    assert (
+        feat_a["missing_pct"] and feat_a["missing_pct"] > 0
+    ), f"expected missing_pct>0 for feat_a, got {feat_a['missing_pct']}"
 
     # Outliers detected for feat_b
     feat_b = next(c for c in report["columns"] if c["name"] == "feat_b")
-    assert feat_b["n_outliers_iqr"] >= 1, (
-        f"expected IQR outliers for feat_b, got {feat_b['n_outliers_iqr']}"
-    )
-    assert feat_b["n_outliers_z3"] >= 1, (
-        f"expected z3 outliers for feat_b, got {feat_b['n_outliers_z3']}"
-    )
+    assert (
+        feat_b["n_outliers_iqr"] >= 1
+    ), f"expected IQR outliers for feat_b, got {feat_b['n_outliers_iqr']}"
+    assert (
+        feat_b["n_outliers_z3"] >= 1
+    ), f"expected z3 outliers for feat_b, got {feat_b['n_outliers_z3']}"
 
     # OHLC violations must be computed (0 expected for clean synthetic OHLC).
     assert report["ohlc_violations"] is not None, "OHLC violations not computed"
@@ -535,13 +517,9 @@ def _selftest() -> int:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="EDA / Data Quality profiler for quant datasets."
-    )
+    parser = argparse.ArgumentParser(description="EDA / Data Quality profiler for quant datasets.")
     parser.add_argument("--selftest", action="store_true", help="run self-test")
-    parser.add_argument(
-        "--in", dest="input", help="input parquet/csv file path"
-    )
+    parser.add_argument("--in", dest="input", help="input parquet/csv file path")
     parser.add_argument(
         "--out",
         dest="out",

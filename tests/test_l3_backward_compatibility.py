@@ -15,6 +15,7 @@ Run with:
 """
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 import numpy as np
 from typing import Dict, Any
@@ -36,6 +37,7 @@ try:
         L3ExecutionProvider,
         create_l3_execution_provider,
     )
+
     HAS_L3 = True
 except ImportError:
     HAS_L3 = False

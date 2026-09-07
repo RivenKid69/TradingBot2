@@ -99,7 +99,9 @@ def atomic_write_with_retry(
             return
         except Exception:
             if attempt >= retries:
-                logging.getLogger(__name__).log(ALERT_LEVEL, "Failed to write %s", path, exc_info=True)
+                logging.getLogger(__name__).log(
+                    ALERT_LEVEL, "Failed to write %s", path, exc_info=True
+                )
                 raise
             time.sleep(backoff)
 
@@ -154,11 +156,18 @@ def start_background(cmd: List[str], pid_file: str, log_file: str) -> int:
         f.write(str(proc.pid))
 
     started_at = datetime.now(timezone.utc).isoformat()
-    atomic_write_json(status_file, {
-        "pid": int(proc.pid), "state": "running", "running": True,
-        "exit_code": None, "started_at": started_at, "finished_at": None,
-        "command": cmd,
-    })
+    atomic_write_json(
+        status_file,
+        {
+            "pid": int(proc.pid),
+            "state": "running",
+            "running": True,
+            "exit_code": None,
+            "started_at": started_at,
+            "finished_at": None,
+            "command": cmd,
+        },
+    )
 
     def _watch() -> None:
         exit_code = int(proc.wait())
@@ -173,15 +182,18 @@ def start_background(cmd: List[str], pid_file: str, log_file: str) -> int:
                 final_state = "stopped"
         except Exception:
             pass
-        atomic_write_json(status_file, {
-            "pid": int(proc.pid),
-            "state": final_state,
-            "running": False,
-            "exit_code": exit_code,
-            "started_at": started_at,
-            "finished_at": datetime.now(timezone.utc).isoformat(),
-            "command": cmd,
-        })
+        atomic_write_json(
+            status_file,
+            {
+                "pid": int(proc.pid),
+                "state": final_state,
+                "running": False,
+                "exit_code": exit_code,
+                "started_at": started_at,
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+                "command": cmd,
+            },
+        )
         try:
             if os.path.exists(pid_file):
                 with open(pid_file, "r", encoding="utf-8") as fh:
@@ -230,11 +242,16 @@ def stop_background(pid_file: str) -> bool:
         pass
     try:
         from datetime import datetime, timezone
+
         current = read_json(pid_file + ".json")
-        current.update({
-            "state": "stopped", "running": False, "exit_code": None,
-            "finished_at": datetime.now(timezone.utc).isoformat(),
-        })
+        current.update(
+            {
+                "state": "stopped",
+                "running": False,
+                "exit_code": None,
+                "finished_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
         atomic_write_json(pid_file + ".json", current)
     except Exception:
         pass
@@ -248,7 +265,9 @@ def background_running(pid_file: str) -> bool:
         with open(pid_file, "r", encoding="utf-8") as f:
             pid = int(f.read().strip())
         if platform.system() == "Windows":
-            out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True)
+            out = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True
+            )
             is_alive = str(pid) in (out.stdout or "")
             if not is_alive:
                 # A freshly spawned Windows process can take a moment to appear
@@ -276,7 +295,7 @@ def background_running(pid_file: str) -> bool:
                 except Exception:
                     pass
                 return False
-            
+
             # Check if process is zombie on Linux
             try:
                 with open(f"/proc/{pid}/status", "r") as f_proc:
@@ -296,7 +315,7 @@ def background_running(pid_file: str) -> bool:
                             break
             except Exception:
                 pass
-                
+
             return True
     except Exception:
         try:
@@ -383,6 +402,7 @@ def append_row_csv(path: str, header: List[str], row: List[Any]) -> None:
     exists = os.path.exists(path)
     with open(path, "a", encoding="utf-8", newline="") as f:
         import csv as _csv
+
         w = _csv.writer(f)
         if not exists:
             w.writerow(header)

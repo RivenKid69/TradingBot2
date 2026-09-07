@@ -85,6 +85,7 @@ class ForexExecutionConfig:
         large_order_threshold_usd: Threshold for large order handling
         enable_adaptive_blending: Adapt blending based on fill quality
     """
+
     tca_config: Optional[ForexParametricConfig] = None
     dealer_config: Optional[ForexDealerConfig] = None
     execution_weight: float = 0.3
@@ -110,6 +111,7 @@ class ForexExecutionEstimate:
         recommended_execution: Execution recommendation
         risk_factors: Dictionary of risk factors
     """
+
     expected_slippage_pips: float
     expected_rejection_prob: float
     session: ForexSession
@@ -151,6 +153,7 @@ class ForexExecutionReport:
         total_latency_ms: Total execution latency
         execution_quality: Quality score (0-1, higher is better)
     """
+
     pre_trade_estimate: ForexExecutionEstimate
     execution_result: ExecutionResult
     tca_slippage_pips: float
@@ -244,10 +247,7 @@ class ForexExecutionIntegration:
 
         # Initialize dealer simulator
         self._dealer = create_forex_dealer_simulator(
-            config=(
-                self.config.dealer_config.__dict__
-                if self.config.dealer_config else None
-            ),
+            config=(self.config.dealer_config.__dict__ if self.config.dealer_config else None),
             seed=seed,
             profile=dealer_profile,
         )
@@ -439,10 +439,14 @@ class ForexExecutionIntegration:
         price_drift = (0.0001 if "JPY" not in symbol.upper() else 0.01) * 0.5
         if side.upper() == "BUY":
             # For buyers, adverse move is price going up
-            current_mid = mid_price + price_drift * (0.5 - 1.0 * (1.0 - estimate.expected_rejection_prob))
+            current_mid = mid_price + price_drift * (
+                0.5 - 1.0 * (1.0 - estimate.expected_rejection_prob)
+            )
         else:
             # For sellers, adverse move is price going down
-            current_mid = mid_price - price_drift * (0.5 - 1.0 * (1.0 - estimate.expected_rejection_prob))
+            current_mid = mid_price - price_drift * (
+                0.5 - 1.0 * (1.0 - estimate.expected_rejection_prob)
+            )
 
         # Execute through dealer simulator
         execution_result = self._dealer.attempt_execution(
@@ -464,7 +468,11 @@ class ForexExecutionIntegration:
         )
 
         # TCA error (for adaptive learning)
-        tca_error = abs(dealer_slippage - estimate.expected_slippage_pips) if execution_result.filled else 0.0
+        tca_error = (
+            abs(dealer_slippage - estimate.expected_slippage_pips)
+            if execution_result.filled
+            else 0.0
+        )
 
         # Update adaptive blending if enabled
         if self.config.enable_adaptive_blending and execution_result.filled:
@@ -575,7 +583,7 @@ class ForexExecutionIntegration:
         self._tca_error_history.append(error)
 
         if len(self._tca_error_history) > self._max_error_history:
-            self._tca_error_history = self._tca_error_history[-self._max_error_history // 2:]
+            self._tca_error_history = self._tca_error_history[-self._max_error_history // 2 :]
 
         # Adjust blend weight based on recent accuracy
         if len(self._tca_error_history) >= 20:

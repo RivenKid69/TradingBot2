@@ -37,16 +37,19 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ProbeType(Enum):
     """Health probe types."""
-    LIVENESS = "liveness"      # Process is running
-    READINESS = "readiness"    # Ready to accept traffic
-    STARTUP = "startup"        # Initial startup check
-    HEALTH = "health"          # Full health check
+
+    LIVENESS = "liveness"  # Process is running
+    READINESS = "readiness"  # Ready to accept traffic
+    STARTUP = "startup"  # Initial startup check
+    HEALTH = "health"  # Full health check
 
 
 class DependencyType(Enum):
     """Dependency types."""
+
     DATABASE = "database"
     CACHE = "cache"
     MESSAGE_QUEUE = "message_queue"
@@ -58,6 +61,7 @@ class DependencyType(Enum):
 
 class DependencyStatus(Enum):
     """Dependency health status."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -66,6 +70,7 @@ class DependencyStatus(Enum):
 
 class ReadinessCondition(Enum):
     """Readiness conditions."""
+
     ALL_DEPENDENCIES = "all_dependencies"
     CRITICAL_DEPENDENCIES = "critical_dependencies"
     BASIC_CHECKS = "basic_checks"
@@ -74,6 +79,7 @@ class ReadinessCondition(Enum):
 # =============================================================================
 # Protocols
 # =============================================================================
+
 
 class DependencyChecker(Protocol):
     """Protocol for dependency health checkers."""
@@ -91,9 +97,11 @@ class DependencyChecker(Protocol):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class HealthProbe:
     """Health probe configuration."""
+
     probe_id: str = ""
     name: str = ""
     probe_type: ProbeType = ProbeType.HEALTH
@@ -121,6 +129,7 @@ class HealthProbe:
 @dataclass
 class DependencyCheck:
     """Dependency health check result."""
+
     check_id: str = ""
     dependency_name: str = ""
     dependency_type: DependencyType = DependencyType.INTERNAL_SERVICE
@@ -148,6 +157,7 @@ class DependencyCheck:
 @dataclass
 class LivenessResult:
     """Liveness probe result."""
+
     alive: bool = True
     timestamp: str = ""
     uptime_seconds: float = 0.0
@@ -165,6 +175,7 @@ class LivenessResult:
 @dataclass
 class ReadinessResult:
     """Readiness probe result."""
+
     ready: bool = True
     timestamp: str = ""
     condition: str = ""
@@ -189,6 +200,7 @@ class ReadinessResult:
 @dataclass
 class HealthResult:
     """Full health check result."""
+
     healthy: bool = True
     status: str = "healthy"  # healthy, degraded, unhealthy
     timestamp: str = ""
@@ -233,6 +245,7 @@ class HealthResult:
 @dataclass
 class EnhancedHealthcheckConfig:
     """Configuration for EnhancedHealthcheck."""
+
     # Version info
     service_version: str = "1.0.0"
     service_name: str = "quantitative-research-platform"
@@ -268,6 +281,7 @@ class EnhancedHealthcheckConfig:
 # =============================================================================
 # Built-in Checkers
 # =============================================================================
+
 
 class DatabaseChecker:
     """Database health checker."""
@@ -357,6 +371,7 @@ class ExternalAPIChecker:
 # =============================================================================
 # Main Class
 # =============================================================================
+
 
 class EnhancedHealthcheck:
     """
@@ -518,8 +533,10 @@ class EnhancedHealthcheck:
             LivenessResult with liveness status
         """
         import os
+
         try:
             import psutil
+
             process = psutil.Process(os.getpid())
             memory_mb = process.memory_info().rss / (1024 * 1024)
         except ImportError:
@@ -570,7 +587,11 @@ class EnhancedHealthcheck:
             dependencies_healthy=sum(1 for c in checks if c.status == DependencyStatus.HEALTHY),
             dependencies_unhealthy=len(unhealthy),
             unhealthy_dependencies=unhealthy,
-            message="Ready to accept traffic" if healthy else f"Unhealthy dependencies: {', '.join(unhealthy)}",
+            message=(
+                "Ready to accept traffic"
+                if healthy
+                else f"Unhealthy dependencies: {', '.join(unhealthy)}"
+            ),
         )
 
     def health(self, force_refresh: bool = False) -> HealthResult:
@@ -608,13 +629,15 @@ class EnhancedHealthcheck:
                 check = check_fn()
                 checks.append(check)
             except Exception as e:
-                checks.append(DependencyCheck(
-                    dependency_name=name,
-                    dependency_type=DependencyType.INTERNAL_SERVICE,
-                    status=DependencyStatus.UNHEALTHY,
-                    is_critical=False,
-                    error=str(e),
-                ))
+                checks.append(
+                    DependencyCheck(
+                        dependency_name=name,
+                        dependency_type=DependencyType.INTERNAL_SERVICE,
+                        status=DependencyStatus.UNHEALTHY,
+                        is_critical=False,
+                        error=str(e),
+                    )
+                )
 
         # Calculate summary
         healthy_count = sum(1 for c in checks if c.status == DependencyStatus.HEALTHY)
@@ -625,8 +648,7 @@ class EnhancedHealthcheck:
         if unhealthy_count > 0:
             # Check if any critical dependency is unhealthy
             critical_unhealthy = any(
-                c.status == DependencyStatus.UNHEALTHY and c.is_critical
-                for c in checks
+                c.status == DependencyStatus.UNHEALTHY and c.is_critical for c in checks
             )
             if critical_unhealthy:
                 overall_status = "unhealthy"
@@ -686,7 +708,9 @@ class EnhancedHealthcheck:
             with self._lock:
                 if dep["name"] in self._dependencies:
                     self._dependencies[dep["name"]]["last_status"] = status
-                    self._dependencies[dep["name"]]["last_check"] = datetime.now(timezone.utc).isoformat()
+                    self._dependencies[dep["name"]]["last_check"] = datetime.now(
+                        timezone.utc
+                    ).isoformat()
 
                     if status == DependencyStatus.UNHEALTHY:
                         self._dependencies[dep["name"]]["consecutive_failures"] += 1
@@ -732,10 +756,11 @@ class EnhancedHealthcheck:
 
         try:
             import psutil
+
             info["cpu_percent"] = psutil.cpu_percent(interval=0.1)
             memory = psutil.virtual_memory()
             info["memory_percent"] = round(memory.percent, 1)
-            info["memory_available_gb"] = round(memory.available / (1024 ** 3), 2)
+            info["memory_available_gb"] = round(memory.available / (1024**3), 2)
         except ImportError:
             pass
 
@@ -872,6 +897,7 @@ class EnhancedHealthcheck:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_enhanced_healthcheck(
     config: Optional[EnhancedHealthcheckConfig] = None,

@@ -215,9 +215,7 @@ class TestDocumentationSection:
         section = DocumentationSection(
             title="Test Section",
             content="Test content",
-            subsections=[
-                {"level": 2, "title": "Subsection", "content": "Subsection content"}
-            ],
+            subsections=[{"level": 2, "title": "Subsection", "content": "Subsection content"}],
         )
 
         markdown = section.to_markdown()
@@ -362,10 +360,12 @@ class TestTechnicalDocumentationGenerator:
     def test_generate_change_log(self, doc_generator):
         """Test generating change log section."""
         # Add some changes first
-        doc_generator.record_change(ChangeRecord(
-            change_type="config",
-            description="Updated parameters",
-        ))
+        doc_generator.record_change(
+            ChangeRecord(
+                change_type="config",
+                description="Updated parameters",
+            )
+        )
 
         section = doc_generator.generate_change_log_section()
 
@@ -425,16 +425,20 @@ class TestTechnicalDocumentationGenerator:
     def test_get_substantial_modifications(self, doc_generator):
         """Test getting substantial modifications."""
         # Add a regular change
-        doc_generator.record_change(ChangeRecord(
-            description="Minor fix",
-            is_substantial_modification=False,
-        ))
+        doc_generator.record_change(
+            ChangeRecord(
+                description="Minor fix",
+                is_substantial_modification=False,
+            )
+        )
 
         # Add a substantial modification
-        doc_generator.record_change(ChangeRecord(
-            description="Major change",
-            is_substantial_modification=True,
-        ))
+        doc_generator.record_change(
+            ChangeRecord(
+                description="Major change",
+                is_substantial_modification=True,
+            )
+        )
 
         substantial = doc_generator.get_substantial_modifications()
 
@@ -530,10 +534,12 @@ class TestFactoryFunctions:
 
     def test_create_generator_with_dict(self, temp_output_dir):
         """Test creating generator with dict config."""
-        generator = create_technical_documentation_generator({
-            "output_path": temp_output_dir,
-            "include_git_history": False,
-        })
+        generator = create_technical_documentation_generator(
+            {
+                "output_path": temp_output_dir,
+                "include_git_history": False,
+            }
+        )
 
         assert generator.config.include_git_history is False
 
@@ -578,11 +584,11 @@ class TestArticle11Compliance:
 
         required = [
             "general_description",  # Annex IV.1
-            "algorithm_and_data",   # Annex IV.2
+            "algorithm_and_data",  # Annex IV.2
             "monitoring_and_control",  # Annex IV.3
             "performance_metrics",  # Annex IV.4
-            "risk_management",      # Annex IV.5
-            "change_log",           # Annex IV.6
+            "risk_management",  # Annex IV.5
+            "change_log",  # Annex IV.6
         ]
 
         for req in required:
@@ -637,10 +643,12 @@ class TestAnnexIVCompliance:
         """Test change log properly records modifications (Annex IV.6)."""
         # Record several changes
         for i in range(5):
-            doc_generator.record_change(ChangeRecord(
-                change_type="config",
-                description=f"Change {i}",
-            ))
+            doc_generator.record_change(
+                ChangeRecord(
+                    change_type="config",
+                    description=f"Change {i}",
+                )
+            )
 
         section = doc_generator.generate_change_log_section()
 

@@ -36,12 +36,12 @@ class OrderEvent:
     ts_ms: int
     symbol: str
     account: str
-    side: str                # BUY | SELL
-    action: str              # NEW | CANCEL | MODIFY
+    side: str  # BUY | SELL
+    action: str  # NEW | CANCEL | MODIFY
     qty: float
     price: float
     order_id: str
-    mid: Optional[float] = None   # prevailing mid at event time (for distance-from-touch)
+    mid: Optional[float] = None  # prevailing mid at event time (for distance-from-touch)
 
 
 @dataclass
@@ -58,36 +58,42 @@ class TradeEvent:
 
 @dataclass
 class MarketAbuseAlert:
-    pattern: str             # spoofing | layering | wash_trade | marking_the_close
+    pattern: str  # spoofing | layering | wash_trade | marking_the_close
     symbol: str
     account: str
-    severity: str            # LOW | MEDIUM | HIGH
+    severity: str  # LOW | MEDIUM | HIGH
     ts_ms: int
     detail: str
     evidence: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"pattern": self.pattern, "symbol": self.symbol, "account": self.account,
-                "severity": self.severity, "ts_ms": self.ts_ms, "detail": self.detail,
-                "evidence": self.evidence}
+        return {
+            "pattern": self.pattern,
+            "symbol": self.symbol,
+            "account": self.account,
+            "severity": self.severity,
+            "ts_ms": self.ts_ms,
+            "detail": self.detail,
+            "evidence": self.evidence,
+        }
 
 
 @dataclass
 class MarketAbuseConfig:
-    window_ms: int = 60_000                  # sliding window for pattern detection
+    window_ms: int = 60_000  # sliding window for pattern detection
     # spoofing
-    spoof_large_qty: float = 1000.0          # "large" order threshold
-    spoof_cancel_ms: int = 5_000             # cancelled within this ⇒ fast cancel
-    spoof_min_distance_bps: float = 5.0      # placed at least this far from mid
-    spoof_min_events: int = 3                # need this many to alert
+    spoof_large_qty: float = 1000.0  # "large" order threshold
+    spoof_cancel_ms: int = 5_000  # cancelled within this ⇒ fast cancel
+    spoof_min_distance_bps: float = 5.0  # placed at least this far from mid
+    spoof_min_events: int = 3  # need this many to alert
     # layering
-    layering_min_orders: int = 4             # same-side orders stacked
-    layering_cancel_ratio: float = 0.7       # fraction cancelled after opposite fill
+    layering_min_orders: int = 4  # same-side orders stacked
+    layering_cancel_ratio: float = 0.7  # fraction cancelled after opposite fill
     # wash
     wash_price_tol_bps: float = 5.0
     wash_window_ms: int = 10_000
     # marking-the-close
-    close_window_ms: int = 300_000           # last 5 min before close
+    close_window_ms: int = 300_000  # last 5 min before close
     market_close_ms_of_day: int = 20 * 3_600_000  # 20:00 UTC default (override per venue)
     marking_min_notional: float = 50_000.0
 
@@ -99,7 +105,7 @@ class MarketAbuseMonitor:
         self.cfg = config or MarketAbuseConfig()
         self._orders: Dict[str, Deque[OrderEvent]] = defaultdict(lambda: deque(maxlen=5000))
         self._trades: Dict[str, Deque[TradeEvent]] = defaultdict(lambda: deque(maxlen=5000))
-        self._open: Dict[str, OrderEvent] = {}        # order_id -> NEW event still open
+        self._open: Dict[str, OrderEvent] = {}  # order_id -> NEW event still open
         self._filled_ids: set = set()
         self._alerts: List[MarketAbuseAlert] = []
 
@@ -147,12 +153,18 @@ class MarketAbuseMonitor:
         cnt = self._recent_spoof_count(cancel_ev)
         if cnt < self.cfg.spoof_min_events:
             return []
-        return [MarketAbuseAlert(
-            "spoofing", cancel_ev.symbol, cancel_ev.account,
-            "HIGH" if cnt >= 2 * self.cfg.spoof_min_events else "MEDIUM", cancel_ev.ts_ms,
-            f"{cnt} large orders placed away from mid and cancelled within "
-            f"{self.cfg.spoof_cancel_ms}ms without execution",
-            {"count": cnt, "qty": orig.qty, "price": orig.price, "mid": orig.mid})]
+        return [
+            MarketAbuseAlert(
+                "spoofing",
+                cancel_ev.symbol,
+                cancel_ev.account,
+                "HIGH" if cnt >= 2 * self.cfg.spoof_min_events else "MEDIUM",
+                cancel_ev.ts_ms,
+                f"{cnt} large orders placed away from mid and cancelled within "
+                f"{self.cfg.spoof_cancel_ms}ms without execution",
+                {"count": cnt, "qty": orig.qty, "price": orig.price, "mid": orig.mid},
+            )
+        ]
 
     def _recent_spoof_count(self, ev: OrderEvent) -> int:
         cnt = 0
@@ -164,7 +176,9 @@ class MarketAbuseMonitor:
                 seen[o.order_id] = o
             elif o.action == "CANCEL" and o.order_id in seen:
                 orig = seen[o.order_id]
-                if (o.ts_ms - orig.ts_ms) <= self.cfg.spoof_cancel_ms and orig.order_id not in self._filled_ids:
+                if (
+                    o.ts_ms - orig.ts_ms
+                ) <= self.cfg.spoof_cancel_ms and orig.order_id not in self._filled_ids:
                     if (ev.ts_ms - o.ts_ms) <= self.cfg.window_ms:
                         cnt += 1
         return cnt
@@ -173,28 +187,46 @@ class MarketAbuseMonitor:
         # opposite-side fill recently, then a burst of same-side cancels
         opp = "SELL" if cancel_ev.side == "BUY" else "BUY"
         recent_opp_fill = any(
-            t.account == cancel_ev.account and t.side == opp
+            t.account == cancel_ev.account
+            and t.side == opp
             and (cancel_ev.ts_ms - t.ts_ms) <= self.cfg.window_ms
             for t in self._trades[cancel_ev.symbol]
         )
         if not recent_opp_fill:
             return []
-        same_side_news = [o for o in self._orders[cancel_ev.symbol]
-                          if o.account == cancel_ev.account and o.side == cancel_ev.side
-                          and o.action == "NEW" and (cancel_ev.ts_ms - o.ts_ms) <= self.cfg.window_ms]
-        same_side_cancels = [o for o in self._orders[cancel_ev.symbol]
-                             if o.account == cancel_ev.account and o.side == cancel_ev.side
-                             and o.action == "CANCEL" and (cancel_ev.ts_ms - o.ts_ms) <= self.cfg.window_ms]
+        same_side_news = [
+            o
+            for o in self._orders[cancel_ev.symbol]
+            if o.account == cancel_ev.account
+            and o.side == cancel_ev.side
+            and o.action == "NEW"
+            and (cancel_ev.ts_ms - o.ts_ms) <= self.cfg.window_ms
+        ]
+        same_side_cancels = [
+            o
+            for o in self._orders[cancel_ev.symbol]
+            if o.account == cancel_ev.account
+            and o.side == cancel_ev.side
+            and o.action == "CANCEL"
+            and (cancel_ev.ts_ms - o.ts_ms) <= self.cfg.window_ms
+        ]
         if len(same_side_news) < self.cfg.layering_min_orders:
             return []
         ratio = len(same_side_cancels) / max(1, len(same_side_news))
         if ratio < self.cfg.layering_cancel_ratio:
             return []
-        return [MarketAbuseAlert(
-            "layering", cancel_ev.symbol, cancel_ev.account, "HIGH", cancel_ev.ts_ms,
-            f"{len(same_side_news)} {cancel_ev.side} orders layered then {ratio:.0%} cancelled "
-            f"after an opposite-side fill",
-            {"orders": len(same_side_news), "cancel_ratio": ratio})]
+        return [
+            MarketAbuseAlert(
+                "layering",
+                cancel_ev.symbol,
+                cancel_ev.account,
+                "HIGH",
+                cancel_ev.ts_ms,
+                f"{len(same_side_news)} {cancel_ev.side} orders layered then {ratio:.0%} cancelled "
+                f"after an opposite-side fill",
+                {"orders": len(same_side_news), "cancel_ratio": ratio},
+            )
+        ]
 
     def _check_wash(self, ev: TradeEvent) -> List[MarketAbuseAlert]:
         opp = "SELL" if ev.side == "BUY" else "BUY"
@@ -205,15 +237,27 @@ class MarketAbuseMonitor:
                 break
             if t.account != ev.account or t.side != opp:
                 continue
-            price_close = (ev.price > 0 and abs(t.price - ev.price) / ev.price * 1e4 <= self.cfg.wash_price_tol_bps)
+            price_close = (
+                ev.price > 0
+                and abs(t.price - ev.price) / ev.price * 1e4 <= self.cfg.wash_price_tol_bps
+            )
             if price_close and min(t.qty, ev.qty) > 0:
-                return [MarketAbuseAlert(
-                    "wash_trade", ev.symbol, ev.account, "HIGH", ev.ts_ms,
-                    "same account bought and sold the instrument at ~same price within "
-                    f"{self.cfg.wash_window_ms}ms (no change in beneficial ownership)",
-                    {"buy_price": ev.price if ev.side == "BUY" else t.price,
-                     "sell_price": t.price if ev.side == "BUY" else ev.price,
-                     "qty": float(min(t.qty, ev.qty))})]
+                return [
+                    MarketAbuseAlert(
+                        "wash_trade",
+                        ev.symbol,
+                        ev.account,
+                        "HIGH",
+                        ev.ts_ms,
+                        "same account bought and sold the instrument at ~same price within "
+                        f"{self.cfg.wash_window_ms}ms (no change in beneficial ownership)",
+                        {
+                            "buy_price": ev.price if ev.side == "BUY" else t.price,
+                            "sell_price": t.price if ev.side == "BUY" else ev.price,
+                            "qty": float(min(t.qty, ev.qty)),
+                        },
+                    )
+                ]
         return []
 
     def _check_marking_the_close(self, ev: TradeEvent) -> List[MarketAbuseAlert]:
@@ -226,11 +270,18 @@ class MarketAbuseMonitor:
         notional = ev.qty * ev.price
         if notional < self.cfg.marking_min_notional:
             return []
-        return [MarketAbuseAlert(
-            "marking_the_close", ev.symbol, ev.account, "MEDIUM", ev.ts_ms,
-            f"aggressive {ev.side} of ${notional:,.0f} within {self.cfg.close_window_ms//1000}s "
-            f"of the close — potential price marking",
-            {"notional": notional, "ms_to_close": until_close})]
+        return [
+            MarketAbuseAlert(
+                "marking_the_close",
+                ev.symbol,
+                ev.account,
+                "MEDIUM",
+                ev.ts_ms,
+                f"aggressive {ev.side} of ${notional:,.0f} within {self.cfg.close_window_ms//1000}s "
+                f"of the close — potential price marking",
+                {"notional": notional, "ms_to_close": until_close},
+            )
+        ]
 
     # ------------------------------------------------------------------
     def get_alerts(self, *, pattern: Optional[str] = None) -> List[MarketAbuseAlert]:
@@ -245,4 +296,10 @@ class MarketAbuseMonitor:
         return dict(out)
 
 
-__all__ = ["OrderEvent", "TradeEvent", "MarketAbuseAlert", "MarketAbuseConfig", "MarketAbuseMonitor"]
+__all__ = [
+    "OrderEvent",
+    "TradeEvent",
+    "MarketAbuseAlert",
+    "MarketAbuseConfig",
+    "MarketAbuseMonitor",
+]

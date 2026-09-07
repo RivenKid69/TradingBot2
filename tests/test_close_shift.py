@@ -13,13 +13,19 @@ except ImportError:
     lob_state_stub.N_FEATURES = 1
     sys.modules["lob_state_cython"] = lob_state_stub
 mediator_stub = types.ModuleType("mediator")
+
+
 class _Mediator:
     def __init__(self, env):
         self.env = env
+
     def step(self, proto):
         return np.zeros(1), 0.0, False, False, {}
+
     def reset(self):
         return np.zeros(1, dtype=np.float32), {}
+
+
 mediator_stub.Mediator = _Mediator
 sys.modules["mediator"] = mediator_stub
 

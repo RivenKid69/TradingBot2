@@ -71,22 +71,13 @@ class TestPatternMatching:
 
     def test_wildcard_match(self):
         """Test wildcard pattern matching."""
-        assert matches_pattern(
-            "adapters.alpaca.order_execution",
-            ["adapters.*.order_execution"]
-        )
-        assert matches_pattern(
-            "adapters.oanda.order_execution",
-            ["adapters.*.order_execution"]
-        )
+        assert matches_pattern("adapters.alpaca.order_execution", ["adapters.*.order_execution"])
+        assert matches_pattern("adapters.oanda.order_execution", ["adapters.*.order_execution"])
 
     def test_no_match(self):
         """Test non-matching patterns."""
         assert not matches_pattern("core_models", ["impl_*"])
-        assert not matches_pattern(
-            "adapters.alpaca.market_data",
-            ["adapters.*.order_execution"]
-        )
+        assert not matches_pattern("adapters.alpaca.market_data", ["adapters.*.order_execution"])
 
 
 class TestImportExtraction:

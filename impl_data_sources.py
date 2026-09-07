@@ -55,9 +55,9 @@ from impl_panel import PanelBuilder, normalize_ts_ms
 logger = logging.getLogger(__name__)
 
 # Допустимые значения PIT-качества (показываются в UI/логах).
-PIT_TRUE = "true"      # настоящий point-in-time (можно бэктестить честно)
+PIT_TRUE = "true"  # настоящий point-in-time (можно бэктестить честно)
 PIT_APPROX = "approx"  # приблизительный PIT (есть лаг/допущения)
-PIT_NONE = "none"      # снимок «сейчас», историзации нет (НЕ для бэктеста)
+PIT_NONE = "none"  # снимок «сейчас», историзации нет (НЕ для бэктеста)
 VALID_PIT_QUALITY = (PIT_TRUE, PIT_APPROX, PIT_NONE)
 
 # Канонические колонки прайс-кадра.
@@ -70,8 +70,8 @@ class DataSourceMeta:
 
     name: str
     vendor: str
-    kind: str                       # 'price' | 'fundamentals'
-    pit_quality: str = PIT_TRUE     # true | approx | none
+    kind: str  # 'price' | 'fundamentals'
+    pit_quality: str = PIT_TRUE  # true | approx | none
     survivorship_biased: Optional[bool] = None
     free: bool = True
     notes: str = ""
@@ -363,7 +363,9 @@ class ParquetFundamentals:
             free=False,
             notes="User-provided point-in-time fundamentals (BYO).",
         )
-        logger.info("FundamentalsSource ready: %s (pit_quality=%s)", self.meta.name, self.meta.pit_quality)
+        logger.info(
+            "FundamentalsSource ready: %s (pit_quality=%s)", self.meta.name, self.meta.pit_quality
+        )
 
     def get_fundamentals(
         self,
@@ -556,9 +558,7 @@ def build_price_panel(
     fill: str = "ffill",
 ) -> Panel:
     """Загрузить бары из источника и собрать Panel (через PanelBuilder)."""
-    frames = source.get_bars(
-        symbols, timeframe, start_ms=start_ms, end_ms=end_ms, limit=limit
-    )
+    frames = source.get_bars(symbols, timeframe, start_ms=start_ms, end_ms=end_ms, limit=limit)
     return PanelBuilder.from_frames(frames, columns=columns, align=align, fill=fill)
 
 

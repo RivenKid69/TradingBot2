@@ -24,11 +24,13 @@ class TestImportCheck:
             tmppath = Path(tmpdir)
 
             # Create clean Python file
-            (tmppath / "clean_module.py").write_text('''
+            (tmppath / "clean_module.py").write_text(
+                """
 import numpy as np
 import pandas as pd
 from packages.shared.contracts import OrderIntent
-''')
+"""
+            )
 
             result = check_cloud_imports(tmppath)
             assert result.passed is True
@@ -42,10 +44,12 @@ from packages.shared.contracts import OrderIntent
             tmppath = Path(tmpdir)
 
             # Create file with prohibited import
-            (tmppath / "bad_module.py").write_text('''
+            (tmppath / "bad_module.py").write_text(
+                """
 import numpy as np
 from adapters.alpaca.order_execution import submit_order
-''')
+"""
+            )
 
             result = check_cloud_imports(tmppath)
             assert result.passed is False
@@ -120,10 +124,12 @@ class TestCloudAllowlist:
             tmppath = Path(tmpdir)
 
             # Create clean module
-            (tmppath / "clean.py").write_text('''
+            (tmppath / "clean.py").write_text(
+                """
 import numpy as np
 from packages.shared.contracts import OrderIntent
-''')
+"""
+            )
 
             result = validate_cloud_build(tmppath, check_transitive=False)
             assert result.passed is True
@@ -136,9 +142,11 @@ from packages.shared.contracts import OrderIntent
             tmppath = Path(tmpdir)
 
             # Create module with prohibited import
-            (tmppath / "bad.py").write_text('''
+            (tmppath / "bad.py").write_text(
+                """
 from packages.agent.vault import LocalVault
-''')
+"""
+            )
 
             result = validate_cloud_build(tmppath, check_transitive=False)
             assert result.passed is False
@@ -155,12 +163,16 @@ class TestTransitiveDependencyChecker:
             tmppath = Path(tmpdir)
 
             # Create module hierarchy
-            (tmppath / "module_a.py").write_text('''
+            (tmppath / "module_a.py").write_text(
+                """
 from module_b import foo
-''')
-            (tmppath / "module_b.py").write_text('''
+"""
+            )
+            (tmppath / "module_b.py").write_text(
+                """
 import numpy
-''')
+"""
+            )
 
             checker = TransitiveDependencyChecker(tmppath)
             checker.build_graph()
@@ -180,10 +192,12 @@ class TestBuildArtifactCheck:
             tmppath = Path(tmpdir)
 
             # Create clean file
-            (tmppath / "clean.py").write_text('''
+            (tmppath / "clean.py").write_text(
+                """
 def process_data(data):
     return data * 2
-''')
+"""
+            )
 
             result = scan_directory(tmppath)
             assert result.passed is True
@@ -196,10 +210,12 @@ def process_data(data):
             tmppath = Path(tmpdir)
 
             # Create file with prohibited name
-            (tmppath / "order_execution.py").write_text('''
+            (tmppath / "order_execution.py").write_text(
+                """
 def submit_order():
     pass
-''')
+"""
+            )
 
             result = scan_directory(tmppath)
             assert result.passed is False
@@ -213,10 +229,12 @@ def submit_order():
             tmppath = Path(tmpdir)
 
             # Create file with prohibited code
-            (tmppath / "trading.py").write_text('''
+            (tmppath / "trading.py").write_text(
+                """
 def trade():
     broker.submit_order(symbol="AAPL", qty=100)
-''')
+"""
+            )
 
             result = scan_directory(tmppath)
             assert result.passed is False
@@ -230,10 +248,12 @@ def trade():
             tmppath = Path(tmpdir)
 
             # Create file with prohibited import
-            (tmppath / "module.py").write_text('''
+            (tmppath / "module.py").write_text(
+                """
 from packages.agent.vault import LocalVault
 from execution_providers import get_provider
-''')
+"""
+            )
 
             result = scan_directory(tmppath)
             assert result.passed is False

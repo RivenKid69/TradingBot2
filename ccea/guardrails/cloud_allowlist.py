@@ -24,97 +24,165 @@ from typing import Dict, Final, FrozenSet, List, Optional, Set, Tuple
 # ============================================================================
 
 # Python standard library modules (safe for all zones)
-STDLIB_MODULES: Final[FrozenSet[str]] = frozenset([
-    "abc", "asyncio", "base64", "collections", "contextlib",
-    "copy", "csv", "dataclasses", "datetime", "decimal", "enum",
-    "functools", "gzip", "hashlib", "io", "itertools", "json",
-    "logging", "math", "os", "pathlib", "pickle", "random", "re",
-    "secrets", "shutil", "sqlite3", "statistics", "struct", "sys",
-    "tempfile", "threading", "time", "traceback", "typing", "unittest",
-    "urllib", "uuid", "warnings", "weakref", "zipfile", "zlib",
-    # Typing extensions
-    "typing_extensions",
-    # Common submodules
-    "collections.abc", "concurrent.futures", "email.mime",
-])
+STDLIB_MODULES: Final[FrozenSet[str]] = frozenset(
+    [
+        "abc",
+        "asyncio",
+        "base64",
+        "collections",
+        "contextlib",
+        "copy",
+        "csv",
+        "dataclasses",
+        "datetime",
+        "decimal",
+        "enum",
+        "functools",
+        "gzip",
+        "hashlib",
+        "io",
+        "itertools",
+        "json",
+        "logging",
+        "math",
+        "os",
+        "pathlib",
+        "pickle",
+        "random",
+        "re",
+        "secrets",
+        "shutil",
+        "sqlite3",
+        "statistics",
+        "struct",
+        "sys",
+        "tempfile",
+        "threading",
+        "time",
+        "traceback",
+        "typing",
+        "unittest",
+        "urllib",
+        "uuid",
+        "warnings",
+        "weakref",
+        "zipfile",
+        "zlib",
+        # Typing extensions
+        "typing_extensions",
+        # Common submodules
+        "collections.abc",
+        "concurrent.futures",
+        "email.mime",
+    ]
+)
 
 # Third-party packages allowed in Cloud
-ALLOWED_THIRD_PARTY: Final[FrozenSet[str]] = frozenset([
-    # Data processing
-    "numpy", "pandas", "pyarrow", "scipy",
-    # Configuration
-    "pydantic", "pydantic_core", "yaml", "pyyaml",
-    # ML/AI (training/research only)
-    "torch", "stable_baselines3", "sb3_contrib", "gymnasium",
-    "optuna", "joblib", "cloudpickle",
-    # HTTP (for public market data only)
-    "aiohttp", "httpx", "requests", "websockets",
-    # Visualization (for research)
-    "matplotlib", "seaborn", "plotly",
-    # Utilities
-    "sortedcontainers", "arch",
-    # Web API (cloud API server)
-    "fastapi", "uvicorn", "starlette",
-])
+ALLOWED_THIRD_PARTY: Final[FrozenSet[str]] = frozenset(
+    [
+        # Data processing
+        "numpy",
+        "pandas",
+        "pyarrow",
+        "scipy",
+        # Configuration
+        "pydantic",
+        "pydantic_core",
+        "yaml",
+        "pyyaml",
+        # ML/AI (training/research only)
+        "torch",
+        "stable_baselines3",
+        "sb3_contrib",
+        "gymnasium",
+        "optuna",
+        "joblib",
+        "cloudpickle",
+        # HTTP (for public market data only)
+        "aiohttp",
+        "httpx",
+        "requests",
+        "websockets",
+        # Visualization (for research)
+        "matplotlib",
+        "seaborn",
+        "plotly",
+        # Utilities
+        "sortedcontainers",
+        "arch",
+        # Web API (cloud API server)
+        "fastapi",
+        "uvicorn",
+        "starlette",
+    ]
+)
 
 # Packages PROHIBITED in Cloud (trading/execution)
-PROHIBITED_PACKAGES: Final[FrozenSet[str]] = frozenset([
-    # Exchange SDKs that include order execution
-    "alpaca_trade_api",  # Old Alpaca SDK
-    # Note: alpaca-py is allowed for market data, but trading endpoints are blocked
-    "ib_insync",  # Interactive Brokers (has order submission)
-    # We may need to reconsider ccxt if used only for market data
-])
+PROHIBITED_PACKAGES: Final[FrozenSet[str]] = frozenset(
+    [
+        # Exchange SDKs that include order execution
+        "alpaca_trade_api",  # Old Alpaca SDK
+        # Note: alpaca-py is allowed for market data, but trading endpoints are blocked
+        "ib_insync",  # Interactive Brokers (has order submission)
+        # We may need to reconsider ccxt if used only for market data
+    ]
+)
 
 # Internal modules PROHIBITED in Cloud
-PROHIBITED_INTERNAL: Final[FrozenSet[str]] = frozenset([
-    # Order execution modules
-    "adapters.alpaca.order_execution",
-    "adapters.alpaca.options_execution",
-    "adapters.binance.futures_order_execution",
-    "adapters.binance_spot_private",
-    "adapters.oanda.order_execution",
-    "adapters.ib.order_execution",
-    "adapters.ib.options_combo",
-    # Execution providers (live)
-    "execution_providers",
-    "execution_providers_l3",
-    "execution_providers_futures",
-    "execution_providers_futures_l3",
-    "execution_providers_cme",
-    "execution_providers_cme_l3",
-    # Live runtime
-    "service_signal_runner",
-    "script_live",
-    "script_futures_live",
-    # Agent zone packages
-    "packages.agent",
-    "packages.agent.vault",
-    "packages.agent.execution",
-    "packages.agent.policy",
-    "packages.agent.reconciliation",
-    "packages.agent.approval",
-])
+PROHIBITED_INTERNAL: Final[FrozenSet[str]] = frozenset(
+    [
+        # Order execution modules
+        "adapters.alpaca.order_execution",
+        "adapters.alpaca.options_execution",
+        "adapters.binance.futures_order_execution",
+        "adapters.binance_spot_private",
+        "adapters.oanda.order_execution",
+        "adapters.ib.order_execution",
+        "adapters.ib.options_combo",
+        # Execution providers (live)
+        "execution_providers",
+        "execution_providers_l3",
+        "execution_providers_futures",
+        "execution_providers_futures_l3",
+        "execution_providers_cme",
+        "execution_providers_cme_l3",
+        # Live runtime
+        "service_signal_runner",
+        "script_live",
+        "script_futures_live",
+        # Agent zone packages
+        "packages.agent",
+        "packages.agent.vault",
+        "packages.agent.execution",
+        "packages.agent.policy",
+        "packages.agent.reconciliation",
+        "packages.agent.approval",
+    ]
+)
 
 # Patterns that indicate trading/execution code
-PROHIBITED_PATTERNS: Final[FrozenSet[str]] = frozenset([
-    "order_execution",
-    "options_execution",
-    "_private.",  # Private trading endpoints (e.g. binance_spot_private.foo)
-    ".private.",  # Private modules
-    "spot_private",  # Binance spot private API
-    "live_loop",
-    "broker_connector",
-])
+PROHIBITED_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    [
+        "order_execution",
+        "options_execution",
+        "_private.",  # Private trading endpoints (e.g. binance_spot_private.foo)
+        ".private.",  # Private modules
+        "spot_private",  # Binance spot private API
+        "live_loop",
+        "broker_connector",
+    ]
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class DependencyViolation:
     """Represents a dependency violation."""
+
     module: str
     reason: str
     file_path: Optional[str] = None
@@ -140,6 +208,7 @@ class DependencyViolation:
 @dataclass
 class AllowlistCheckResult:
     """Result of allowlist check."""
+
     violations: List[DependencyViolation] = field(default_factory=list)
     files_checked: int = 0
     modules_checked: int = 0
@@ -153,6 +222,7 @@ class AllowlistCheckResult:
 # ============================================================================
 # Dependency Analysis
 # ============================================================================
+
 
 def extract_imports_from_file(file_path: Path) -> List[Tuple[str, int]]:
     """
@@ -263,25 +333,42 @@ def is_cloud_allowed(module: str) -> bool:
         return True
 
     # Allow core modules (shared infrastructure)
-    if any(module.startswith(prefix) for prefix in [
-        "core_", "impl_", "adapters.base", "adapters.models",
-        "adapters.registry", "adapters.config", "adapters.websocket_base",
-    ]):
+    if any(
+        module.startswith(prefix)
+        for prefix in [
+            "core_",
+            "impl_",
+            "adapters.base",
+            "adapters.models",
+            "adapters.registry",
+            "adapters.config",
+            "adapters.websocket_base",
+        ]
+    ):
         return True
 
     # Allow CCEA shared infrastructure modules (crypto, models, guardrails)
     # These are needed by Cloud for command signing and validation
-    if any(module.startswith(prefix) for prefix in [
-        "ccea.crypto",  # Cryptographic utilities for signing/verification
-        "ccea.models",  # Shared data models and protocols
-        "ccea.guardrails",  # CI/CD guardrails
-    ]):
+    if any(
+        module.startswith(prefix)
+        for prefix in [
+            "ccea.crypto",  # Cryptographic utilities for signing/verification
+            "ccea.models",  # Shared data models and protocols
+            "ccea.guardrails",  # CI/CD guardrails
+        ]
+    ):
         return True
 
     # Allow data-only adapter modules
-    if any(pattern in module for pattern in [
-        "market_data", "fees", "trading_hours", "exchange_info",
-    ]):
+    if any(
+        pattern in module
+        for pattern in [
+            "market_data",
+            "fees",
+            "trading_hours",
+            "exchange_info",
+        ]
+    ):
         # But not if it also has execution patterns
         if not any(p in module for p in PROHIBITED_PATTERNS):
             return True
@@ -293,6 +380,7 @@ def is_cloud_allowed(module: str) -> bool:
 # ============================================================================
 # Transitive Dependency Checking
 # ============================================================================
+
 
 class TransitiveDependencyChecker:
     """
@@ -363,12 +451,14 @@ class TransitiveDependencyChecker:
 
             # Check if this module is prohibited
             if is_prohibited_internal(module) and len(chain) > 1:
-                violations.append(DependencyViolation(
-                    module=module,
-                    reason="transitive import of trading/execution module",
-                    is_transitive=True,
-                    chain=list(chain),
-                ))
+                violations.append(
+                    DependencyViolation(
+                        module=module,
+                        reason="transitive import of trading/execution module",
+                        is_transitive=True,
+                        chain=list(chain),
+                    )
+                )
                 return
 
             # Get imports of this module
@@ -391,7 +481,8 @@ class TransitiveDependencyChecker:
 
         # Find all Cloud zone modules
         cloud_modules = [
-            m for m in self.import_graph.keys()
+            m
+            for m in self.import_graph.keys()
             if m.startswith("packages.cloud") or m.startswith("packages/cloud")
         ]
 
@@ -408,6 +499,7 @@ class TransitiveDependencyChecker:
 # ============================================================================
 # Cloud Build Validation
 # ============================================================================
+
 
 def validate_cloud_build(
     cloud_directory: Path,
@@ -442,21 +534,25 @@ def validate_cloud_build(
         for module, line in imports:
             # Check prohibited packages
             if is_prohibited_package(module):
-                result.add_violation(DependencyViolation(
-                    module=module,
-                    reason="prohibited package in Cloud zone",
-                    file_path=str(py_file),
-                    line_number=line,
-                ))
+                result.add_violation(
+                    DependencyViolation(
+                        module=module,
+                        reason="prohibited package in Cloud zone",
+                        file_path=str(py_file),
+                        line_number=line,
+                    )
+                )
 
             # Check prohibited internal modules
             if is_prohibited_internal(module):
-                result.add_violation(DependencyViolation(
-                    module=module,
-                    reason="trading/execution module prohibited in Cloud",
-                    file_path=str(py_file),
-                    line_number=line,
-                ))
+                result.add_violation(
+                    DependencyViolation(
+                        module=module,
+                        reason="trading/execution module prohibited in Cloud",
+                        file_path=str(py_file),
+                        line_number=line,
+                    )
+                )
 
     # Set modules_checked to count of non-test Python files analyzed
     result.modules_checked = modules_analyzed
@@ -493,10 +589,12 @@ def validate_cloud_manifest(manifest_path: Path) -> AllowlistCheckResult:
         with open(manifest_path, "r") as f:
             manifest = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        result.add_violation(DependencyViolation(
-            module="manifest",
-            reason=f"Failed to read manifest: {e}",
-        ))
+        result.add_violation(
+            DependencyViolation(
+                module="manifest",
+                reason=f"Failed to read manifest: {e}",
+            )
+        )
         return result
 
     # Check dependencies in manifest
@@ -505,16 +603,20 @@ def validate_cloud_manifest(manifest_path: Path) -> AllowlistCheckResult:
         module_name = dep if isinstance(dep, str) else dep.get("name", "")
 
         if is_prohibited_package(module_name):
-            result.add_violation(DependencyViolation(
-                module=module_name,
-                reason="prohibited package in Cloud manifest",
-            ))
+            result.add_violation(
+                DependencyViolation(
+                    module=module_name,
+                    reason="prohibited package in Cloud manifest",
+                )
+            )
 
         if is_prohibited_internal(module_name):
-            result.add_violation(DependencyViolation(
-                module=module_name,
-                reason="trading/execution module in Cloud manifest",
-            ))
+            result.add_violation(
+                DependencyViolation(
+                    module=module_name,
+                    reason="trading/execution module in Cloud manifest",
+                )
+            )
 
     return result
 
@@ -523,13 +625,12 @@ def validate_cloud_manifest(manifest_path: Path) -> AllowlistCheckResult:
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Cloud Dependency Allowlist Check"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Cloud Dependency Allowlist Check")
     parser.add_argument(
         "--check",
         action="store_true",

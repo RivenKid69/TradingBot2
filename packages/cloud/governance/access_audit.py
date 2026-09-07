@@ -59,8 +59,10 @@ HASH_CHAIN_BATCH_SIZE: Final[int] = 1000
 # Enums
 # ============================================================================
 
+
 class AuditAction(str, Enum):
     """Audit action types."""
+
     # CRUD operations
     CREATE = "create"
     READ = "read"
@@ -122,6 +124,7 @@ class AuditAction(str, Enum):
 
 class AuditResult(str, Enum):
     """Result of audited operation."""
+
     SUCCESS = "success"
     DENIED = "denied"
     ERROR = "error"
@@ -132,11 +135,13 @@ class AuditResult(str, Enum):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class AuditPrincipal:
     """
     Principal information for audit entry.
     """
+
     id: str = ""
     type: str = "user"  # user, agent, system, service, anonymous
     email: Optional[str] = None
@@ -189,6 +194,7 @@ class AuditEntry:
     - Result (success/denied/error)
     - Integrity (hash)
     """
+
     # Identity
     id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -241,18 +247,22 @@ class AuditEntry:
 
     def _compute_hash(self) -> str:
         """Compute integrity hash for this entry."""
-        content = json.dumps({
-            "id": self.id,
-            "timestamp": self.timestamp.isoformat(),
-            "workspace_id": self.workspace_id,
-            "request_id": self.request_id,
-            "principal": self.principal.to_dict(),
-            "action": self.action.value,
-            "resource_type": self.resource_type,
-            "resource_id": self.resource_id,
-            "result": self.result.value,
-            "previous_hash": self.previous_hash,
-        }, sort_keys=True, default=str)
+        content = json.dumps(
+            {
+                "id": self.id,
+                "timestamp": self.timestamp.isoformat(),
+                "workspace_id": self.workspace_id,
+                "request_id": self.request_id,
+                "principal": self.principal.to_dict(),
+                "action": self.action.value,
+                "resource_type": self.resource_type,
+                "resource_id": self.resource_id,
+                "result": self.result.value,
+                "previous_hash": self.previous_hash,
+            },
+            sort_keys=True,
+            default=str,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -301,6 +311,7 @@ class AuditEntry:
 @dataclass
 class AuditQuery:
     """Query parameters for audit log search."""
+
     workspace_id: Optional[str] = None
     principal_id: Optional[str] = None
     principal_type: Optional[str] = None
@@ -324,6 +335,7 @@ class AuditQuery:
 @dataclass
 class AuditStats:
     """Audit log statistics."""
+
     total_entries: int = 0
     by_action: Dict[str, int] = field(default_factory=dict)
     by_result: Dict[str, int] = field(default_factory=dict)
@@ -355,6 +367,7 @@ class AuditStats:
 @dataclass
 class AuditExport:
     """Audit log export."""
+
     export_id: str = field(default_factory=lambda: str(uuid4()))
     exported_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     exported_by: str = ""
@@ -386,6 +399,7 @@ class AuditExport:
 # ============================================================================
 # Access Audit Service
 # ============================================================================
+
 
 class AccessAuditService:
     """
@@ -704,7 +718,7 @@ class AccessAuditService:
 
             # Apply pagination
             total = len(entries)
-            entries = entries[query.offset:query.offset + min(query.limit, MAX_QUERY_RESULTS)]
+            entries = entries[query.offset : query.offset + min(query.limit, MAX_QUERY_RESULTS)]
 
             return entries
 
@@ -727,10 +741,12 @@ class AccessAuditService:
         limit: int = 100,
     ) -> List[AuditEntry]:
         """Get recent entries for a workspace."""
-        return self.query(AuditQuery(
-            workspace_id=workspace_id,
-            limit=limit,
-        ))
+        return self.query(
+            AuditQuery(
+                workspace_id=workspace_id,
+                limit=limit,
+            )
+        )
 
     def get_by_principal(
         self,
@@ -739,11 +755,13 @@ class AccessAuditService:
         days: int = 30,
     ) -> List[AuditEntry]:
         """Get entries for a specific principal."""
-        return self.query(AuditQuery(
-            workspace_id=workspace_id,
-            principal_id=principal_id,
-            start_time=datetime.now(timezone.utc) - timedelta(days=days),
-        ))
+        return self.query(
+            AuditQuery(
+                workspace_id=workspace_id,
+                principal_id=principal_id,
+                start_time=datetime.now(timezone.utc) - timedelta(days=days),
+            )
+        )
 
     # ========================================================================
     # Statistics
@@ -924,16 +942,12 @@ class AccessAuditService:
             # Verify integrity hash
             expected_hash = entry._compute_hash()
             if entry.integrity_hash != expected_hash:
-                errors.append(
-                    f"Entry {entry.id}: integrity hash mismatch"
-                )
+                errors.append(f"Entry {entry.id}: integrity hash mismatch")
 
             # Verify chain (if enabled and entry has previous_hash)
             if self._enable_hash_chain and entry.previous_hash:
                 if previous_hash and entry.previous_hash != previous_hash:
-                    errors.append(
-                        f"Entry {entry.id}: chain hash mismatch"
-                    )
+                    errors.append(f"Entry {entry.id}: chain hash mismatch")
 
             previous_hash = entry.integrity_hash
 
@@ -949,9 +963,9 @@ class AccessAuditService:
         alert_reason = ""
 
         # Alert on denied access to critical resources
-        if (
-            entry.result == AuditResult.DENIED and
-            entry.sensitivity_level in (SensitivityLevel.CRITICAL, SensitivityLevel.RESTRICTED)
+        if entry.result == AuditResult.DENIED and entry.sensitivity_level in (
+            SensitivityLevel.CRITICAL,
+            SensitivityLevel.RESTRICTED,
         ):
             should_alert = True
             alert_reason = f"Denied access to {entry.sensitivity_level.value} resource"
@@ -1017,8 +1031,7 @@ class AccessAuditService:
                 # Update workspace index
                 for ws_id in self._entries_by_workspace:
                     self._entries_by_workspace[ws_id] = [
-                        e for e in self._entries_by_workspace[ws_id]
-                        if e.timestamp >= cutoff
+                        e for e in self._entries_by_workspace[ws_id] if e.timestamp >= cutoff
                     ]
 
         if removed > 0:

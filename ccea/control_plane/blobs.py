@@ -34,23 +34,28 @@ logger = logging.getLogger(__name__)
 # Exceptions
 # ============================================================================
 
+
 class BlobError(Exception):
     """Base blob storage error."""
+
     pass
 
 
 class BlobNotFoundError(BlobError):
     """Blob not found."""
+
     pass
 
 
 class BlobIntegrityError(BlobError):
     """Blob integrity check failed."""
+
     pass
 
 
 class BlobAlreadyExistsError(BlobError):
     """Blob with this digest already exists."""
+
     pass
 
 
@@ -58,9 +63,11 @@ class BlobAlreadyExistsError(BlobError):
 # Blob Metadata
 # ============================================================================
 
+
 @dataclass
 class BlobMetadata:
     """Metadata for a stored blob."""
+
     digest: str
     size_bytes: int
     content_type: str = "application/octet-stream"
@@ -73,6 +80,7 @@ class BlobMetadata:
 # ============================================================================
 # Blob Store Interface
 # ============================================================================
+
 
 class BlobStore(ABC):
     """
@@ -175,6 +183,7 @@ class BlobStore(ABC):
 # In-Memory Blob Store
 # ============================================================================
 
+
 class InMemoryBlobStore(BlobStore):
     """
     In-memory blob store for development/testing.
@@ -219,7 +228,7 @@ class InMemoryBlobStore(BlobStore):
             extra={
                 "digest": digest[:32] + "...",
                 "size": len(content),
-            }
+            },
         )
 
         return metadata
@@ -254,10 +263,7 @@ class InMemoryBlobStore(BlobStore):
         limit: int = 100,
     ) -> List[BlobMetadata]:
         with self._lock:
-            blobs = [
-                m for m in self._metadata.values()
-                if m.workspace_id == workspace_id
-            ]
+            blobs = [m for m in self._metadata.values() if m.workspace_id == workspace_id]
             blobs.sort(key=lambda m: m.created_at, reverse=True)
             return blobs[:limit]
 
@@ -265,6 +271,7 @@ class InMemoryBlobStore(BlobStore):
 # ============================================================================
 # File-based Blob Store
 # ============================================================================
+
 
 class FileBlobStore(BlobStore):
     """
@@ -380,15 +387,17 @@ class FileBlobStore(BlobStore):
                     with open(meta_file, "r") as f:
                         data = json.load(f)
                     if data.get("workspace_id") == workspace_id:
-                        results.append(BlobMetadata(
-                            digest=data["digest"],
-                            size_bytes=data["size_bytes"],
-                            content_type=data.get("content_type", "application/octet-stream"),
-                            created_at=datetime.fromisoformat(data["created_at"]),
-                            created_by=data.get("created_by"),
-                            workspace_id=data.get("workspace_id"),
-                            labels=data.get("labels", {}),
-                        ))
+                        results.append(
+                            BlobMetadata(
+                                digest=data["digest"],
+                                size_bytes=data["size_bytes"],
+                                content_type=data.get("content_type", "application/octet-stream"),
+                                created_at=datetime.fromisoformat(data["created_at"]),
+                                created_by=data.get("created_by"),
+                                workspace_id=data.get("workspace_id"),
+                                labels=data.get("labels", {}),
+                            )
+                        )
                 except Exception:
                     continue
 
@@ -433,6 +442,7 @@ class FileBlobStore(BlobStore):
 # ============================================================================
 # Config Blob Helper
 # ============================================================================
+
 
 class ConfigBlobStore:
     """

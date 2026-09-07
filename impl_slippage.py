@@ -59,6 +59,7 @@ except Exception:  # pragma: no cover
 try:
     from utils_time import get_hourly_multiplier, watch_seasonality_file
 except Exception:  # pragma: no cover
+
     def get_hourly_multiplier(ts_ms, multipliers, *, interpolate=False):  # type: ignore
         return 1.0
 
@@ -204,17 +205,13 @@ def load_calibration_artifact(
 
     symbols_block = data.get("symbols")
     if not isinstance(symbols_block, Mapping) or not symbols_block:
-        logger.warning(
-            "Slippage calibration artifact %s does not contain symbol profiles", path
-        )
+        logger.warning("Slippage calibration artifact %s does not contain symbol profiles", path)
         return None
 
     symbols_filter: Optional[set[str]] = None
     if symbols:
         symbols_filter = {
-            str(sym).upper()
-            for sym in symbols
-            if sym is not None and str(sym).strip()
+            str(sym).upper() for sym in symbols if sym is not None and str(sym).strip()
         }
         if not symbols_filter:
             symbols_filter = None
@@ -382,9 +379,7 @@ class _TradeCostState:
         return norm
 
     def normalise_part(self, value: Optional[float]) -> Optional[float]:
-        norm = self._normalise(
-            self.participation_history, self.participation_window, value
-        )
+        norm = self._normalise(self.participation_history, self.participation_window, value)
         if norm is None:
             return None
         clip = self.zscore_clip
@@ -411,6 +406,7 @@ class _TradeCostState:
         smoothed = alpha * k_val + (1.0 - alpha) * prev
         self.k_ema = smoothed
         return smoothed
+
 
 def _tail_rng_seed(
     *,
@@ -541,14 +537,10 @@ class _DynamicSpreadProfile:
         self._cfg = cfg
         self._base_spread_bps = float(default_spread_bps)
         self._min_spread_bps = (
-            float(cfg.min_spread_bps)
-            if getattr(cfg, "min_spread_bps", None) is not None
-            else None
+            float(cfg.min_spread_bps) if getattr(cfg, "min_spread_bps", None) is not None else None
         )
         self._max_spread_bps = (
-            float(cfg.max_spread_bps)
-            if getattr(cfg, "max_spread_bps", None) is not None
-            else None
+            float(cfg.max_spread_bps) if getattr(cfg, "max_spread_bps", None) is not None else None
         )
         alpha = getattr(cfg, "smoothing_alpha", None)
         if alpha is None:
@@ -771,7 +763,6 @@ class _DynamicSpreadProfile:
             spread = base * seasonal * float(vol_multiplier)
             return self._finalise_spread(spread)
         return float(result)
-
 
     def metadata(self) -> Mapping[str, Any]:
         with self._lock:
@@ -1018,9 +1009,7 @@ class SlippageImpl:
                 dyn_block = getattr(cfg, "dynamic_spread", None)
         dyn_dict: Optional[Dict[str, Any]] = None
         if dyn_block is not None:
-            if DynamicSpreadConfig is not None and isinstance(
-                dyn_block, DynamicSpreadConfig
-            ):
+            if DynamicSpreadConfig is not None and isinstance(dyn_block, DynamicSpreadConfig):
                 dyn_cfg_obj = dyn_block
                 try:
                     dyn_dict = dyn_block.to_dict()
@@ -1098,9 +1087,7 @@ class SlippageImpl:
             self._maker_taker_share_raw["spread_cost_maker_bps"] = maker_spread_cost
             self._maker_taker_share_raw["spread_cost_taker_bps"] = taker_spread_cost
 
-        def _normalise_section(
-            block: Any, cfg_cls: Optional[type]
-        ) -> Optional[Dict[str, Any]]:
+        def _normalise_section(block: Any, cfg_cls: Optional[type]) -> Optional[Dict[str, Any]]:
             if block is None:
                 return None
             if cfg_cls is not None and isinstance(block, cfg_cls):
@@ -1182,11 +1169,7 @@ class SlippageImpl:
                 elif isinstance(payload, Mapping) and calibrated_cfg_obj is None:
                     calibrated_cfg_obj = dict(payload)
 
-        self._cfg_obj = (
-            SlippageConfig.from_dict(cfg_dict)
-            if SlippageConfig is not None
-            else None
-        )
+        self._cfg_obj = SlippageConfig.from_dict(cfg_dict) if SlippageConfig is not None else None
         if dyn_cfg_obj is None and self._cfg_obj is not None:
             dyn_cfg_obj = getattr(self._cfg_obj, "dynamic_spread", None)
         self._adv_cfg = adv_cfg_obj
@@ -1349,6 +1332,7 @@ class SlippageImpl:
                 self._dynamic_profile = None
         impact_vol_metric = _cfg_attr(self._impact_cfg, "vol_metric")
         part_metric = _cfg_attr(self._impact_cfg, "participation_metric")
+
         def _normalise_str(value: Any) -> Optional[str]:
             if value is None:
                 return None
@@ -1377,9 +1361,7 @@ class SlippageImpl:
             adv_cfg=self._adv_cfg,
             adv_store=self._adv_store,
             vol_window=_positive_int(_cfg_attr(self._impact_cfg, "vol_window")),
-            participation_window=_positive_int(
-                _cfg_attr(self._impact_cfg, "participation_window")
-            ),
+            participation_window=_positive_int(_cfg_attr(self._impact_cfg, "participation_window")),
             zscore_clip=zscore_clip,
             smoothing_alpha=smoothing_alpha,
             vol_metric=_normalise_str(impact_vol_metric),
@@ -1447,9 +1429,7 @@ class SlippageImpl:
                 logger.exception("Failed to parse calibration file: %s", path)
         return None
 
-    def _profiles_from_payload(
-        self, payload: Any
-    ) -> Dict[str, SymbolCalibratedProfile]:
+    def _profiles_from_payload(self, payload: Any) -> Dict[str, SymbolCalibratedProfile]:
         profiles: Dict[str, SymbolCalibratedProfile] = {}
         if SymbolCalibratedProfile is None:
             return profiles
@@ -1528,7 +1508,11 @@ class SlippageImpl:
             if symbol_key in mapping and isinstance(mapping[symbol_key], Mapping):
                 return mapping[symbol_key]
             for key, value in mapping.items():
-                if isinstance(key, str) and key.upper() == symbol_key and isinstance(value, Mapping):
+                if (
+                    isinstance(key, str)
+                    and key.upper() == symbol_key
+                    and isinstance(value, Mapping)
+                ):
                     return value
         return payload if isinstance(payload, Mapping) else None
 
@@ -1564,9 +1548,7 @@ class SlippageImpl:
                     )
                     if isinstance(curve_block, Sequence):
                         profile.impact_curve = tuple(
-                            dict(entry)
-                            for entry in curve_block
-                            if isinstance(entry, Mapping)
+                            dict(entry) for entry in curve_block if isinstance(entry, Mapping)
                         )
             profile._curve_loaded = True
         if profile.hourly_path and not getattr(profile, "_hourly_loaded", False):
@@ -1659,9 +1641,7 @@ class SlippageImpl:
                 enabled_flag = False
         self._calibration_enabled = enabled_flag and bool(self._calibration_symbols)
 
-    def _get_calibrated_profile(
-        self, symbol: Optional[str]
-    ) -> Optional[SymbolCalibratedProfile]:
+    def _get_calibrated_profile(self, symbol: Optional[str]) -> Optional[SymbolCalibratedProfile]:
         if self._calibrated_cfg is None:
             return None
         profile: Optional[SymbolCalibratedProfile] = None
@@ -1779,9 +1759,7 @@ class SlippageImpl:
         if self._adv_store is not None:
             try:
                 setattr(sim, "get_bar_capacity_quote", self.get_bar_capacity_quote)
-                setattr(
-                    sim, "_slippage_get_bar_capacity_quote", self.get_bar_capacity_quote
-                )
+                setattr(sim, "_slippage_get_bar_capacity_quote", self.get_bar_capacity_quote)
             except Exception:
                 logger.exception("Failed to attach get_bar_capacity_quote to simulator")
         try:
@@ -1821,9 +1799,7 @@ class SlippageImpl:
                     self.get_calibrated_trade_cost_bps,
                 )
             except Exception:
-                logger.exception(
-                    "Failed to attach get_calibrated_trade_cost_bps to config"
-                )
+                logger.exception("Failed to attach get_calibrated_trade_cost_bps to config")
 
     @staticmethod
     def from_dict(d: Dict[str, Any], *, run_config: Any | None = None) -> "SlippageImpl":
@@ -1839,9 +1815,7 @@ class SlippageImpl:
                 dyn_cfg = DynamicSpreadConfig.from_dict(dyn_block)
             else:
                 dyn_cfg = dict(dyn_block)
-        elif DynamicSpreadConfig is not None and isinstance(
-            dyn_block, DynamicSpreadConfig
-        ):
+        elif DynamicSpreadConfig is not None and isinstance(dyn_block, DynamicSpreadConfig):
             dyn_cfg = dyn_block
 
         def _parse_section(block: Any, cfg_cls: Optional[type]) -> Optional[Any]:
@@ -2051,7 +2025,9 @@ class SlippageImpl:
         max_adv = _safe_float(_cfg_attr(adv_cfg, "max_adv")) if adv_cfg is not None else None
         if max_adv is not None and max_adv > 0.0:
             candidate = min(candidate, max_adv)
-        buffer = _safe_float(_cfg_attr(adv_cfg, "liquidity_buffer")) if adv_cfg is not None else None
+        buffer = (
+            _safe_float(_cfg_attr(adv_cfg, "liquidity_buffer")) if adv_cfg is not None else None
+        )
         if buffer is not None and buffer > 0.0 and buffer != 1.0:
             candidate = candidate * buffer
         if candidate <= 0.0 or not math.isfinite(candidate):
@@ -2347,9 +2323,7 @@ class SlippageImpl:
                         k_effective = _clamp(k_effective, min_k, max_k)
                     k_effective = self._trade_cost_state.apply_k_smoothing(k_effective)
 
-            impact_term = k_effective * math.sqrt(
-                max(participation_ratio, float(self.cfg.eps))
-            )
+            impact_term = k_effective * math.sqrt(max(participation_ratio, float(self.cfg.eps)))
             base_cost = half_spread + impact_term
             tail_mult, tail_bps = self._evaluate_tail_shock(
                 side=side, bar_close_ts=bar_close_ts, order_seq=order_seq
@@ -2376,12 +2350,8 @@ class SlippageImpl:
             maker_cost = _safe_non_negative_float(
                 maker_cost_metric, self._spread_cost_maker_bps_default
             )
-            taker_cost_effective = _safe_non_negative_float(
-                taker_cost_metric, taker_cost
-            )
-            expected_spread = (
-                share_value * maker_cost + (1.0 - share_value) * taker_cost_effective
-            )
+            taker_cost_effective = _safe_non_negative_float(taker_cost_metric, taker_cost)
+            expected_spread = share_value * maker_cost + (1.0 - share_value) * taker_cost_effective
             if not math.isfinite(expected_spread):
                 expected_spread = taker_cost_effective
             if expected_spread < 0.0:

@@ -35,14 +35,17 @@ from uuid import UUID, uuid4
 # Enums
 # =============================================================================
 
+
 class OrderSide(str, Enum):
     """Order side."""
+
     BUY = "buy"
     SELL = "sell"
 
 
 class OrderType(str, Enum):
     """Order type."""
+
     MARKET = "market"
     LIMIT = "limit"
     STOP = "stop"
@@ -52,6 +55,7 @@ class OrderType(str, Enum):
 
 class TimeInForce(str, Enum):
     """Time in force."""
+
     GTC = "gtc"  # Good til cancelled
     DAY = "day"  # Day order
     IOC = "ioc"  # Immediate or cancel
@@ -63,9 +67,10 @@ class TimeInForce(str, Enum):
 
 class OrderStatus(str, Enum):
     """Order status."""
-    PENDING = "pending"          # Not yet submitted
-    SUBMITTED = "submitted"      # Sent to broker
-    ACCEPTED = "accepted"        # Accepted by exchange
+
+    PENDING = "pending"  # Not yet submitted
+    SUBMITTED = "submitted"  # Sent to broker
+    ACCEPTED = "accepted"  # Accepted by exchange
     PARTIALLY_FILLED = "partially_filled"
     FILLED = "filled"
     CANCELLED = "cancelled"
@@ -76,6 +81,7 @@ class OrderStatus(str, Enum):
 
 class PositionSide(str, Enum):
     """Position side."""
+
     LONG = "long"
     SHORT = "short"
     FLAT = "flat"
@@ -83,6 +89,7 @@ class PositionSide(str, Enum):
 
 class ConnectionStatus(str, Enum):
     """Connection status."""
+
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
     RECONNECTING = "reconnecting"
@@ -93,6 +100,7 @@ class ConnectionStatus(str, Enum):
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class BrokerCredentials:
     """
@@ -101,6 +109,7 @@ class BrokerCredentials:
     SECURITY: Never log or transmit these values.
     Retrieved from Local Vault only.
     """
+
     api_key: str
     api_secret: str
     passphrase: Optional[str] = None  # Some exchanges require this
@@ -115,6 +124,7 @@ class OrderRequest:
 
     Design Doc Section 9.3: Order creation in Agent only.
     """
+
     # Identification
     client_order_id: str  # Deterministic for idempotency
     symbol: str
@@ -142,6 +152,7 @@ class OrderResult:
     """
     Result of order submission.
     """
+
     success: bool
     client_order_id: str
     broker_order_id: Optional[str] = None
@@ -160,6 +171,7 @@ class OrderInfo:
     """
     Full order information.
     """
+
     client_order_id: str
     broker_order_id: Optional[str]
     symbol: str
@@ -183,6 +195,7 @@ class Position:
     """
     Position information.
     """
+
     symbol: str
     side: PositionSide
     quantity: Decimal
@@ -200,6 +213,7 @@ class AccountInfo:
     """
     Account information.
     """
+
     account_id: str
     equity: Decimal
     cash: Decimal
@@ -218,6 +232,7 @@ class CancelResult:
     """
     Result of order cancellation.
     """
+
     success: bool
     client_order_id: str
     broker_order_id: Optional[str] = None
@@ -232,6 +247,7 @@ class BulkCancelResult:
 
     Design Doc Section 9.4: Kill Switch cancel all orders.
     """
+
     total_requested: int
     total_cancelled: int
     total_failed: int
@@ -242,6 +258,7 @@ class BulkCancelResult:
 # =============================================================================
 # Protocol Definition
 # =============================================================================
+
 
 @runtime_checkable
 class BrokerConnector(Protocol):
@@ -483,6 +500,7 @@ class BrokerConnector(Protocol):
 # Base Implementation
 # =============================================================================
 
+
 class BaseBrokerConnector(ABC):
     """
     Abstract base class for broker connectors.
@@ -619,6 +637,7 @@ class BaseBrokerConnector(ABC):
 # =============================================================================
 # Factory
 # =============================================================================
+
 
 class BrokerConnectorFactory:
     """

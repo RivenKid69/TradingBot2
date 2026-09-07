@@ -55,18 +55,18 @@ def factor_attribution(
         w = weights.loc[t].dropna()
         r = asset_returns.loc[t]
         common = [
-            s for s in w.index
-            if s in r.index and s in exposures.index
-            and np.isfinite(r[s]) and np.isfinite(w[s])
+            s
+            for s in w.index
+            if s in r.index and s in exposures.index and np.isfinite(r[s]) and np.isfinite(w[s])
         ]
         if len(common) < len(factors):
             continue
         wv = w.loc[common].to_numpy(dtype="float64")
         rv = r.loc[common].to_numpy(dtype="float64")
         B = exposures.loc[common, factors].to_numpy(dtype="float64")
-        f, *_ = np.linalg.lstsq(B, rv, rcond=None)   # факторные доходности периода
-        u = rv - B @ f                                # specific (по построению)
-        pexp = wv @ B                                 # экспозиция портфеля к факторам
+        f, *_ = np.linalg.lstsq(B, rv, rcond=None)  # факторные доходности периода
+        u = rv - B @ f  # specific (по построению)
+        pexp = wv @ B  # экспозиция портфеля к факторам
         fac_contrib = pexp * f
         spec = float(wv @ u)
         tot = float(wv @ rv)
@@ -106,6 +106,7 @@ def signal_attribution(
     ``asset_returns`` — MultiIndex (ts, symbol) Series реализованных доходностей,
     выровненных с панелью сигналов.
     """
+
     def _ls_weights(g: pd.Series) -> pd.Series:
         d = g - g.mean()
         denom = d.abs().sum()
@@ -122,7 +123,11 @@ def signal_attribution(
             out[col] = {"total_pnl": float("nan"), "sharpe": float("nan"), "n_periods": 0}
             continue
         sd = float(per_period.std(ddof=0))
-        sharpe = (float(per_period.mean()) / sd * math.sqrt(periods_per_year)) if sd > 0 else float("nan")
+        sharpe = (
+            (float(per_period.mean()) / sd * math.sqrt(periods_per_year))
+            if sd > 0
+            else float("nan")
+        )
         out[col] = {
             "total_pnl": float(per_period.sum()),
             "sharpe": float(sharpe),
@@ -195,7 +200,9 @@ def tear_sheet(
         sheet["signal_attribution"] = signal
     if brinson is not None:
         sheet["brinson"] = {
-            k: v for k, v in brinson.items() if k.endswith("_total") or k in ("total_active", "tie_out_residual")
+            k: v
+            for k, v in brinson.items()
+            if k.endswith("_total") or k in ("total_active", "tie_out_residual")
         }
     if trust is not None:
         sheet["trust_report"] = trust

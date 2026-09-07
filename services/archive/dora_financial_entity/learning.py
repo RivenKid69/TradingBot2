@@ -29,6 +29,7 @@ import uuid
 
 class ReviewType(Enum):
     """Types of post-incident reviews per Article 13."""
+
     POST_INCIDENT = "post_incident"
     ROOT_CAUSE_ANALYSIS = "root_cause_analysis"
     TREND_ANALYSIS = "trend_analysis"
@@ -40,6 +41,7 @@ class ReviewType(Enum):
 
 class LessonCategory(Enum):
     """Categories of lessons learned."""
+
     TECHNICAL = "technical"
     PROCEDURAL = "procedural"
     ORGANIZATIONAL = "organizational"
@@ -52,6 +54,7 @@ class LessonCategory(Enum):
 
 class LessonPriority(Enum):
     """Priority levels for lessons learned."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -60,6 +63,7 @@ class LessonPriority(Enum):
 
 class LessonStatus(Enum):
     """Status of lessons learned implementation."""
+
     IDENTIFIED = "identified"
     DOCUMENTED = "documented"
     REVIEWED = "reviewed"
@@ -72,6 +76,7 @@ class LessonStatus(Enum):
 
 class ImprovementType(Enum):
     """Types of improvements."""
+
     PROCESS = "process"
     TECHNOLOGY = "technology"
     TRAINING = "training"
@@ -84,6 +89,7 @@ class ImprovementType(Enum):
 
 class ImprovementStatus(Enum):
     """Status of improvement initiatives."""
+
     PROPOSED = "proposed"
     EVALUATED = "evaluated"
     APPROVED = "approved"
@@ -96,6 +102,7 @@ class ImprovementStatus(Enum):
 
 class KnowledgeType(Enum):
     """Types of knowledge artifacts."""
+
     INCIDENT_REPORT = "incident_report"
     POST_MORTEM = "post_mortem"
     RUNBOOK = "runbook"
@@ -115,6 +122,7 @@ class PostIncidentReview:
     Documents comprehensive review of ICT-related incidents including
     root cause analysis and improvement recommendations.
     """
+
     review_id: str
     incident_id: str
     review_type: ReviewType
@@ -149,6 +157,7 @@ class LessonLearned:
     Captures specific lessons from incidents for organizational learning
     and process improvement.
     """
+
     lesson_id: str
     title: str
     description: str
@@ -186,6 +195,7 @@ class ImprovementInitiative:
     Tracks continuous improvement efforts derived from lessons learned
     and post-incident reviews.
     """
+
     initiative_id: str
     title: str
     description: str
@@ -224,6 +234,7 @@ class KnowledgeArticle:
     Stores organizational knowledge derived from incidents, lessons,
     and best practices for future reference.
     """
+
     article_id: str
     title: str
     content: str
@@ -259,6 +270,7 @@ class TrainingNeed:
     Tracks training requirements identified through incident analysis
     and lessons learned.
     """
+
     need_id: str
     title: str
     description: str
@@ -292,6 +304,7 @@ class TrendAnalysis:
     Documents analysis of incident patterns and trends for
     proactive improvement.
     """
+
     analysis_id: str
     title: str
     analysis_period_start: datetime
@@ -325,6 +338,7 @@ class InformationShare:
     Tracks sharing of threat intelligence and lessons learned
     with competent authorities and industry peers.
     """
+
     share_id: str
     title: str
     description: str
@@ -409,7 +423,7 @@ class DORALearning:
         event = {
             "timestamp": datetime.now().isoformat(),
             "event_type": event_type,
-            "details": details
+            "details": details,
         }
         self._event_log.append(event)
 
@@ -433,7 +447,7 @@ class DORALearning:
         what_went_wrong: list[str],
         recommendations: list[str],
         action_items: list[dict],
-        **kwargs
+        **kwargs,
     ) -> PostIncidentReview:
         """
         Create post-incident review per Article 13(1).
@@ -478,7 +492,7 @@ class DORALearning:
                 what_went_wrong=what_went_wrong,
                 recommendations=recommendations,
                 action_items=action_items,
-                **kwargs
+                **kwargs,
             )
 
             self._reviews[review_id] = review
@@ -488,11 +502,14 @@ class DORALearning:
                 self._incident_reviews[incident_id] = []
             self._incident_reviews[incident_id].append(review_id)
 
-            self._log_event("review_created", {
-                "review_id": review_id,
-                "incident_id": incident_id,
-                "review_type": review_type.value
-            })
+            self._log_event(
+                "review_created",
+                {
+                    "review_id": review_id,
+                    "incident_id": incident_id,
+                    "review_type": review_type.value,
+                },
+            )
 
             # Trigger callbacks
             for callback in self._review_callbacks:
@@ -528,11 +545,10 @@ class DORALearning:
                 review.management_body_notified = True
                 review.notification_date = datetime.now()
 
-            self._log_event("review_status_updated", {
-                "review_id": review_id,
-                "status": status,
-                "management_notified": notified
-            })
+            self._log_event(
+                "review_status_updated",
+                {"review_id": review_id, "status": status, "management_notified": notified},
+            )
 
             return True
 
@@ -561,7 +577,7 @@ class DORALearning:
         stakeholders: list[str],
         source_incident_id: str | None = None,
         source_review_id: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> LessonLearned:
         """
         Document lesson learned per Article 13(2).
@@ -609,17 +625,20 @@ class DORALearning:
                 affected_areas=affected_areas,
                 affected_systems=affected_systems,
                 stakeholders=stakeholders,
-                **kwargs
+                **kwargs,
             )
 
             self._lessons[lesson_id] = lesson
 
-            self._log_event("lesson_documented", {
-                "lesson_id": lesson_id,
-                "title": title,
-                "category": category.value,
-                "priority": priority.value
-            })
+            self._log_event(
+                "lesson_documented",
+                {
+                    "lesson_id": lesson_id,
+                    "title": title,
+                    "category": category.value,
+                    "priority": priority.value,
+                },
+            )
 
             return lesson
 
@@ -629,10 +648,7 @@ class DORALearning:
             return self._lessons.get(lesson_id)
 
     def update_lesson_status(
-        self,
-        lesson_id: str,
-        status: LessonStatus,
-        implementation_plan: dict | None = None
+        self, lesson_id: str, status: LessonStatus, implementation_plan: dict | None = None
     ) -> bool:
         """Update lesson learned status."""
         with self._lock:
@@ -649,18 +665,14 @@ class DORALearning:
             if status == LessonStatus.IMPLEMENTED:
                 lesson.implementation_date = datetime.now()
 
-            self._log_event("lesson_status_updated", {
-                "lesson_id": lesson_id,
-                "status": status.value
-            })
+            self._log_event(
+                "lesson_status_updated", {"lesson_id": lesson_id, "status": status.value}
+            )
 
             return True
 
     def verify_lesson_implementation(
-        self,
-        lesson_id: str,
-        verified_by: str,
-        effectiveness_rating: float
+        self, lesson_id: str, verified_by: str, effectiveness_rating: float
     ) -> bool:
         """Verify lesson learned implementation."""
         with self._lock:
@@ -674,11 +686,14 @@ class DORALearning:
             lesson.effectiveness_rating = effectiveness_rating
             lesson.updated_at = datetime.now()
 
-            self._log_event("lesson_verified", {
-                "lesson_id": lesson_id,
-                "verified_by": verified_by,
-                "effectiveness_rating": effectiveness_rating
-            })
+            self._log_event(
+                "lesson_verified",
+                {
+                    "lesson_id": lesson_id,
+                    "verified_by": verified_by,
+                    "effectiveness_rating": effectiveness_rating,
+                },
+            )
 
             return True
 
@@ -699,7 +714,7 @@ class DORALearning:
             LessonStatus.DOCUMENTED,
             LessonStatus.REVIEWED,
             LessonStatus.APPROVED,
-            LessonStatus.IN_PROGRESS
+            LessonStatus.IN_PROGRESS,
         }
         with self._lock:
             return [l for l in self._lessons.values() if l.status in pending_statuses]
@@ -723,7 +738,7 @@ class DORALearning:
         priority: LessonPriority,
         estimated_effort: str,
         estimated_cost: float,
-        **kwargs
+        **kwargs,
     ) -> ImprovementInitiative:
         """
         Create improvement initiative per Article 13(3).
@@ -766,16 +781,19 @@ class DORALearning:
                 priority=priority,
                 estimated_effort=estimated_effort,
                 estimated_cost=estimated_cost,
-                **kwargs
+                **kwargs,
             )
 
             self._improvements[initiative_id] = initiative
 
-            self._log_event("improvement_created", {
-                "initiative_id": initiative_id,
-                "title": title,
-                "improvement_type": improvement_type.value
-            })
+            self._log_event(
+                "improvement_created",
+                {
+                    "initiative_id": initiative_id,
+                    "title": title,
+                    "improvement_type": improvement_type.value,
+                },
+            )
 
             return initiative
 
@@ -785,10 +803,7 @@ class DORALearning:
             return self._improvements.get(initiative_id)
 
     def update_improvement_status(
-        self,
-        initiative_id: str,
-        status: ImprovementStatus,
-        actual_cost: float | None = None
+        self, initiative_id: str, status: ImprovementStatus, actual_cost: float | None = None
     ) -> bool:
         """Update improvement initiative status."""
         with self._lock:
@@ -807,18 +822,14 @@ class DORALearning:
                 if actual_cost is not None:
                     initiative.actual_cost = actual_cost
 
-            self._log_event("improvement_status_updated", {
-                "initiative_id": initiative_id,
-                "status": status.value
-            })
+            self._log_event(
+                "improvement_status_updated",
+                {"initiative_id": initiative_id, "status": status.value},
+            )
 
             return True
 
-    def add_improvement_milestone(
-        self,
-        initiative_id: str,
-        milestone: dict
-    ) -> bool:
+    def add_improvement_milestone(self, initiative_id: str, milestone: dict) -> bool:
         """Add milestone to improvement initiative."""
         with self._lock:
             if initiative_id not in self._improvements:
@@ -837,7 +848,7 @@ class DORALearning:
         active_statuses = {
             ImprovementStatus.APPROVED,
             ImprovementStatus.PLANNED,
-            ImprovementStatus.IN_PROGRESS
+            ImprovementStatus.IN_PROGRESS,
         }
         with self._lock:
             return [i for i in self._improvements.values() if i.status in active_statuses]
@@ -860,7 +871,7 @@ class DORALearning:
         related_incidents: list[str] | None = None,
         related_lessons: list[str] | None = None,
         prerequisites: list[str] | None = None,
-        **kwargs
+        **kwargs,
     ) -> KnowledgeArticle:
         """
         Create knowledge article per Article 13(4).
@@ -902,16 +913,15 @@ class DORALearning:
                 related_lessons=related_lessons or [],
                 prerequisites=prerequisites or [],
                 procedures=procedures,
-                **kwargs
+                **kwargs,
             )
 
             self._knowledge_articles[article_id] = article
 
-            self._log_event("knowledge_article_created", {
-                "article_id": article_id,
-                "title": title,
-                "knowledge_type": knowledge_type.value
-            })
+            self._log_event(
+                "knowledge_article_created",
+                {"article_id": article_id, "title": title, "knowledge_type": knowledge_type.value},
+            )
 
             return article
 
@@ -921,10 +931,7 @@ class DORALearning:
             return self._knowledge_articles.get(article_id)
 
     def search_knowledge_base(
-        self,
-        query: str,
-        knowledge_type: KnowledgeType | None = None,
-        category: str | None = None
+        self, query: str, knowledge_type: KnowledgeType | None = None, category: str | None = None
     ) -> list[KnowledgeArticle]:
         """
         Search knowledge base.
@@ -951,20 +958,17 @@ class DORALearning:
                     continue
 
                 # Search in title, content, keywords, tags
-                if (query_lower in article.title.lower() or
-                    query_lower in article.content.lower() or
-                    any(query_lower in kw.lower() for kw in article.keywords) or
-                    any(query_lower in tag.lower() for tag in article.tags)):
+                if (
+                    query_lower in article.title.lower()
+                    or query_lower in article.content.lower()
+                    or any(query_lower in kw.lower() for kw in article.keywords)
+                    or any(query_lower in tag.lower() for tag in article.tags)
+                ):
                     results.append(article)
 
             return results
 
-    def update_article_version(
-        self,
-        article_id: str,
-        new_content: str,
-        author: str
-    ) -> bool:
+    def update_article_version(self, article_id: str, new_content: str, author: str) -> bool:
         """Update knowledge article content and version."""
         with self._lock:
             if article_id not in self._knowledge_articles:
@@ -979,10 +983,9 @@ class DORALearning:
             article.version = f"{major}.{int(minor) + 1}"
             article.updated_at = datetime.now()
 
-            self._log_event("article_updated", {
-                "article_id": article_id,
-                "new_version": article.version
-            })
+            self._log_event(
+                "article_updated", {"article_id": article_id, "new_version": article.version}
+            )
 
             return True
 
@@ -995,11 +998,7 @@ class DORALearning:
             self._knowledge_articles[article_id].view_count += 1
             return True
 
-    def rate_article_usefulness(
-        self,
-        article_id: str,
-        rating: float
-    ) -> bool:
+    def rate_article_usefulness(self, article_id: str, rating: float) -> bool:
         """Rate article usefulness (0-5 scale)."""
         with self._lock:
             if article_id not in self._knowledge_articles:
@@ -1032,7 +1031,7 @@ class DORALearning:
         estimated_duration: str,
         source_lesson_id: str | None = None,
         source_review_id: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> TrainingNeed:
         """
         Identify training need per Article 13(5).
@@ -1075,16 +1074,15 @@ class DORALearning:
                 recommended_training=recommended_training,
                 delivery_method=delivery_method,
                 estimated_duration=estimated_duration,
-                **kwargs
+                **kwargs,
             )
 
             self._training_needs[need_id] = need
 
-            self._log_event("training_need_identified", {
-                "need_id": need_id,
-                "title": title,
-                "priority": priority.value
-            })
+            self._log_event(
+                "training_need_identified",
+                {"need_id": need_id, "title": title, "priority": priority.value},
+            )
 
             return need
 
@@ -1099,7 +1097,7 @@ class DORALearning:
         status: str,
         scheduled_date: datetime | None = None,
         completion_date: datetime | None = None,
-        effectiveness_assessment: str | None = None
+        effectiveness_assessment: str | None = None,
     ) -> bool:
         """Update training need status."""
         with self._lock:
@@ -1117,18 +1115,18 @@ class DORALearning:
             if effectiveness_assessment:
                 need.effectiveness_assessment = effectiveness_assessment
 
-            self._log_event("training_status_updated", {
-                "need_id": need_id,
-                "status": status
-            })
+            self._log_event("training_status_updated", {"need_id": need_id, "status": status})
 
             return True
 
     def get_pending_training_needs(self) -> list[TrainingNeed]:
         """Get training needs not yet completed."""
         with self._lock:
-            return [n for n in self._training_needs.values()
-                    if n.status not in {"completed", "cancelled"}]
+            return [
+                n
+                for n in self._training_needs.values()
+                if n.status not in {"completed", "cancelled"}
+            ]
 
     # =========================================================================
     # Trend Analysis (Article 13(1)(c))
@@ -1152,7 +1150,7 @@ class DORALearning:
         predictions: list[dict],
         recommendations: list[str],
         risk_implications: list[str],
-        **kwargs
+        **kwargs,
     ) -> TrendAnalysis:
         """
         Create trend analysis per Article 13(1)(c).
@@ -1201,16 +1199,19 @@ class DORALearning:
                 predictions=predictions,
                 recommendations=recommendations,
                 risk_implications=risk_implications,
-                **kwargs
+                **kwargs,
             )
 
             self._trend_analyses[analysis_id] = analysis
 
-            self._log_event("trend_analysis_created", {
-                "analysis_id": analysis_id,
-                "title": title,
-                "incidents_analyzed": incidents_analyzed
-            })
+            self._log_event(
+                "trend_analysis_created",
+                {
+                    "analysis_id": analysis_id,
+                    "title": title,
+                    "incidents_analyzed": incidents_analyzed,
+                },
+            )
 
             return analysis
 
@@ -1252,7 +1253,7 @@ class DORALearning:
         source_lesson_id: str | None = None,
         full_content_reference: str | None = None,
         regulatory_requirement: bool = False,
-        **kwargs
+        **kwargs,
     ) -> InformationShare:
         """
         Share information per Article 13(6).
@@ -1295,17 +1296,20 @@ class DORALearning:
                 content_summary=content_summary,
                 full_content_reference=full_content_reference,
                 regulatory_requirement=regulatory_requirement,
-                **kwargs
+                **kwargs,
             )
 
             self._information_shares[share_id] = share
 
-            self._log_event("information_shared", {
-                "share_id": share_id,
-                "title": title,
-                "recipients": recipients,
-                "regulatory_requirement": regulatory_requirement
-            })
+            self._log_event(
+                "information_shared",
+                {
+                    "share_id": share_id,
+                    "title": title,
+                    "recipients": recipients,
+                    "regulatory_requirement": regulatory_requirement,
+                },
+            )
 
             return share
 
@@ -1338,19 +1342,11 @@ class DORALearning:
         with self._lock:
             return {
                 "total_reviews": len(self._reviews),
-                "reviews_by_type": self._count_by_enum(
-                    self._reviews.values(), "review_type"
-                ),
+                "reviews_by_type": self._count_by_enum(self._reviews.values(), "review_type"),
                 "total_lessons": len(self._lessons),
-                "lessons_by_category": self._count_by_enum(
-                    self._lessons.values(), "category"
-                ),
-                "lessons_by_status": self._count_by_enum(
-                    self._lessons.values(), "status"
-                ),
-                "lessons_by_priority": self._count_by_enum(
-                    self._lessons.values(), "priority"
-                ),
+                "lessons_by_category": self._count_by_enum(self._lessons.values(), "category"),
+                "lessons_by_status": self._count_by_enum(self._lessons.values(), "status"),
+                "lessons_by_priority": self._count_by_enum(self._lessons.values(), "priority"),
                 "total_improvements": len(self._improvements),
                 "improvements_by_type": self._count_by_enum(
                     self._improvements.values(), "improvement_type"
@@ -1365,7 +1361,7 @@ class DORALearning:
                 "total_training_needs": len(self._training_needs),
                 "pending_training_needs": len(self.get_pending_training_needs()),
                 "total_trend_analyses": len(self._trend_analyses),
-                "total_information_shares": len(self._information_shares)
+                "total_information_shares": len(self._information_shares),
             }
 
     def _count_by_enum(self, items: Any, attr: str) -> dict[str, int]:
@@ -1391,89 +1387,76 @@ class DORALearning:
         with self._lock:
             # Filter items by period
             reviews_in_period = [
-                r for r in self._reviews.values()
-                if period_start <= r.review_date <= period_end
+                r for r in self._reviews.values() if period_start <= r.review_date <= period_end
             ]
 
             lessons_in_period = [
-                l for l in self._lessons.values()
-                if period_start <= l.identified_date <= period_end
+                l for l in self._lessons.values() if period_start <= l.identified_date <= period_end
             ]
 
             improvements_in_period = [
-                i for i in self._improvements.values()
-                if period_start <= i.created_at <= period_end
+                i for i in self._improvements.values() if period_start <= i.created_at <= period_end
             ]
 
             shares_in_period = [
-                s for s in self._information_shares.values()
+                s
+                for s in self._information_shares.values()
                 if period_start <= s.share_date <= period_end
             ]
 
             return {
-                "report_period": {
-                    "start": period_start.isoformat(),
-                    "end": period_end.isoformat()
-                },
+                "report_period": {"start": period_start.isoformat(), "end": period_end.isoformat()},
                 "post_incident_reviews": {
                     "count": len(reviews_in_period),
                     "by_type": self._count_by_enum(reviews_in_period, "review_type"),
-                    "root_causes_identified": sum(
-                        len(r.root_causes) for r in reviews_in_period
-                    ),
-                    "recommendations_made": sum(
-                        len(r.recommendations) for r in reviews_in_period
-                    )
+                    "root_causes_identified": sum(len(r.root_causes) for r in reviews_in_period),
+                    "recommendations_made": sum(len(r.recommendations) for r in reviews_in_period),
                 },
                 "lessons_learned": {
                     "count": len(lessons_in_period),
                     "by_category": self._count_by_enum(lessons_in_period, "category"),
                     "by_priority": self._count_by_enum(lessons_in_period, "priority"),
-                    "implementation_rate": self._calculate_implementation_rate(
-                        lessons_in_period
-                    )
+                    "implementation_rate": self._calculate_implementation_rate(lessons_in_period),
                 },
                 "improvement_initiatives": {
                     "count": len(improvements_in_period),
                     "by_type": self._count_by_enum(improvements_in_period, "improvement_type"),
                     "by_status": self._count_by_enum(improvements_in_period, "status"),
-                    "total_investment": sum(
-                        i.estimated_cost for i in improvements_in_period
-                    )
+                    "total_investment": sum(i.estimated_cost for i in improvements_in_period),
                 },
                 "knowledge_base": {
                     "total_articles": len(self._knowledge_articles),
                     "most_viewed": self._get_top_articles(5),
-                    "highest_rated": self._get_top_rated_articles(5)
+                    "highest_rated": self._get_top_rated_articles(5),
                 },
                 "information_sharing": {
                     "count": len(shares_in_period),
                     "regulatory_shares": len(
                         [s for s in shares_in_period if s.regulatory_requirement]
                     ),
-                    "acknowledgment_rate": self._calculate_acknowledgment_rate(
-                        shares_in_period
-                    )
+                    "acknowledgment_rate": self._calculate_acknowledgment_rate(shares_in_period),
                 },
-                "generated_at": datetime.now().isoformat()
+                "generated_at": datetime.now().isoformat(),
             }
 
     def _calculate_implementation_rate(self, lessons: list) -> float:
         """Calculate lesson implementation rate."""
         if not lessons:
             return 0.0
-        implemented = len([
-            l for l in lessons
-            if l.status in {LessonStatus.IMPLEMENTED, LessonStatus.VERIFIED, LessonStatus.CLOSED}
-        ])
+        implemented = len(
+            [
+                l
+                for l in lessons
+                if l.status
+                in {LessonStatus.IMPLEMENTED, LessonStatus.VERIFIED, LessonStatus.CLOSED}
+            ]
+        )
         return implemented / len(lessons)
 
     def _get_top_articles(self, n: int) -> list[dict]:
         """Get top N most viewed articles."""
         sorted_articles = sorted(
-            self._knowledge_articles.values(),
-            key=lambda a: a.view_count,
-            reverse=True
+            self._knowledge_articles.values(), key=lambda a: a.view_count, reverse=True
         )[:n]
         return [
             {"article_id": a.article_id, "title": a.title, "views": a.view_count}
@@ -1482,15 +1465,10 @@ class DORALearning:
 
     def _get_top_rated_articles(self, n: int) -> list[dict]:
         """Get top N highest rated articles."""
-        rated_articles = [
-            a for a in self._knowledge_articles.values()
-            if a.feedback_count > 0
+        rated_articles = [a for a in self._knowledge_articles.values() if a.feedback_count > 0]
+        sorted_articles = sorted(rated_articles, key=lambda a: a.usefulness_rating, reverse=True)[
+            :n
         ]
-        sorted_articles = sorted(
-            rated_articles,
-            key=lambda a: a.usefulness_rating,
-            reverse=True
-        )[:n]
         return [
             {"article_id": a.article_id, "title": a.title, "rating": a.usefulness_rating}
             for a in sorted_articles
@@ -1526,6 +1504,7 @@ class DORALearning:
 # =============================================================================
 # Factory Function
 # =============================================================================
+
 
 def create_dora_learning(config: dict | None = None) -> DORALearning:
     """

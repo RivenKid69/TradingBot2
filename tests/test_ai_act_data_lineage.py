@@ -74,15 +74,17 @@ def lineage_config(temp_storage_dir):
 def sample_df():
     """Create a sample DataFrame."""
     np.random.seed(42)
-    return pd.DataFrame({
-        "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h"),
-        "symbol": np.random.choice(["BTCUSDT", "ETHUSDT"], 100),
-        "open": 50000 + np.random.randn(100) * 100,
-        "high": 50050 + np.random.randn(100) * 100,
-        "low": 49950 + np.random.randn(100) * 100,
-        "close": 50000 + np.random.randn(100) * 100,
-        "volume": np.abs(np.random.randn(100) * 1000 + 5000),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2024-01-01", periods=100, freq="1h"),
+            "symbol": np.random.choice(["BTCUSDT", "ETHUSDT"], 100),
+            "open": 50000 + np.random.randn(100) * 100,
+            "high": 50050 + np.random.randn(100) * 100,
+            "low": 49950 + np.random.randn(100) * 100,
+            "close": 50000 + np.random.randn(100) * 100,
+            "volume": np.abs(np.random.randn(100) * 1000 + 5000),
+        }
+    )
 
 
 @pytest.fixture

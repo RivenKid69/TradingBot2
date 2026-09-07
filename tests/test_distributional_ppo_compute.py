@@ -21,6 +21,7 @@ from unittest.mock import Mock, MagicMock, patch
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 from sb3_contrib.common.recurrent.buffers import RecurrentRolloutBuffer
 
@@ -353,8 +354,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert buffer.advantages is not None
@@ -381,8 +381,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap[5, 0] = 10.0  # Bootstrap value
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert buffer.advantages is not None
@@ -405,8 +404,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.random.randn(buffer_size, n_envs).astype(np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert np.all(np.isfinite(buffer.advantages))
@@ -430,8 +428,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.random.randn(buffer_size, n_envs).astype(np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert np.all(np.isfinite(buffer.advantages))
@@ -450,8 +447,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert buffer.advantages.shape == (buffer_size, n_envs)
@@ -473,8 +469,7 @@ class TestComputeReturnsWithTimeLimits:
 
         with pytest.raises(ValueError, match="TimeLimit mask"):
             _compute_returns_with_time_limits(
-                buffer, last_values, dones, gamma, gae_lambda,
-                time_limit_mask, time_limit_bootstrap
+                buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
             )
 
     def test_with_done_episodes(self):
@@ -490,8 +485,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert np.all(np.isfinite(buffer.advantages))
@@ -509,8 +503,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         # With gamma=0, returns should equal rewards
@@ -529,8 +522,7 @@ class TestComputeReturnsWithTimeLimits:
         time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)
 
         _compute_returns_with_time_limits(
-            buffer, last_values, dones, gamma, gae_lambda,
-            time_limit_mask, time_limit_bootstrap
+            buffer, last_values, dones, gamma, gae_lambda, time_limit_mask, time_limit_bootstrap
         )
 
         assert np.all(np.isfinite(buffer.advantages))

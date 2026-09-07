@@ -70,6 +70,7 @@ from service_conformal import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def default_config():
     """Create default conformal config."""
@@ -162,6 +163,7 @@ def disabled_service(disabled_config):
 # Test Configuration
 # =============================================================================
 
+
 class TestConformalConfig:
     """Test configuration validation."""
 
@@ -248,6 +250,7 @@ class TestConformalConfig:
 # =============================================================================
 # Test CQR Calibrator
 # =============================================================================
+
 
 class TestCQRCalibrator:
     """Test Conformalized Quantile Regression."""
@@ -355,6 +358,7 @@ class TestCQRCalibrator:
 # Test EnbPI Calibrator
 # =============================================================================
 
+
 class TestEnbPICalibrator:
     """Test Ensemble batch Prediction Intervals for time series."""
 
@@ -408,6 +412,7 @@ class TestEnbPICalibrator:
 # Test ACI Calibrator
 # =============================================================================
 
+
 class TestACICalibrator:
     """Test Adaptive Conformal Inference."""
 
@@ -459,14 +464,13 @@ class TestACICalibrator:
 # Test Naive Calibrator
 # =============================================================================
 
+
 class TestNaiveCalibrator:
     """Test naive baseline calibrator."""
 
     def test_calibration_stores_residuals(self, cqr_config):
         """Test calibration stores residuals."""
-        cqr_config = ConformalConfig(
-            calibration=CalibrationConfig(method=ConformalMethod.NAIVE)
-        )
+        cqr_config = ConformalConfig(calibration=CalibrationConfig(method=ConformalMethod.NAIVE))
         calibrator = NaiveCalibrator(cqr_config)
 
         predictions = np.array([1.0, 2.0, 3.0])
@@ -479,9 +483,7 @@ class TestNaiveCalibrator:
 
     def test_predict_interval_uses_percentiles(self, cqr_config):
         """Test prediction uses percentiles."""
-        config = ConformalConfig(
-            calibration=CalibrationConfig(method=ConformalMethod.NAIVE)
-        )
+        config = ConformalConfig(calibration=CalibrationConfig(method=ConformalMethod.NAIVE))
         calibrator = NaiveCalibrator(config)
 
         # Add some residuals
@@ -497,6 +499,7 @@ class TestNaiveCalibrator:
 # =============================================================================
 # Test CVaR Estimator
 # =============================================================================
+
 
 class TestConformalCVaREstimator:
     """Test CVaR with conformal bounds."""
@@ -537,6 +540,7 @@ class TestConformalCVaREstimator:
 # =============================================================================
 # Test Uncertainty Tracker
 # =============================================================================
+
 
 class TestUncertaintyTracker:
     """Test uncertainty tracking and escalation."""
@@ -624,6 +628,7 @@ class TestUncertaintyTracker:
 # =============================================================================
 # Test Conformal Prediction Service
 # =============================================================================
+
 
 class TestConformalPredictionService:
     """Test main service integration."""
@@ -729,6 +734,7 @@ class TestConformalPredictionService:
 
         assert state_file.exists()
         import json
+
         with open(state_file) as f:
             state = json.load(f)
 
@@ -740,6 +746,7 @@ class TestConformalPredictionService:
 # =============================================================================
 # Test Factory Functions
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -783,6 +790,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test Integration Helpers
 # =============================================================================
+
 
 class TestIntegrationHelpers:
     """Test integration helper functions."""
@@ -857,6 +865,7 @@ class TestIntegrationHelpers:
 # Test Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -873,7 +882,7 @@ class TestEdgeCases:
     def test_nan_handling_in_interval(self, cqr_calibrator):
         """Test NaN handling in prediction intervals."""
         interval = cqr_calibrator.predict_interval(
-            predicted_lower=float('nan'),
+            predicted_lower=float("nan"),
             predicted_upper=1.0,
             point_estimate=0.5,
         )
@@ -883,12 +892,12 @@ class TestEdgeCases:
     def test_inf_handling_in_interval(self, cqr_calibrator):
         """Test infinity handling in prediction intervals."""
         interval = cqr_calibrator.predict_interval(
-            predicted_lower=float('-inf'),
-            predicted_upper=float('inf'),
+            predicted_lower=float("-inf"),
+            predicted_upper=float("inf"),
             point_estimate=0.0,
         )
         # Should not crash
-        assert interval.interval_width == float('inf')
+        assert interval.interval_width == float("inf")
 
     def test_calibration_with_constant_values(self, cqr_calibrator):
         """Test calibration with constant values."""
@@ -928,6 +937,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Data Types
 # =============================================================================
+
 
 class TestDataTypes:
     """Test data type serialization and methods."""

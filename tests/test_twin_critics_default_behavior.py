@@ -9,8 +9,10 @@ Tests verify that:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
+
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 from custom_policy_patch1 import CustomActorCriticPolicy
@@ -53,12 +55,12 @@ class TestDefaultBehavior:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
                 # use_twin_critics NOT specified
-            }
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -76,12 +78,12 @@ class TestDefaultBehavior:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'num_atoms': 51,
-            'critic': {
-                'distributional': False,
+            "hidden_dim": 32,
+            "num_atoms": 51,
+            "critic": {
+                "distributional": False,
                 # use_twin_critics NOT specified
-            }
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -99,7 +101,7 @@ class TestDefaultBehavior:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         # Minimal config without critic section
-        arch_params = {'hidden_dim': 32}
+        arch_params = {"hidden_dim": 32}
 
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -113,10 +115,7 @@ class TestDefaultBehavior:
         observation_space = spaces.Box(low=-1.0, high=1.0, shape=(10,), dtype=np.float32)
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
-        arch_params = {
-            'hidden_dim': 32,
-            'critic': {}  # Empty critic config
-        }
+        arch_params = {"hidden_dim": 32, "critic": {}}  # Empty critic config
 
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -134,12 +133,12 @@ class TestExplicitControl:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "use_twin_critics": True,
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -155,12 +154,12 @@ class TestExplicitControl:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'use_twin_critics': False,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "use_twin_critics": False,
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -176,11 +175,11 @@ class TestExplicitControl:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': False,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": False,
+                "use_twin_critics": True,
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -196,11 +195,11 @@ class TestExplicitControl:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': False,
-                'use_twin_critics': False,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": False,
+                "use_twin_critics": False,
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -221,8 +220,8 @@ class TestEdgeCases:
 
         # Test integer 0 (should be False)
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': 0}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": 0},
         }
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -231,8 +230,8 @@ class TestEdgeCases:
 
         # Test integer 1 (should be True)
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': 1}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": 1},
         }
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -241,8 +240,8 @@ class TestEdgeCases:
 
         # Test string "true" (should be True)
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': "true"}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": "true"},
         }
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -251,8 +250,8 @@ class TestEdgeCases:
 
         # Test string "false" (should be False)
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': "false"}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": "false"},
         }
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -265,8 +264,8 @@ class TestEdgeCases:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': None}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": None},
         }
         policy = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -286,19 +285,19 @@ class TestPPOIntegration:
     def test_ppo_default_enables_twin_critics(self, env):
         """Test that PPO enables Twin Critics by default."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
                 # use_twin_critics NOT specified
-            }
+            },
         }
 
         model = DistributionalPPO(
             CustomActorCriticPolicy,
             env,
-            policy_kwargs={'arch_params': arch_params},
+            policy_kwargs={"arch_params": arch_params},
             n_steps=64,
             batch_size=32,
             n_epochs=2,
@@ -317,19 +316,19 @@ class TestPPOIntegration:
     def test_ppo_explicit_disable(self, env):
         """Test that PPO respects explicit disabling."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': False,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": False,
+            },
         }
 
         model = DistributionalPPO(
             CustomActorCriticPolicy,
             env,
-            policy_kwargs={'arch_params': arch_params},
+            policy_kwargs={"arch_params": arch_params},
             n_steps=64,
             batch_size=32,
             n_epochs=2,
@@ -348,19 +347,19 @@ class TestPPOIntegration:
     def test_ppo_value_predictions_use_min(self, env):
         """Test that PPO uses min(V1, V2) for predictions by default."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
                 # use_twin_critics defaults to True
-            }
+            },
         }
 
         model = DistributionalPPO(
             CustomActorCriticPolicy,
             env,
-            policy_kwargs={'arch_params': arch_params},
+            policy_kwargs={"arch_params": arch_params},
             n_steps=64,
             batch_size=32,
             n_epochs=2,
@@ -393,8 +392,9 @@ class TestPPOIntegration:
             value_2 = logits_2.mean(dim=-1, keepdim=True)
             expected_min = torch.min(value_1, value_2)
 
-        assert torch.allclose(value_pred, expected_min, atol=1e-6), \
-            "Should use min(V1, V2) by default"
+        assert torch.allclose(
+            value_pred, expected_min, atol=1e-6
+        ), "Should use min(V1, V2) by default"
 
 
 class TestOptimizerInclusion:
@@ -406,12 +406,12 @@ class TestOptimizerInclusion:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
                 # use_twin_critics defaults to True
-            }
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -420,7 +420,7 @@ class TestOptimizerInclusion:
 
         # Get optimizer parameter IDs
         optimizer_param_ids = {
-            id(p) for group in policy.optimizer.param_groups for p in group['params']
+            id(p) for group in policy.optimizer.param_groups for p in group["params"]
         }
 
         # Get critic parameter IDs

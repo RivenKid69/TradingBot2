@@ -9,6 +9,7 @@ Date: 2025-11-22
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 
 
@@ -74,8 +75,7 @@ class TestTorchClampNumericalStability:
         relative_diff = torch.abs((log_probs_new - log_probs_old) / log_probs_old)
         # Maximum relative difference should be small (< 1%)
         max_relative_diff = relative_diff.max().item()
-        assert max_relative_diff < 0.01, \
-            f"Large relative difference: {max_relative_diff:.6f}"
+        assert max_relative_diff < 0.01, f"Large relative difference: {max_relative_diff:.6f}"
 
     def test_torch_clamp_preserves_safe_values(self):
         """Test that torch.clamp preserves values already in valid range."""
@@ -99,7 +99,7 @@ class TestTorchClampNumericalStability:
             probs,
             rtol=1e-9,
             atol=1e-12,
-            msg="torch.clamp should preserve already-safe probabilities"
+            msg="torch.clamp should preserve already-safe probabilities",
         )
 
     def test_addition_modifies_safe_values_unnecessarily(self):
@@ -119,8 +119,9 @@ class TestTorchClampNumericalStability:
         probs_added = probs + epsilon
 
         # Addition changes the values even though they're already safe
-        assert torch.any(probs_added != probs), \
-            "Addition should modify probabilities (even safe ones)"
+        assert torch.any(
+            probs_added != probs
+        ), "Addition should modify probabilities (even safe ones)"
 
         # This is UNNECESSARY modification
         # torch.clamp would preserve them unchanged
@@ -160,8 +161,9 @@ class TestTorchClampNumericalStability:
         relative_diff = torch.abs((loss_new - loss_old) / (loss_old + 1e-10))
         max_relative_diff = relative_diff.max().item()
         # Allow up to 5% relative difference (they won't be identical)
-        assert max_relative_diff < 0.05, \
-            f"Cross-entropy losses differ too much: {max_relative_diff:.4f}"
+        assert (
+            max_relative_diff < 0.05
+        ), f"Cross-entropy losses differ too much: {max_relative_diff:.4f}"
 
     def test_extreme_edge_cases_no_nan(self):
         """Test that no NaN occurs even with extreme edge cases."""
@@ -172,24 +174,30 @@ class TestTorchClampNumericalStability:
         edge_cases = [
             # Case 1: All probabilities equal (uniform)
             torch.ones((batch_size, num_atoms)) / num_atoms,
-
             # Case 2: One probability very close to 1.0
-            torch.cat([
-                torch.ones((batch_size, 1)) * 0.9999,
-                torch.ones((batch_size, num_atoms - 1)) * (0.0001 / (num_atoms - 1))
-            ], dim=1),
-
+            torch.cat(
+                [
+                    torch.ones((batch_size, 1)) * 0.9999,
+                    torch.ones((batch_size, num_atoms - 1)) * (0.0001 / (num_atoms - 1)),
+                ],
+                dim=1,
+            ),
             # Case 3: Many very small probabilities
-            torch.cat([
-                torch.ones((batch_size, 1)) * 0.99,
-                torch.ones((batch_size, num_atoms - 1)) * (1e-10)
-            ], dim=1),
-
+            torch.cat(
+                [
+                    torch.ones((batch_size, 1)) * 0.99,
+                    torch.ones((batch_size, num_atoms - 1)) * (1e-10),
+                ],
+                dim=1,
+            ),
             # Case 4: Extreme small values
-            torch.cat([
-                torch.ones((batch_size, 1)) * 0.999999,
-                torch.ones((batch_size, num_atoms - 1)) * (1e-15)
-            ], dim=1),
+            torch.cat(
+                [
+                    torch.ones((batch_size, 1)) * 0.999999,
+                    torch.ones((batch_size, num_atoms - 1)) * (1e-15),
+                ],
+                dim=1,
+            ),
         ]
 
         for i, probs in enumerate(edge_cases):
@@ -201,14 +209,11 @@ class TestTorchClampNumericalStability:
 
             # Verify safe for log
             log_probs = torch.log(probs_safe)
-            assert torch.all(torch.isfinite(log_probs)), \
-                f"Case {i+1}: log produced NaN/Inf"
+            assert torch.all(torch.isfinite(log_probs)), f"Case {i+1}: log produced NaN/Inf"
 
             # Verify values in valid range
-            assert torch.all(probs_safe >= epsilon), \
-                f"Case {i+1}: values below epsilon"
-            assert torch.all(probs_safe <= 1.0), \
-                f"Case {i+1}: values above 1.0"
+            assert torch.all(probs_safe >= epsilon), f"Case {i+1}: values below epsilon"
+            assert torch.all(probs_safe <= 1.0), f"Case {i+1}: values above 1.0"
 
     def test_gradient_flow_through_torch_clamp(self):
         """Test that gradients flow correctly through torch.clamp."""
@@ -235,8 +240,7 @@ class TestTorchClampNumericalStability:
         assert logits.grad is not None, "No gradient for logits"
 
         # Verify gradients are finite
-        assert torch.all(torch.isfinite(logits.grad)), \
-            "Gradients contain NaN/Inf"
+        assert torch.all(torch.isfinite(logits.grad)), "Gradients contain NaN/Inf"
 
         # Verify gradients are non-zero (learning is happening)
         assert torch.norm(logits.grad) > 0, "Gradient norm is zero"
@@ -261,11 +265,7 @@ class TestTorchClampNumericalStability:
 
         # Should be identical (idempotent)
         torch.testing.assert_close(
-            probs_1,
-            probs_2,
-            rtol=1e-12,
-            atol=1e-15,
-            msg="torch.clamp is not idempotent"
+            probs_1, probs_2, rtol=1e-12, atol=1e-15, msg="torch.clamp is not idempotent"
         )
 
 

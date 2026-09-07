@@ -24,7 +24,10 @@ class LeakConfig:
     IMPORTANT: decision_delay_ms должен быть >= 8000 для продакшена!
     Reference: de Prado (2018) "Advances in Financial Machine Learning", Chapter 7
     """
-    decision_delay_ms: int = 8000  # Changed from 0 to 8000 to prevent forward-looking bias by default
+
+    decision_delay_ms: int = (
+        8000  # Changed from 0 to 8000 to prevent forward-looking bias by default
+    )
     min_lookback_ms: int = 0
 
 
@@ -40,6 +43,7 @@ class LeakGuard:
     References:
     - de Prado, M.L. (2018). "Advances in Financial Machine Learning", Chapter 7
     """
+
     def __init__(self, cfg: Optional[LeakConfig] = None):
         self.cfg = cfg or LeakConfig()
 
@@ -78,7 +82,7 @@ class LeakGuard:
                     f"Recommended: decision_delay_ms >= {RECOMMENDED_MIN_DELAY_MS} (8 seconds). "
                     "Reference: de Prado (2018) 'Advances in Financial Machine Learning', Ch. 7",
                     UserWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
             else:
                 # Warning for delays below recommended minimum (1-7999 ms)
@@ -89,7 +93,7 @@ class LeakGuard:
                     "feature computation, and signal transmission. "
                     "Reference: de Prado (2018) 'Advances in Financial Machine Learning', Ch. 7",
                     UserWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
 
     def attach_decision_time(self, df: pd.DataFrame, *, ts_col: str = "ts_ms") -> pd.DataFrame:
@@ -145,9 +149,7 @@ class LeakGuard:
             grouped = d.groupby(group_keys, sort=False, dropna=False)
         else:
             grouped = d.groupby(lambda _: 0, sort=False)
-        masks: dict[str, pd.Series] = {
-            col: pd.Series(False, index=d.index) for col in value_cols
-        }
+        masks: dict[str, pd.Series] = {col: pd.Series(False, index=d.index) for col in value_cols}
 
         for _, idx in grouped.groups.items():
             group_df = d.loc[idx]

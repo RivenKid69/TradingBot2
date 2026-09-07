@@ -1,12 +1,15 @@
 """Quick test of critical fixes."""
+
 import sys
-sys.path.insert(0, '/home/user/ai-quant-platform')
+
+sys.path.insert(0, "/home/user/ai-quant-platform")
 
 print("Testing critical fixes...")
 
 # Test 1: Import works
 try:
     from variance_gradient_scaler import VarianceGradientScaler
+
     print("✓ Import successful")
 except Exception as e:
     print(f"✗ Import failed: {e}")
@@ -29,6 +32,7 @@ try:
 except Exception as e:
     print(f"✗ get_normalized_variance() failed: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 
@@ -40,6 +44,7 @@ try:
 except Exception as e:
     print(f"✗ get_scaling_factor() failed: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 
@@ -51,9 +56,10 @@ try:
 except Exception as e:
     print(f"✗ step() failed: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("ALL CRITICAL FIX TESTS PASSED!")
-print("="*60)
+print("=" * 60)

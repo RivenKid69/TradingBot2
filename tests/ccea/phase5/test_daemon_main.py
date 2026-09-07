@@ -37,7 +37,7 @@ class TestSetupLogging:
 
     def test_setup_logging_default(self):
         """Test default logging setup."""
-        with patch('packages.agent.daemon.__main__.logging') as mock_logging:
+        with patch("packages.agent.daemon.__main__.logging") as mock_logging:
             mock_root = MagicMock()
             mock_logging.getLogger.return_value = mock_root
             mock_logging.INFO = 20
@@ -48,7 +48,7 @@ class TestSetupLogging:
 
     def test_setup_logging_with_level(self):
         """Test logging setup with custom level."""
-        with patch('packages.agent.daemon.__main__.logging') as mock_logging:
+        with patch("packages.agent.daemon.__main__.logging") as mock_logging:
             mock_root = MagicMock()
             mock_logging.getLogger.return_value = mock_root
             mock_logging.DEBUG = 10
@@ -61,7 +61,7 @@ class TestSetupLogging:
         """Test logging setup with file handler."""
         log_file = tmp_path / "logs" / "test.log"
 
-        with patch('packages.agent.daemon.__main__.logging') as mock_logging:
+        with patch("packages.agent.daemon.__main__.logging") as mock_logging:
             mock_root = MagicMock()
             mock_logging.getLogger.return_value = mock_root
             mock_logging.INFO = 20
@@ -196,10 +196,13 @@ class TestBuildDaemonConfig:
             "cloud": {"endpoint": "https://config.example.com"},
         }
 
-        with patch.dict(os.environ, {
-            "CCEA_AGENT_NAME": "env-agent",
-            "CCEA_CLOUD_ENDPOINT": "https://env.example.com",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "CCEA_AGENT_NAME": "env-agent",
+                "CCEA_CLOUD_ENDPOINT": "https://env.example.com",
+            },
+        ):
             result = build_daemon_config(config_dict, mock_args)
 
         assert result.agent_name == "env-agent"
@@ -303,12 +306,12 @@ class TestDaemonRunner:
         """Test signal handler setup."""
         runner = DaemonRunner(mock_daemon)
 
-        with patch('packages.agent.daemon.__main__.signal') as mock_signal:
+        with patch("packages.agent.daemon.__main__.signal") as mock_signal:
             mock_signal.SIGTERM = signal.SIGTERM
             mock_signal.SIGINT = signal.SIGINT
-            if hasattr(signal, 'SIGHUP'):
+            if hasattr(signal, "SIGHUP"):
                 mock_signal.SIGHUP = signal.SIGHUP
-            if hasattr(signal, 'SIGUSR1'):
+            if hasattr(signal, "SIGUSR1"):
                 mock_signal.SIGUSR1 = signal.SIGUSR1
 
             runner.setup_signal_handlers()
@@ -328,7 +331,7 @@ class TestDaemonRunner:
         """Test reload signal handling (SIGHUP)."""
         runner = DaemonRunner(mock_daemon)
 
-        runner._handle_reload_signal(signal.SIGHUP if hasattr(signal, 'SIGHUP') else 1, None)
+        runner._handle_reload_signal(signal.SIGHUP if hasattr(signal, "SIGHUP") else 1, None)
 
         assert runner._restart_requested is True
         assert runner._shutdown_requested is True
@@ -338,7 +341,7 @@ class TestDaemonRunner:
         runner = DaemonRunner(mock_daemon)
         mock_daemon.get_status.return_value = {"state": "RUNNING"}
 
-        runner._handle_status_signal(signal.SIGUSR1 if hasattr(signal, 'SIGUSR1') else 10, None)
+        runner._handle_status_signal(signal.SIGUSR1 if hasattr(signal, "SIGUSR1") else 10, None)
 
         mock_daemon.get_status.assert_called_once()
 
@@ -348,7 +351,7 @@ class TestDaemonRunner:
         runner = DaemonRunner(mock_daemon)
         runner._shutdown_requested = True  # Prevent blocking
 
-        with patch.object(runner, 'setup_signal_handlers'):
+        with patch.object(runner, "setup_signal_handlers"):
             result = runner.run()
 
         assert result == 1
@@ -359,7 +362,7 @@ class TestDaemonRunner:
         runner = DaemonRunner(mock_daemon)
         runner._shutdown_requested = True
 
-        with patch.object(runner, 'setup_signal_handlers'):
+        with patch.object(runner, "setup_signal_handlers"):
             result = runner.run()
 
         assert result == 1
@@ -385,10 +388,14 @@ class TestCreateParser:
     def test_parser_cloud_args(self):
         """Test cloud connection arguments."""
         parser = create_parser()
-        args = parser.parse_args([
-            "--cloud-endpoint", "https://cloud.example.com",
-            "--enrollment-token", "test-token",
-        ])
+        args = parser.parse_args(
+            [
+                "--cloud-endpoint",
+                "https://cloud.example.com",
+                "--enrollment-token",
+                "test-token",
+            ]
+        )
 
         assert args.cloud_endpoint == "https://cloud.example.com"
         assert args.enrollment_token == "test-token"
@@ -396,10 +403,14 @@ class TestCreateParser:
     def test_parser_agent_args(self):
         """Test agent identity arguments."""
         parser = create_parser()
-        args = parser.parse_args([
-            "--agent-id", "agent-123",
-            "--agent-name", "my-agent",
-        ])
+        args = parser.parse_args(
+            [
+                "--agent-id",
+                "agent-123",
+                "--agent-name",
+                "my-agent",
+            ]
+        )
 
         assert args.agent_id == "agent-123"
         assert args.agent_name == "my-agent"
@@ -407,10 +418,14 @@ class TestCreateParser:
     def test_parser_logging_args(self):
         """Test logging arguments."""
         parser = create_parser()
-        args = parser.parse_args([
-            "--log-level", "DEBUG",
-            "--log-file", "/var/log/agent.log",
-        ])
+        args = parser.parse_args(
+            [
+                "--log-level",
+                "DEBUG",
+                "--log-file",
+                "/var/log/agent.log",
+            ]
+        )
 
         assert args.log_level == "DEBUG"
         assert args.log_file == Path("/var/log/agent.log")
@@ -488,6 +503,7 @@ class TestMain:
     def test_main_no_preflight_warning(self, tmp_path, caplog):
         """Test main logs warning when preflight disabled."""
         import logging
+
         caplog.set_level(logging.WARNING)
 
         result = main(["--no-preflight", "--dry-run", "--data-dir", str(tmp_path)])
@@ -530,11 +546,15 @@ class TestConfigPriority:
 
     def test_cli_overrides_file(self, config_file, tmp_path, capsys):
         """Test CLI arguments override file config."""
-        result = main([
-            "--config", str(config_file),
-            "--agent-name", "cli-agent",
-            "--dump-config",
-        ])
+        result = main(
+            [
+                "--config",
+                str(config_file),
+                "--agent-name",
+                "cli-agent",
+                "--dump-config",
+            ]
+        )
 
         assert result == 0
         output = capsys.readouterr().out
@@ -543,11 +563,15 @@ class TestConfigPriority:
     def test_cli_overrides_env(self, tmp_path, capsys):
         """Test CLI arguments override environment."""
         with patch.dict(os.environ, {"CCEA_AGENT_NAME": "env-agent"}):
-            result = main([
-                "--agent-name", "cli-agent",
-                "--dump-config",
-                "--data-dir", str(tmp_path),
-            ])
+            result = main(
+                [
+                    "--agent-name",
+                    "cli-agent",
+                    "--dump-config",
+                    "--data-dir",
+                    str(tmp_path),
+                ]
+            )
 
         assert result == 0
         output = capsys.readouterr().out

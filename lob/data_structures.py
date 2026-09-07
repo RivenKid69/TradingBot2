@@ -798,9 +798,11 @@ class OrderBook:
             return round(price / self.tick_size) * self.tick_size
         elif direction == "down":
             import math
+
             return math.floor(price / self.tick_size) * self.tick_size
         elif direction == "up":
             import math
+
             return math.ceil(price / self.tick_size) * self.tick_size
         else:
             raise ValueError(f"Invalid direction: {direction}")
@@ -1025,7 +1027,9 @@ class OrderBook:
     # Book Depth / Walk Operations
     # ==========================================================================
 
-    def get_depth(self, n_levels: int = 10) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+    def get_depth(
+        self, n_levels: int = 10
+    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
         """
         Get top N price levels on each side.
 

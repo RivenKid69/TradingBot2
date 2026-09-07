@@ -3,6 +3,7 @@
 
 import sys
 
+
 def _format_window_name(window_minutes: int) -> str:
     """
     Форматирует имя окна в зависимости от величины для 4h интервала.
@@ -11,10 +12,11 @@ def _format_window_name(window_minutes: int) -> str:
     # Для длинных окон >= 7 дней (10080 минут) используем дни (для GARCH)
     if window_minutes >= 10080 and window_minutes % 1440 == 0:  # >= 7 дней и кратно дню
         return f"{window_minutes // 1440}d"
-    elif window_minutes >= 60 and window_minutes % 60 == 0:     # часы
+    elif window_minutes >= 60 and window_minutes % 60 == 0:  # часы
         return f"{window_minutes // 60}h"
-    else:                                                        # минуты
+    else:  # минуты
         return f"{window_minutes}m"
+
 
 def test_format_window_name():
     """Test _format_window_name() function."""
@@ -40,10 +42,13 @@ def test_format_window_name():
         status = "✓" if result == expected else "✗"
         if result != expected:
             all_passed = False
-        print(f"{status} _format_window_name({minutes:5d}) = '{result:4s}' (expected '{expected:4s}') - {description}")
+        print(
+            f"{status} _format_window_name({minutes:5d}) = '{result:4s}' (expected '{expected:4s}') - {description}"
+        )
 
     print()
     return all_passed
+
 
 def test_feature_names():
     """Test that feature names match between transformers and mediator."""
@@ -53,20 +58,32 @@ def test_feature_names():
     # Expected feature names from mediator.py _extract_norm_cols()
     expected_features = [
         # Returns
-        "ret_4h", "ret_12h", "ret_24h",
+        "ret_4h",
+        "ret_12h",
+        "ret_24h",
         # GARCH - КРИТИЧНО: минимум 50 баров для стабильной оценки!
         # 12000 минут = 50 баров = 200h (минимум для GARCH)
-        "garch_200h", "garch_14d", "garch_30d",
+        "garch_200h",
+        "garch_14d",
+        "garch_30d",
         # Yang-Zhang
-        "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
+        "yang_zhang_48h",
+        "yang_zhang_7d",
+        "yang_zhang_30d",
         # Parkinson
-        "parkinson_48h", "parkinson_7d",
+        "parkinson_48h",
+        "parkinson_7d",
         # CVD
-        "cvd_24h", "cvd_7d",
+        "cvd_24h",
+        "cvd_7d",
         # Taker Buy Ratio SMA
-        "taker_buy_ratio_sma_8h", "taker_buy_ratio_sma_16h", "taker_buy_ratio_sma_24h",
+        "taker_buy_ratio_sma_8h",
+        "taker_buy_ratio_sma_16h",
+        "taker_buy_ratio_sma_24h",
         # Taker Buy Ratio Momentum
-        "taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h",
+        "taker_buy_ratio_momentum_4h",
+        "taker_buy_ratio_momentum_8h",
+        "taker_buy_ratio_momentum_12h",
     ]
 
     # Feature spec parameters for 4h interval
@@ -147,6 +164,7 @@ def test_feature_names():
     print()
     return all_match
 
+
 def main():
     """Run all tests."""
     print("=" * 50)
@@ -169,6 +187,7 @@ def main():
         print("✗ SOME TESTS FAILED")
         print("=" * 50)
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -527,7 +527,7 @@ class TestIntegration:
         assert impl.maker_taker_share_raw.get("enabled") is True
 
         # Verify expected fee breakdown
-        if hasattr(impl, 'maker_taker_share_expected') and impl.maker_taker_share_expected:
+        if hasattr(impl, "maker_taker_share_expected") and impl.maker_taker_share_expected:
             assert "expected_fee_bps" in impl.maker_taker_share_expected
 
 

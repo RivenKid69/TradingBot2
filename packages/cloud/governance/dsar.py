@@ -58,7 +58,8 @@ DSAR_DATA_CATEGORIES: Final[Set[str]] = {
 }
 
 # CCEA boundary notice for DSAR responses
-CCEA_BOUNDARY_NOTICE: Final[str] = """
+CCEA_BOUNDARY_NOTICE: Final[str] = (
+    """
 CCEA Architecture Data Boundary Notice
 
 Your request has been processed for all personal data held in our Cloud systems.
@@ -75,6 +76,7 @@ For access to Agent-local data, please contact your system administrator or acce
 your Agent's local storage directly. We cannot export or delete data that we do not
 receive or store.
 """.strip()
+)
 
 # Data categories OUT OF SCOPE (Agent-controlled)
 DSAR_OUT_OF_SCOPE_CATEGORIES: Final[Set[str]] = {
@@ -88,14 +90,16 @@ DSAR_OUT_OF_SCOPE_CATEGORIES: Final[Set[str]] = {
 
 class DSARRequestType(Enum):
     """Types of DSAR requests."""
-    ACCESS = auto()      # Right of access (Article 15)
+
+    ACCESS = auto()  # Right of access (Article 15)
     PORTABILITY = auto()  # Right to data portability (Article 20)
-    ERASURE = auto()     # Right to erasure (Article 17)
+    ERASURE = auto()  # Right to erasure (Article 17)
     RECTIFICATION = auto()  # Right to rectification (Article 16)
 
 
 class DSARStatus(Enum):
     """DSAR request processing status."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     AWAITING_VERIFICATION = "awaiting_verification"
@@ -120,6 +124,7 @@ class DSARRequest:
         reason: Reason for request (especially for erasure)
         verification_method: How identity was verified
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     request_type: DSARRequestType = DSARRequestType.ACCESS
     user_id: str = ""
@@ -132,7 +137,9 @@ class DSARRequest:
 
     # Timing
     created_at: datetime = field(default_factory=datetime.utcnow)
-    deadline: datetime = field(default_factory=lambda: datetime.utcnow() + timedelta(days=DSAR_RESPONSE_DEADLINE_DAYS))
+    deadline: datetime = field(
+        default_factory=lambda: datetime.utcnow() + timedelta(days=DSAR_RESPONSE_DEADLINE_DAYS)
+    )
     extended_deadline: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
@@ -160,7 +167,9 @@ class DSARRequest:
             "verified_at": self.verified_at.isoformat() if self.verified_at else None,
             "created_at": self.created_at.isoformat(),
             "deadline": self.deadline.isoformat(),
-            "extended_deadline": self.extended_deadline.isoformat() if self.extended_deadline else None,
+            "extended_deadline": (
+                self.extended_deadline.isoformat() if self.extended_deadline else None
+            ),
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "processed_by": self.processed_by,
             "notes": self.notes,
@@ -175,13 +184,15 @@ class DSARRequest:
         """Check if request is overdue."""
         effective_deadline = self.extended_deadline or self.deadline
         return datetime.utcnow() > effective_deadline and self.status not in (
-            DSARStatus.COMPLETED, DSARStatus.REJECTED
+            DSARStatus.COMPLETED,
+            DSARStatus.REJECTED,
         )
 
 
 @dataclass
 class DSARResult:
     """Result of DSAR processing."""
+
     success: bool = True
     request_id: str = ""
     request_type: DSARRequestType = DSARRequestType.ACCESS
@@ -196,7 +207,9 @@ class DSARResult:
     # CCEA boundary information
     ccea_boundary_notice: str = CCEA_BOUNDARY_NOTICE
     in_scope_categories: Set[str] = field(default_factory=lambda: set(DSAR_DATA_CATEGORIES))
-    out_of_scope_categories: Set[str] = field(default_factory=lambda: set(DSAR_OUT_OF_SCOPE_CATEGORIES))
+    out_of_scope_categories: Set[str] = field(
+        default_factory=lambda: set(DSAR_OUT_OF_SCOPE_CATEGORIES)
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -480,7 +493,9 @@ class DSARService:
         self._export_dir.mkdir(parents=True, exist_ok=True)
 
         # Create export file
-        export_filename = f"dsar_export_{request.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        export_filename = (
+            f"dsar_export_{request.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        )
         export_path = self._export_dir / export_filename
 
         # Write export with CCEA boundary notice
@@ -544,7 +559,9 @@ class DSARService:
 
             # Create pre-deletion snapshot (for compliance audit)
             self._export_dir.mkdir(parents=True, exist_ok=True)
-            snapshot_filename = f"erasure_snapshot_{request.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+            snapshot_filename = (
+                f"erasure_snapshot_{request.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+            )
             snapshot_path = self._export_dir / snapshot_filename
 
             snapshot_data = {
@@ -616,8 +633,10 @@ class DSARService:
         """Get all pending requests."""
         with self._lock:
             return [
-                r for r in self._requests.values()
-                if r.status in (DSARStatus.PENDING, DSARStatus.IN_PROGRESS, DSARStatus.AWAITING_VERIFICATION)
+                r
+                for r in self._requests.values()
+                if r.status
+                in (DSARStatus.PENDING, DSARStatus.IN_PROGRESS, DSARStatus.AWAITING_VERIFICATION)
             ]
 
     def _log_audit(

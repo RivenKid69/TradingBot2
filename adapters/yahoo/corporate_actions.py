@@ -219,6 +219,7 @@ class YahooCorporateActionsAdapter(CorporateActionsAdapter):
                     # Reverse split: 0.5 means 1 new share for 2 old (1:2)
                     # Convert to fraction
                     from fractions import Fraction
+
                     frac = Fraction(ratio_float).limit_denominator(100)
                     new_shares = frac.numerator
                     old_shares = frac.denominator

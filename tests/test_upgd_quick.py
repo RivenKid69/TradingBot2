@@ -3,6 +3,7 @@ Quick test script for UPGD optimizers without pytest dependency.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers import UPGD, AdaptiveUPGD, UPGDW
@@ -10,6 +11,7 @@ from optimizers import UPGD, AdaptiveUPGD, UPGDW
 
 class SimpleModel(nn.Module):
     """Simple test model."""
+
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(10, 5)
@@ -129,8 +131,9 @@ def test_utility_computation():
     expected_utility = torch.tensor([[-0.1, -0.4, -0.9], [-1.6, -2.5, -3.6]])
 
     state = optimizer.state[model.weight]
-    assert torch.allclose(state["avg_utility"], expected_utility, atol=1e-5), \
-        "Utility should be -grad * param"
+    assert torch.allclose(
+        state["avg_utility"], expected_utility, atol=1e-5
+    ), "Utility should be -grad * param"
 
     print("✓ Utility computation test passed")
 
@@ -152,8 +155,9 @@ def test_weight_decay():
 
     # Weight decay should have been applied
     # Parameters should have changed
-    assert not torch.allclose(model.weight, torch.ones_like(model.weight)), \
-        "Parameters should change with weight decay"
+    assert not torch.allclose(
+        model.weight, torch.ones_like(model.weight)
+    ), "Parameters should change with weight decay"
 
     print("✓ Weight decay test passed")
 
@@ -175,8 +179,9 @@ def test_state_persistence():
 
     # Utility should have been updated
     final_utility = optimizer.state[model.weight]["avg_utility"]
-    assert not torch.allclose(final_utility, torch.zeros_like(final_utility)), \
-        "Utility should have been updated"
+    assert not torch.allclose(
+        final_utility, torch.zeros_like(final_utility)
+    ), "Utility should have been updated"
 
     print("✓ State persistence test passed")
 
@@ -194,8 +199,9 @@ def test_numerical_stability():
     optimizer.step()
 
     # Should not produce NaN or Inf
-    assert torch.all(torch.isfinite(model.weight)), \
-        "Parameters should remain finite even with large gradients"
+    assert torch.all(
+        torch.isfinite(model.weight)
+    ), "Parameters should remain finite even with large gradients"
 
     print("✓ Numerical stability test passed")
 
@@ -234,8 +240,9 @@ def test_integration_training_loop():
             final_loss = loss.item()
 
     # Loss should decrease
-    assert final_loss < initial_loss, \
-        f"Loss should decrease: {initial_loss:.4f} -> {final_loss:.4f}"
+    assert (
+        final_loss < initial_loss
+    ), f"Loss should decrease: {initial_loss:.4f} -> {final_loss:.4f}"
 
     print(f"✓ Training loop test passed (loss: {initial_loss:.4f} -> {final_loss:.4f})")
 

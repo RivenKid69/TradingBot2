@@ -75,15 +75,11 @@ class TestConsentRequest:
     def test_request_is_expired(self):
         """Test request expiry detection."""
         # Not expired
-        request = ConsentRequest(
-            expires_at=datetime.utcnow() + timedelta(days=1)
-        )
+        request = ConsentRequest(expires_at=datetime.utcnow() + timedelta(days=1))
         assert not request.is_expired
 
         # Expired
-        request_expired = ConsentRequest(
-            expires_at=datetime.utcnow() - timedelta(days=1)
-        )
+        request_expired = ConsentRequest(expires_at=datetime.utcnow() - timedelta(days=1))
         assert request_expired.is_expired
 
 

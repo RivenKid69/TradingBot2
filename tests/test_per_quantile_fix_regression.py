@@ -52,16 +52,12 @@ class TestPerQuantileBugFix:
 
         # BUGGY APPROACH: Clip to old_mean
         buggy_clipped = old_mean + torch.clamp(
-            new_quantiles - old_mean,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_mean, min=-clip_delta, max=clip_delta
         )
 
         # CORRECT APPROACH: Clip to old_quantiles
         correct_clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         print("\n=== BUG DEMONSTRATION ===")
@@ -75,7 +71,9 @@ class TestPerQuantileBugFix:
         print(f"  -> Variance: {buggy_clipped.var().item():.6f}")
         print()
         print(f"CORRECT (clip to old_q): {correct_clipped.squeeze().tolist()}")
-        print(f"  -> Range: [{correct_clipped.min().item():.2f}, {correct_clipped.max().item():.2f}]")
+        print(
+            f"  -> Range: [{correct_clipped.min().item():.2f}, {correct_clipped.max().item():.2f}]"
+        )
         print(f"  -> Variance: {correct_clipped.var().item():.6f}")
         print()
 
@@ -88,12 +86,14 @@ class TestPerQuantileBugFix:
         old_variance = old_quantiles.var().item()
         correct_variance = correct_clipped.var().item()
         # Should be close to old variance (slightly smaller due to clipping)
-        assert correct_variance >= 0.9 * old_variance, \
-            f"Correct approach should preserve variance: {correct_variance:.2f} vs old {old_variance:.2f}"
+        assert (
+            correct_variance >= 0.9 * old_variance
+        ), f"Correct approach should preserve variance: {correct_variance:.2f} vs old {old_variance:.2f}"
 
         # 3. Correct approach has MUCH larger variance than buggy
-        assert correct_variance > 10 * buggy_variance, \
-            "Correct approach should have much larger variance than buggy"
+        assert (
+            correct_variance > 10 * buggy_variance
+        ), "Correct approach should have much larger variance than buggy"
 
         print("✓ Bug demonstrated: old_mean destroys shape, old_quantiles preserves it!")
 
@@ -104,33 +104,33 @@ class TestPerQuantileBugFix:
         This is the core fix: Q_i should clip to old_Q_i, not to old_mean.
         """
         # Create asymmetric old distribution
-        old_quantiles = torch.tensor([
-            [-10.0, -5.0, 0.0, 3.0, 15.0]  # Note: asymmetric (mean ≈ 0.6)
-        ])
+        old_quantiles = torch.tensor(
+            [[-10.0, -5.0, 0.0, 3.0, 15.0]]  # Note: asymmetric (mean ≈ 0.6)
+        )
         old_mean = old_quantiles.mean(dim=1, keepdim=True)
 
         # New quantiles: each moves by different amount
-        new_quantiles = torch.tensor([
-            [-15.0, -3.0, 2.0, 8.0, 20.0]
-        ])
+        new_quantiles = torch.tensor([[-15.0, -3.0, 2.0, 8.0, 20.0]])
 
         clip_delta = 2.0
 
         # CORRECT: Each quantile clips to its own old value
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # Expected: Each Q_i should be in [old_Q_i - 2, old_Q_i + 2]
-        expected = torch.tensor([
-            [-12.0,  # -15 clipped to [-12, -8], chooses -12
-             -5.0,   # -3 clipped to [-7, -3], chooses -3... wait, let me recalculate
-             2.0,    # 2 clipped to [-2, 2], chooses 2
-             5.0,    # 8 clipped to [1, 5], chooses 5
-             17.0]   # 20 clipped to [13, 17], chooses 17
-        ])
+        expected = torch.tensor(
+            [
+                [
+                    -12.0,  # -15 clipped to [-12, -8], chooses -12
+                    -5.0,  # -3 clipped to [-7, -3], chooses -3... wait, let me recalculate
+                    2.0,  # 2 clipped to [-2, 2], chooses 2
+                    5.0,  # 8 clipped to [1, 5], chooses 5
+                    17.0,
+                ]  # 20 clipped to [13, 17], chooses 17
+            ]
+        )
 
         # Let me compute this correctly
         # Q_0: new=-15, old=-10, diff=-5, clamped=[-2,2] -> -2, result=-10+(-2)=-12 ✓
@@ -155,19 +155,22 @@ class TestPerQuantileBugFix:
             expected_min = old_q - clip_delta
             expected_max = old_q + clip_delta
 
-            print(f"Q_{i}: old={old_q:+.1f}, new={new_q:+.1f}, "
-                  f"clipped={clipped_q:+.1f}, "
-                  f"expected=[{expected_min:+.1f}, {expected_max:+.1f}]")
+            print(
+                f"Q_{i}: old={old_q:+.1f}, new={new_q:+.1f}, "
+                f"clipped={clipped_q:+.1f}, "
+                f"expected=[{expected_min:+.1f}, {expected_max:+.1f}]"
+            )
 
             # Verify each quantile is within ITS OWN bounds
-            assert clipped_q >= expected_min - 1e-5, \
-                f"Q_{i} below its lower bound: {clipped_q} < {expected_min}"
-            assert clipped_q <= expected_max + 1e-5, \
-                f"Q_{i} above its upper bound: {clipped_q} > {expected_max}"
+            assert (
+                clipped_q >= expected_min - 1e-5
+            ), f"Q_{i} below its lower bound: {clipped_q} < {expected_min}"
+            assert (
+                clipped_q <= expected_max + 1e-5
+            ), f"Q_{i} above its upper bound: {clipped_q} > {expected_max}"
 
         # Verify exact match
-        assert torch.allclose(clipped, expected, atol=1e-5), \
-            f"Expected {expected}, got {clipped}"
+        assert torch.allclose(clipped, expected, atol=1e-5), f"Expected {expected}, got {clipped}"
 
         print("\n✓ Each quantile clips to its own old value, not to old_mean!")
 
@@ -180,16 +183,12 @@ class TestPerQuantileBugFix:
         """
         # Old distribution: realistic value function output
         # Quantiles at τ = [0.1, 0.3, 0.5, 0.7, 0.9]
-        old_quantiles = torch.tensor([
-            [-2.5, -0.5, 1.0, 2.5, 5.0]  # Skewed positive
-        ])
+        old_quantiles = torch.tensor([[-2.5, -0.5, 1.0, 2.5, 5.0]])  # Skewed positive
         old_mean = old_quantiles.mean()
         old_std = old_quantiles.std()
 
         # New distribution: model predicts more optimistic values
-        new_quantiles = torch.tensor([
-            [-1.0, 1.0, 3.0, 5.0, 8.0]  # Shifted up, wider
-        ])
+        new_quantiles = torch.tensor([[-1.0, 1.0, 3.0, 5.0, 8.0]])  # Shifted up, wider
         new_mean = new_quantiles.mean()
         new_std = new_quantiles.std()
 
@@ -197,37 +196,44 @@ class TestPerQuantileBugFix:
 
         # Clip to old_quantiles (CORRECT)
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
         clipped_mean = clipped.mean()
         clipped_std = clipped.std()
 
         print("\n=== REALISTIC DISTRIBUTION TEST ===")
-        print(f"Old: mean={old_mean:.2f}, std={old_std:.2f}, quantiles={old_quantiles.squeeze().tolist()}")
-        print(f"New: mean={new_mean:.2f}, std={new_std:.2f}, quantiles={new_quantiles.squeeze().tolist()}")
-        print(f"Clipped: mean={clipped_mean:.2f}, std={clipped_std:.2f}, quantiles={clipped.squeeze().tolist()}")
+        print(
+            f"Old: mean={old_mean:.2f}, std={old_std:.2f}, quantiles={old_quantiles.squeeze().tolist()}"
+        )
+        print(
+            f"New: mean={new_mean:.2f}, std={new_std:.2f}, quantiles={new_quantiles.squeeze().tolist()}"
+        )
+        print(
+            f"Clipped: mean={clipped_mean:.2f}, std={clipped_std:.2f}, quantiles={clipped.squeeze().tolist()}"
+        )
         print()
 
         # Key properties
         # 1. Clipped std should be close to old std (shape preservation)
         std_ratio = clipped_std / old_std
         print(f"Std ratio (clipped/old): {std_ratio:.3f}")
-        assert 0.7 <= std_ratio <= 1.3, \
-            f"Clipped std should be similar to old std, got ratio {std_ratio:.3f}"
+        assert (
+            0.7 <= std_ratio <= 1.3
+        ), f"Clipped std should be similar to old std, got ratio {std_ratio:.3f}"
 
         # 2. Quantiles should maintain relative ordering
         for i in range(clipped.shape[1] - 1):
-            assert clipped[0, i] < clipped[0, i+1], \
-                f"Ordering violated at {i}: {clipped[0, i]:.2f} >= {clipped[0, i+1]:.2f}"
+            assert (
+                clipped[0, i] < clipped[0, i + 1]
+            ), f"Ordering violated at {i}: {clipped[0, i]:.2f} >= {clipped[0, i+1]:.2f}"
 
         # 3. Each quantile respects bounds
         for i in range(old_quantiles.shape[1]):
             old_q = old_quantiles[0, i].item()
             clipped_q = clipped[0, i].item()
-            assert abs(clipped_q - old_q) <= clip_delta + 1e-5, \
-                f"Q_{i} violates clip delta: |{clipped_q:.2f} - {old_q:.2f}| > {clip_delta}"
+            assert (
+                abs(clipped_q - old_q) <= clip_delta + 1e-5
+            ), f"Q_{i} violates clip delta: |{clipped_q:.2f} - {old_q:.2f}| > {clip_delta}"
 
         print("✓ Shape preservation verified with realistic distribution!")
 
@@ -242,24 +248,26 @@ class TestPerQuantileBugFix:
         clip_delta = 1.0
 
         # Different old distributions per sample
-        old_quantiles = torch.tensor([
-            [-10.0, -5.0, 0.0, 5.0, 10.0],   # Sample 0: centered at 0
-            [0.0, 5.0, 10.0, 15.0, 20.0],    # Sample 1: centered at 10
-            [10.0, 15.0, 20.0, 25.0, 30.0],  # Sample 2: centered at 20
-        ])
+        old_quantiles = torch.tensor(
+            [
+                [-10.0, -5.0, 0.0, 5.0, 10.0],  # Sample 0: centered at 0
+                [0.0, 5.0, 10.0, 15.0, 20.0],  # Sample 1: centered at 10
+                [10.0, 15.0, 20.0, 25.0, 30.0],  # Sample 2: centered at 20
+            ]
+        )
 
         # Same new distribution for all (for testing)
-        new_quantiles = torch.tensor([
-            [-5.0, 0.0, 5.0, 10.0, 15.0],
-            [-5.0, 0.0, 5.0, 10.0, 15.0],
-            [-5.0, 0.0, 5.0, 10.0, 15.0],
-        ])
+        new_quantiles = torch.tensor(
+            [
+                [-5.0, 0.0, 5.0, 10.0, 15.0],
+                [-5.0, 0.0, 5.0, 10.0, 15.0],
+                [-5.0, 0.0, 5.0, 10.0, 15.0],
+            ]
+        )
 
         # Clip each sample to its own old_quantiles
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         print("\n=== BATCH INDEPENDENCE TEST ===")
@@ -276,17 +284,21 @@ class TestPerQuantileBugFix:
                 expected_min = old_q - clip_delta
                 expected_max = old_q + clip_delta
 
-                assert clipped_q >= expected_min - 1e-5, \
-                    f"Sample {i}, Q_{j}: {clipped_q:.2f} < {expected_min:.2f}"
-                assert clipped_q <= expected_max + 1e-5, \
-                    f"Sample {i}, Q_{j}: {clipped_q:.2f} > {expected_max:.2f}"
+                assert (
+                    clipped_q >= expected_min - 1e-5
+                ), f"Sample {i}, Q_{j}: {clipped_q:.2f} < {expected_min:.2f}"
+                assert (
+                    clipped_q <= expected_max + 1e-5
+                ), f"Sample {i}, Q_{j}: {clipped_q:.2f} > {expected_max:.2f}"
 
         # Critical: Clipped results should be DIFFERENT across samples
         # (because they use different old_quantiles)
-        assert not torch.allclose(clipped[0], clipped[1]), \
-            "Sample 0 and 1 should have different clipped values"
-        assert not torch.allclose(clipped[1], clipped[2]), \
-            "Sample 1 and 2 should have different clipped values"
+        assert not torch.allclose(
+            clipped[0], clipped[1]
+        ), "Sample 0 and 1 should have different clipped values"
+        assert not torch.allclose(
+            clipped[1], clipped[2]
+        ), "Sample 1 and 2 should have different clipped values"
 
         print("\n✓ Batch samples use their own old_quantiles independently!")
 
@@ -299,14 +311,13 @@ class TestPerQuantileBugFix:
         clip_delta = 0.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # With clip_delta=0, result should equal old_quantiles exactly
-        assert torch.allclose(clipped, old_quantiles), \
-            f"With clip_delta=0, expected {old_quantiles}, got {clipped}"
+        assert torch.allclose(
+            clipped, old_quantiles
+        ), f"With clip_delta=0, expected {old_quantiles}, got {clipped}"
 
         print(f"\nEdge case (clip_delta=0):")
         print(f"  Old: {old_quantiles.squeeze().tolist()}")
@@ -323,14 +334,13 @@ class TestPerQuantileBugFix:
         clip_delta = 100.0  # Very large
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # With large clip_delta, differences are small enough to pass through
-        assert torch.allclose(clipped, new_quantiles), \
-            f"With large clip_delta, expected {new_quantiles}, got {clipped}"
+        assert torch.allclose(
+            clipped, new_quantiles
+        ), f"With large clip_delta, expected {new_quantiles}, got {clipped}"
 
         print(f"\nEdge case (large clip_delta={clip_delta}):")
         print(f"  Old: {old_quantiles.squeeze().tolist()}")
@@ -365,9 +375,7 @@ class TestPerQuantileRegressionIntegration:
 
         # Clip in raw space (CORRECT FIX)
         clipped_raw = old_quantiles_raw + torch.clamp(
-            new_quantiles_raw - old_quantiles_raw,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles_raw - old_quantiles_raw, min=-clip_delta, max=clip_delta
         )
 
         # Convert back to normalized space
@@ -386,8 +394,9 @@ class TestPerQuantileRegressionIntegration:
         for i in range(old_quantiles_raw.shape[1]):
             old_raw = old_quantiles_raw[0, i].item()
             clipped_raw_val = clipped_raw[0, i].item()
-            assert abs(clipped_raw_val - old_raw) <= clip_delta + 1e-5, \
-                f"Q_{i} violates raw space clip: |{clipped_raw_val:.2f} - {old_raw:.2f}| > {clip_delta}"
+            assert (
+                abs(clipped_raw_val - old_raw) <= clip_delta + 1e-5
+            ), f"Q_{i} violates raw space clip: |{clipped_raw_val:.2f} - {old_raw:.2f}| > {clip_delta}"
 
         # Verify normalized values are reasonable
         assert not torch.isnan(clipped_norm).any(), "Clipped normalized values should not be NaN"
@@ -405,9 +414,7 @@ class TestPerQuantileRegressionIntegration:
         clip_delta = 1000.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         print("\n=== EXTREME VALUES TEST ===")
@@ -424,8 +431,9 @@ class TestPerQuantileRegressionIntegration:
         for i in range(old_quantiles.shape[1]):
             old_q = old_quantiles[0, i].item()
             clipped_q = clipped[0, i].item()
-            assert abs(clipped_q - old_q) <= clip_delta + 1e-3, \
-                f"Q_{i} violates bounds with extreme values"
+            assert (
+                abs(clipped_q - old_q) <= clip_delta + 1e-3
+            ), f"Q_{i} violates bounds with extreme values"
 
         print("✓ Fix is numerically stable with extreme values!")
 
@@ -440,9 +448,18 @@ if __name__ == "__main__":
     integration_suite = TestPerQuantileRegressionIntegration()
 
     tests = [
-        ("Bug demonstration: old_mean vs old_quantiles", test_suite.test_bug_demonstration_old_mean_vs_old_quantiles),
-        ("Each quantile uses own reference", test_suite.test_per_quantile_each_quantile_uses_own_reference),
-        ("Shape preservation with realistic distribution", test_suite.test_shape_preservation_with_realistic_distribution),
+        (
+            "Bug demonstration: old_mean vs old_quantiles",
+            test_suite.test_bug_demonstration_old_mean_vs_old_quantiles,
+        ),
+        (
+            "Each quantile uses own reference",
+            test_suite.test_per_quantile_each_quantile_uses_own_reference,
+        ),
+        (
+            "Shape preservation with realistic distribution",
+            test_suite.test_shape_preservation_with_realistic_distribution,
+        ),
         ("Batch independence", test_suite.test_batch_independence_old_quantiles),
         ("Edge case: zero clip_delta", test_suite.test_edge_case_zero_clip_delta),
         ("Edge case: large clip_delta", test_suite.test_large_clip_delta_no_op),
@@ -469,6 +486,7 @@ if __name__ == "__main__":
             print(f"\n✗ ERROR: {name}")
             print(f"  Error: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 

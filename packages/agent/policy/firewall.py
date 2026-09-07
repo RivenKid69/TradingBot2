@@ -228,9 +228,7 @@ class PolicyFirewall:
             self._check_quantity(intent.target_quantity, result)
 
         # Check position limits
-        self._check_position_limit(
-            intent, current_position, account_equity, result
-        )
+        self._check_position_limit(intent, current_position, account_equity, result)
 
         # Check rate limits
         self._check_rate_limits(result)
@@ -260,44 +258,52 @@ class PolicyFirewall:
 
         # Check position size
         if new_config.max_position_size > local.max_position_size:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.HARD_CAP_EXCEEDED,
-                message="Cloud config exceeds local max_position_size",
-                field="max_position_size",
-                value=new_config.max_position_size,
-                limit=local.max_position_size,
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.HARD_CAP_EXCEEDED,
+                    message="Cloud config exceeds local max_position_size",
+                    field="max_position_size",
+                    value=new_config.max_position_size,
+                    limit=local.max_position_size,
+                )
+            )
 
         # Check daily loss
         if new_config.max_daily_loss > local.max_daily_loss:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.HARD_CAP_EXCEEDED,
-                message="Cloud config exceeds local max_daily_loss",
-                field="max_daily_loss",
-                value=new_config.max_daily_loss,
-                limit=local.max_daily_loss,
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.HARD_CAP_EXCEEDED,
+                    message="Cloud config exceeds local max_daily_loss",
+                    field="max_daily_loss",
+                    value=new_config.max_daily_loss,
+                    limit=local.max_daily_loss,
+                )
+            )
 
         # Check order size
         if new_config.max_order_size > local.max_order_size:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.HARD_CAP_EXCEEDED,
-                message="Cloud config exceeds local max_order_size",
-                field="max_order_size",
-                value=new_config.max_order_size,
-                limit=local.max_order_size,
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.HARD_CAP_EXCEEDED,
+                    message="Cloud config exceeds local max_order_size",
+                    field="max_order_size",
+                    value=new_config.max_order_size,
+                    limit=local.max_order_size,
+                )
+            )
 
         # Check if approval required
         if (
             change_class == ChangeClass.TRADING_IMPACTING
             and not self._local_policy.auto_approve_threshold > Decimal("0")
         ):
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.APPROVAL_REQUIRED,
-                message="Trading-impacting change requires local approval",
-                severity="warning",  # Not blocking, but needs approval
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.APPROVAL_REQUIRED,
+                    message="Trading-impacting change requires local approval",
+                    severity="warning",  # Not blocking, but needs approval
+                )
+            )
 
         return result
 
@@ -334,14 +340,16 @@ class PolicyFirewall:
 
         # Check daily loss limit
         if self._daily_pnl < -self._local_policy.max_daily_loss:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.RISK_LIMIT_EXCEEDED,
-                message="Daily loss limit exceeded - KILL SWITCH",
-                field="daily_pnl",
-                value=self._daily_pnl,
-                limit=self._local_policy.max_daily_loss,
-                severity="critical",
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.RISK_LIMIT_EXCEEDED,
+                    message="Daily loss limit exceeded - KILL SWITCH",
+                    field="daily_pnl",
+                    value=self._daily_pnl,
+                    limit=self._local_policy.max_daily_loss,
+                    severity="critical",
+                )
+            )
 
         return result
 
@@ -380,30 +388,32 @@ class PolicyFirewall:
             "max_position_size": str(min(local.max_position_size, cloud.max_position_size)),
             "max_daily_loss": str(min(local.max_daily_loss, cloud.max_daily_loss)),
             "max_order_size": str(min(local.max_order_size, cloud.max_order_size)),
-            "max_orders_per_minute": min(
-                local.max_orders_per_minute, cloud.max_orders_per_minute
-            ),
+            "max_orders_per_minute": min(local.max_orders_per_minute, cloud.max_orders_per_minute),
             "max_orders_per_day": min(local.max_orders_per_day, cloud.max_orders_per_day),
         }
 
     def _check_symbol(self, symbol: str, result: PolicyResult) -> None:
         """Check symbol restrictions."""
         if symbol in self._local_policy.prohibited_symbols:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.PROHIBITED_SYMBOL,
-                message=f"Symbol {symbol} is prohibited",
-                field="symbol",
-                value=symbol,
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.PROHIBITED_SYMBOL,
+                    message=f"Symbol {symbol} is prohibited",
+                    field="symbol",
+                    value=symbol,
+                )
+            )
 
         if self._local_policy.allowed_symbols is not None:
             if symbol not in self._local_policy.allowed_symbols:
-                result.add_violation(PolicyViolation(
-                    violation_type=ViolationType.PROHIBITED_SYMBOL,
-                    message=f"Symbol {symbol} not in allowed list",
-                    field="symbol",
-                    value=symbol,
-                ))
+                result.add_violation(
+                    PolicyViolation(
+                        violation_type=ViolationType.PROHIBITED_SYMBOL,
+                        message=f"Symbol {symbol} not in allowed list",
+                        field="symbol",
+                        value=symbol,
+                    )
+                )
 
     def _check_action(self, intent: OrderIntent, result: PolicyResult) -> None:
         """Check action restrictions."""
@@ -411,18 +421,22 @@ class PolicyFirewall:
 
         if not self._local_policy.allow_short:
             if intent.side == IntentSide.SHORT:
-                result.add_violation(PolicyViolation(
-                    violation_type=ViolationType.PROHIBITED_ACTION,
-                    message="Short selling is not allowed",
-                    field="side",
-                    value=intent.side.value,
-                ))
+                result.add_violation(
+                    PolicyViolation(
+                        violation_type=ViolationType.PROHIBITED_ACTION,
+                        message="Short selling is not allowed",
+                        field="side",
+                        value=intent.side.value,
+                    )
+                )
 
         if not self._local_policy.allow_live_trading:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.PROHIBITED_ACTION,
-                message="Live trading is disabled",
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.PROHIBITED_ACTION,
+                    message="Live trading is disabled",
+                )
+            )
 
     def _check_quantity(self, quantity: Decimal, result: PolicyResult) -> None:
         """Check quantity limits."""
@@ -430,13 +444,15 @@ class PolicyFirewall:
         max_order = Decimal(effective["max_order_size"])
 
         if quantity > max_order:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.RISK_LIMIT_EXCEEDED,
-                message="Order size exceeds limit",
-                field="quantity",
-                value=quantity,
-                limit=max_order,
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.RISK_LIMIT_EXCEEDED,
+                    message="Order size exceeds limit",
+                    field="quantity",
+                    value=quantity,
+                    limit=max_order,
+                )
+            )
 
     def _check_position_limit(
         self,
@@ -461,32 +477,38 @@ class PolicyFirewall:
             new_position = Decimal("0")
 
         if abs(new_position) > max_position:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.RISK_LIMIT_EXCEEDED,
-                message="Position would exceed limit",
-                field="position",
-                value=abs(new_position),
-                limit=max_position,
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.RISK_LIMIT_EXCEEDED,
+                    message="Position would exceed limit",
+                    field="position",
+                    value=abs(new_position),
+                    limit=max_position,
+                )
+            )
 
     def _check_rate_limits(self, result: PolicyResult) -> None:
         """Check rate limits."""
         effective = self._effective_config
 
         if self._orders_this_minute >= effective["max_orders_per_minute"]:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.RATE_LIMIT_EXCEEDED,
-                message="Orders per minute limit exceeded",
-                field="orders_per_minute",
-                value=self._orders_this_minute,
-                limit=effective["max_orders_per_minute"],
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.RATE_LIMIT_EXCEEDED,
+                    message="Orders per minute limit exceeded",
+                    field="orders_per_minute",
+                    value=self._orders_this_minute,
+                    limit=effective["max_orders_per_minute"],
+                )
+            )
 
         if self._orders_today >= effective["max_orders_per_day"]:
-            result.add_violation(PolicyViolation(
-                violation_type=ViolationType.RATE_LIMIT_EXCEEDED,
-                message="Orders per day limit exceeded",
-                field="orders_per_day",
-                value=self._orders_today,
-                limit=effective["max_orders_per_day"],
-            ))
+            result.add_violation(
+                PolicyViolation(
+                    violation_type=ViolationType.RATE_LIMIT_EXCEEDED,
+                    message="Orders per day limit exceeded",
+                    field="orders_per_day",
+                    value=self._orders_today,
+                    limit=effective["max_orders_per_day"],
+                )
+            )

@@ -236,7 +236,6 @@ __all__: list[str] = [
     "create_client_notification_service",
     "create_client_notification_system",
     "get_notification_template",
-
     # -------------------------------------------------------------------------
     # Incident Classification (Article 18)
     # -------------------------------------------------------------------------
@@ -267,7 +266,6 @@ __all__: list[str] = [
     "create_economic_impact_assessment",
     "create_data_loss_assessment",
     "create_critical_service_assessment",
-
     # -------------------------------------------------------------------------
     # Incident Reporting (Article 19) - Export Templates
     # -------------------------------------------------------------------------
@@ -287,7 +285,6 @@ __all__: list[str] = [
     "create_incident_reporter",
     "get_report_deadlines",
     "get_report_types",
-
     # -------------------------------------------------------------------------
     # Cyber Threat Notification (Article 19(4))
     # -------------------------------------------------------------------------
@@ -305,7 +302,6 @@ __all__: list[str] = [
     "create_cyber_threat_notification_service",
     "get_threat_categories",
     "get_threat_severities",
-
     # -------------------------------------------------------------------------
     # Crisis Communication (Article 14)
     # -------------------------------------------------------------------------

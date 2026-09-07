@@ -369,7 +369,9 @@ class TestKillSwitchExecutor:
             ),
         ]
         broker._close_results = [
-            OrderResult(success=True, client_order_id="client-close-1", broker_order_id="broker-close-1"),
+            OrderResult(
+                success=True, client_order_id="client-close-1", broker_order_id="broker-close-1"
+            ),
         ]
 
         config = KillSwitchExecutorConfig(flatten_on_trigger=True)
@@ -612,7 +614,9 @@ class TestKillSwitchExecutorRetry:
                     total_failed=1,
                     results=[
                         CancelResult(client_order_id="client-1", success=True),
-                        CancelResult(client_order_id="client-2", success=False, error_message="Failed"),
+                        CancelResult(
+                            client_order_id="client-2", success=False, error_message="Failed"
+                        ),
                     ],
                     errors=["Order 2 failed"],
                 )
@@ -677,7 +681,11 @@ class TestKillSwitchExecutorRetry:
                 total_requested=1,
                 total_cancelled=0,
                 total_failed=1,
-                results=[CancelResult(client_order_id="client-1", success=False, error_message="Always fails")],
+                results=[
+                    CancelResult(
+                        client_order_id="client-1", success=False, error_message="Always fails"
+                    )
+                ],
                 errors=["Always fails"],
             )
 

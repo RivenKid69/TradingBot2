@@ -36,31 +36,67 @@ client = TestClient(api, headers={"X-API-Key": app_module.API_TOKEN})
 # triggerLiteFeatures/Targets/NoTrade/Splits/FinalBuild), with the short
 # lookbacks preset so ~200 hourly bars are enough.
 LITE_CHAIN = [
-    ("run_features", {
-        "in": "data/prices.parquet", "out": "data/features.parquet",
-        "lookbacks": "60,120", "rsi_period": 14, "price_col": "close",
-        "yang_zhang_windows": "120", "cvd_windows": "120",
-        "parkinson_windows": "120", "garch_windows": "240",
-        "taker_buy_ratio_windows": "120", "taker_buy_ratio_momentum": "60",
-        "bar_duration_minutes": 60,
-    }, "data/features.parquet"),
-    ("run_targets", {
-        "in": "data/features.parquet", "out": "data/targets.parquet",
-        "fees_bps_total": 10, "threshold": 0.0003, "horizon_bars": 5,
-    }, "data/targets.parquet"),
-    ("run_no_trade", {
-        "data": "data/targets.parquet", "out": "data/targets_masked.parquet",
-        "timeframe": "1h", "config": "configs/sandbox.yaml",
-    }, "data/targets_masked.parquet"),
-    ("run_splits", {
-        "data": "data/targets.parquet", "n_splits": 3, "train_size_pct": 80,
-        "config": "configs/sandbox.yaml",
-    }, "data/targets_wf.parquet"),
-    ("run_training_table", {
-        "base": "data/features.parquet", "prices": "data/prices.parquet",
-        "out": "data/training_table.parquet", "price_col": "close",
-        "decision_delay_ms": 8000, "label_horizon_ms": 7200000,
-    }, "data/training_table.parquet"),
+    (
+        "run_features",
+        {
+            "in": "data/prices.parquet",
+            "out": "data/features.parquet",
+            "lookbacks": "60,120",
+            "rsi_period": 14,
+            "price_col": "close",
+            "yang_zhang_windows": "120",
+            "cvd_windows": "120",
+            "parkinson_windows": "120",
+            "garch_windows": "240",
+            "taker_buy_ratio_windows": "120",
+            "taker_buy_ratio_momentum": "60",
+            "bar_duration_minutes": 60,
+        },
+        "data/features.parquet",
+    ),
+    (
+        "run_targets",
+        {
+            "in": "data/features.parquet",
+            "out": "data/targets.parquet",
+            "fees_bps_total": 10,
+            "threshold": 0.0003,
+            "horizon_bars": 5,
+        },
+        "data/targets.parquet",
+    ),
+    (
+        "run_no_trade",
+        {
+            "data": "data/targets.parquet",
+            "out": "data/targets_masked.parquet",
+            "timeframe": "1h",
+            "config": "configs/sandbox.yaml",
+        },
+        "data/targets_masked.parquet",
+    ),
+    (
+        "run_splits",
+        {
+            "data": "data/targets.parquet",
+            "n_splits": 3,
+            "train_size_pct": 80,
+            "config": "configs/sandbox.yaml",
+        },
+        "data/targets_wf.parquet",
+    ),
+    (
+        "run_training_table",
+        {
+            "base": "data/features.parquet",
+            "prices": "data/prices.parquet",
+            "out": "data/training_table.parquet",
+            "price_col": "close",
+            "decision_delay_ms": 8000,
+            "label_horizon_ms": 7200000,
+        },
+        "data/training_table.parquet",
+    ),
 ]
 
 
@@ -86,16 +122,18 @@ def _seed_prices(data_root: Path) -> None:
     n = 240
     ts = 1_700_000_000_000 + np.arange(n) * 3_600_000  # hourly bars
     close = 100.0 * np.exp(np.cumsum(rng.normal(0, 0.01, n)))
-    df = pd.DataFrame({
-        "ts_ms": ts,
-        "symbol": "BTCUSDT",
-        "open": close * (1 + rng.normal(0, 0.001, n)),
-        "high": close * (1 + np.abs(rng.normal(0, 0.003, n))),
-        "low": close * (1 - np.abs(rng.normal(0, 0.003, n))),
-        "close": close,
-        "price": close,
-        "volume": rng.uniform(10, 100, n),
-    })
+    df = pd.DataFrame(
+        {
+            "ts_ms": ts,
+            "symbol": "BTCUSDT",
+            "open": close * (1 + rng.normal(0, 0.001, n)),
+            "high": close * (1 + np.abs(rng.normal(0, 0.003, n))),
+            "low": close * (1 - np.abs(rng.normal(0, 0.003, n))),
+            "close": close,
+            "price": close,
+            "volume": rng.uniform(10, 100, n),
+        }
+    )
     (data_root / "data").mkdir(parents=True, exist_ok=True)
     df.to_parquet(data_root / "data" / "prices.parquet", index=False)
 
@@ -112,7 +150,9 @@ def test_lite_data_chain_runs_end_to_end(monkeypatch, tmp_path):
     # test replicates that.
     (data_root / "configs").mkdir()
     for src in (ROOT / "configs").glob("*.yaml"):
-        (data_root / "configs" / src.name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        (data_root / "configs" / src.name).write_text(
+            src.read_text(encoding="utf-8"), encoding="utf-8"
+        )
 
     env = worker_environment()
     # Production shape: the desktop server's CWD is the data root, so script
@@ -123,8 +163,12 @@ def test_lite_data_chain_runs_end_to_end(monkeypatch, tmp_path):
         # Source mode with a separate data root (audit L2-016): the script path
         # must resolve against the code root even though CWD is the data dir.
         proc = subprocess.run(
-            resolved, cwd=str(data_root), env=env,
-            capture_output=True, text=True, timeout=600,
+            resolved,
+            cwd=str(data_root),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=600,
         )
         assert proc.returncode == 0, (
             f"{job} failed (exit {proc.returncode})\n"

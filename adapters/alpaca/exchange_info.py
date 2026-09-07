@@ -55,9 +55,7 @@ class AlpacaExchangeInfoAdapter(ExchangeInfoAdapter):
             try:
                 from alpaca.trading.client import TradingClient
             except ImportError:
-                raise ImportError(
-                    "Alpaca SDK not installed. Install with: pip install alpaca-py"
-                )
+                raise ImportError("Alpaca SDK not installed. Install with: pip install alpaca-py")
 
             api_key = self._config.get("api_key")
             api_secret = self._config.get("api_secret")

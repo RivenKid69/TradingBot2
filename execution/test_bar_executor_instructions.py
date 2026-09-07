@@ -37,16 +37,12 @@ def make_bar(ts: int = 1, price: str = "100") -> Bar:
 def test_resolve_target_weight_modes(base_state: PortfolioState) -> None:
     executor = BarExecutor(default_equity_usd=base_state.equity_usd)
 
-    target, mode, delta = executor._resolve_target_weight(
-        base_state, {"target_weight": 1.5}
-    )
+    target, mode, delta = executor._resolve_target_weight(base_state, {"target_weight": 1.5})
     assert target == pytest.approx(1.0)
     assert mode == "target"
     assert delta == pytest.approx(0.8)
 
-    target, mode, delta = executor._resolve_target_weight(
-        base_state, {"delta_weight": -0.4}
-    )
+    target, mode, delta = executor._resolve_target_weight(base_state, {"delta_weight": -0.4})
     assert target == pytest.approx(0.0)
     assert mode == "delta"
     assert delta == pytest.approx(-0.2)
@@ -84,7 +80,9 @@ def test_turnover_caps_and_registration(base_state: PortfolioState) -> None:
 
     next_state = base_state.with_bar(make_bar(ts=2, price="105"), Decimal("105"))
     executor._register_turnover(base_state.symbol, 2, 10.0)
-    refreshed = executor._evaluate_turnover_caps(next_state.symbol, next_state, make_bar(ts=2, price="105"))
+    refreshed = executor._evaluate_turnover_caps(
+        next_state.symbol, next_state, make_bar(ts=2, price="105")
+    )
     assert refreshed["symbol_remaining"] == pytest.approx(90.0)
     assert refreshed["portfolio_remaining"] == pytest.approx(140.0)
 

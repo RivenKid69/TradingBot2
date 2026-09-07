@@ -25,14 +25,21 @@ from typing import Any, Dict, Mapping, Optional, Callable, Sequence, List
 
 from core_models import Order, OrderIntent, Side, OrderType, TimeInForce
 from core_strategy import Decision
+
 try:
     from action_proto import ActionProto, ActionType
 except Exception:
     ActionProto = None  # type: ignore
+
     class ActionType:  # minimal fallback
-        HOLD = 0; MARKET = 1; LIMIT = 2; CANCEL_ALL = 3
+        HOLD = 0
+        MARKET = 1
+        LIMIT = 2
+        CANCEL_ALL = 3
+
 
 DecimalLike = Decimal | float | int | str
+
 
 @dataclass(frozen=True)
 class OrderContext:
@@ -46,11 +53,14 @@ class OrderContext:
     client_tag: Optional[str] = None
     round_qty_fn: Optional[Callable[[Decimal], Decimal]] = None
 
+
 def _to_dec(x: DecimalLike) -> Decimal:
     return Decimal(str(x))
 
+
 def _side_from_volume_frac(volume_frac: float) -> Side:
     return Side.BUY if float(volume_frac) > 0 else Side.SELL
+
 
 def _qty_from_volume_frac(volume_frac: float, max_abs_base: DecimalLike) -> Decimal:
     v = abs(float(volume_frac))
@@ -58,13 +68,17 @@ def _qty_from_volume_frac(volume_frac: float, max_abs_base: DecimalLike) -> Deci
     q = Decimal(str(v * m))
     return q
 
-def _price_from_offset(ref_price: Optional[DecimalLike], offset_ticks: int, tick_size: Optional[DecimalLike]) -> Optional[Decimal]:
+
+def _price_from_offset(
+    ref_price: Optional[DecimalLike], offset_ticks: int, tick_size: Optional[DecimalLike]
+) -> Optional[Decimal]:
     if ref_price is None:
         return None
     if offset_ticks == 0:
         return _to_dec(ref_price)
     ts = Decimal(str(tick_size)) if tick_size is not None else Decimal("0")
     return _to_dec(ref_price) + (ts * Decimal(int(offset_ticks)))
+
 
 def actionproto_to_order(action: Any, ctx: OrderContext) -> Optional[Order]:
     """
@@ -111,7 +125,7 @@ def actionproto_to_order(action: Any, ctx: OrderContext) -> Optional[Order]:
             price=None,
             time_in_force=tif,
             client_order_id=(ctx.client_tag or ""),
-            meta={"source": "ActionProto"}
+            meta={"source": "ActionProto"},
         )
     # LIMIT
     price = _price_from_offset(ctx.ref_price, int(ap["price_offset_ticks"]), ctx.tick_size)
@@ -124,8 +138,9 @@ def actionproto_to_order(action: Any, ctx: OrderContext) -> Optional[Order]:
         price=price,
         time_in_force=tif,
         client_order_id=(ctx.client_tag or ""),
-        meta={"source": "ActionProto"}
+        meta={"source": "ActionProto"},
     )
+
 
 def legacy_decision_to_order(decision: Mapping[str, Any], ctx: OrderContext) -> Optional[Order]:
     """
@@ -144,22 +159,35 @@ def legacy_decision_to_order(decision: Mapping[str, Any], ctx: OrderContext) -> 
     tif = TimeInForce(str(decision.get("tif", "GTC")))
     if kind == "MARKET":
         return Order(
-            ts=ctx.ts_ms, symbol=ctx.symbol, side=side,
-            order_type=OrderType.MARKET, quantity=qty, price=None,
-            time_in_force=tif, client_order_id=(ctx.client_tag or ""),
-            meta={"source": "legacy_decision"}
+            ts=ctx.ts_ms,
+            symbol=ctx.symbol,
+            side=side,
+            order_type=OrderType.MARKET,
+            quantity=qty,
+            price=None,
+            time_in_force=tif,
+            client_order_id=(ctx.client_tag or ""),
+            meta={"source": "legacy_decision"},
         )
     # LIMIT
-    price = _price_from_offset(ctx.ref_price, int(decision.get("price_offset_ticks", 0)), ctx.tick_size)
+    price = _price_from_offset(
+        ctx.ref_price, int(decision.get("price_offset_ticks", 0)), ctx.tick_size
+    )
     return Order(
-        ts=ctx.ts_ms, symbol=ctx.symbol, side=side,
-        order_type=OrderType.LIMIT, quantity=qty, price=price,
-        time_in_force=tif, client_order_id=(ctx.client_tag or ""),
-        meta={"source": "legacy_decision"}
+        ts=ctx.ts_ms,
+        symbol=ctx.symbol,
+        side=side,
+        order_type=OrderType.LIMIT,
+        quantity=qty,
+        price=price,
+        time_in_force=tif,
+        client_order_id=(ctx.client_tag or ""),
+        meta={"source": "legacy_decision"},
     )
 
 
 # --- Новые конвертеры: ActionProto/legacy Decision -> OrderIntent и далее -> Order ---
+
 
 def actionproto_to_order_intent(action: Any, ctx: OrderContext) -> Optional[OrderIntent]:
     """
@@ -203,7 +231,9 @@ def actionproto_to_order_intent(action: Any, ctx: OrderContext) -> Optional[Orde
     )
 
 
-def legacy_decision_to_order_intent(decision: Mapping[str, Any], ctx: OrderContext) -> Optional[OrderIntent]:
+def legacy_decision_to_order_intent(
+    decision: Mapping[str, Any], ctx: OrderContext
+) -> Optional[OrderIntent]:
     """
     Поддержка старого формата решений сим-адаптера → OrderIntent.
     {"kind": "MARKET"|"LIMIT"|"HOLD", "side": "BUY"|"SELL", "volume_frac": float, "price_offset_ticks": int?}

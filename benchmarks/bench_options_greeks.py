@@ -132,7 +132,9 @@ def print_results(results: List[dict], title: str = "OPTIONS GREEKS BENCHMARKS")
     print("-" * 100)
 
     for r in results:
-        print(f"{r['name']:<45} {r['mean_us']:<12.2f} {r['p50_us']:<12.2f} {r['p95_us']:<12.2f} {r['p99_us']:<12.2f}")
+        print(
+            f"{r['name']:<45} {r['mean_us']:<12.2f} {r['p50_us']:<12.2f} {r['p95_us']:<12.2f} {r['p99_us']:<12.2f}"
+        )
 
     print("=" * 100)
 
@@ -166,50 +168,66 @@ class BenchmarkScalarGreeks:
 
     def bench_delta(self) -> dict:
         """Benchmark Delta calculation (target: <5μs)."""
+
         def func():
             compute_delta(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL)
+
         return run_benchmark("delta_scalar", func, iterations=20000)
 
     def bench_gamma(self) -> dict:
         """Benchmark Gamma calculation (target: <5μs)."""
+
         def func():
             compute_gamma(SPOT, STRIKE, T, R, SIGMA, Q)
+
         return run_benchmark("gamma_scalar", func, iterations=20000)
 
     def bench_vega(self) -> dict:
         """Benchmark Vega calculation (target: <5μs)."""
+
         def func():
             compute_vega(SPOT, STRIKE, T, R, SIGMA, Q)
+
         return run_benchmark("vega_scalar", func, iterations=20000)
 
     def bench_theta(self) -> dict:
         """Benchmark Theta calculation (target: <5μs)."""
+
         def func():
             compute_theta(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL)
+
         return run_benchmark("theta_scalar", func, iterations=20000)
 
     def bench_rho(self) -> dict:
         """Benchmark Rho calculation (target: <5μs)."""
+
         def func():
             compute_rho(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL)
+
         return run_benchmark("rho_scalar", func, iterations=20000)
 
     def bench_vanna(self) -> dict:
         """Benchmark Vanna calculation (target: <5μs)."""
+
         def func():
             compute_vanna(SPOT, STRIKE, T, R, SIGMA, Q)
+
         return run_benchmark("vanna_scalar", func, iterations=20000)
 
     def bench_volga(self) -> dict:
         """Benchmark Volga calculation (target: <5μs)."""
+
         def func():
             compute_volga(SPOT, STRIKE, T, R, SIGMA, Q)
+
         return run_benchmark("volga_scalar", func, iterations=20000)
 
     def bench_all_greeks(self) -> dict:
         """Benchmark all 12 Greeks together (target: <50μs)."""
+
         def func():
             compute_all_greeks(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL)
+
         return run_benchmark("all_12_greeks_scalar", func, iterations=10000)
 
 
@@ -230,21 +248,29 @@ class BenchmarkVectorizedGreeks:
     def bench_delta_vectorized_1k(self) -> dict:
         """Benchmark vectorized Delta for 1000 options (target: <500μs)."""
         self.setup(1000)
+
         def func():
             compute_delta_vectorized(
-                self.spots, self.strikes, self.times,
-                self.rates, self.vols, self.dividends, self.option_types
+                self.spots,
+                self.strikes,
+                self.times,
+                self.rates,
+                self.vols,
+                self.dividends,
+                self.option_types,
             )
+
         return run_benchmark("delta_vectorized_1k", func, iterations=2000, warmup=200)
 
     def bench_gamma_vectorized_1k(self) -> dict:
         """Benchmark vectorized Gamma for 1000 options."""
         self.setup(1000)
+
         def func():
             compute_gamma_vectorized(
-                self.spots, self.strikes, self.times,
-                self.rates, self.vols, self.dividends
+                self.spots, self.strikes, self.times, self.rates, self.vols, self.dividends
             )
+
         return run_benchmark("gamma_vectorized_1k", func, iterations=2000, warmup=200)
 
     def bench_all_greeks_vectorized_1k(self) -> dict:
@@ -259,8 +285,10 @@ class BenchmarkVectorizedGreeks:
             dividend_yields=self.dividends,
             option_types=self.option_types,
         )
+
         def func():
             compute_greeks_vectorized(inputs)
+
         return run_benchmark("all_greeks_vectorized_1k", func, iterations=1000, warmup=100)
 
     def bench_all_greeks_vectorized_10k(self) -> dict:
@@ -275,8 +303,10 @@ class BenchmarkVectorizedGreeks:
             dividend_yields=self.dividends,
             option_types=self.option_types,
         )
+
         def func():
             compute_greeks_vectorized(inputs)
+
         return run_benchmark("all_greeks_vectorized_10k", func, iterations=500, warmup=50)
 
 
@@ -285,32 +315,42 @@ class BenchmarkPricing:
 
     def bench_black_scholes(self) -> dict:
         """Benchmark Black-Scholes pricing (target: <5μs)."""
+
         def func():
             black_scholes_price(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL)
+
         return run_benchmark("black_scholes_price", func, iterations=20000)
 
     def bench_leisen_reimer_51(self) -> dict:
         """Benchmark Leisen-Reimer with 51 steps (target: <100μs)."""
+
         def func():
             leisen_reimer_price(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL, n_steps=51)
+
         return run_benchmark("leisen_reimer_51_steps", func, iterations=5000)
 
     def bench_leisen_reimer_201(self) -> dict:
         """Benchmark Leisen-Reimer with 201 steps (target: <500μs)."""
+
         def func():
             leisen_reimer_price(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL, n_steps=201)
+
         return run_benchmark("leisen_reimer_201_steps", func, iterations=2000)
 
     def bench_crr_binomial_51(self) -> dict:
         """Benchmark CRR binomial with 51 steps."""
+
         def func():
             crr_binomial_price(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL, n_steps=51)
+
         return run_benchmark("crr_binomial_51_steps", func, iterations=5000)
 
     def bench_crr_binomial_201(self) -> dict:
         """Benchmark CRR binomial with 201 steps (target: <500μs)."""
+
         def func():
             crr_binomial_price(SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL, n_steps=201)
+
         return run_benchmark("crr_binomial_201_steps", func, iterations=2000)
 
     def bench_jump_diffusion(self) -> dict:
@@ -320,21 +360,30 @@ class BenchmarkPricing:
             jump_mean=-0.05,
             jump_std=0.10,
         )
+
         def func():
             jump_diffusion_price(
-                SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL,
-                jump_params, max_jumps=10
+                SPOT, STRIKE, T, R, SIGMA, Q, OptionType.CALL, jump_params, max_jumps=10
             )
+
         return run_benchmark("jump_diffusion_10_jumps", func, iterations=5000)
 
     def bench_american_put_binomial(self) -> dict:
         """Benchmark American put pricing with binomial (target: <500μs)."""
+
         def func():
             crr_binomial_price(
-                SPOT, STRIKE, T, R, SIGMA, Q,
-                OptionType.PUT, n_steps=201,
-                exercise_style=ExerciseStyle.AMERICAN
+                SPOT,
+                STRIKE,
+                T,
+                R,
+                SIGMA,
+                Q,
+                OptionType.PUT,
+                n_steps=201,
+                exercise_style=ExerciseStyle.AMERICAN,
             )
+
         return run_benchmark("american_put_binomial_201", func, iterations=2000)
 
 
@@ -351,37 +400,37 @@ class BenchmarkIVCalculation:
     def bench_iv_newton(self) -> dict:
         """Benchmark Newton-Raphson IV solver (target: <50μs)."""
         self.setup()
+
         def func():
-            compute_iv_newton(
-                self.atm_price, SPOT, STRIKE, T, R, Q, OptionType.CALL
-            )
+            compute_iv_newton(self.atm_price, SPOT, STRIKE, T, R, Q, OptionType.CALL)
+
         return run_benchmark("iv_newton_atm", func, iterations=10000)
 
     def bench_iv_brent(self) -> dict:
         """Benchmark Brent's method IV solver (target: <100μs)."""
         self.setup()
+
         def func():
-            compute_iv_brent(
-                self.atm_price, SPOT, STRIKE, T, R, Q, OptionType.CALL
-            )
+            compute_iv_brent(self.atm_price, SPOT, STRIKE, T, R, Q, OptionType.CALL)
+
         return run_benchmark("iv_brent_atm", func, iterations=10000)
 
     def bench_iv_hybrid(self) -> dict:
         """Benchmark hybrid IV solver (target: <100μs)."""
         self.setup()
+
         def func():
-            compute_iv(
-                self.atm_price, SPOT, STRIKE, T, R, Q, OptionType.CALL
-            )
+            compute_iv(self.atm_price, SPOT, STRIKE, T, R, Q, OptionType.CALL)
+
         return run_benchmark("iv_hybrid_atm", func, iterations=10000)
 
     def bench_iv_otm_put(self) -> dict:
         """Benchmark IV for OTM put (harder case)."""
         self.setup()
+
         def func():
-            compute_iv(
-                self.otm_price, SPOT, OTM_STRIKE, T, R, Q, OptionType.PUT
-            )
+            compute_iv(self.otm_price, SPOT, OTM_STRIKE, T, R, Q, OptionType.PUT)
+
         return run_benchmark("iv_hybrid_otm_put", func, iterations=10000)
 
     def bench_iv_solver_batch(self) -> dict:
@@ -408,7 +457,7 @@ class BenchmarkJumpCalibration:
         """Setup synthetic returns with jumps."""
         np.random.seed(42)
         n = 1000
-        dt = 1/252  # Daily
+        dt = 1 / 252  # Daily
         sigma = 0.20
         lambda_j = 3.0  # 3 jumps per year
         mu_j = -0.02
@@ -429,24 +478,30 @@ class BenchmarkJumpCalibration:
     def bench_calibrate_moments(self) -> dict:
         """Benchmark moment-based calibration (target: <10ms)."""
         self.setup()
-        dt = 1/252
+        dt = 1 / 252
+
         def func():
             calibrate_from_moments(self.returns, dt)
+
         return run_benchmark("calibrate_moments", func, iterations=1000, warmup=100)
 
     def bench_calibrate_mle(self) -> dict:
         """Benchmark MLE calibration (target: <100ms)."""
         self.setup()
-        dt = 1/252
+        dt = 1 / 252
+
         def func():
             calibrate_from_mle(self.returns, dt, max_iterations=50)
+
         return run_benchmark("calibrate_mle", func, iterations=100, warmup=10)
 
     def bench_detect_jumps(self) -> dict:
         """Benchmark jump detection (target: <1ms)."""
         self.setup()
+
         def func():
             detect_jumps(self.returns, threshold_sigmas=3.0)
+
         return run_benchmark("detect_jumps", func, iterations=5000, warmup=500)
 
 
@@ -466,21 +521,23 @@ class BenchmarkDiscreteDividends:
     def bench_escrowed_dividends(self) -> dict:
         """Benchmark escrowed dividend model (target: <10μs)."""
         self.setup()
+
         def func():
             price_with_escrowed_dividends(
-                SPOT, STRIKE, self.t, R, SIGMA, OptionType.CALL,
-                self.dividends
+                SPOT, STRIKE, self.t, R, SIGMA, OptionType.CALL, self.dividends
             )
+
         return run_benchmark("escrowed_dividends", func, iterations=10000)
 
     def bench_american_with_dividends(self) -> dict:
         """Benchmark American option with dividends (target: <1ms)."""
         self.setup()
+
         def func():
             price_american_with_dividends(
-                SPOT, STRIKE, self.t, R, SIGMA, OptionType.PUT,
-                self.dividends, n_steps=101
+                SPOT, STRIKE, self.t, R, SIGMA, OptionType.PUT, self.dividends, n_steps=101
             )
+
         return run_benchmark("american_put_with_dividends", func, iterations=1000, warmup=100)
 
 
@@ -489,51 +546,80 @@ class BenchmarkLongstaffSchwartz:
 
     def bench_ls_1k_paths(self) -> dict:
         """Benchmark LS with 1000 paths (target: <100ms)."""
+
         def func():
             longstaff_schwartz(
-                spot=SPOT, strike=STRIKE, time_to_expiry=T,
-                rate=R, volatility=SIGMA, dividend_yield=Q,
+                spot=SPOT,
+                strike=STRIKE,
+                time_to_expiry=T,
+                rate=R,
+                volatility=SIGMA,
+                dividend_yield=Q,
                 option_type=OptionType.PUT,
-                n_paths=1000, n_steps=50,
-                basis=BasisFunctions.LAGUERRE, degree=3,
+                n_paths=1000,
+                n_steps=50,
+                basis=BasisFunctions.LAGUERRE,
+                degree=3,
                 variance_reduction=VarianceReduction.ANTITHETIC,
                 seed=42,
             )
+
         return run_benchmark("ls_1k_paths_50_steps", func, iterations=50, warmup=5)
 
     def bench_ls_10k_paths(self) -> dict:
         """Benchmark LS with 10000 paths (target: <1s)."""
+
         def func():
             longstaff_schwartz(
-                spot=SPOT, strike=STRIKE, time_to_expiry=T,
-                rate=R, volatility=SIGMA, dividend_yield=Q,
+                spot=SPOT,
+                strike=STRIKE,
+                time_to_expiry=T,
+                rate=R,
+                volatility=SIGMA,
+                dividend_yield=Q,
                 option_type=OptionType.PUT,
-                n_paths=10000, n_steps=50,
-                basis=BasisFunctions.LAGUERRE, degree=3,
+                n_paths=10000,
+                n_steps=50,
+                basis=BasisFunctions.LAGUERRE,
+                degree=3,
                 variance_reduction=VarianceReduction.ANTITHETIC,
                 seed=42,
             )
+
         return run_benchmark("ls_10k_paths_50_steps", func, iterations=10, warmup=2)
 
     def bench_barone_adesi_whaley(self) -> dict:
         """Benchmark Barone-Adesi Whaley approximation (target: <50μs)."""
+
         def func():
             barone_adesi_whaley(
-                spot=SPOT, strike=STRIKE, time_to_expiry=T,
-                rate=R, volatility=SIGMA, dividend_yield=Q,
-                option_type=OptionType.PUT
+                spot=SPOT,
+                strike=STRIKE,
+                time_to_expiry=T,
+                rate=R,
+                volatility=SIGMA,
+                dividend_yield=Q,
+                option_type=OptionType.PUT,
             )
+
         return run_benchmark("barone_adesi_whaley", func, iterations=10000)
 
     def bench_early_exercise_premium(self) -> dict:
         """Benchmark early exercise premium calculation."""
+
         def func():
             compute_early_exercise_premium(
-                spot=SPOT, strike=STRIKE, time_to_expiry=T,
-                rate=R, volatility=SIGMA, dividend_yield=Q,
+                spot=SPOT,
+                strike=STRIKE,
+                time_to_expiry=T,
+                rate=R,
+                volatility=SIGMA,
+                dividend_yield=Q,
                 option_type=OptionType.PUT,
-                n_paths=500, n_steps=25
+                n_paths=500,
+                n_steps=25,
             )
+
         return run_benchmark("early_exercise_premium", func, iterations=50, warmup=5)
 
 
@@ -615,12 +701,10 @@ def check_targets(results: List[dict]) -> bool:
         "vanna_scalar": 10.0,
         "volga_scalar": 10.0,
         "all_12_greeks_scalar": 100.0,  # <50μs target, 100μs CI allowance
-
         # Vectorized Greeks
         "delta_vectorized_1k": 1000.0,  # <500μs target
         "all_greeks_vectorized_1k": 2000.0,  # <1ms target
         "all_greeks_vectorized_10k": 20000.0,  # <10ms target
-
         # Pricing
         "black_scholes_price": 10.0,  # <5μs target
         "leisen_reimer_51_steps": 200.0,  # <100μs target
@@ -628,21 +712,17 @@ def check_targets(results: List[dict]) -> bool:
         "crr_binomial_201_steps": 1000.0,  # <500μs target
         "jump_diffusion_10_jumps": 200.0,  # <100μs target
         "american_put_binomial_201": 1000.0,  # <500μs target
-
         # IV Calculation
         "iv_newton_atm": 100.0,  # <50μs target
         "iv_brent_atm": 200.0,  # <100μs target
         "iv_hybrid_atm": 200.0,  # <100μs target
         "iv_solver_batch_100": 20000.0,  # <10ms target
-
         # Jump Calibration
         "calibrate_moments": 20000.0,  # <10ms target
         "detect_jumps": 2000.0,  # <1ms target
-
         # Dividends
         "escrowed_dividends": 50.0,  # <10μs target
         "american_put_with_dividends": 5000.0,  # <1ms target
-
         # Longstaff-Schwartz
         "barone_adesi_whaley": 100.0,  # <50μs target
         "ls_1k_paths_50_steps": 200000.0,  # <100ms target
@@ -657,7 +737,9 @@ def check_targets(results: List[dict]) -> bool:
             target = targets[r["name"]]
             passed = r["p95_us"] < target
             status = "✓ PASS" if passed else "✗ FAIL"
-            print(f"  {r['name']:<35} P95={r['p95_us']:>10.2f}μs  target<{target:>10.0f}μs  [{status}]")
+            print(
+                f"  {r['name']:<35} P95={r['p95_us']:>10.2f}μs  target<{target:>10.0f}μs  [{status}]"
+            )
             if not passed:
                 all_passed = False
 

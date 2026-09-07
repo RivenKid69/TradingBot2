@@ -49,23 +49,26 @@ from data_loader_multi_asset import (
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def sample_stock_df():
     """Create a sample stock DataFrame with OHLCV data."""
     n_rows = 100
     timestamps = np.arange(1700000000, 1700000000 + n_rows * 14400, 14400)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "AAPL",
-        "open": np.random.uniform(150, 160, n_rows),
-        "high": np.random.uniform(160, 165, n_rows),
-        "low": np.random.uniform(145, 150, n_rows),
-        "close": np.random.uniform(150, 160, n_rows),
-        "volume": np.random.uniform(1e6, 5e6, n_rows),
-        "quote_asset_volume": np.random.uniform(1e8, 5e8, n_rows),
-        "number_of_trades": np.random.randint(1000, 5000, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "AAPL",
+            "open": np.random.uniform(150, 160, n_rows),
+            "high": np.random.uniform(160, 165, n_rows),
+            "low": np.random.uniform(145, 150, n_rows),
+            "close": np.random.uniform(150, 160, n_rows),
+            "volume": np.random.uniform(1e6, 5e6, n_rows),
+            "quote_asset_volume": np.random.uniform(1e8, 5e8, n_rows),
+            "number_of_trades": np.random.randint(1000, 5000, n_rows),
+        }
+    )
     # Fix OHLC consistency
     df["high"] = df[["open", "high", "low", "close"]].max(axis=1) + 1
     df["low"] = df[["open", "high", "low", "close"]].min(axis=1) - 1
@@ -78,17 +81,19 @@ def sample_crypto_df():
     n_rows = 100
     timestamps = np.arange(1700000000, 1700000000 + n_rows * 14400, 14400)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "BTCUSDT",
-        "open": np.random.uniform(40000, 45000, n_rows),
-        "high": np.random.uniform(45000, 48000, n_rows),
-        "low": np.random.uniform(38000, 40000, n_rows),
-        "close": np.random.uniform(40000, 45000, n_rows),
-        "volume": np.random.uniform(1000, 5000, n_rows),
-        "quote_asset_volume": np.random.uniform(4e7, 2e8, n_rows),
-        "number_of_trades": np.random.randint(10000, 50000, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "BTCUSDT",
+            "open": np.random.uniform(40000, 45000, n_rows),
+            "high": np.random.uniform(45000, 48000, n_rows),
+            "low": np.random.uniform(38000, 40000, n_rows),
+            "close": np.random.uniform(40000, 45000, n_rows),
+            "volume": np.random.uniform(1000, 5000, n_rows),
+            "quote_asset_volume": np.random.uniform(4e7, 2e8, n_rows),
+            "number_of_trades": np.random.randint(10000, 50000, n_rows),
+        }
+    )
     # Fix OHLC consistency
     df["high"] = df[["open", "high", "low", "close"]].max(axis=1) + 100
     df["low"] = df[["open", "high", "low", "close"]].min(axis=1) - 100
@@ -101,15 +106,17 @@ def sample_vix_df():
     n_rows = 100
     timestamps = np.arange(1700000000, 1700000000 + n_rows * 14400, 14400)
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "VIX",
-        "open": np.random.uniform(15, 25, n_rows),
-        "high": np.random.uniform(20, 30, n_rows),
-        "low": np.random.uniform(12, 20, n_rows),
-        "close": np.random.uniform(15, 25, n_rows),
-        "volume": np.random.uniform(1e6, 5e6, n_rows),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "VIX",
+            "open": np.random.uniform(15, 25, n_rows),
+            "high": np.random.uniform(20, 30, n_rows),
+            "low": np.random.uniform(12, 20, n_rows),
+            "close": np.random.uniform(15, 25, n_rows),
+            "volume": np.random.uniform(1e6, 5e6, n_rows),
+        }
+    )
 
 
 @pytest.fixture
@@ -118,15 +125,17 @@ def sample_spy_df():
     n_rows = 100
     timestamps = np.arange(1700000000, 1700000000 + n_rows * 14400, 14400)
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "SPY",
-        "open": np.random.uniform(450, 470, n_rows),
-        "high": np.random.uniform(470, 480, n_rows),
-        "low": np.random.uniform(440, 450, n_rows),
-        "close": np.random.uniform(450, 470, n_rows),
-        "volume": np.random.uniform(5e7, 1e8, n_rows),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "SPY",
+            "open": np.random.uniform(450, 470, n_rows),
+            "high": np.random.uniform(470, 480, n_rows),
+            "low": np.random.uniform(440, 450, n_rows),
+            "close": np.random.uniform(450, 470, n_rows),
+            "volume": np.random.uniform(5e7, 1e8, n_rows),
+        }
+    )
 
 
 @pytest.fixture
@@ -135,15 +144,17 @@ def sample_qqq_df():
     n_rows = 100
     timestamps = np.arange(1700000000, 1700000000 + n_rows * 14400, 14400)
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "QQQ",
-        "open": np.random.uniform(380, 400, n_rows),
-        "high": np.random.uniform(400, 420, n_rows),
-        "low": np.random.uniform(370, 380, n_rows),
-        "close": np.random.uniform(380, 400, n_rows),
-        "volume": np.random.uniform(3e7, 7e7, n_rows),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "QQQ",
+            "open": np.random.uniform(380, 400, n_rows),
+            "high": np.random.uniform(400, 420, n_rows),
+            "low": np.random.uniform(370, 380, n_rows),
+            "close": np.random.uniform(380, 400, n_rows),
+            "volume": np.random.uniform(3e7, 7e7, n_rows),
+        }
+    )
 
 
 @pytest.fixture
@@ -182,6 +193,7 @@ def temp_data_dir(sample_stock_df, sample_crypto_df, sample_vix_df, sample_spy_d
 # TEST: _load_benchmark_data
 # =============================================================================
 
+
 class TestLoadBenchmarkData:
     """Tests for _load_benchmark_data helper function."""
 
@@ -218,6 +230,7 @@ class TestLoadBenchmarkData:
 # TEST: _add_stock_features
 # =============================================================================
 
+
 class TestAddStockFeatures:
     """Tests for _add_stock_features helper function."""
 
@@ -226,7 +239,9 @@ class TestAddStockFeatures:
     ):
         """Should add stock features when benchmark data is available."""
         # Patch at the services.sector_momentum module level since it's imported inside _add_stock_features
-        with patch("services.sector_momentum.enrich_dataframe_with_all_stock_features") as mock_enrich:
+        with patch(
+            "services.sector_momentum.enrich_dataframe_with_all_stock_features"
+        ) as mock_enrich:
             # Set up mock to return enriched DataFrame
             enriched_df = sample_stock_df.copy()
             enriched_df["vix_normalized"] = 0.1
@@ -236,7 +251,8 @@ class TestAddStockFeatures:
             mock_enrich.return_value = enriched_df
 
             result = _add_stock_features(
-                sample_stock_df, "AAPL",
+                sample_stock_df,
+                "AAPL",
                 vix_df=sample_vix_df,
                 spy_df=sample_spy_df,
                 qqq_df=sample_qqq_df,
@@ -252,11 +268,14 @@ class TestAddStockFeatures:
 
     def test_add_stock_features_without_benchmarks(self, sample_stock_df):
         """Should handle missing benchmark data gracefully."""
-        with patch("services.sector_momentum.enrich_dataframe_with_all_stock_features") as mock_enrich:
+        with patch(
+            "services.sector_momentum.enrich_dataframe_with_all_stock_features"
+        ) as mock_enrich:
             mock_enrich.return_value = sample_stock_df.copy()
 
             result = _add_stock_features(
-                sample_stock_df, "AAPL",
+                sample_stock_df,
+                "AAPL",
                 vix_df=None,
                 spy_df=None,
                 qqq_df=None,
@@ -269,13 +288,14 @@ class TestAddStockFeatures:
         """Should fallback to stock_features module if sector_momentum unavailable."""
         with patch(
             "services.sector_momentum.enrich_dataframe_with_all_stock_features",
-            side_effect=ImportError("Mock import error")
+            side_effect=ImportError("Mock import error"),
         ):
             with patch("stock_features.add_stock_features_to_dataframe") as mock_fallback:
                 mock_fallback.return_value = sample_stock_df.copy()
 
                 result = _add_stock_features(
-                    sample_stock_df, "AAPL",
+                    sample_stock_df,
+                    "AAPL",
                     vix_df=None,
                     spy_df=None,
                     qqq_df=None,
@@ -289,16 +309,19 @@ class TestAddStockFeatures:
 # TEST: load_multi_asset_data (EQUITY)
 # =============================================================================
 
+
 class TestLoadMultiAssetDataEquity:
     """Tests for load_multi_asset_data with equity asset class."""
 
     def test_equity_loads_benchmark_data_when_add_stock_features_true(self, temp_data_dir):
         """Should load VIX/SPY/QQQ benchmark data when add_stock_features=True."""
         with patch("data_loader_multi_asset._load_benchmark_data") as mock_load_benchmark:
-            mock_load_benchmark.return_value = pd.DataFrame({
-                "timestamp": [1700000000],
-                "close": [20.0],
-            })
+            mock_load_benchmark.return_value = pd.DataFrame(
+                {
+                    "timestamp": [1700000000],
+                    "close": [20.0],
+                }
+            )
             with patch("data_loader_multi_asset._add_stock_features") as mock_add_features:
                 mock_add_features.side_effect = lambda df, *args, **kwargs: df
 
@@ -353,6 +376,7 @@ class TestLoadMultiAssetDataEquity:
 # TEST: load_multi_asset_data (CRYPTO - BACKWARD COMPATIBILITY)
 # =============================================================================
 
+
 class TestLoadMultiAssetDataCryptoBackwardCompatibility:
     """Tests to ensure crypto path is NOT affected by stock features changes."""
 
@@ -375,10 +399,12 @@ class TestLoadMultiAssetDataCryptoBackwardCompatibility:
     def test_crypto_still_merges_fear_greed(self, temp_data_dir):
         """Crypto should still merge Fear & Greed data."""
         with patch("data_loader_multi_asset.load_fear_greed") as mock_load_fng:
-            mock_load_fng.return_value = pd.DataFrame({
-                "timestamp": [1700000000],
-                "fear_greed_value": [50],
-            })
+            mock_load_fng.return_value = pd.DataFrame(
+                {
+                    "timestamp": [1700000000],
+                    "fear_greed_value": [50],
+                }
+            )
             with patch("data_loader_multi_asset._merge_fear_greed") as mock_merge:
                 mock_merge.side_effect = lambda df, fng: df
 
@@ -429,8 +455,13 @@ class TestLoadMultiAssetDataCryptoBackwardCompatibility:
 
         # Stock-specific features should NOT be present
         stock_feature_cols = [
-            "vix_normalized", "vix_regime", "market_regime",
-            "rs_spy_20d", "rs_spy_50d", "rs_qqq_20d", "sector_momentum"
+            "vix_normalized",
+            "vix_regime",
+            "market_regime",
+            "rs_spy_20d",
+            "rs_spy_50d",
+            "rs_qqq_20d",
+            "sector_momentum",
         ]
         for col in stock_feature_cols:
             assert col not in df.columns, f"Stock feature {col} should not be in crypto data"
@@ -439,6 +470,7 @@ class TestLoadMultiAssetDataCryptoBackwardCompatibility:
 # =============================================================================
 # TEST: load_stock_data (convenience function)
 # =============================================================================
+
 
 class TestLoadStockDataConvenience:
     """Tests for load_stock_data convenience function."""
@@ -491,6 +523,7 @@ class TestLoadStockDataConvenience:
 # TEST: load_crypto_data (backward compatibility)
 # =============================================================================
 
+
 class TestLoadCryptoDataBackwardCompatibility:
     """Tests to ensure load_crypto_data function is unchanged."""
 
@@ -518,6 +551,7 @@ class TestLoadCryptoDataBackwardCompatibility:
 # =============================================================================
 # TEST: Integration
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for stock features loading."""
@@ -577,6 +611,7 @@ class TestIntegration:
 # =============================================================================
 # TEST: Error Handling
 # =============================================================================
+
 
 class TestErrorHandling:
     """Tests for error handling in stock features loading."""

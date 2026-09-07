@@ -95,7 +95,7 @@ class FeatureStore:
         self.root = root or os.path.join(_ROOT, "feature_store")
         os.makedirs(self.root, exist_ok=True)
         self._lock = threading.RLock()
-        self._cache: Dict[str, Dict[str, Any]] = {}   # key -> {"df":..., "expire": ms|None}
+        self._cache: Dict[str, Dict[str, Any]] = {}  # key -> {"df":..., "expire": ms|None}
 
     # ---- paths ----
     def _name_dir(self, name: str) -> str:
@@ -118,8 +118,14 @@ class FeatureStore:
         _atomic_write(self._index_path(name), json.dumps(versions, indent=2, ensure_ascii=False))
 
     # ---- write (version by content hash) ----
-    def write(self, name: str, df: pd.DataFrame, *, asof_ms: Optional[int] = None,
-              lineage: Optional[Dict[str, Any]] = None) -> FeatureVersion:
+    def write(
+        self,
+        name: str,
+        df: pd.DataFrame,
+        *,
+        asof_ms: Optional[int] = None,
+        lineage: Optional[Dict[str, Any]] = None,
+    ) -> FeatureVersion:
         with self._lock:
             asof = int(asof_ms if asof_ms is not None else _now_ms())
             chash = content_hash(df)
@@ -137,12 +143,19 @@ class FeatureStore:
             os.makedirs(vdir, exist_ok=True)
             df.to_parquet(os.path.join(vdir, "data.parquet"))
             fv = FeatureVersion(
-                name=name, version=version, content_hash=chash, asof_ms=asof,
-                created_ms=_now_ms(), rows=int(len(df)), columns=[str(c) for c in df.columns],
+                name=name,
+                version=version,
+                content_hash=chash,
+                asof_ms=asof,
+                created_ms=_now_ms(),
+                rows=int(len(df)),
+                columns=[str(c) for c in df.columns],
                 lineage=dict(lineage or {}),
             )
-            _atomic_write(os.path.join(vdir, "meta.json"),
-                          json.dumps(fv.to_dict(), indent=2, ensure_ascii=False))
+            _atomic_write(
+                os.path.join(vdir, "meta.json"),
+                json.dumps(fv.to_dict(), indent=2, ensure_ascii=False),
+            )
             index.append(fv.to_dict())
             self._save_index(name, index)
             return fv
@@ -158,15 +171,16 @@ class FeatureStore:
                     return FeatureVersion.from_dict(v)
             return None
         if asof_ms is None:
-            return FeatureVersion.from_dict(index[-1])   # latest
+            return FeatureVersion.from_dict(index[-1])  # latest
         # последняя версия с asof_ms <= запрошенного (PIT)
         eligible = [v for v in index if v["asof_ms"] <= int(asof_ms)]
         if not eligible:
             return None
         return FeatureVersion.from_dict(max(eligible, key=lambda v: v["version"]))
 
-    def read(self, name: str, *, asof_ms: Optional[int] = None,
-             version: Optional[int] = None) -> Optional[pd.DataFrame]:
+    def read(
+        self, name: str, *, asof_ms: Optional[int] = None, version: Optional[int] = None
+    ) -> Optional[pd.DataFrame]:
         fv = self._resolve_version(name, asof_ms=asof_ms, version=version)
         if fv is None:
             return None
@@ -175,8 +189,9 @@ class FeatureStore:
             return None
         return pd.read_parquet(path)
 
-    def get_version(self, name: str, *, asof_ms: Optional[int] = None,
-                    version: Optional[int] = None) -> Optional[FeatureVersion]:
+    def get_version(
+        self, name: str, *, asof_ms: Optional[int] = None, version: Optional[int] = None
+    ) -> Optional[FeatureVersion]:
         return self._resolve_version(name, asof_ms=asof_ms, version=version)
 
     def list_versions(self, name: str) -> List[FeatureVersion]:
@@ -185,21 +200,28 @@ class FeatureStore:
     def list_features(self) -> List[str]:
         if not os.path.isdir(self.root):
             return []
-        return sorted([d for d in os.listdir(self.root)
-                       if os.path.isfile(self._index_path(d))])
+        return sorted([d for d in os.listdir(self.root) if os.path.isfile(self._index_path(d))])
 
     # ---- online cache (inference) ----
     @staticmethod
     def _ckey(name: str, asof_ms: Optional[int], version: Optional[int]) -> str:
         return f"{name}|{asof_ms}|{version}"
 
-    def cache_put(self, name: str, df: pd.DataFrame, *, asof_ms: Optional[int] = None,
-                  version: Optional[int] = None, ttl_sec: Optional[float] = None) -> None:
+    def cache_put(
+        self,
+        name: str,
+        df: pd.DataFrame,
+        *,
+        asof_ms: Optional[int] = None,
+        version: Optional[int] = None,
+        ttl_sec: Optional[float] = None,
+    ) -> None:
         exp = (_now_ms() + int(ttl_sec * 1000)) if ttl_sec else None
         self._cache[self._ckey(name, asof_ms, version)] = {"df": df, "expire": exp}
 
-    def cache_get(self, name: str, *, asof_ms: Optional[int] = None,
-                  version: Optional[int] = None) -> Optional[pd.DataFrame]:
+    def cache_get(
+        self, name: str, *, asof_ms: Optional[int] = None, version: Optional[int] = None
+    ) -> Optional[pd.DataFrame]:
         rec = self._cache.get(self._ckey(name, asof_ms, version))
         if rec is None:
             return None
@@ -208,8 +230,15 @@ class FeatureStore:
             return None
         return rec["df"]
 
-    def get(self, name: str, *, asof_ms: Optional[int] = None, version: Optional[int] = None,
-            use_cache: bool = True, ttl_sec: Optional[float] = 300.0) -> Optional[pd.DataFrame]:
+    def get(
+        self,
+        name: str,
+        *,
+        asof_ms: Optional[int] = None,
+        version: Optional[int] = None,
+        use_cache: bool = True,
+        ttl_sec: Optional[float] = 300.0,
+    ) -> Optional[pd.DataFrame]:
         """Inference-путь: сначала online-кэш, иначе диск (+положить в кэш)."""
         if use_cache:
             cached = self.cache_get(name, asof_ms=asof_ms, version=version)
@@ -220,8 +249,9 @@ class FeatureStore:
             self.cache_put(name, df, asof_ms=asof_ms, version=version, ttl_sec=ttl_sec)
         return df
 
-    def materialize(self, names: Sequence[str], *, asof_ms: Optional[int] = None,
-                    use_cache: bool = True) -> pd.DataFrame:
+    def materialize(
+        self, names: Sequence[str], *, asof_ms: Optional[int] = None, use_cache: bool = True
+    ) -> pd.DataFrame:
         """Собрать несколько фич в один кадр (join по индексу) для обучения/inference."""
         frames = []
         for n in names:

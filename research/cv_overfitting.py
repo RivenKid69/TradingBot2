@@ -63,33 +63,56 @@ except Exception:  # pragma: no cover - fallback path
             return math.inf
 
         # Coefficients (Peter Acklam).
-        a = [-3.969683028665376e+01, 2.209460984245205e+02,
-             -2.759285104469687e+02, 1.383577518672690e+02,
-             -3.066479806614716e+01, 2.506628277459239e+00]
-        b = [-5.447609879822406e+01, 1.615858368580409e+02,
-             -1.556989798598866e+02, 6.680131188771972e+01,
-             -1.328068155288572e+01]
-        c = [-7.784894002430293e-03, -3.223964580411365e-01,
-             -2.400758277161838e+00, -2.549732539343734e+00,
-             4.374664141464968e+00, 2.938163982698783e+00]
-        d = [7.784695709041462e-03, 3.224671290700398e-01,
-             2.445134137142996e+00, 3.754408661907416e+00]
+        a = [
+            -3.969683028665376e01,
+            2.209460984245205e02,
+            -2.759285104469687e02,
+            1.383577518672690e02,
+            -3.066479806614716e01,
+            2.506628277459239e00,
+        ]
+        b = [
+            -5.447609879822406e01,
+            1.615858368580409e02,
+            -1.556989798598866e02,
+            6.680131188771972e01,
+            -1.328068155288572e01,
+        ]
+        c = [
+            -7.784894002430293e-03,
+            -3.223964580411365e-01,
+            -2.400758277161838e00,
+            -2.549732539343734e00,
+            4.374664141464968e00,
+            2.938163982698783e00,
+        ]
+        d = [
+            7.784695709041462e-03,
+            3.224671290700398e-01,
+            2.445134137142996e00,
+            3.754408661907416e00,
+        ]
 
         plow = 0.02425
         phigh = 1.0 - plow
         if p < plow:
             q = math.sqrt(-2.0 * math.log(p))
-            x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / \
-                ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0)
+            x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / (
+                (((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0
+            )
         elif p <= phigh:
             q = p - 0.5
             r = q * q
-            x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / \
-                (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1.0)
+            x = (
+                (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5])
+                * q
+                / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1.0)
+            )
         else:
             q = math.sqrt(-2.0 * math.log(1.0 - p))
-            x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / \
-                ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0)
+            x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / (
+                (((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1.0
+            )
 
         # One Halley refinement step.
         e = norm_cdf(x) - p
@@ -155,20 +178,18 @@ def cpcv_splits(
             blocks.append((int(g[0]), int(g[-1])))
 
         # Start with all non-test groups as candidate train.
-        train_idx = np.sort(
-            np.concatenate([groups[i] for i in range(n_groups) if i not in combo])
-        )
+        train_idx = np.sort(np.concatenate([groups[i] for i in range(n_groups) if i not in combo]))
 
         # Purge + embargo: remove forbidden indices.
         forbidden = np.zeros(n_samples, dtype=bool)
         forbidden[test_idx] = True  # test ranges themselves
-        for (b0, b1) in blocks:
+        for b0, b1 in blocks:
             # PURGE: horizon bars BEFORE the start of the test block.
             p0 = max(0, b0 - horizon)
             forbidden[p0:b0] = True
             # EMBARGO: embargo bars AFTER the end of the test block.
             e1 = min(n_samples, b1 + 1 + embargo)
-            forbidden[b1 + 1:e1] = True
+            forbidden[b1 + 1 : e1] = True
 
         train_idx = train_idx[~forbidden[train_idx]]
         splits.append((train_idx, test_idx))
@@ -214,8 +235,8 @@ def cpcv_report(
             if len(g) == 0:
                 continue
             b0, b1 = int(g[0]), int(g[-1])
-            purge_mask[max(0, b0 - horizon):b0] = True
-            embargo_mask[b1 + 1:min(n_samples, b1 + 1 + embargo)] = True
+            purge_mask[max(0, b0 - horizon) : b0] = True
+            embargo_mask[b1 + 1 : min(n_samples, b1 + 1 + embargo)] = True
         # Only count indices that were actually in candidate train (non-test).
         candidate = ~test_mask
         total_purged += int(np.sum(purge_mask & candidate & ~embargo_mask))
@@ -274,7 +295,7 @@ def pbo_cscv(perf_matrix: np.ndarray, S: int = 16) -> Dict[str, Any]:
     block = T // S
     usable = block * S
     M = M[:usable]
-    sub = [M[i * block:(i + 1) * block] for i in range(S)]
+    sub = [M[i * block : (i + 1) * block] for i in range(S)]
 
     all_combos = list(combinations(range(S), S // 2))
     sampled = False
@@ -345,8 +366,8 @@ def _moments(returns: np.ndarray) -> Tuple[float, float, float, float, int]:
     # population std (ddof=0) -- standard for the PSR/DSR formulas.
     std_pop = float(np.std(r, ddof=0))
     centered = r - mean
-    skew = float(np.mean(centered ** 3) / std_pop ** 3)
-    kurt = float(np.mean(centered ** 4) / std_pop ** 4)  # NON-excess kurtosis
+    skew = float(np.mean(centered**3) / std_pop**3)
+    kurt = float(np.mean(centered**4) / std_pop**4)  # NON-excess kurtosis
     return sr, skew, kurt, std, T
 
 
@@ -369,14 +390,11 @@ def expected_max_sharpe(var_sr: float, n_trials: int) -> float:
         return 0.0
     g = EULER_MASCHERONI
     e = math.e
-    term = (1.0 - g) * norm_ppf(1.0 - 1.0 / n_trials) + \
-        g * norm_ppf(1.0 - 1.0 / (n_trials * e))
+    term = (1.0 - g) * norm_ppf(1.0 - 1.0 / n_trials) + g * norm_ppf(1.0 - 1.0 / (n_trials * e))
     return float(math.sqrt(max(0.0, var_sr)) * term)
 
 
-def deflated_sharpe_ratio(
-    returns: Sequence[float], n_trials: int, var_sr: float
-) -> Dict[str, Any]:
+def deflated_sharpe_ratio(returns: Sequence[float], n_trials: int, var_sr: float) -> Dict[str, Any]:
     """Deflated Sharpe Ratio = PSR evaluated against expected_max_sharpe."""
     sr, _, _, _, T = _moments(np.asarray(returns, dtype=float))
     sr0 = expected_max_sharpe(var_sr, n_trials)
@@ -439,8 +457,10 @@ def build_report(
             var_sr = float(np.var(srs, ddof=1)) if len(srs) > 1 else 1.0 / max(1, len(returns))
         else:
             var_sr = 1.0 / max(1, len(returns) - 1)
-        nt = int(n_trials) if n_trials is not None else (
-            int(perf_matrix.shape[1]) if perf_matrix is not None else 1
+        nt = (
+            int(n_trials)
+            if n_trials is not None
+            else (int(perf_matrix.shape[1]) if perf_matrix is not None else 1)
         )
         dsr = deflated_sharpe_ratio(returns, n_trials=max(1, nt), var_sr=var_sr)
         dsr["min_track_record_length"] = min_track_record_length(returns)
@@ -452,8 +472,9 @@ def build_report(
 # ===========================================================================
 # Self-test
 # ===========================================================================
-def _build_perf_matrix(T: int, N: int, seed: int, drift_idx: Optional[int] = None,
-                       drift: float = 0.0) -> np.ndarray:
+def _build_perf_matrix(
+    T: int, N: int, seed: int, drift_idx: Optional[int] = None, drift: float = 0.0
+) -> np.ndarray:
     rng = np.random.default_rng(seed)
     M = rng.normal(0.0, 1.0, size=(T, N))
     if drift_idx is not None:
@@ -470,27 +491,31 @@ def selftest() -> Dict[str, Any]:
     assert rep["n_paths"] == 5, f"n_paths={rep['n_paths']}"
     assert rep["total_purged"] > 0, f"total_purged={rep['total_purged']}"
     out["cpcv"] = rep
-    print(f"[CPCV] n_splits={rep['n_splits']} n_paths={rep['n_paths']} "
-          f"total_purged={rep['total_purged']} total_embargoed={rep['total_embargoed']}")
+    print(
+        f"[CPCV] n_splits={rep['n_splits']} n_paths={rep['n_paths']} "
+        f"total_purged={rep['total_purged']} total_embargoed={rep['total_embargoed']}"
+    )
 
     # --- PBO: pure noise --------------------------------------------------
     # PBO ~= 0.5 holds IN EXPECTATION over realizations; a single (T,N) draw
     # has high sampling variance, so we average over several noise matrices to
     # exercise the law-of-large-numbers behaviour faithfully.
     n_real = 12
-    noise_pbos = [pbo_cscv(_build_perf_matrix(T=1000, N=20, seed=s), S=16)["pbo"]
-                  for s in range(n_real)]
+    noise_pbos = [
+        pbo_cscv(_build_perf_matrix(T=1000, N=20, seed=s), S=16)["pbo"] for s in range(n_real)
+    ]
     pbo_noise_single = pbo_cscv(_build_perf_matrix(T=1000, N=20, seed=42), S=16)
     pbo_noise = float(np.mean(noise_pbos))
-    print(f"[PBO] noise pbo(avg over {n_real} realizations)={pbo_noise:.3f} "
-          f"single-seed42={pbo_noise_single['pbo']:.3f} "
-          f"combos={pbo_noise_single['n_combinations']}")
+    print(
+        f"[PBO] noise pbo(avg over {n_real} realizations)={pbo_noise:.3f} "
+        f"single-seed42={pbo_noise_single['pbo']:.3f} "
+        f"combos={pbo_noise_single['n_combinations']}"
+    )
     assert 0.35 <= pbo_noise <= 0.65, f"noise PBO out of range: {pbo_noise}"
 
     # --- PBO: one genuinely better strategy -------------------------------
     better_pbos = [
-        pbo_cscv(_build_perf_matrix(T=1000, N=20, seed=s, drift_idx=0, drift=0.12),
-                 S=16)["pbo"]
+        pbo_cscv(_build_perf_matrix(T=1000, N=20, seed=s, drift_idx=0, drift=0.12), S=16)["pbo"]
         for s in range(n_real)
     ]
     pbo_better = float(np.mean(better_pbos))
@@ -506,8 +531,10 @@ def selftest() -> Dict[str, Any]:
     # over T=1000, giving a strongly significant track record.
     rets = rng.normal(0.10, 0.4, size=1000)
     dsr = deflated_sharpe_ratio(rets, n_trials=50, var_sr=1.0 / 1000.0)
-    print(f"[DSR] sr={dsr['sr']:.4f} sr0={dsr['sr0']:.4f} dsr={dsr['dsr']:.4f} "
-          f"psr_vs_0={dsr['psr_vs_0']:.4f}")
+    print(
+        f"[DSR] sr={dsr['sr']:.4f} sr0={dsr['sr0']:.4f} dsr={dsr['dsr']:.4f} "
+        f"psr_vs_0={dsr['psr_vs_0']:.4f}"
+    )
     assert dsr["psr_vs_0"] > 0.9, f"PSR(0) too low: {dsr['psr_vs_0']}"
     out["dsr"] = dsr
 
@@ -520,16 +547,14 @@ def selftest() -> Dict[str, Any]:
 # ===========================================================================
 def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Overfitting controls: CPCV, PBO, DSR")
-    p.add_argument("--out", default="models/cv_overfitting.json",
-                   help="output JSON path")
+    p.add_argument("--out", default="models/cv_overfitting.json", help="output JSON path")
     p.add_argument("--selftest", action="store_true", help="run self-test and exit")
 
-    p.add_argument("--returns-matrix", default=None,
-                   help="parquet/csv: columns = candidate strategies (T x N)")
-    p.add_argument("--returns", default=None,
-                   help="parquet/csv with return series for DSR")
-    p.add_argument("--returns-col", default=None,
-                   help="column name to use from --returns")
+    p.add_argument(
+        "--returns-matrix", default=None, help="parquet/csv: columns = candidate strategies (T x N)"
+    )
+    p.add_argument("--returns", default=None, help="parquet/csv with return series for DSR")
+    p.add_argument("--returns-col", default=None, help="column name to use from --returns")
     p.add_argument("--pbo-S", type=int, default=16, help="number of CSCV submatrices")
     p.add_argument("--n-trials", type=int, default=None, help="n_trials for DSR")
 
@@ -584,8 +609,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
 
     if not report:
-        print("No sections requested. Use --selftest or supply inputs "
-              "(--n-samples, --returns-matrix, --returns).")
+        print(
+            "No sections requested. Use --selftest or supply inputs "
+            "(--n-samples, --returns-matrix, --returns)."
+        )
         return 1
 
     out_dir = os.path.dirname(args.out)

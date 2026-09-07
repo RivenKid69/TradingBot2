@@ -26,6 +26,7 @@ from datetime import datetime, timezone, timedelta
 # Block 2.1: Tiered Backup Tests
 # =============================================================================
 
+
 class TestTieredBackup:
     """Tests for tiered backup system."""
 
@@ -47,6 +48,7 @@ class TestTieredBackup:
             create_tiered_backup_manager,
             get_tier_definitions,
         )
+
         assert BackupTier.CRITICAL.value == "critical"
         assert RPOLevel.RPO_15MIN.value == "15min"
 
@@ -162,6 +164,7 @@ class TestTieredBackup:
 # Block 2.2: Enhanced Healthcheck Tests
 # =============================================================================
 
+
 class TestEnhancedHealthcheck:
     """Tests for enhanced healthcheck system."""
 
@@ -181,6 +184,7 @@ class TestEnhancedHealthcheck:
             EnhancedHealthcheck,
             create_enhanced_healthcheck,
         )
+
         assert ProbeType.LIVENESS.value == "liveness"
         assert DependencyStatus.HEALTHY.value == "healthy"
 
@@ -263,6 +267,7 @@ class TestEnhancedHealthcheck:
 # Block 2.3: Structured Logging Tests
 # =============================================================================
 
+
 class TestStructuredLogging:
     """Tests for structured logging system."""
 
@@ -280,6 +285,7 @@ class TestStructuredLogging:
             set_correlation_id,
             correlation_context,
         )
+
         assert LogLevel.INFO.value == "INFO"
         assert LogCategory.SECURITY.value == "security"
 
@@ -384,6 +390,7 @@ class TestStructuredLogging:
 # Block 2.4: Alerting Tests
 # =============================================================================
 
+
 class TestAlerting:
     """Tests for alerting system."""
 
@@ -402,6 +409,7 @@ class TestAlerting:
             AlertingService,
             create_alerting_service,
         )
+
         assert AlertSeverity.CRITICAL.value == "critical"
         assert AlertChannel.SLACK.value == "slack"
 
@@ -540,6 +548,7 @@ class TestAlerting:
 # Block 2.5: DR Testing Tests
 # =============================================================================
 
+
 class TestDRTesting:
     """Tests for DR testing framework."""
 
@@ -558,6 +567,7 @@ class TestDRTesting:
             DRTestingFramework,
             create_dr_testing_framework,
         )
+
         assert DRTestType.TABLETOP.value == "tabletop"
         assert DRTestResult.PASSED.value == "passed"
 
@@ -642,6 +652,7 @@ class TestDRTesting:
 # Block 2.6: Security Gates Tests
 # =============================================================================
 
+
 class TestSecurityGates:
     """Tests for security gates."""
 
@@ -659,6 +670,7 @@ class TestSecurityGates:
             SecurityGatesManager,
             create_security_gates_manager,
         )
+
         assert ScanType.SAST.value == "sast"
         assert GateDecision.PASS.value == "pass"
 
@@ -746,6 +758,7 @@ class TestSecurityGates:
 # Block 2.7: SOC2-DORA Mapping Tests
 # =============================================================================
 
+
 class TestSOC2DORAMapping:
     """Tests for SOC2-DORA mapping."""
 
@@ -765,6 +778,7 @@ class TestSOC2DORAMapping:
             create_soc2_dora_mapper,
             get_control_mappings,
         )
+
         assert SOC2Category.CC_SECURITY.value == "CC"
         assert DORAArticle.ART_9.value == "Article 9"
 
@@ -831,6 +845,7 @@ class TestSOC2DORAMapping:
 # Block 2.9: Multi-AZ Tests
 # =============================================================================
 
+
 class TestMultiAZ:
     """Tests for Multi-AZ deployment."""
 
@@ -849,6 +864,7 @@ class TestMultiAZ:
             MultiAZManager,
             create_multi_az_manager,
         )
+
         assert AvailabilityZone.EU_WEST_1A.value == "eu-west-1a"
         assert DeploymentStrategy.ACTIVE_ACTIVE.value == "active_active"
 
@@ -944,6 +960,7 @@ class TestMultiAZ:
 # Block 2.10: On-Call Rotation Tests
 # =============================================================================
 
+
 class TestOnCallRotation:
     """Tests for on-call rotation."""
 
@@ -962,6 +979,7 @@ class TestOnCallRotation:
             OnCallRotationManager,
             create_oncall_rotation_manager,
         )
+
         assert OnCallTier.OPTION_B.value == "option_b"
         assert IncidentPriority.P1.value == "P1"
 
@@ -1045,6 +1063,7 @@ class TestOnCallRotation:
 # Block 2.11: Subcontractor Monitoring Tests
 # =============================================================================
 
+
 class TestSubcontractorMonitoring:
     """Tests for subcontractor monitoring."""
 
@@ -1061,6 +1080,7 @@ class TestSubcontractorMonitoring:
             SubcontractorMonitor,
             create_subcontractor_monitor,
         )
+
         assert SubcontractorHealthStatus.HEALTHY.value == "healthy"
 
     def test_create_subcontractor_monitor(self):
@@ -1124,6 +1144,7 @@ class TestSubcontractorMonitoring:
 # Block 2.12: Trust Center Tests
 # =============================================================================
 
+
 class TestTrustCenter:
     """Tests for trust center platform."""
 
@@ -1141,6 +1162,7 @@ class TestTrustCenter:
             TrustCenterPlatform,
             create_trust_center,
         )
+
         assert DocumentType.SOC2_REPORT.value == "soc2_report"
         assert AccessLevel.PUBLIC.value == "public"
 
@@ -1215,6 +1237,7 @@ class TestTrustCenter:
 # Block 2.13: DR Execution Tests
 # =============================================================================
 
+
 class TestDRExecution:
     """Tests for DR execution manager."""
 
@@ -1231,6 +1254,7 @@ class TestDRExecution:
             DRExecutionManager,
             create_dr_execution_manager,
         )
+
         assert ExecutionPhase.PREPARATION.value == "preparation"
         assert ValidationResult.PASSED.value == "passed"
 
@@ -1318,6 +1342,7 @@ class TestDRExecution:
 # Block 2.14: CTPP Monitoring Tests
 # =============================================================================
 
+
 class TestCTPPMonitoring:
     """Tests for CTPP risk monitoring."""
 
@@ -1334,6 +1359,7 @@ class TestCTPPMonitoring:
             CTPPRiskMonitor,
             create_ctpp_risk_monitor,
         )
+
         assert CTPPRiskLevel.CRITICAL.value == "critical"
         assert RiskIndicator.CONCENTRATION_LEVEL.value == "concentration_level"
 
@@ -1420,6 +1446,7 @@ class TestCTPPMonitoring:
 # Integration Tests
 # =============================================================================
 
+
 class TestPhase2Integration:
     """Integration tests for Phase 2 modules."""
 
@@ -1494,9 +1521,16 @@ class TestPhase2Integration:
         # - Article 28-30: Third-Party Risk (CTPP Monitoring, Subcontractor Monitoring, Trust Center)
 
         covered_articles = [
-            "Article 9", "Article 10", "Article 11", "Article 12",
-            "Article 14", "Article 15", "Article 28", "Article 29",
-            "Article 30", "Article 31-44",
+            "Article 9",
+            "Article 10",
+            "Article 11",
+            "Article 12",
+            "Article 14",
+            "Article 15",
+            "Article 28",
+            "Article 29",
+            "Article 30",
+            "Article 31-44",
         ]
 
         assert len(covered_articles) >= 10

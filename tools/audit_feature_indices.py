@@ -7,6 +7,7 @@ Verifies that feature_idx increments correctly to reach 63 total features.
 import re
 from pathlib import Path
 
+
 def audit_obs_builder():
     """Parse obs_builder.pyx and track feature_idx increments."""
 
@@ -16,7 +17,7 @@ def audit_obs_builder():
         print(f"❌ File not found: {obs_builder_path}")
         return False
 
-    with open(obs_builder_path, 'r') as f:
+    with open(obs_builder_path, "r") as f:
         lines = f.readlines()
 
     print("=" * 80)
@@ -31,7 +32,7 @@ def audit_obs_builder():
 
     for line_num, line in enumerate(lines, 1):
         # Check if we're in build_observation_vector function
-        if 'def build_observation_vector' in line or 'cpdef void build_observation_vector' in line:
+        if "def build_observation_vector" in line or "cpdef void build_observation_vector" in line:
             in_function = True
             print(f"Line {line_num}: Found build_observation_vector function")
             continue
@@ -40,27 +41,24 @@ def audit_obs_builder():
             continue
 
         # Check for feature_idx initialization
-        if 'feature_idx = 0' in line:
+        if "feature_idx = 0" in line:
             print(f"Line {line_num}: feature_idx initialized to 0")
             current_idx = 0
             continue
 
         # Check for out_features assignments
-        if 'out_features[feature_idx]' in line and '=' in line:
+        if "out_features[feature_idx]" in line and "=" in line:
             # Extract comment if exists
             comment = ""
-            if '#' in line:
-                comment = line.split('#', 1)[1].strip()
+            if "#" in line:
+                comment = line.split("#", 1)[1].strip()
 
-            feature_assignments.append({
-                'line': line_num,
-                'index': current_idx,
-                'code': line.strip(),
-                'comment': comment
-            })
+            feature_assignments.append(
+                {"line": line_num, "index": current_idx, "code": line.strip(), "comment": comment}
+            )
 
         # Check for feature_idx increments
-        if 'feature_idx += 1' in line or 'feature_idx = feature_idx + 1' in line:
+        if "feature_idx += 1" in line or "feature_idx = feature_idx + 1" in line:
             current_idx += 1
 
     # Display feature assignments
@@ -84,11 +82,11 @@ def audit_obs_builder():
     vol_proxy_checks_atr = False
 
     for line_num, line in enumerate(lines, 1):
-        if 'atr_valid = not isnan(atr)' in line:
+        if "atr_valid = not isnan(atr)" in line:
             print(f"Line {line_num}: ✅ Found atr_valid flag assignment")
             atr_valid_found = True
 
-        if 'if atr_valid:' in line and 'vol_proxy' in lines[line_num]:
+        if "if atr_valid:" in line and "vol_proxy" in lines[line_num]:
             print(f"Line {line_num}: ✅ Found vol_proxy checking atr_valid")
             vol_proxy_checks_atr = True
 
@@ -105,8 +103,10 @@ def audit_obs_builder():
     print("=" * 80)
 
     for i, assignment in enumerate(feature_assignments[:30]):
-        comment = f" // {assignment['comment']}" if assignment['comment'] else ""
-        print(f"[{assignment['index']:2d}] Line {assignment['line']:4d}: {assignment['code'][:60]}{comment}")
+        comment = f" // {assignment['comment']}" if assignment["comment"] else ""
+        print(
+            f"[{assignment['index']:2d}] Line {assignment['line']:4d}: {assignment['code'][:60]}{comment}"
+        )
 
     if len(feature_assignments) > 30:
         print(f"... ({len(feature_assignments) - 30} more features)")
@@ -122,7 +122,7 @@ def check_feature_config():
 
     config_path = Path("/home/user/AI-Powered Quantitative Research Platform/feature_config.py")
 
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         content = f.read()
 
     # Check indicators-related blocks (ma5 + ma20 + indicators + bb_context = 2+2+14+2 = 20 total)
@@ -136,12 +136,15 @@ def check_feature_config():
         print("OK: Indicators structure = ma5(2) + ma20(2) + indicators(14) + bb_context(2) = 20")
     else:
         print("ERROR: Indicators structure not found or incorrect")
-        print(f"  ma5: {has_ma5}, ma20: {has_ma20}, indicators: {has_indicators}, bb_context: {has_bb_context}")
+        print(
+            f"  ma5: {has_ma5}, ma20: {has_ma20}, indicators: {has_indicators}, bb_context: {has_bb_context}"
+        )
         return False
 
     # Compute total from layout
     import sys
-    sys.path.insert(0, '/home/user/AI-Powered Quantitative Research Platform')
+
+    sys.path.insert(0, "/home/user/AI-Powered Quantitative Research Platform")
 
     try:
         from feature_config import N_FEATURES, FEATURES_LAYOUT
@@ -157,8 +160,8 @@ def check_feature_config():
         print("\nFeature blocks:")
         total = 0
         for block in FEATURES_LAYOUT:
-            name = block['name']
-            size = block['size']
+            name = block["name"]
+            size = block["size"]
             print(f"  {name:15s}: {size:2d}")
             total += size
 
@@ -186,17 +189,19 @@ def check_documentation():
     checks = []
 
     # Check FEATURE_MAPPING_63.md
-    mapping_path = Path("/home/user/AI-Powered Quantitative Research Platform/FEATURE_MAPPING_63.md")
+    mapping_path = Path(
+        "/home/user/AI-Powered Quantitative Research Platform/FEATURE_MAPPING_63.md"
+    )
     if mapping_path.exists():
-        with open(mapping_path, 'r') as f:
+        with open(mapping_path, "r") as f:
             content = f.read()
 
-        if '63 features' in content.lower():
+        if "63 features" in content.lower():
             checks.append(("FEATURE_MAPPING_63.md mentions 63 features", True))
         else:
             checks.append(("FEATURE_MAPPING_63.md mentions 63 features", False))
 
-        if 'atr_valid' in content.lower() or 'index 16' in content.lower():
+        if "atr_valid" in content.lower() or "index 16" in content.lower():
             checks.append(("FEATURE_MAPPING_63.md documents atr_valid", True))
         else:
             checks.append(("FEATURE_MAPPING_63.md documents atr_valid", False))
@@ -204,12 +209,14 @@ def check_documentation():
         checks.append(("FEATURE_MAPPING_63.md exists", False))
 
     # Check MIGRATION_GUIDE
-    migration_path = Path("/home/user/AI-Powered Quantitative Research Platform/MIGRATION_GUIDE_62_TO_63.md")
+    migration_path = Path(
+        "/home/user/AI-Powered Quantitative Research Platform/MIGRATION_GUIDE_62_TO_63.md"
+    )
     if migration_path.exists():
-        with open(migration_path, 'r') as f:
+        with open(migration_path, "r") as f:
             content = f.read()
 
-        if '62' in content and '63' in content:
+        if "62" in content and "63" in content:
             checks.append(("MIGRATION_GUIDE_62_TO_63.md mentions migration", True))
         else:
             checks.append(("MIGRATION_GUIDE_62_TO_63.md mentions migration", False))
@@ -240,6 +247,7 @@ def main():
     except Exception as e:
         print(f"❌ ERROR auditing obs_builder.pyx: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("obs_builder.pyx", False))
 
@@ -250,6 +258,7 @@ def main():
     except Exception as e:
         print(f"❌ ERROR auditing feature_config.py: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("feature_config.py", False))
 
@@ -260,6 +269,7 @@ def main():
     except Exception as e:
         print(f"❌ ERROR auditing documentation: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("Documentation", False))
 
@@ -286,4 +296,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

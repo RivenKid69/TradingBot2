@@ -589,9 +589,7 @@ class TestIntegration:
         impl_strict = QuantizerImpl(cfg_strict)
 
         # Permissive mode
-        cfg_permissive = QuantizerConfig(
-            path=str(filters_path), strict_filters=False
-        )
+        cfg_permissive = QuantizerConfig(path=str(filters_path), strict_filters=False)
         impl_permissive = QuantizerImpl(cfg_permissive)
 
         # Both should initialize

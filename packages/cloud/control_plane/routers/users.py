@@ -179,9 +179,7 @@ async def list_users(
                     page_size=pagination.page_size,
                 )
             query = query.where(User.organization_id == current_user.org_id)
-            count_query = count_query.where(
-                User.organization_id == current_user.org_id
-            )
+            count_query = count_query.where(User.organization_id == current_user.org_id)
 
         # Get total count
         total_result = await session.execute(count_query)
@@ -189,9 +187,7 @@ async def list_users(
 
         # Get users
         query = (
-            query.offset(pagination.offset)
-            .limit(pagination.limit)
-            .order_by(User.created_at.desc())
+            query.offset(pagination.offset).limit(pagination.limit).order_by(User.created_at.desc())
         )
         result = await session.execute(query)
         users = result.scalars().unique().all()
@@ -250,9 +246,7 @@ async def create_user(
             )
 
         # Check email uniqueness
-        existing = await session.execute(
-            select(User).where(User.email == request.email)
-        )
+        existing = await session.execute(select(User).where(User.email == request.email))
         if existing.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -438,9 +432,7 @@ async def update_user(
 
         if request.is_active is not None:
             # Only superusers or users with permission can deactivate
-            if not current_user.is_superuser and not current_user.has_permission(
-                "user:write"
-            ):
+            if not current_user.is_superuser and not current_user.has_permission("user:write"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Permission required to change user status",

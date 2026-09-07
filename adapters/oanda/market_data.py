@@ -73,6 +73,7 @@ from adapters.models import ExchangeVendor
 # Optional async support
 try:
     import aiohttp
+
     HAS_AIOHTTP = True
 except ImportError:
     aiohttp = None  # type: ignore
@@ -84,6 +85,7 @@ logger = logging.getLogger(__name__)
 # =========================
 # Rate Limiter
 # =========================
+
 
 class RateLimiter:
     """
@@ -153,6 +155,7 @@ class RateLimiter:
 # OANDA Bar Data (with bid/ask)
 # =========================
 
+
 @dataclass
 class OandaCandleData:
     """
@@ -160,6 +163,7 @@ class OandaCandleData:
 
     OANDA provides separate bid/ask/mid candles for accurate spread modeling.
     """
+
     timestamp: int  # milliseconds UTC
     open_bid: float
     high_bid: float
@@ -180,6 +184,7 @@ class OandaCandleData:
 # =========================
 # OANDA Market Data Adapter
 # =========================
+
 
 class OandaMarketDataAdapter(MarketDataAdapter):
     """
@@ -226,29 +231,67 @@ class OandaMarketDataAdapter(MarketDataAdapter):
     # Timeframe mapping: user-friendly -> OANDA format
     TIMEFRAME_MAP: Dict[str, str] = {
         # Seconds
-        "5s": "S5", "10s": "S10", "15s": "S15", "30s": "S30",
-        "S5": "S5", "S10": "S10", "S15": "S15", "S30": "S30",
+        "5s": "S5",
+        "10s": "S10",
+        "15s": "S15",
+        "30s": "S30",
+        "S5": "S5",
+        "S10": "S10",
+        "S15": "S15",
+        "S30": "S30",
         # Minutes
-        "1m": "M1", "2m": "M2", "4m": "M4", "5m": "M5",
-        "10m": "M10", "15m": "M15", "30m": "M30",
-        "M1": "M1", "M2": "M2", "M4": "M4", "M5": "M5",
-        "M10": "M10", "M15": "M15", "M30": "M30",
+        "1m": "M1",
+        "2m": "M2",
+        "4m": "M4",
+        "5m": "M5",
+        "10m": "M10",
+        "15m": "M15",
+        "30m": "M30",
+        "M1": "M1",
+        "M2": "M2",
+        "M4": "M4",
+        "M5": "M5",
+        "M10": "M10",
+        "M15": "M15",
+        "M30": "M30",
         # Hours
-        "1h": "H1", "2h": "H2", "3h": "H3", "4h": "H4",
-        "6h": "H6", "8h": "H8", "12h": "H12",
-        "H1": "H1", "H2": "H2", "H3": "H3", "H4": "H4",
-        "H6": "H6", "H8": "H8", "H12": "H12",
+        "1h": "H1",
+        "2h": "H2",
+        "3h": "H3",
+        "4h": "H4",
+        "6h": "H6",
+        "8h": "H8",
+        "12h": "H12",
+        "H1": "H1",
+        "H2": "H2",
+        "H3": "H3",
+        "H4": "H4",
+        "H6": "H6",
+        "H8": "H8",
+        "H12": "H12",
         # Days/Weeks/Months
-        "1d": "D", "1w": "W", "1M": "M",
-        "D": "D", "W": "W", "M": "M",
-        "d": "D", "w": "W",
+        "1d": "D",
+        "1w": "W",
+        "1M": "M",
+        "D": "D",
+        "W": "W",
+        "M": "M",
+        "d": "D",
+        "w": "W",
     }
 
     # Major currency pairs for validation
-    MAJOR_PAIRS = frozenset({
-        "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-        "AUD_USD", "USD_CAD", "NZD_USD",
-    })
+    MAJOR_PAIRS = frozenset(
+        {
+            "EUR_USD",
+            "USD_JPY",
+            "GBP_USD",
+            "USD_CHF",
+            "AUD_USD",
+            "USD_CAD",
+            "NZD_USD",
+        }
+    )
 
     def __init__(
         self,
@@ -355,13 +398,12 @@ class OandaMarketDataAdapter(MarketDataAdapter):
         """Initialize HTTP session."""
         try:
             import requests
+
             self._session = requests.Session()
             self._session.headers.update(self._get_headers())
             logger.debug(f"OANDA adapter connected (practice={self._practice})")
         except ImportError:
-            raise ImportError(
-                "requests library is required. Install with: pip install requests"
-            )
+            raise ImportError("requests library is required. Install with: pip install requests")
 
     def _do_disconnect(self) -> None:
         """Close HTTP session."""
@@ -470,9 +512,24 @@ class OandaMarketDataAdapter(MarketDataAdapter):
             ask = candle.get("ask", mid)
 
             # Retrieve distinct values
-            mid_o, mid_h, mid_l, mid_c = float(mid.get("o", 0)), float(mid.get("h", 0)), float(mid.get("l", 0)), float(mid.get("c", 0))
-            bid_o, bid_h, bid_l, bid_c = float(bid.get("o", mid_o)), float(bid.get("h", mid_h)), float(bid.get("l", mid_l)), float(bid.get("c", mid_c))
-            ask_o, ask_h, ask_l, ask_c = float(ask.get("o", mid_o)), float(ask.get("h", mid_h)), float(ask.get("l", mid_l)), float(ask.get("c", mid_c))
+            mid_o, mid_h, mid_l, mid_c = (
+                float(mid.get("o", 0)),
+                float(mid.get("h", 0)),
+                float(mid.get("l", 0)),
+                float(mid.get("c", 0)),
+            )
+            bid_o, bid_h, bid_l, bid_c = (
+                float(bid.get("o", mid_o)),
+                float(bid.get("h", mid_h)),
+                float(bid.get("l", mid_l)),
+                float(bid.get("c", mid_c)),
+            )
+            ask_o, ask_h, ask_l, ask_c = (
+                float(ask.get("o", mid_o)),
+                float(ask.get("h", mid_h)),
+                float(ask.get("l", mid_l)),
+                float(ask.get("c", mid_c)),
+            )
 
             # Use selected price type for main OHLC
             price_type = self._config.get("price_type", "mid")
@@ -686,6 +743,7 @@ class OandaMarketDataAdapter(MarketDataAdapter):
 
                     try:
                         import json
+
                         data = json.loads(line.decode("utf-8"))
 
                         if data.get("type") == "PRICE":
@@ -766,6 +824,7 @@ class OandaMarketDataAdapter(MarketDataAdapter):
 
                     try:
                         import json
+
                         data = json.loads(line.decode("utf-8"))
 
                         if data.get("type") == "PRICE":

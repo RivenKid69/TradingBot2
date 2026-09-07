@@ -15,6 +15,7 @@ Target: 100% code coverage
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -49,9 +50,11 @@ def perturbation(config):
 @pytest.fixture
 def dummy_loss_fn():
     """Dummy loss function for testing."""
+
     def loss_fn(state):
         # Simple loss: sum of squares
-        return (state ** 2).sum()
+        return (state**2).sum()
+
     return loss_fn
 
 
@@ -423,7 +426,7 @@ class TestStatePerturbation:
         state = torch.randn(4, 10)
 
         def loss_fn(s):
-            return (s ** 2).sum()
+            return (s**2).sum()
 
         # Original loss
         original_loss = loss_fn(state).item()
@@ -504,7 +507,7 @@ class TestEdgeCases:
         state = torch.randn(4, 10, requires_grad=False)
 
         def loss_fn(s):
-            return (s ** 2).sum()
+            return (s**2).sum()
 
         delta = perturbation.generate_perturbation(state, loss_fn)
 

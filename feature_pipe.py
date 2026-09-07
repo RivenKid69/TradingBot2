@@ -177,7 +177,11 @@ class SignalQualityMetrics:
                 if isfinite(derived_quote_value):
                     volume_quote_value = derived_quote_value
 
-        if volume_quote_value is not None and volume_quote_value > 0.0 and isfinite(volume_quote_value):
+        if (
+            volume_quote_value is not None
+            and volume_quote_value > 0.0
+            and isfinite(volume_quote_value)
+        ):
             self._append_volume(state, volume_quote_value)
 
         snapshot = self._snapshot(sym, state)
@@ -228,8 +232,7 @@ class SignalQualityMetrics:
         sigma = self._compute_sigma(state)
         vol_median = self._compute_volume_median(state)
         window_ready = (
-            len(state.returns) >= self.sigma_window
-            and len(state.volumes) >= self.vol_median_window
+            len(state.returns) >= self.sigma_window and len(state.volumes) >= self.vol_median_window
         )
         snapshot = SignalQualitySnapshot(
             current_sigma=sigma,
@@ -244,8 +247,6 @@ class SignalQualityMetrics:
         """Expose latest computed snapshots for all symbols."""
 
         return dict(self._latest)
-
-
 
 
 @dataclass
@@ -273,12 +274,8 @@ class FeaturePipe:
     spread_ttl_ms: int = 60_000
     execution: Optional[ExecutionRuntimeConfig] = None
     costs: Optional[SpotCostConfig] = None
-    signal_quality: Dict[str, SignalQualitySnapshot] = field(
-        init=False, default_factory=dict
-    )
-    market_state: Dict[str, MarketMetricsSnapshot] = field(
-        init=False, default_factory=dict
-    )
+    signal_quality: Dict[str, SignalQualitySnapshot] = field(init=False, default_factory=dict)
+    market_state: Dict[str, MarketMetricsSnapshot] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.spec is None:
@@ -294,9 +291,7 @@ class FeaturePipe:
         self._symbol_state: Dict[str, _FeatureStatsState] = {}
         self._cost_config = self._resolve_cost_config()
         exec_mode = getattr(self.execution, "mode", None)
-        self._bar_mode_active = (
-            isinstance(exec_mode, str) and exec_mode.lower() == "bar"
-        )
+        self._bar_mode_active = isinstance(exec_mode, str) and exec_mode.lower() == "bar"
 
     # ------------------------------------------------------------------
     # Streaming API
@@ -343,7 +338,7 @@ class FeaturePipe:
         # Using unclosed bars creates forward-looking bias!
         # STRICT: Only is_final=True (identity check) is accepted
         # Rejects: False, None, 0, 1, "", "yes", [], etc.
-        if getattr(bar, 'is_final', True) is not True:
+        if getattr(bar, "is_final", True) is not True:
             return {}
 
         try:
@@ -511,11 +506,7 @@ class FeaturePipe:
         high_val = self._coerce_float(getattr(bar, "high", None))
         low_val = self._coerce_float(getattr(bar, "low", None))
         range_ratio: Optional[float] = None
-        if (
-            prev not in (None, 0.0)
-            and high_val is not None
-            and low_val is not None
-        ):
+        if prev not in (None, 0.0) and high_val is not None and low_val is not None:
             try:
                 prev_close_val = float(prev) if prev is not None else None
                 hi = float(high_val)
@@ -601,20 +592,18 @@ class FeaturePipe:
         state: _FeatureStatsState,
         ts_ms: Optional[int],
     ) -> None:
-        ret_last = state.ret_last if state.ret_last is not None and isfinite(state.ret_last) else None
+        ret_last = (
+            state.ret_last if state.ret_last is not None and isfinite(state.ret_last) else None
+        )
         sigma = state.sigma if state.sigma is not None and isfinite(state.sigma) else None
         atr_pct = (
             state.atr_pct
-            if state.atr_pct is not None
-            and isfinite(state.atr_pct)
-            and state.atr_pct >= 0.0
+            if state.atr_pct is not None and isfinite(state.atr_pct) and state.atr_pct >= 0.0
             else None
         )
         spread = (
             state.spread_bps
-            if state.spread_bps is not None
-            and isfinite(state.spread_bps)
-            and state.spread_bps > 0
+            if state.spread_bps is not None and isfinite(state.spread_bps) and state.spread_bps > 0
             else None
         )
         ready = state.bar_count >= self._sigma_window and sigma is not None
@@ -946,9 +935,7 @@ class FeaturePipe:
                     out=np.zeros_like(turnover_values),
                     where=(equity_values > 0.0),
                 )
-            return np.where(
-                np.isfinite(fractions) & (fractions > 0.0), fractions, 0.0
-            )
+            return np.where(np.isfinite(fractions) & (fractions > 0.0), fractions, 0.0)
 
         normalized = np.where(np.isfinite(turnover_values), turnover_values, 0.0)
         normalized = np.where(normalized > 0.0, normalized, 0.0)
@@ -972,12 +959,8 @@ class FeaturePipe:
         turnover_fraction = np.zeros(n_rows, dtype=float)
         if turnover_series is not None:
             turnover_values = turnover_series.to_numpy(dtype=float)
-            turnover_values = np.where(
-                np.isfinite(turnover_values), np.abs(turnover_values), 0.0
-            )
-            turnover_fraction = self._compute_turnover_fraction(
-                df, turnover_values
-            )
+            turnover_values = np.where(np.isfinite(turnover_values), np.abs(turnover_values), 0.0)
+            turnover_fraction = self._compute_turnover_fraction(df, turnover_values)
         else:
             turnover_values = None
 
@@ -1038,4 +1021,3 @@ __all__ = [
     "SignalQualitySnapshot",
     "MarketMetricsSnapshot",
 ]
-

@@ -43,7 +43,7 @@ def test_decide_spot_trade_costs_and_net():
     # Expected delta = 0.2 -> turnover_usd = 200.0, participation = 0.004
     assert metrics.turnover_usd == pytest.approx(200.0)
     base_cost = 15.0  # 5 + 10
-    impact = 15.0 * (0.004 ** 0.5) + 2.0 * 0.004
+    impact = 15.0 * (0.004**0.5) + 2.0 * 0.004
     assert metrics.cost_bps == pytest.approx(base_cost + impact)
     assert metrics.edge_bps == 50.0
     assert metrics.net_bps == pytest.approx(50.0 - (base_cost + impact) - 3.0)
@@ -303,9 +303,7 @@ def test_bar_executor_handles_symbol_case_variants():
     assert second_report.meta["decision"]["target_weight"] == pytest.approx(0.1)
     price_ratio = float(second_bar.close) / float(first_bar.close)
     expected_delta = 0.1 - (0.4 * price_ratio)
-    assert second_report.meta["decision"]["delta_weight"] == pytest.approx(
-        expected_delta
-    )
+    assert second_report.meta["decision"]["delta_weight"] == pytest.approx(expected_delta)
 
     positions_upper = executor.get_open_positions(symbols=["ETHUSDT"])
     assert "ETHUSDT" in positions_upper
@@ -608,9 +606,7 @@ def test_bar_executor_handles_envelope_meta():
     assert instruction["target_weight"] == pytest.approx(payload.target_weight)
     decision = report.meta["decision"]
     assert decision["edge_bps"] == pytest.approx(economics.edge_bps)
-    assert decision["turnover_usd"] == pytest.approx(
-        payload.target_weight * equity_override
-    )
+    assert decision["turnover_usd"] == pytest.approx(payload.target_weight * equity_override)
     assert decision["impact_mode"] == "model"
     assert report.meta["adv_quote"] == pytest.approx(adv_quote)
     assert report.meta["reference_price"] == pytest.approx(float(bar.close))
@@ -655,9 +651,7 @@ def test_bar_executor_falls_back_to_nested_economics() -> None:
 
     decision = report.meta["decision"]
     assert decision["edge_bps"] == pytest.approx(economics.edge_bps)
-    assert decision["net_bps"] == pytest.approx(
-        economics.edge_bps - economics.cost_bps
-    )
+    assert decision["net_bps"] == pytest.approx(economics.edge_bps - economics.cost_bps)
     assert decision["act_now"] is True
     assert decision["turnover_usd"] == pytest.approx(economics.turnover_usd)
     expected_target = economics.turnover_usd / executor.default_equity_usd
@@ -732,9 +726,7 @@ def test_bar_executor_uses_default_max_participation():
 
 def test_bar_executor_turnover_cap_blocks_trade():
     cost_cfg = SpotCostConfig(
-        turnover_caps=SpotTurnoverCaps(
-            per_symbol=SpotTurnoverLimit(usd=100.0)
-        )
+        turnover_caps=SpotTurnoverCaps(per_symbol=SpotTurnoverLimit(usd=100.0))
     )
     executor = BarExecutor(
         run_id="test",
@@ -966,9 +958,7 @@ def test_bar_executor_skips_when_price_invalid(price: float):
 
 def test_bar_executor_turnover_cap_tracks_portfolio_usage():
     cost_cfg = SpotCostConfig(
-        turnover_caps=SpotTurnoverCaps(
-            portfolio=SpotTurnoverLimit(usd=150.0)
-        )
+        turnover_caps=SpotTurnoverCaps(portfolio=SpotTurnoverLimit(usd=150.0))
     )
     executor = BarExecutor(
         run_id="test",
@@ -1018,6 +1008,7 @@ def test_bar_executor_turnover_cap_tracks_portfolio_usage():
     assert snapshot["turnover_usd"] == pytest.approx(0.0)
     assert snapshot.get("turnover_cap_enforced") is True
     assert snapshot["cap_usd"] == pytest.approx(100.0)
+
 
 def test_bar_executor_respects_min_rebalance_step():
     executor = BarExecutor(
@@ -1117,7 +1108,9 @@ def test_bar_executor_skips_when_edge_insufficient():
     assert executor.get_open_positions()["BTCUSDT"].meta["weight"] == 0.0
 
 
-def _make_worker(max_total_weight: float | None, *, existing_weights: dict[str, float] | None = None) -> _Worker:
+def _make_worker(
+    max_total_weight: float | None, *, existing_weights: dict[str, float] | None = None
+) -> _Worker:
     class DummyFeaturePipe:
         def __init__(self) -> None:
             self.spread_ttl_ms = 0
@@ -1225,18 +1218,12 @@ def test_worker_normalizes_weights_above_cap():
         (normalized_orders[0], payloads[0], order1_turnover),
         (normalized_orders[1], payloads[1], order2_turnover),
     ):
-        assert pending[id(order_obj)]["target_weight"] == pytest.approx(
-            payload["target_weight"]
-        )
-        assert pending[id(order_obj)]["delta_weight"] == pytest.approx(
-            payload["delta_weight"]
-        )
+        assert pending[id(order_obj)]["target_weight"] == pytest.approx(payload["target_weight"])
+        assert pending[id(order_obj)]["delta_weight"] == pytest.approx(payload["delta_weight"])
         economics = payload["economics"]
         assert economics["turnover_usd"] == pytest.approx(original_turnover * expected_factor)
         decision_meta = order_obj.meta["decision"]
-        assert decision_meta["turnover_usd"] == pytest.approx(
-            original_turnover * expected_factor
-        )
+        assert decision_meta["turnover_usd"] == pytest.approx(original_turnover * expected_factor)
         assert decision_meta["economics"]["turnover_usd"] == pytest.approx(
             original_turnover * expected_factor
         )
@@ -1313,9 +1300,7 @@ def test_worker_normalizes_weights_accumulates_same_symbol_orders():
     assert payloads[0]["target_weight"] == pytest.approx(expected_target1)
     assert payloads[1]["target_weight"] == pytest.approx(expected_target2)
     assert payloads[0]["delta_weight"] == pytest.approx(expected_target1 - 0.1)
-    assert payloads[1]["delta_weight"] == pytest.approx(
-        expected_target2 - expected_target1
-    )
+    assert payloads[1]["delta_weight"] == pytest.approx(expected_target2 - expected_target1)
 
     for order_obj, payload, original_turnover in (
         (normalized_orders[0], payloads[0], order1_turnover),
@@ -1441,9 +1426,7 @@ def test_worker_normalizes_weights_handles_false_string_flag():
 
 
 def test_worker_normalizes_weights_with_existing_weight_keeps_direction():
-    worker = _make_worker(
-        1.0, existing_weights={"BTCUSDT": 0.5, "ETHUSDT": 0.3}
-    )
+    worker = _make_worker(1.0, existing_weights={"BTCUSDT": 0.5, "ETHUSDT": 0.3})
     order_up = Order(
         ts=1,
         symbol="BTCUSDT",
@@ -1478,33 +1461,24 @@ def test_worker_normalizes_weights_with_existing_weight_keeps_direction():
     normalized_orders, applied = worker._normalize_weight_targets([order_up, order_new])
     assert applied is True
 
-    payloads: Dict[str, Dict[str, Any]] = {
-        o.symbol: o.meta["payload"] for o in normalized_orders
-    }
+    payloads: Dict[str, Dict[str, Any]] = {o.symbol: o.meta["payload"] for o in normalized_orders}
     btc_payload = payloads["BTCUSDT"]
     btc_current = worker._weights["BTCUSDT"]
     factor = btc_payload["normalization"]["factor"]
     assert factor == pytest.approx(
-        (btc_payload["normalization"]["available_delta"]) / (
-            btc_payload["normalization"]["delta_total"]
-        )
+        (btc_payload["normalization"]["available_delta"])
+        / (btc_payload["normalization"]["delta_total"])
     )
-    assert btc_payload["target_weight"] == pytest.approx(
-        btc_current + (0.7 - btc_current) * factor
-    )
+    assert btc_payload["target_weight"] == pytest.approx(btc_current + (0.7 - btc_current) * factor)
     assert btc_payload["target_weight"] >= btc_current
     assert btc_payload["target_weight"] <= 0.7
-    assert btc_payload["delta_weight"] == pytest.approx(
-        btc_payload["target_weight"] - btc_current
-    )
+    assert btc_payload["delta_weight"] == pytest.approx(btc_payload["target_weight"] - btc_current)
     assert btc_payload["delta_weight"] >= 0.0
     ltc_payload = payloads["LTCUSDT"]
     assert ltc_payload["target_weight"] == pytest.approx(0.7 * factor)
     assert ltc_payload["delta_weight"] == pytest.approx(ltc_payload["target_weight"])
     total_weight = sum(p["target_weight"] for p in payloads.values())
-    assert total_weight == pytest.approx(
-        btc_payload["normalization"]["available_total"]
-    )
+    assert total_weight == pytest.approx(btc_payload["normalization"]["available_total"])
 
 
 def test_worker_normalizes_weights_with_current_exposure_respects_cap():
@@ -1561,9 +1535,7 @@ def test_worker_normalizes_weights_with_current_exposure_respects_cap():
 
     total_weight = sum(payload["target_weight"] for payload in payloads.values())
     assert total_weight == pytest.approx(normalization["available_total"])
-    assert total_weight + worker._weights["SOLUSDT"] == pytest.approx(
-        worker._max_total_weight
-    )
+    assert total_weight + worker._weights["SOLUSDT"] == pytest.approx(worker._max_total_weight)
 
     for order in (order_btc, order_eth):
         payload = payloads[order.symbol]
@@ -1572,9 +1544,7 @@ def test_worker_normalizes_weights_with_current_exposure_respects_cap():
         original_target = btc_target if order.symbol == "BTCUSDT" else eth_target
         expected_target = current + (original_target - current) * expected_factor
         assert payload["target_weight"] == pytest.approx(expected_target)
-        assert payload["delta_weight"] == pytest.approx(
-            payload["target_weight"] - current
-        )
+        assert payload["delta_weight"] == pytest.approx(payload["target_weight"] - current)
         assert payload["delta_weight"] >= 0.0
 
 
@@ -1690,6 +1660,7 @@ def test_worker_normalizes_weights_mixed_directions_under_cap():
     pending = worker._pending_weight
     assert pending[id(eth_order)]["delta_weight"] == pytest.approx(-0.15)
 
+
 def test_bar_executor_propagates_normalized_flag():
     executor = BarExecutor(
         run_id="test",
@@ -1799,4 +1770,3 @@ def test_bar_executor_aborts_when_weight_would_drop_below_zero():
     decision = report.meta["decision"]
     assert decision["act_now"] is True
     assert decision["delta_weight"] == pytest.approx(-0.2)
-

@@ -12,6 +12,7 @@ Date: 2025-11-23
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 from typing import Dict, Any
 from unittest.mock import Mock, MagicMock, patch
@@ -125,7 +126,9 @@ class TestAdvantageNormalizationBehavior:
         # But CleanRL/SB3 would still normalize with floor 1e-8
         # This shows the discrepancy
 
-        assert EPSILON_CLEANRL < THRESHOLD_CURRENT, "CleanRL epsilon is smaller than current threshold"
+        assert (
+            EPSILON_CLEANRL < THRESHOLD_CURRENT
+        ), "CleanRL epsilon is smaller than current threshold"
 
 
 class TestObservationNormalizationImpact:
@@ -168,10 +171,12 @@ class TestObservationNormalizationImpact:
         unnormalized = np.column_stack([price_returns, volume])
 
         # With normalization
-        normalized = np.column_stack([
-            (price_returns - price_returns.mean()) / price_returns.std(),
-            (volume - volume.mean()) / volume.std(),
-        ])
+        normalized = np.column_stack(
+            [
+                (price_returns - price_returns.mean()) / price_returns.std(),
+                (volume - volume.mean()) / volume.std(),
+            ]
+        )
 
         # Verify normalization
         assert np.allclose(normalized.mean(axis=0), 0, atol=1e-6), "Mean should be ~0"
@@ -343,11 +348,14 @@ class TestAdvantageNormalizationIntegration:
     def test_floor_normalization_implementation(self):
         """Test recommended floor normalization implementation."""
         # Simulate rollout buffer advantages
-        advantages = np.array([
-            [0.0001, 0.0002],
-            [0.0003, 0.00015],
-            [0.00025, 0.0001],
-        ], dtype=np.float32)
+        advantages = np.array(
+            [
+                [0.0001, 0.0002],
+                [0.0003, 0.00015],
+                [0.00025, 0.0001],
+            ],
+            dtype=np.float32,
+        )
 
         adv_mean = float(np.mean(advantages))
         adv_std = float(np.std(advantages, ddof=1))

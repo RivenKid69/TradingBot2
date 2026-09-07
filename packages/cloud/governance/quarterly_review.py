@@ -48,17 +48,19 @@ OVERDUE_THRESHOLD_DAYS: Final[int] = 7  # Overdue after 7 days past due date
 
 class ReviewType(str, Enum):
     """Type of quarterly review."""
-    RETENTION = "retention"              # Retention schedule review
-    SUBPROCESSOR = "subprocessor"        # Subprocessor list review
-    DSAR = "dsar"                        # DSAR metrics review
-    INCIDENT = "incident"                # Incident learnings
-    INVENTORY = "inventory"              # Data inventory audit
-    POLICY = "policy"                    # Policy changes review
-    FULL_QUARTERLY = "full_quarterly"    # Full quarterly review
+
+    RETENTION = "retention"  # Retention schedule review
+    SUBPROCESSOR = "subprocessor"  # Subprocessor list review
+    DSAR = "dsar"  # DSAR metrics review
+    INCIDENT = "incident"  # Incident learnings
+    INVENTORY = "inventory"  # Data inventory audit
+    POLICY = "policy"  # Policy changes review
+    FULL_QUARTERLY = "full_quarterly"  # Full quarterly review
 
 
 class ReviewStatus(str, Enum):
     """Status of a review."""
+
     SCHEDULED = "scheduled"
     DUE_SOON = "due_soon"
     IN_PROGRESS = "in_progress"
@@ -70,6 +72,7 @@ class ReviewStatus(str, Enum):
 
 class FindingSeverity(str, Enum):
     """Severity of a review finding."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -79,6 +82,7 @@ class FindingSeverity(str, Enum):
 
 class FindingStatus(str, Enum):
     """Status of a finding."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
@@ -88,6 +92,7 @@ class FindingStatus(str, Enum):
 
 class SubprocessorStatus(str, Enum):
     """Status of a subprocessor."""
+
     ACTIVE = "active"
     PENDING_REVIEW = "pending_review"
     APPROVED = "approved"
@@ -100,9 +105,11 @@ class SubprocessorStatus(str, Enum):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ReviewFinding:
     """A finding from a compliance review."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     review_id: str = ""
     finding_type: str = ""
@@ -150,16 +157,17 @@ class ReviewFinding:
 @dataclass
 class Subprocessor:
     """A subprocessor record per GDPR Art. 28."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     description: str = ""
-    category: str = ""                   # cloud, analytics, support, etc.
+    category: str = ""  # cloud, analytics, support, etc.
     data_processed: List[str] = field(default_factory=list)  # Categories of data
-    processing_location: str = ""        # EU, US, etc.
+    processing_location: str = ""  # EU, US, etc.
     eu_compliant: bool = True
     dpa_signed: bool = False
     dpa_signed_date: Optional[datetime] = None
-    scc_in_place: bool = False           # Standard Contractual Clauses
+    scc_in_place: bool = False  # Standard Contractual Clauses
     security_certified: List[str] = field(default_factory=list)  # ISO27001, SOC2, etc.
     status: SubprocessorStatus = SubprocessorStatus.ACTIVE
     last_reviewed_at: Optional[datetime] = None
@@ -187,15 +195,21 @@ class Subprocessor:
             "compliance": {
                 "eu_compliant": self.eu_compliant,
                 "dpa_signed": self.dpa_signed,
-                "dpa_signed_date": self.dpa_signed_date.isoformat() if self.dpa_signed_date else None,
+                "dpa_signed_date": (
+                    self.dpa_signed_date.isoformat() if self.dpa_signed_date else None
+                ),
                 "scc_in_place": self.scc_in_place,
                 "security_certified": self.security_certified,
             },
             "status": self.status.value,
             "review": {
-                "last_reviewed_at": self.last_reviewed_at.isoformat() if self.last_reviewed_at else None,
+                "last_reviewed_at": (
+                    self.last_reviewed_at.isoformat() if self.last_reviewed_at else None
+                ),
                 "last_reviewed_by": self.last_reviewed_by,
-                "next_review_due": self.next_review_due.isoformat() if self.next_review_due else None,
+                "next_review_due": (
+                    self.next_review_due.isoformat() if self.next_review_due else None
+                ),
                 "is_review_due": self.is_review_due,
             },
             "notes": self.notes,
@@ -207,11 +221,12 @@ class Subprocessor:
 @dataclass
 class IncidentLearning:
     """An incident learning record."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     incident_id: str = ""
     incident_date: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    incident_type: str = ""              # data_breach, access_violation, etc.
-    severity: str = ""                   # P1, P2, P3, P4
+    incident_type: str = ""  # data_breach, access_violation, etc.
+    severity: str = ""  # P1, P2, P3, P4
     description: str = ""
     root_cause: str = ""
     impact_summary: str = ""
@@ -220,7 +235,7 @@ class IncidentLearning:
     remediation_taken: str = ""
     preventive_measures: List[str] = field(default_factory=list)
     lessons_learned: List[str] = field(default_factory=list)
-    status: str = "open"                 # open, in_progress, closed
+    status: str = "open"  # open, in_progress, closed
     reviewed_at: Optional[datetime] = None
     reviewed_by: Optional[str] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -256,6 +271,7 @@ class IncidentLearning:
 @dataclass
 class RetentionReviewItem:
     """Item in retention schedule review."""
+
     data_type: str = ""
     current_retention_days: int = 0
     min_retention_days: int = 0
@@ -291,12 +307,15 @@ class RetentionReviewItem:
 @dataclass
 class QuarterlyReview:
     """A quarterly compliance review."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     review_type: ReviewType = ReviewType.FULL_QUARTERLY
     status: ReviewStatus = ReviewStatus.SCHEDULED
-    quarter: str = ""                    # e.g., "2025-Q1"
+    quarter: str = ""  # e.g., "2025-Q1"
     scheduled_date: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    due_date: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=REVIEW_CYCLE_DAYS))
+    due_date: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=REVIEW_CYCLE_DAYS)
+    )
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
@@ -344,13 +363,16 @@ class QuarterlyReview:
 
     def _compute_hash(self) -> str:
         """Compute integrity hash."""
-        content = json.dumps({
-            "id": self.id,
-            "review_type": self.review_type.value,
-            "quarter": self.quarter,
-            "findings_count": len(self.findings),
-            "status": self.status.value,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "id": self.id,
+                "review_type": self.review_type.value,
+                "quarter": self.quarter,
+                "findings_count": len(self.findings),
+                "status": self.status.value,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     @property
@@ -374,7 +396,9 @@ class QuarterlyReview:
     @property
     def open_findings(self) -> int:
         """Count of open findings."""
-        return sum(1 for f in self.findings if f.status in (FindingStatus.OPEN, FindingStatus.IN_PROGRESS))
+        return sum(
+            1 for f in self.findings if f.status in (FindingStatus.OPEN, FindingStatus.IN_PROGRESS)
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -433,6 +457,7 @@ class QuarterlyReview:
 @dataclass
 class ReviewSchedule:
     """Schedule of upcoming reviews."""
+
     reviews: List[QuarterlyReview] = field(default_factory=list)
     next_review: Optional[QuarterlyReview] = None
     overdue_reviews: List[QuarterlyReview] = field(default_factory=list)
@@ -452,6 +477,7 @@ class ReviewSchedule:
 # ============================================================================
 # Quarterly Review Service
 # ============================================================================
+
 
 class QuarterlyReviewService:
     """
@@ -569,12 +595,15 @@ class QuarterlyReviewService:
         with self._lock:
             self._reviews[review.id] = review
 
-        self._log_audit("review_scheduled", {
-            "review_id": review.id,
-            "review_type": review_type.value,
-            "quarter": quarter,
-            "created_by": created_by,
-        })
+        self._log_audit(
+            "review_scheduled",
+            {
+                "review_id": review.id,
+                "review_type": review_type.value,
+                "quarter": quarter,
+                "created_by": created_by,
+            },
+        )
 
         logger.info(f"Scheduled quarterly review: {review.id} ({quarter})")
         return review
@@ -590,17 +619,24 @@ class QuarterlyReviewService:
             if not review:
                 return None
 
-            if review.status not in (ReviewStatus.SCHEDULED, ReviewStatus.DUE_SOON, ReviewStatus.OVERDUE):
+            if review.status not in (
+                ReviewStatus.SCHEDULED,
+                ReviewStatus.DUE_SOON,
+                ReviewStatus.OVERDUE,
+            ):
                 raise ValueError(f"Cannot start review in status: {review.status.value}")
 
             review.status = ReviewStatus.IN_PROGRESS
             review.started_at = datetime.now(timezone.utc)
             review.updated_at = datetime.now(timezone.utc)
 
-        self._log_audit("review_started", {
-            "review_id": review_id,
-            "started_by": started_by,
-        })
+        self._log_audit(
+            "review_started",
+            {
+                "review_id": review_id,
+                "started_by": started_by,
+            },
+        )
 
         # Collect initial metrics snapshot
         self._collect_metrics_snapshot(review)
@@ -635,11 +671,14 @@ class QuarterlyReviewService:
             review.recommendations = recommendations or []
             review.integrity_hash = review._compute_hash()
 
-        self._log_audit("review_completed", {
-            "review_id": review_id,
-            "completed_by": completed_by,
-            "findings_count": len(review.findings),
-        })
+        self._log_audit(
+            "review_completed",
+            {
+                "review_id": review_id,
+                "completed_by": completed_by,
+                "findings_count": len(review.findings),
+            },
+        )
 
         logger.info(f"Completed quarterly review: {review_id}")
         return review
@@ -667,10 +706,13 @@ class QuarterlyReviewService:
             review.updated_at = datetime.now(timezone.utc)
             review.integrity_hash = review._compute_hash()
 
-        self._log_audit("review_approved", {
-            "review_id": review_id,
-            "approved_by": approved_by,
-        })
+        self._log_audit(
+            "review_approved",
+            {
+                "review_id": review_id,
+                "approved_by": approved_by,
+            },
+        )
 
         # Schedule next review
         self._schedule_next_review(review)
@@ -728,12 +770,17 @@ class QuarterlyReviewService:
                 schedule.due_soon_reviews.append(review)
 
         # Next review
-        upcoming = [r for r in schedule.reviews if r.status in (
-            ReviewStatus.SCHEDULED,
-            ReviewStatus.DUE_SOON,
-            ReviewStatus.OVERDUE,
-            ReviewStatus.IN_PROGRESS,
-        )]
+        upcoming = [
+            r
+            for r in schedule.reviews
+            if r.status
+            in (
+                ReviewStatus.SCHEDULED,
+                ReviewStatus.DUE_SOON,
+                ReviewStatus.OVERDUE,
+                ReviewStatus.IN_PROGRESS,
+            )
+        ]
         if upcoming:
             schedule.next_review = upcoming[0]
 
@@ -759,12 +806,15 @@ class QuarterlyReviewService:
             review.updated_at = datetime.now(timezone.utc)
             self._findings[finding.id] = finding
 
-        self._log_audit("finding_created", {
-            "finding_id": finding.id,
-            "review_id": review_id,
-            "severity": finding.severity.value,
-            "title": finding.title,
-        })
+        self._log_audit(
+            "finding_created",
+            {
+                "finding_id": finding.id,
+                "review_id": review_id,
+                "severity": finding.severity.value,
+                "title": finding.title,
+            },
+        )
 
         if self._on_finding_created:
             try:
@@ -800,10 +850,13 @@ class QuarterlyReviewService:
             if resolution_notes:
                 finding.resolution_notes = resolution_notes
 
-        self._log_audit("finding_updated", {
-            "finding_id": finding_id,
-            "new_status": status.value if status else None,
-        })
+        self._log_audit(
+            "finding_updated",
+            {
+                "finding_id": finding_id,
+                "new_status": status.value if status else None,
+            },
+        )
 
         return finding
 
@@ -838,11 +891,14 @@ class QuarterlyReviewService:
         with self._lock:
             self._subprocessors[subprocessor.id] = subprocessor
 
-        self._log_audit("subprocessor_added", {
-            "subprocessor_id": subprocessor.id,
-            "name": subprocessor.name,
-            "eu_compliant": subprocessor.eu_compliant,
-        })
+        self._log_audit(
+            "subprocessor_added",
+            {
+                "subprocessor_id": subprocessor.id,
+                "name": subprocessor.name,
+                "eu_compliant": subprocessor.eu_compliant,
+            },
+        )
 
         logger.info(f"Added subprocessor: {subprocessor.name}")
         return subprocessor
@@ -870,10 +926,13 @@ class QuarterlyReviewService:
             if notes:
                 sub.notes = notes
 
-        self._log_audit("subprocessor_reviewed", {
-            "subprocessor_id": subprocessor_id,
-            "reviewed_by": reviewed_by,
-        })
+        self._log_audit(
+            "subprocessor_reviewed",
+            {
+                "subprocessor_id": subprocessor_id,
+                "reviewed_by": reviewed_by,
+            },
+        )
 
         return sub
 
@@ -933,11 +992,14 @@ class QuarterlyReviewService:
         with self._lock:
             self._incidents[incident.id] = incident
 
-        self._log_audit("incident_learning_added", {
-            "incident_id": incident.incident_id,
-            "incident_type": incident.incident_type,
-            "severity": incident.severity,
-        })
+        self._log_audit(
+            "incident_learning_added",
+            {
+                "incident_id": incident.incident_id,
+                "incident_type": incident.incident_type,
+                "severity": incident.severity,
+            },
+        )
 
         logger.info(f"Added incident learning: {incident.incident_id}")
         return incident
@@ -964,10 +1026,13 @@ class QuarterlyReviewService:
             if preventive_measures:
                 incident.preventive_measures.extend(preventive_measures)
 
-        self._log_audit("incident_reviewed", {
-            "incident_id": incident_id,
-            "reviewed_by": reviewed_by,
-        })
+        self._log_audit(
+            "incident_reviewed",
+            {
+                "incident_id": incident_id,
+                "reviewed_by": reviewed_by,
+            },
+        )
 
         return incident
 
@@ -1004,7 +1069,7 @@ class QuarterlyReviewService:
         """Review retention schedule as part of quarterly review."""
         items = []
 
-        if self._retention and hasattr(self._retention, 'get_all_policies'):
+        if self._retention and hasattr(self._retention, "get_all_policies"):
             try:
                 policies = self._retention.get_all_policies()
 
@@ -1015,11 +1080,11 @@ class QuarterlyReviewService:
                     )
 
                     # Get min/max from constants if available
-                    if hasattr(self._retention, 'MIN_RETENTION_DAYS'):
+                    if hasattr(self._retention, "MIN_RETENTION_DAYS"):
                         min_days = self._retention.MIN_RETENTION_DAYS.get(policy.data_type, 1)
                         item.min_retention_days = min_days
 
-                    if hasattr(self._retention, 'MAX_RETENTION_DAYS'):
+                    if hasattr(self._retention, "MAX_RETENTION_DAYS"):
                         max_days = self._retention.MAX_RETENTION_DAYS.get(policy.data_type)
                         item.max_retention_days = max_days
 
@@ -1055,9 +1120,11 @@ class QuarterlyReviewService:
 
         if self._inventory:
             try:
-                if hasattr(self._inventory, 'generate_report'):
+                if hasattr(self._inventory, "generate_report"):
                     report = self._inventory.generate_report()
-                    snapshot["inventory_report"] = report.to_dict() if hasattr(report, 'to_dict') else report
+                    snapshot["inventory_report"] = (
+                        report.to_dict() if hasattr(report, "to_dict") else report
+                    )
             except Exception as e:
                 logger.warning(f"Could not collect inventory metrics: {e}")
 
@@ -1128,6 +1195,7 @@ class QuarterlyReviewService:
 # ============================================================================
 # Pre-populated Subprocessors
 # ============================================================================
+
 
 def create_default_subprocessors() -> List[Subprocessor]:
     """Create default subprocessor list for CCEA platform."""

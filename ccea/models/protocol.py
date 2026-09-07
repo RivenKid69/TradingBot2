@@ -30,8 +30,10 @@ DIGEST_PATTERN = re.compile(r"^sha256:[a-f0-9]{64}$")
 # Enums
 # ============================================================================
 
+
 class SignatureAlgorithm(str, Enum):
     """Supported signature algorithms."""
+
     ED25519 = "ed25519"
     ECDSA_P256 = "ecdsa-p256"
     RSA_PSS = "rsa-pss"
@@ -39,6 +41,7 @@ class SignatureAlgorithm(str, Enum):
 
 class CommandStatus(str, Enum):
     """Command processing status."""
+
     PENDING = "PENDING"
     RECEIVED = "RECEIVED"
     AWAITING_APPROVAL = "AWAITING_APPROVAL"
@@ -51,6 +54,7 @@ class CommandStatus(str, Enum):
 
 class ApprovalStatus(str, Enum):
     """Approval result status."""
+
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     TIMEOUT = "TIMEOUT"
@@ -58,6 +62,7 @@ class ApprovalStatus(str, Enum):
 
 class RunState(str, Enum):
     """Run state machine states."""
+
     INITIALIZING = "INITIALIZING"
     RUNNING = "RUNNING"
     PAUSED = "PAUSED"
@@ -67,6 +72,7 @@ class RunState(str, Enum):
 
 class DeploymentState(str, Enum):
     """Deployment state machine states."""
+
     CREATED = "CREATED"
     PENDING = "PENDING"
     ENROLLED = "ENROLLED"
@@ -79,12 +85,14 @@ class DeploymentState(str, Enum):
 
 class ChangeClass(str, Enum):
     """Change classification for approval requirements."""
+
     TRADING_IMPACTING = "TRADING_IMPACTING"
     NON_TRADING_IMPACTING = "NON_TRADING_IMPACTING"
 
 
 class TelemetryLevel(str, Enum):
     """Telemetry detail levels."""
+
     AGGREGATED = "AGGREGATED"
     DETAILED_NON_SENSITIVE = "DETAILED_NON_SENSITIVE"
     RAW_ORDER_EVENTS = "RAW_ORDER_EVENTS"
@@ -92,6 +100,7 @@ class TelemetryLevel(str, Enum):
 
 class CommandType(str, Enum):
     """Allowed command types (Design Doc E2)."""
+
     REQUEST_START_RUN = "REQUEST_START_RUN"
     REQUEST_STOP_RUN = "REQUEST_STOP_RUN"
     REQUEST_PAUSE_RUN = "REQUEST_PAUSE_RUN"
@@ -103,6 +112,7 @@ class CommandType(str, Enum):
 
 class MessageType(str, Enum):
     """Allowed message types."""
+
     HEARTBEAT = "HEARTBEAT"
     POLL_COMMANDS = "POLL_COMMANDS"
     COMMAND_BATCH = "COMMAND_BATCH"
@@ -115,6 +125,7 @@ class MessageType(str, Enum):
 # ============================================================================
 # Base Types
 # ============================================================================
+
 
 class IdempotencyKey(str):
     """Idempotency key with validation."""
@@ -158,14 +169,13 @@ class Digest(str):
     @classmethod
     def validate(cls, v: str) -> "Digest":
         if not DIGEST_PATTERN.match(v):
-            raise ValueError(
-                f"Invalid digest format. Must match pattern: {DIGEST_PATTERN.pattern}"
-            )
+            raise ValueError(f"Invalid digest format. Must match pattern: {DIGEST_PATTERN.pattern}")
         return cls(v)
 
 
 class Signature(BaseModel):
     """Cryptographic signature."""
+
     algorithm: SignatureAlgorithm
     value: str = Field(..., description="Base64-encoded signature")
     key_id: Optional[str] = Field(None, description="Key identifier")
@@ -177,11 +187,21 @@ class Signature(BaseModel):
 # Prohibited Fields Validator
 # ============================================================================
 
-PROHIBITED_FIELDS = frozenset({
-    "side", "quantity", "qty", "price", "order_type",
-    "target_position", "execute_order", "place_order",
-    "submit_order", "intent", "signal"
-})
+PROHIBITED_FIELDS = frozenset(
+    {
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "target_position",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "intent",
+        "signal",
+    }
+)
 
 
 def check_no_order_fields(values: Dict[str, Any]) -> Dict[str, Any]:
@@ -203,8 +223,10 @@ def check_no_order_fields(values: Dict[str, Any]) -> Dict[str, Any]:
 # State Models
 # ============================================================================
 
+
 class AgentState(BaseModel):
     """Agent state information in heartbeat."""
+
     deployment_state: Optional[DeploymentState] = None
     run_state: Optional[RunState] = None
     agent_version: Optional[str] = None
@@ -216,6 +238,7 @@ class AgentState(BaseModel):
 
 class AgentHealth(BaseModel):
     """Agent health metrics."""
+
     cpu_percent: Optional[float] = Field(None, ge=0, le=100)
     memory_percent: Optional[float] = Field(None, ge=0, le=100)
     disk_percent: Optional[float] = Field(None, ge=0, le=100)
@@ -231,20 +254,19 @@ class VersionNegotiation(BaseModel):
 
     Uses min_supported/max_supported per Design Doc.
     """
+
     min_supported: str = Field(
         ...,
         pattern=r"^\d+\.\d+\.\d+$",
-        description="Minimum supported schema version (MAJOR.MINOR.PATCH)"
+        description="Minimum supported schema version (MAJOR.MINOR.PATCH)",
     )
     max_supported: str = Field(
         ...,
         pattern=r"^\d+\.\d+\.\d+$",
-        description="Maximum supported schema version (MAJOR.MINOR.PATCH)"
+        description="Maximum supported schema version (MAJOR.MINOR.PATCH)",
     )
     preferred: Optional[str] = Field(
-        None,
-        pattern=r"^\d+\.\d+\.\d+$",
-        description="Preferred schema version if within range"
+        None, pattern=r"^\d+\.\d+\.\d+$", description="Preferred schema version if within range"
     )
 
     model_config = {"extra": "forbid"}
@@ -253,6 +275,7 @@ class VersionNegotiation(BaseModel):
     def validate_version_range(self) -> "VersionNegotiation":
         """Ensure max_supported >= min_supported."""
         from ccea.protocol.schema_versioning import SchemaVersion
+
         min_ver = SchemaVersion.parse(self.min_supported)
         max_ver = SchemaVersion.parse(self.max_supported)
         if max_ver < min_ver:
@@ -267,8 +290,10 @@ class VersionNegotiation(BaseModel):
 # Base Message Model
 # ============================================================================
 
+
 class BaseMessage(BaseModel):
     """Base model for all messages."""
+
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     signature: Optional[Signature] = None
 
@@ -282,6 +307,7 @@ class BaseMessage(BaseModel):
 
 class BaseCommand(BaseMessage):
     """Base model for all commands."""
+
     command_type: CommandType
     idempotency_key: str = Field(..., pattern=r"^[a-zA-Z0-9_-]{16,64}$")
 
@@ -297,6 +323,7 @@ class BaseCommand(BaseMessage):
 # Agent -> Cloud Messages
 # ============================================================================
 
+
 class HeartbeatMessage(BaseMessage):
     """
     Heartbeat message from agent to cloud.
@@ -304,29 +331,31 @@ class HeartbeatMessage(BaseMessage):
     Design Doc: HEARTBEAT includes agent state, health metrics, and capabilities.
     Capabilities advertise what features the agent supports.
     """
+
     message_type: Literal[MessageType.HEARTBEAT] = MessageType.HEARTBEAT
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     state: AgentState
     health: Optional[AgentHealth] = None
     capabilities: Optional[List[str]] = Field(
         None,
-        description="Agent capabilities: e.g., 'live_trading', 'paper_trading', 'backtesting', 'gpu'"
+        description="Agent capabilities: e.g., 'live_trading', 'paper_trading', 'backtesting', 'gpu'",
     )
 
 
 class PollCommandsMessage(BaseMessage):
     """Poll commands request from agent."""
+
     message_type: Literal[MessageType.POLL_COMMANDS] = MessageType.POLL_COMMANDS
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     last_command_id: Optional[str] = None
     version_negotiation: Optional[VersionNegotiation] = Field(
-        None,
-        description="Version negotiation using min_supported/max_supported per Design Doc"
+        None, description="Version negotiation using min_supported/max_supported per Design Doc"
     )
 
 
 class CommandAckMessage(BaseMessage):
     """Command acknowledgment from agent."""
+
     message_type: Literal[MessageType.COMMAND_ACK] = MessageType.COMMAND_ACK
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     command_id: str
@@ -337,6 +366,7 @@ class CommandAckMessage(BaseMessage):
 
 class CommandApprovalMessage(BaseMessage):
     """Command approval from agent."""
+
     message_type: Literal[MessageType.COMMAND_APPROVAL] = MessageType.COMMAND_APPROVAL
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     command_id: str
@@ -348,6 +378,7 @@ class CommandApprovalMessage(BaseMessage):
 
 class CommandResultMessage(BaseMessage):
     """Command result from agent."""
+
     message_type: Literal[MessageType.COMMAND_RESULT] = MessageType.COMMAND_RESULT
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     command_id: str
@@ -359,6 +390,7 @@ class CommandResultMessage(BaseMessage):
 
 class TelemetryEvent(BaseModel):
     """Single telemetry event."""
+
     event_type: str
     timestamp: datetime
     data: Optional[Dict[str, Any]] = None
@@ -368,13 +400,13 @@ class TelemetryEvent(BaseModel):
 
 class TelemetryMessage(BaseMessage):
     """Telemetry message from agent."""
+
     message_type: Literal[MessageType.TELEMETRY] = MessageType.TELEMETRY
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     level: TelemetryLevel
     events: List[TelemetryEvent]
     redaction_applied: Literal[True] = Field(
-        True,
-        description="MUST always be true - redaction is mandatory"
+        True, description="MUST always be true - redaction is mandatory"
     )
 
 
@@ -382,8 +414,10 @@ class TelemetryMessage(BaseMessage):
 # Cloud -> Agent Commands
 # ============================================================================
 
+
 class RequestStartRunCommand(BaseCommand):
     """Request to start a run (TRADING_IMPACTING)."""
+
     command_type: Literal[CommandType.REQUEST_START_RUN] = CommandType.REQUEST_START_RUN
     deployment_id: str
     artifact_digest: str = Field(..., pattern=r"^sha256:[a-f0-9]{64}$")
@@ -394,6 +428,7 @@ class RequestStartRunCommand(BaseCommand):
 
 class RequestStopRunCommand(BaseCommand):
     """Request to stop a run (safety - no approval needed)."""
+
     command_type: Literal[CommandType.REQUEST_STOP_RUN] = CommandType.REQUEST_STOP_RUN
     deployment_id: str
     reason: Optional[str] = None
@@ -402,6 +437,7 @@ class RequestStopRunCommand(BaseCommand):
 
 class RequestPauseRunCommand(BaseCommand):
     """Request to pause a run (safety - no approval needed)."""
+
     command_type: Literal[CommandType.REQUEST_PAUSE_RUN] = CommandType.REQUEST_PAUSE_RUN
     deployment_id: str
     reason: Optional[str] = None
@@ -410,7 +446,10 @@ class RequestPauseRunCommand(BaseCommand):
 
 class RequestUpgradeArtifactCommand(BaseCommand):
     """Request to upgrade artifact (TRADING_IMPACTING)."""
-    command_type: Literal[CommandType.REQUEST_UPGRADE_ARTIFACT] = CommandType.REQUEST_UPGRADE_ARTIFACT
+
+    command_type: Literal[CommandType.REQUEST_UPGRADE_ARTIFACT] = (
+        CommandType.REQUEST_UPGRADE_ARTIFACT
+    )
     deployment_id: str
     new_artifact_digest: str = Field(..., pattern=r"^sha256:[a-f0-9]{64}$")
     old_artifact_digest: Optional[str] = Field(None, pattern=r"^sha256:[a-f0-9]{64}$")
@@ -420,15 +459,13 @@ class RequestUpgradeArtifactCommand(BaseCommand):
 
 class RequestUpdateConfigCommand(BaseCommand):
     """Request to update config."""
+
     command_type: Literal[CommandType.REQUEST_UPDATE_CONFIG] = CommandType.REQUEST_UPDATE_CONFIG
     deployment_id: str
     new_config_digest: str = Field(..., pattern=r"^sha256:[a-f0-9]{64}$")
     old_config_digest: Optional[str] = Field(None, pattern=r"^sha256:[a-f0-9]{64}$")
     change_class: ChangeClass
-    requires_approval: bool = Field(
-        ...,
-        description="True if change_class is TRADING_IMPACTING"
-    )
+    requires_approval: bool = Field(..., description="True if change_class is TRADING_IMPACTING")
 
     @model_validator(mode="after")
     def validate_approval_requirement(self) -> "RequestUpdateConfigCommand":
@@ -439,7 +476,10 @@ class RequestUpdateConfigCommand(BaseCommand):
 
 class RequestRotateAgentSessionCommand(BaseCommand):
     """Request to rotate agent session."""
-    command_type: Literal[CommandType.REQUEST_ROTATE_AGENT_SESSION] = CommandType.REQUEST_ROTATE_AGENT_SESSION
+
+    command_type: Literal[CommandType.REQUEST_ROTATE_AGENT_SESSION] = (
+        CommandType.REQUEST_ROTATE_AGENT_SESSION
+    )
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     reason: Optional[str] = None
     requires_approval: Literal[True] = True
@@ -447,6 +487,7 @@ class RequestRotateAgentSessionCommand(BaseCommand):
 
 class ExportConfig(BaseModel):
     """Log export configuration."""
+
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     log_types: Optional[List[Literal["audit", "telemetry", "errors", "commands"]]] = None
@@ -457,14 +498,12 @@ class ExportConfig(BaseModel):
 
 class RequestExportLogsCommand(BaseCommand):
     """Request to export logs (DATA_SENSITIVE)."""
+
     command_type: Literal[CommandType.REQUEST_EXPORT_LOGS] = CommandType.REQUEST_EXPORT_LOGS
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     export_config: ExportConfig
     requires_approval: Literal[True] = True
-    break_glass_reason: Optional[str] = Field(
-        None,
-        description="Required reason for data export"
-    )
+    break_glass_reason: Optional[str] = Field(None, description="Required reason for data export")
 
 
 # ============================================================================
@@ -484,6 +523,7 @@ Command = Union[
 
 class CommandBatchMessage(BaseMessage):
     """Batch of commands from cloud to agent."""
+
     message_type: Literal[MessageType.COMMAND_BATCH] = MessageType.COMMAND_BATCH
     commands: List[Command]
 

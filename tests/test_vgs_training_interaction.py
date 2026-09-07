@@ -13,6 +13,7 @@ This test suite validates the hypothesis and proposes fixes.
 import math
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from typing import Tuple, List
@@ -122,11 +123,7 @@ class TestValueFunctionLearning:
         torch.manual_seed(42)
 
         # Simple critic
-        critic = nn.Sequential(
-            nn.Linear(10, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1)
-        )
+        critic = nn.Sequential(nn.Linear(10, 32), nn.ReLU(), nn.Linear(32, 1))
         optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
 
         losses_no_vgs = []
@@ -135,11 +132,7 @@ class TestValueFunctionLearning:
         # Training with VGS simulation
         for scenario, vgs_scale in [("no_vgs", 1.0), ("with_vgs", 0.1)]:
             torch.manual_seed(42)  # Reset for fair comparison
-            model = nn.Sequential(
-                nn.Linear(10, 32),
-                nn.ReLU(),
-                nn.Linear(32, 1)
-            )
+            model = nn.Sequential(nn.Linear(10, 32), nn.ReLU(), nn.Linear(32, 1))
             opt = torch.optim.Adam(model.parameters(), lr=1e-3)
 
             scenario_losses = []
@@ -300,7 +293,9 @@ class TestProposedFixes:
         print(f"\nFix 1: Lower alpha")
         print(f"Current (alpha={current_alpha}): scale={current_scale:.4f}")
         print(f"Proposed (alpha={proposed_alpha}): scale={proposed_scale:.4f}")
-        print(f"Improvement: {(proposed_scale - current_scale) / current_scale * 100:.1f}% more gradients")
+        print(
+            f"Improvement: {(proposed_scale - current_scale) / current_scale * 100:.1f}% more gradients"
+        )
 
         assert proposed_scale > 0.3, "Proposed alpha should allow more learning"
 
@@ -386,7 +381,8 @@ class TestComprehensiveRecommendations:
         print("COMPREHENSIVE RECOMMENDATIONS FOR TRAINING QUALITY ISSUES")
         print("=" * 70)
 
-        print("""
+        print(
+            """
 DIAGNOSIS SUMMARY:
 ------------------
 1. EV ~ 0: Value function not learning effectively
@@ -459,7 +455,8 @@ MONITORING RECOMMENDATIONS:
 TEST COMMAND:
 -------------
 python -m pytest tests/test_vgs_training_interaction.py -v -s
-""")
+"""
+        )
 
 
 if __name__ == "__main__":

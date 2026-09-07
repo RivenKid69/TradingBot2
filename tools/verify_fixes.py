@@ -9,38 +9,38 @@ import sys
 
 def read_file(path):
     """Читает файл и возвращает его содержимое."""
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
 
 def check_transformers_defaults():
     """Проверяет дефолтные параметры в transformers.py для 4h интервала."""
-    content = read_file('/home/user/ai-quant-platform/transformers.py')
+    content = read_file("/home/user/ai-quant-platform/transformers.py")
 
     issues = []
 
     # Проверка КРИТИЧЕСКАЯ #1: lookbacks_prices для 4h
-    if 'self.lookbacks_prices = [240, 720, 1440, 12000]' not in content:
+    if "self.lookbacks_prices = [240, 720, 1440, 12000]" not in content:
         issues.append("КРИТИЧЕСКАЯ #1.1: lookbacks_prices не обновлены для 4h интервала")
 
     # Проверка КРИТИЧЕСКАЯ #3: GARCH windows для 4h
-    if 'self.garch_windows = [7 * 24 * 60, 14 * 24 * 60, 30 * 24 * 60]' not in content:
+    if "self.garch_windows = [7 * 24 * 60, 14 * 24 * 60, 30 * 24 * 60]" not in content:
         issues.append("КРИТИЧЕСКАЯ #3: garch_windows не обновлены для 4h интервала")
 
     # Проверка Yang-Zhang для 4h
-    if 'self.yang_zhang_windows = [48 * 60, 7 * 24 * 60, 30 * 24 * 60]' not in content:
+    if "self.yang_zhang_windows = [48 * 60, 7 * 24 * 60, 30 * 24 * 60]" not in content:
         issues.append("Yang-Zhang windows не обновлены для 4h интервала")
 
     # Проверка Parkinson для 4h
-    if 'self.parkinson_windows = [48 * 60, 7 * 24 * 60]' not in content:
+    if "self.parkinson_windows = [48 * 60, 7 * 24 * 60]" not in content:
         issues.append("Parkinson windows не обновлены для 4h интервала")
 
     # Проверка Taker Buy Ratio SMA для 4h
-    if 'self.taker_buy_ratio_windows = [8 * 60, 16 * 60, 24 * 60]' not in content:
+    if "self.taker_buy_ratio_windows = [8 * 60, 16 * 60, 24 * 60]" not in content:
         issues.append("Taker Buy Ratio SMA windows не обновлены для 4h интервала")
 
     # Проверка Taker Buy Ratio Momentum для 4h
-    if 'self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60]' not in content:
+    if "self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60]" not in content:
         issues.append("Taker Buy Ratio Momentum windows не обновлены для 4h интервала")
 
     return issues
@@ -48,15 +48,15 @@ def check_transformers_defaults():
 
 def check_parkinson_formula():
     """Проверяет улучшение формулы Parkinson (MAJOR #1)."""
-    content = read_file('/home/user/ai-quant-platform/transformers.py')
+    content = read_file("/home/user/ai-quant-platform/transformers.py")
 
     issues = []
 
     # Проверка что добавлена проверка 80% валидных баров
-    if 'min_required = max(2, int(0.8 * n))' not in content:
+    if "min_required = max(2, int(0.8 * n))" not in content:
         issues.append("MAJOR #1: не добавлена проверка минимум 80% валидных баров для Parkinson")
 
-    if 'if valid_bars < min_required:' not in content:
+    if "if valid_bars < min_required:" not in content:
         issues.append("MAJOR #1: не добавлена проверка валидных баров для Parkinson")
 
     return issues
@@ -64,12 +64,12 @@ def check_parkinson_formula():
 
 def check_taker_buy_ratio_clamping():
     """Проверяет добавление clamping для taker_buy_ratio (MINOR #2)."""
-    content = read_file('/home/user/ai-quant-platform/transformers.py')
+    content = read_file("/home/user/ai-quant-platform/transformers.py")
 
     issues = []
 
     # Проверка что добавлен clamping
-    if 'taker_buy_ratio = min(1.0, max(0.0, float(taker_buy_base) / float(volume)))' not in content:
+    if "taker_buy_ratio = min(1.0, max(0.0, float(taker_buy_base) / float(volume)))" not in content:
         issues.append("MINOR #2: не добавлен clamping для taker_buy_ratio")
 
     return issues
@@ -77,15 +77,15 @@ def check_taker_buy_ratio_clamping():
 
 def check_obs_builder_comments():
     """Проверяет добавление комментариев в obs_builder.pyx (MAJOR #2)."""
-    content = read_file('/home/user/ai-quant-platform/obs_builder.pyx')
+    content = read_file("/home/user/ai-quant-platform/obs_builder.pyx")
 
     issues = []
 
     # Проверка что добавлены комментарии о нормализации
-    if 'Normalized by 1% of price (price_d * 0.01)' not in content:
+    if "Normalized by 1% of price (price_d * 0.01)" not in content:
         issues.append("MAJOR #2: не добавлен комментарий о нормализации price_momentum")
 
-    if 'Normalized by full price (price_d) not 1%' not in content:
+    if "Normalized by full price (price_d) not 1%" not in content:
         issues.append("MAJOR #2: не добавлен комментарий о нормализации bb_squeeze")
 
     return issues
@@ -93,7 +93,7 @@ def check_obs_builder_comments():
 
 def check_config_names():
     """Проверяет исправление названий в config_4h_timeframe.py (MINOR #1)."""
-    content = read_file('/home/user/ai-quant-platform/config_4h_timeframe.py')
+    content = read_file("/home/user/ai-quant-platform/config_4h_timeframe.py")
 
     issues = []
 

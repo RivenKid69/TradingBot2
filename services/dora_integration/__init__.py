@@ -84,7 +84,6 @@ from services.dora_integration.due_diligence import (
     MultiClientIncident,
     MultiClientIncidentCoordinator,
     create_incident_coordinator,
-
     # =========================================================================
     # Provider Information Package (Art. 28(3))
     # =========================================================================
@@ -110,7 +109,6 @@ from services.dora_integration.due_diligence import (
     ProviderInfoPackageGenerator,
     # Factory functions
     create_provider_info_package,
-
     # =========================================================================
     # Pooled Audit Support (Art. 30(4))
     # =========================================================================
@@ -134,7 +132,6 @@ from services.dora_integration.due_diligence import (
     create_pooled_audit_support,
     get_audit_scope_areas,
     get_report_types,
-
     # =========================================================================
     # Compliance Dashboard
     # =========================================================================
@@ -178,7 +175,6 @@ from services.dora_integration.incident_interface import (
     create_client_notification_service,
     create_client_notification_system,
     get_notification_template,
-
     # =========================================================================
     # Incident Classification (Article 18)
     # =========================================================================
@@ -215,7 +211,6 @@ from services.dora_integration.incident_interface import (
     create_economic_impact_assessment,
     create_data_loss_assessment,
     create_critical_service_assessment,
-
     # =========================================================================
     # Incident Reporting (Article 19) - Export Templates
     # =========================================================================
@@ -240,7 +235,6 @@ from services.dora_integration.incident_interface import (
     create_incident_reporter,
     get_report_deadlines,
     get_report_types as get_incident_report_types,  # Alias to avoid conflict
-
     # =========================================================================
     # Cyber Threat Notification (Article 19(4))
     # =========================================================================
@@ -263,7 +257,6 @@ from services.dora_integration.incident_interface import (
     create_cyber_threat_notification_service,
     get_threat_categories,
     get_threat_severities,
-
     # =========================================================================
     # Crisis Communication (Article 14)
     # =========================================================================
@@ -315,7 +308,6 @@ from services.dora_integration.third_party import (
     create_concentration_risk,
     get_concentration_types,
     get_substitutability_levels,
-
     # =========================================================================
     # CTPP Oversight (Articles 31-44)
     # =========================================================================
@@ -339,7 +331,6 @@ from services.dora_integration.third_party import (
     get_designated_ctpps_list,
     get_ctpp_requirements,
     get_ctpp_contract_requirements,
-
     # =========================================================================
     # Third-Party Risk Management (Article 28)
     # =========================================================================
@@ -364,7 +355,6 @@ from services.dora_integration.third_party import (
     get_provider_types,
     get_risk_categories,
     get_criticality_levels,
-
     # =========================================================================
     # Third-Party Incidents (Article 23)
     # =========================================================================
@@ -386,7 +376,6 @@ from services.dora_integration.third_party import (
     ThirdPartyIncident,
     PostIncidentReview,
     create_third_party_incidents,
-
     # =========================================================================
     # Subcontractor Management (Article 30)
     # =========================================================================
@@ -435,7 +424,6 @@ from services.dora_integration.contracts import (
     get_basic_requirement_count,
     get_critical_requirement_count,
     get_termination_clause_templates,
-
     # =========================================================================
     # SLA Guardrails (Article 30(2)(e))
     # =========================================================================
@@ -453,7 +441,6 @@ from services.dora_integration.contracts import (
     create_sla_guardrails,
     get_sla_tier_definitions,
     get_sla_tiers,
-
     # =========================================================================
     # Exit Strategies (Article 28(8))
     # =========================================================================
@@ -508,7 +495,6 @@ from services.dora_integration.reporting import (
     create_report_destination,
     get_report_types as get_unified_report_types,
     get_report_statuses,
-
     # =========================================================================
     # Reporting Templates (Article 20)
     # =========================================================================
@@ -534,7 +520,6 @@ from services.dora_integration.reporting import (
     get_service_type_codes,
     get_client_type_codes,
     create_timeline_event,
-
     # =========================================================================
     # Register of Information - ROI Data Generator (Article 28(3))
     # =========================================================================
@@ -577,7 +562,6 @@ from services.dora_integration.sharing import (
     TLP_DEFINITIONS,
     DEFAULT_INTELLIGENCE_RETENTION_DAYS,
     NCA_NOTIFICATION_DEADLINE_DAYS,
-
     # =========================================================================
     # Enums
     # =========================================================================
@@ -597,7 +581,6 @@ from services.dora_integration.sharing import (
     ThreatSeverity as SharingThreatSeverity,
     # Sanitization levels
     SanitizationLevel,
-
     # =========================================================================
     # Data Structures
     # =========================================================================
@@ -615,12 +598,10 @@ from services.dora_integration.sharing import (
     NCANotification,
     # Service configuration
     InformationSharingConfig,
-
     # =========================================================================
     # Main Service Class
     # =========================================================================
     DORAInformationSharing,
-
     # =========================================================================
     # Factory Functions
     # =========================================================================
@@ -643,11 +624,9 @@ __all__ = [
     # Version info
     "__version__",
     "__migration_phase__",
-
     # =========================================================================
     # Phase 1: Due Diligence & Audit Layer
     # =========================================================================
-
     # -------------------------------------------------------------------------
     # Audit Readiness (Art. 30(3)(e))
     # -------------------------------------------------------------------------
@@ -682,7 +661,6 @@ __all__ = [
     "MultiClientIncident",
     "MultiClientIncidentCoordinator",
     "create_incident_coordinator",
-
     # -------------------------------------------------------------------------
     # Provider Information Package (Art. 28(3))
     # -------------------------------------------------------------------------
@@ -708,7 +686,6 @@ __all__ = [
     "ProviderInfoPackageGenerator",
     # Factory functions
     "create_provider_info_package",
-
     # -------------------------------------------------------------------------
     # Pooled Audit Support (Art. 30(4))
     # -------------------------------------------------------------------------
@@ -732,7 +709,6 @@ __all__ = [
     "create_pooled_audit_support",
     "get_audit_scope_areas",
     "get_report_types",
-
     # -------------------------------------------------------------------------
     # Compliance Dashboard
     # -------------------------------------------------------------------------
@@ -747,11 +723,9 @@ __all__ = [
     "DORAComplianceReport",
     # Main class
     "DORAComplianceDashboard",
-
     # =========================================================================
     # Phase 2: Incident Interface Layer
     # =========================================================================
-
     # -------------------------------------------------------------------------
     # Client Incident Notification (Article 30(2)(d))
     # -------------------------------------------------------------------------
@@ -769,7 +743,6 @@ __all__ = [
     "create_client_notification_service",
     "create_client_notification_system",
     "get_notification_template",
-
     # -------------------------------------------------------------------------
     # Incident Classification (Article 18)
     # -------------------------------------------------------------------------
@@ -800,7 +773,6 @@ __all__ = [
     "create_economic_impact_assessment",
     "create_data_loss_assessment",
     "create_critical_service_assessment",
-
     # -------------------------------------------------------------------------
     # Incident Reporting (Article 19) - Export Templates
     # -------------------------------------------------------------------------
@@ -820,7 +792,6 @@ __all__ = [
     "create_incident_reporter",
     "get_report_deadlines",
     "get_incident_report_types",
-
     # -------------------------------------------------------------------------
     # Cyber Threat Notification (Article 19(4))
     # -------------------------------------------------------------------------
@@ -838,7 +809,6 @@ __all__ = [
     "create_cyber_threat_notification_service",
     "get_threat_categories",
     "get_threat_severities",
-
     # -------------------------------------------------------------------------
     # Crisis Communication (Article 14)
     # -------------------------------------------------------------------------
@@ -859,11 +829,9 @@ __all__ = [
     "get_communication_channels",
     "get_stakeholder_types",
     "get_crisis_phases",
-
     # =========================================================================
     # Phase 3: Third-Party Risk Interface
     # =========================================================================
-
     # -------------------------------------------------------------------------
     # Concentration Risk (Article 29)
     # -------------------------------------------------------------------------
@@ -883,7 +851,6 @@ __all__ = [
     "create_concentration_risk",
     "get_concentration_types",
     "get_substitutability_levels",
-
     # -------------------------------------------------------------------------
     # CTPP Oversight (Articles 31-44)
     # -------------------------------------------------------------------------
@@ -907,7 +874,6 @@ __all__ = [
     "get_designated_ctpps_list",
     "get_ctpp_requirements",
     "get_ctpp_contract_requirements",
-
     # -------------------------------------------------------------------------
     # Third-Party Risk Management (Article 28)
     # -------------------------------------------------------------------------
@@ -932,7 +898,6 @@ __all__ = [
     "get_provider_types",
     "get_risk_categories",
     "get_criticality_levels",
-
     # -------------------------------------------------------------------------
     # Third-Party Incidents (Article 23)
     # -------------------------------------------------------------------------
@@ -954,7 +919,6 @@ __all__ = [
     "ThirdPartyIncident",
     "PostIncidentReview",
     "create_third_party_incidents",
-
     # -------------------------------------------------------------------------
     # Subcontractor Management (Article 30)
     # -------------------------------------------------------------------------
@@ -971,11 +935,9 @@ __all__ = [
     "ClientSubcontractorPreference",
     "SubcontractorRiskAssessment",
     "create_subcontractor_management",
-
     # =========================================================================
     # Phase 4: Contracts & SLA Layer
     # =========================================================================
-
     # -------------------------------------------------------------------------
     # Contractual Requirements (Article 30)
     # -------------------------------------------------------------------------
@@ -1001,7 +963,6 @@ __all__ = [
     "get_basic_requirement_count",
     "get_critical_requirement_count",
     "get_termination_clause_templates",
-
     # -------------------------------------------------------------------------
     # SLA Guardrails (Article 30(2)(e))
     # -------------------------------------------------------------------------
@@ -1019,7 +980,6 @@ __all__ = [
     "create_sla_guardrails",
     "get_sla_tier_definitions",
     "get_sla_tiers",
-
     # -------------------------------------------------------------------------
     # Exit Strategies (Article 28(8))
     # -------------------------------------------------------------------------
@@ -1044,11 +1004,9 @@ __all__ = [
     "get_exit_triggers",
     "get_exit_phases",
     "get_transition_types",
-
     # =========================================================================
     # Phase 5: Unified Reporting Layer
     # =========================================================================
-
     # -------------------------------------------------------------------------
     # Unified Reporting Manager
     # -------------------------------------------------------------------------
@@ -1072,7 +1030,6 @@ __all__ = [
     "create_report_destination",
     "get_unified_report_types",
     "get_report_statuses",
-
     # -------------------------------------------------------------------------
     # Reporting Templates (Article 20)
     # -------------------------------------------------------------------------
@@ -1098,7 +1055,6 @@ __all__ = [
     "get_service_type_codes",
     "get_client_type_codes",
     "create_timeline_event",
-
     # -------------------------------------------------------------------------
     # Register of Information - ROI Data Generator (Article 28(3))
     # -------------------------------------------------------------------------
@@ -1127,11 +1083,9 @@ __all__ = [
     "get_subcontracting_levels",
     "get_its_templates_provided",
     "get_its_templates_client_provides",
-
     # =========================================================================
     # Phase 6: Information Sharing Layer (Art. 45)
     # =========================================================================
-
     # -------------------------------------------------------------------------
     # Constants
     # -------------------------------------------------------------------------
@@ -1139,7 +1093,6 @@ __all__ = [
     "TLP_DEFINITIONS",
     "DEFAULT_INTELLIGENCE_RETENTION_DAYS",
     "NCA_NOTIFICATION_DEADLINE_DAYS",
-
     # -------------------------------------------------------------------------
     # Enums
     # -------------------------------------------------------------------------
@@ -1151,7 +1104,6 @@ __all__ = [
     "IntelligenceDirection",
     "SharingThreatSeverity",
     "SanitizationLevel",
-
     # -------------------------------------------------------------------------
     # Data Structures
     # -------------------------------------------------------------------------
@@ -1162,12 +1114,10 @@ __all__ = [
     "SharingAuditRecord",
     "NCANotification",
     "InformationSharingConfig",
-
     # -------------------------------------------------------------------------
     # Main Service Class
     # -------------------------------------------------------------------------
     "DORAInformationSharing",
-
     # -------------------------------------------------------------------------
     # Factory Functions
     # -------------------------------------------------------------------------

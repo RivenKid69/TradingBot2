@@ -87,6 +87,7 @@ def flags_yaml_path(tmp_path, sample_flags_yaml):
 def reset_global_flags_fixture():
     """Reset global flags before and after each test."""
     from services.futures_feature_flags import reset_global_flags
+
     reset_global_flags()
     yield
     reset_global_flags()
@@ -607,11 +608,15 @@ class TestShouldExecute:
         flags = FuturesFeatureFlags()
         flags.set_stage(FuturesFeature.LEVERAGE_ACTION_SPACE, RolloutStage.CANARY)
         flags.set_canary_percentage(FuturesFeature.LEVERAGE_ACTION_SPACE, 100.0)
-        flags.features[FuturesFeature.LEVERAGE_ACTION_SPACE].allowed_accounts = ["account1", "account2"]
+        flags.features[FuturesFeature.LEVERAGE_ACTION_SPACE].allowed_accounts = [
+            "account1",
+            "account2",
+        ]
 
-        assert flags.should_execute(
-            FuturesFeature.LEVERAGE_ACTION_SPACE, account_id="account1"
-        ) is True
+        assert (
+            flags.should_execute(FuturesFeature.LEVERAGE_ACTION_SPACE, account_id="account1")
+            is True
+        )
 
     def test_account_filter_blocked(self):
         """Test that non-allowed accounts are blocked."""
@@ -626,9 +631,10 @@ class TestShouldExecute:
         flags.set_canary_percentage(FuturesFeature.LEVERAGE_ACTION_SPACE, 100.0)
         flags.features[FuturesFeature.LEVERAGE_ACTION_SPACE].allowed_accounts = ["account1"]
 
-        assert flags.should_execute(
-            FuturesFeature.LEVERAGE_ACTION_SPACE, account_id="account999"
-        ) is False
+        assert (
+            flags.should_execute(FuturesFeature.LEVERAGE_ACTION_SPACE, account_id="account999")
+            is False
+        )
 
     def test_shadow_mode_executes(self):
         """Test that shadow mode executes."""
@@ -1027,7 +1033,9 @@ class TestEdgeCases:
 
         # 0% canary should never execute when random_value provided
         for rv in [0, 25, 50, 75, 100]:
-            assert flags.should_execute(FuturesFeature.L3_EXECUTION, random_value=float(rv)) is False
+            assert (
+                flags.should_execute(FuturesFeature.L3_EXECUTION, random_value=float(rv)) is False
+            )
 
     def test_canary_100_percent(self):
         """Test canary with 100% percentage."""

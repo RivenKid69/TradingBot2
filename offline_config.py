@@ -59,9 +59,7 @@ def _first_present(mapping: Mapping[str, Any], candidates: Sequence[str]) -> Any
 
 def _normalize_input_window(raw: Mapping[str, Any]) -> MutableMapping[str, str]:
     window: MutableMapping[str, str] = {}
-    start = _normalize_timestamp(
-        _first_present(raw, ("start", "from", "begin", "input_start"))
-    )
+    start = _normalize_timestamp(_first_present(raw, ("start", "from", "begin", "input_start")))
     end = _normalize_timestamp(_first_present(raw, ("end", "until", "to", "stop", "input_end")))
     if not start or not end:
         nested = raw.get("input") or raw.get("range") or raw.get("window")
@@ -156,9 +154,7 @@ def normalize_dataset_splits(raw: Any) -> dict[str, MutableMapping[str, Any]]:
         for entry in raw:
             if not isinstance(entry, Mapping):
                 continue
-            name = _coerce_str(
-                _first_present(entry, ("name", "split", "id", "key", "label"))
-            )
+            name = _coerce_str(_first_present(entry, ("name", "split", "id", "key", "label")))
             if not name:
                 continue
             normalized[name] = _normalize_split(name, entry)

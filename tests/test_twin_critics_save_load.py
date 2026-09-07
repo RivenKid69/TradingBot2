@@ -3,6 +3,7 @@ Tests for Twin Critics save/load functionality and backward compatibility.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -21,12 +22,12 @@ def test_save_load_twin_critics():
     action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {
-            'distributional': True,
-            'num_quantiles': 16,
-            'use_twin_critics': True,
-        }
+        "hidden_dim": 32,
+        "critic": {
+            "distributional": True,
+            "num_quantiles": 16,
+            "use_twin_critics": True,
+        },
     }
 
     # Create policy with twin critics
@@ -42,7 +43,7 @@ def test_save_load_twin_critics():
 
     # Save to temporary file
     print("Step 2: Save model")
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pth') as f:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pth") as f:
         temp_path = f.name
 
     try:
@@ -89,15 +90,15 @@ def test_load_single_critic_into_twin():
     # Create single critic model
     print("Step 1: Create single critic model")
     arch_single = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
     }
     policy_single = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_single
     )
 
     # Save single critic state
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pth') as f:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pth") as f:
         temp_path = f.name
 
     try:
@@ -107,8 +108,8 @@ def test_load_single_critic_into_twin():
         # Try to load into twin critics policy
         print("Step 2: Try loading into twin critics policy")
         arch_twin = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': True}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": True},
         }
         policy_twin = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_twin
@@ -124,7 +125,9 @@ def test_load_single_critic_into_twin():
             print(f"  Unexpected keys: {result.unexpected_keys}")
 
             # Second critic should have missing keys
-            missing_second_critic = any('_2' in k or 'quantile_head_2' in k for k in result.missing_keys)
+            missing_second_critic = any(
+                "_2" in k or "quantile_head_2" in k for k in result.missing_keys
+            )
             assert missing_second_critic, "Should have missing keys for second critic"
             print("✓ Correctly identified missing second critic keys")
 
@@ -149,14 +152,14 @@ def test_load_twin_into_single():
     # Create twin critics model
     print("Step 1: Create twin critics model")
     arch_twin = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': True}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": True},
     }
     policy_twin = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_twin
     )
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pth') as f:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pth") as f:
         temp_path = f.name
 
     try:
@@ -166,8 +169,8 @@ def test_load_twin_into_single():
         # Load into single critic policy
         print("Step 2: Load into single critic policy")
         arch_single = {
-            'hidden_dim': 32,
-            'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}
+            "hidden_dim": 32,
+            "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
         }
         policy_single = CustomActorCriticPolicy(
             observation_space, action_space, lambda x: 0.001, arch_params=arch_single
@@ -179,7 +182,9 @@ def test_load_twin_into_single():
         print(f"  Unexpected keys: {result.unexpected_keys}")
 
         # Should have unexpected keys for second critic
-        unexpected_second_critic = any('_2' in k or 'quantile_head_2' in k for k in result.unexpected_keys)
+        unexpected_second_critic = any(
+            "_2" in k or "quantile_head_2" in k for k in result.unexpected_keys
+        )
         assert unexpected_second_critic, "Should have unexpected keys for second critic"
         print("✓ Correctly ignored second critic keys")
 
@@ -206,8 +211,8 @@ def test_backward_compatibility_no_twin_critics():
     # Test 1: Default behavior (no twin critics key in config)
     print("Test 1: Default config (no 'use_twin_critics' key)")
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16},
         # Note: 'use_twin_critics' not specified - should default to True
     }
     policy = CustomActorCriticPolicy(
@@ -220,8 +225,8 @@ def test_backward_compatibility_no_twin_critics():
     # Test 2: Explicit False
     print("Test 2: Explicit use_twin_critics=False")
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
     }
     policy = CustomActorCriticPolicy(
         observation_space, action_space, lambda x: 0.001, arch_params=arch_params
@@ -266,8 +271,8 @@ def test_optimizer_contains_twin_critics():
     action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
     arch_params = {
-        'hidden_dim': 32,
-        'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': True}
+        "hidden_dim": 32,
+        "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": True},
     }
 
     policy = CustomActorCriticPolicy(
@@ -278,7 +283,7 @@ def test_optimizer_contains_twin_critics():
     print("Step 1: Check optimizer parameters")
     optimizer_param_ids = set()
     for param_group in policy.optimizer.param_groups:
-        for param in param_group['params']:
+        for param in param_group["params"]:
             optimizer_param_ids.add(id(param))
 
     print(f"  Total params in optimizer: {len(optimizer_param_ids)}")
@@ -334,9 +339,9 @@ def test_optimizer_contains_twin_critics():
 
 def run_all_save_load_tests():
     """Run all save/load and compatibility tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TWIN CRITICS SAVE/LOAD & COMPATIBILITY TEST SUITE")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         test_save_load_twin_critics,
@@ -357,12 +362,13 @@ def run_all_save_load_tests():
             print(f"\n❌ Test failed: {test.__name__}")
             print(f"Error: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print(f"RESULTS: {passed} passed, {failed} failed out of {len(tests)} tests")
-    print("="*70)
+    print("=" * 70)
 
     if failed > 0:
         sys.exit(1)

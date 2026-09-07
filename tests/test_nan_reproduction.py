@@ -14,8 +14,8 @@ def test_nan_propagation():
     print("=" * 80)
 
     # Эмуляция ранних баров, когда индикаторы еще не готовы
-    bb_lower = float('nan')
-    bb_upper = float('nan')
+    bb_lower = float("nan")
+    bb_upper = float("nan")
     price = 100.0
 
     # Вычисления из obs_builder.pyx строка 168
@@ -61,9 +61,9 @@ def test_nan_propagation():
     print("ТЕСТ 3: Другие индикаторы с NaN")
     print("=" * 80)
 
-    momentum = float('nan')  # Первые 10 баров
-    macd = float('nan')      # Первые ~26 баров
-    macd_signal = float('nan')
+    momentum = float("nan")  # Первые 10 баров
+    macd = float("nan")  # Первые ~26 баров
+    macd_signal = float("nan")
 
     price_momentum = math.tanh(momentum / (price * 0.01 + 1e-8))
     trend_strength = math.tanh((macd - macd_signal) / (price * 0.01 + 1e-8))
@@ -87,22 +87,26 @@ def test_nan_propagation():
     observation = []
 
     # Прямое присваивание индикаторов (строки 99-112)
-    observation.extend([
-        42.0,  # rsi14 (может быть готов раньше)
-        macd,  # NaN!
-        macd_signal,  # NaN!
-        momentum,  # NaN!
-        15.0,  # atr (может быть готов раньше)
-        20.0,  # cci (может быть готов раньше)
-        1000.0,  # obv
-    ])
+    observation.extend(
+        [
+            42.0,  # rsi14 (может быть готов раньше)
+            macd,  # NaN!
+            macd_signal,  # NaN!
+            momentum,  # NaN!
+            15.0,  # atr (может быть готов раньше)
+            20.0,  # cci (может быть готов раньше)
+            1000.0,  # obv
+        ]
+    )
 
     # Производные признаки (строки 160-177)
-    observation.extend([
-        price_momentum,  # NaN!
-        bb_squeeze,      # NaN!
-        trend_strength,  # NaN!
-    ])
+    observation.extend(
+        [
+            price_momentum,  # NaN!
+            bb_squeeze,  # NaN!
+            trend_strength,  # NaN!
+        ]
+    )
 
     nan_count = sum(1 for x in observation if isinstance(x, float) and math.isnan(x))
     print(f"Всего признаков: {len(observation)}")
@@ -124,8 +128,8 @@ def test_existing_solution():
     print("ТЕСТ 4: Существующее решение для bb_lower/bb_upper (строки 180-195)")
     print("=" * 80)
 
-    bb_lower = float('nan')
-    bb_upper = float('nan')
+    bb_lower = float("nan")
+    bb_upper = float("nan")
     price = 100.0
 
     # Существующий код из obs_builder.pyx
@@ -162,7 +166,8 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("ВЫВОДЫ")
     print("=" * 80)
-    print("""
+    print(
+        """
 1. ✓ Проблема РЕАЛЬНА и воспроизводима
 2. ✓ NaN появляются в первые N баров пока индикаторы не накопят историю:
    - Bollinger Bands: первые 20 баров
@@ -179,4 +184,5 @@ if __name__ == "__main__":
    - Строка 175-177: trend_strength = tanh((macd - macd_signal) / price)
 
 НУЖНО: Комплексное решение для ВСЕХ индикаторов, не только bb_lower/bb_upper
-    """)
+    """
+    )

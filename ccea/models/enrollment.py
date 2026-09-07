@@ -26,8 +26,10 @@ TOKEN_PATTERN = re.compile(r"^enroll_[a-zA-Z0-9]{32,64}$")
 # Enums
 # ============================================================================
 
+
 class TrustState(str, Enum):
     """Agent trust states."""
+
     PENDING = "PENDING"
     ENROLLED = "ENROLLED"
     REVOKED = "REVOKED"
@@ -36,6 +38,7 @@ class TrustState(str, Enum):
 
 class AgentCapability(str, Enum):
     """Agent capabilities."""
+
     LIVE_TRADING = "LIVE_TRADING"
     PAPER_TRADING = "PAPER_TRADING"
     BACKTEST = "BACKTEST"
@@ -46,16 +49,16 @@ class AgentCapability(str, Enum):
 # Models
 # ============================================================================
 
+
 class EnrollmentToken(BaseModel):
     """
     Enrollment token with TTL.
 
     Used to initiate agent enrollment securely.
     """
+
     token_id: str = Field(
-        ...,
-        pattern=r"^enroll_[a-zA-Z0-9]{32,64}$",
-        description="Enrollment token ID"
+        ..., pattern=r"^enroll_[a-zA-Z0-9]{32,64}$", description="Enrollment token ID"
     )
     workspace_id: str = Field(..., description="Target workspace")
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -112,19 +115,10 @@ class EnrollmentRequest(BaseModel):
     Sent by agent to register with cloud.
     Agent generates keypair locally and sends public key.
     """
-    token: str = Field(
-        ...,
-        pattern=r"^enroll_[a-zA-Z0-9]{32,64}$",
-        description="Enrollment token"
-    )
-    public_key: str = Field(
-        ...,
-        description="Agent's public key (PEM format)"
-    )
-    public_key_algorithm: str = Field(
-        "ed25519",
-        description="Public key algorithm"
-    )
+
+    token: str = Field(..., pattern=r"^enroll_[a-zA-Z0-9]{32,64}$", description="Enrollment token")
+    public_key: str = Field(..., description="Agent's public key (PEM format)")
+    public_key_algorithm: str = Field("ed25519", description="Public key algorithm")
     agent_version: str = Field(..., description="Agent software version")
     hostname: Optional[str] = Field(None, description="Agent hostname (optional)")
     capabilities: List[AgentCapability] = Field(
@@ -142,11 +136,10 @@ class EnrollmentResponse(BaseModel):
 
     Contains assigned agent_id and configuration.
     """
+
     success: bool
     agent_id: Optional[str] = Field(
-        None,
-        pattern=r"^agent_[a-zA-Z0-9]{16,32}$",
-        description="Assigned agent ID"
+        None, pattern=r"^agent_[a-zA-Z0-9]{16,32}$", description="Assigned agent ID"
     )
     workspace_id: Optional[str] = None
     enrolled_at: Optional[datetime] = None
@@ -155,9 +148,7 @@ class EnrollmentResponse(BaseModel):
     # Configuration
     heartbeat_interval_seconds: int = Field(30, ge=5, le=300)
     command_poll_interval_seconds: int = Field(5, ge=1, le=60)
-    supported_schema_versions: List[str] = Field(
-        default_factory=lambda: ["1.0.0"]
-    )
+    supported_schema_versions: List[str] = Field(default_factory=lambda: ["1.0.0"])
     # Endpoints
     heartbeat_endpoint: Optional[str] = None
     commands_endpoint: Optional[str] = None
@@ -205,10 +196,8 @@ class AgentInfo(BaseModel):
 
     Contains agent metadata and trust state.
     """
-    agent_id: str = Field(
-        ...,
-        pattern=r"^agent_[a-zA-Z0-9]{16,32}$"
-    )
+
+    agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     workspace_id: str
     public_key: str = Field(..., description="Agent's public key (PEM)")
     public_key_algorithm: str = "ed25519"

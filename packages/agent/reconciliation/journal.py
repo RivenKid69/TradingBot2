@@ -90,12 +90,16 @@ class JournalEntry:
             broker_order_id=data.get("broker_order_id"),
             filled_quantity=data.get("filled_quantity", "0"),
             avg_price=data.get("avg_price"),
-            created_at=datetime.fromisoformat(data["created_at"])
-            if "created_at" in data
-            else datetime.utcnow(),
-            updated_at=datetime.fromisoformat(data["updated_at"])
-            if "updated_at" in data
-            else datetime.utcnow(),
+            created_at=(
+                datetime.fromisoformat(data["created_at"])
+                if "created_at" in data
+                else datetime.utcnow()
+            ),
+            updated_at=(
+                datetime.fromisoformat(data["updated_at"])
+                if "updated_at" in data
+                else datetime.utcnow()
+            ),
             metadata=data.get("metadata", {}),
         )
 
@@ -214,6 +218,7 @@ class OrderJournal:
     # ---- tamper-evident audit chain -------------------------------------
     def _audit_head_hash(self) -> str:
         from packages.agent.audit.hash_chain import GENESIS_HASH
+
         row = self._conn.execute(
             "SELECT entry_hash FROM order_audit ORDER BY seq DESC LIMIT 1"
         ).fetchone()
@@ -225,6 +230,7 @@ class OrderJournal:
             from datetime import datetime as _dt
 
             from packages.agent.audit.hash_chain import chain_hash
+
             seq = int(self._conn.execute("SELECT COUNT(*) c FROM order_audit").fetchone()["c"]) + 1
             prev = self._audit_head_hash()
             body = {"event_type": event_type, **payload}
@@ -232,8 +238,15 @@ class OrderJournal:
             self._conn.execute(
                 "INSERT INTO order_audit(ts, event_type, client_order_id, entry_id, payload, prev_hash, entry_hash) "
                 "VALUES(?,?,?,?,?,?,?)",
-                (_dt.utcnow().isoformat(), event_type, payload.get("client_order_id"),
-                 payload.get("entry_id"), json.dumps(body, sort_keys=True), prev, h),
+                (
+                    _dt.utcnow().isoformat(),
+                    event_type,
+                    payload.get("client_order_id"),
+                    payload.get("entry_id"),
+                    json.dumps(body, sort_keys=True),
+                    prev,
+                    h,
+                ),
             )
             self._conn.commit()
         except Exception:  # pragma: no cover - audit must never break execution
@@ -242,11 +255,19 @@ class OrderJournal:
     def verify_audit_chain(self) -> Dict[str, Any]:
         """Recompute the audit chain and report integrity (tamper-evidence)."""
         from packages.agent.audit.hash_chain import ChainRecord, verify_chain
+
         rows = self._conn.execute(
             "SELECT seq, payload, prev_hash, entry_hash FROM order_audit ORDER BY seq ASC"
         ).fetchall()
-        recs = [ChainRecord(seq=r["seq"], payload=json.loads(r["payload"]),
-                            prev_hash=r["prev_hash"], entry_hash=r["entry_hash"]) for r in rows]
+        recs = [
+            ChainRecord(
+                seq=r["seq"],
+                payload=json.loads(r["payload"]),
+                prev_hash=r["prev_hash"],
+                entry_hash=r["entry_hash"],
+            )
+            for r in rows
+        ]
         out = verify_chain(recs, key=self._hmac_key)
         out["keyed"] = self._hmac_key is not None
         out["head_hash"] = self._audit_head_hash()
@@ -255,7 +276,8 @@ class OrderJournal:
     def get_audit_events(self, *, limit: int = 200) -> List[Dict[str, Any]]:
         rows = self._conn.execute(
             "SELECT seq, ts, event_type, client_order_id, entry_id, entry_hash "
-            "FROM order_audit ORDER BY seq DESC LIMIT ?", (int(limit),)
+            "FROM order_audit ORDER BY seq DESC LIMIT ?",
+            (int(limit),),
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -322,12 +344,19 @@ class OrderJournal:
             )
             self._conn.commit()
 
-            self._append_audit("order_logged", {
-                "client_order_id": entry.client_order_id, "entry_id": entry.entry_id,
-                "intent_id": entry.intent_id, "symbol": entry.symbol, "side": entry.side,
-                "quantity": entry.quantity, "order_type": entry.order_type,
-                "status": entry.status.value,
-            })
+            self._append_audit(
+                "order_logged",
+                {
+                    "client_order_id": entry.client_order_id,
+                    "entry_id": entry.entry_id,
+                    "intent_id": entry.intent_id,
+                    "symbol": entry.symbol,
+                    "side": entry.side,
+                    "quantity": entry.quantity,
+                    "order_type": entry.order_type,
+                    "status": entry.status.value,
+                },
+            )
         return entry
 
     def update_status(
@@ -369,12 +398,18 @@ class OrderJournal:
             self._conn.commit()
 
             if cursor.rowcount > 0:
-                self._append_audit(f"status_{status.value}", {
-                    "entry_id": entry_id, "status": status.value,
-                    "broker_order_id": broker_order_id,
-                    "filled_quantity": str(filled_quantity) if filled_quantity is not None else None,
-                    "avg_price": str(avg_price) if avg_price is not None else None,
-                })
+                self._append_audit(
+                    f"status_{status.value}",
+                    {
+                        "entry_id": entry_id,
+                        "status": status.value,
+                        "broker_order_id": broker_order_id,
+                        "filled_quantity": (
+                            str(filled_quantity) if filled_quantity is not None else None
+                        ),
+                        "avg_price": str(avg_price) if avg_price is not None else None,
+                    },
+                )
         return cursor.rowcount > 0
 
     def is_duplicate(self, client_order_id: str) -> bool:
@@ -520,11 +555,11 @@ class OrderJournal:
 class CommandStatus(str, Enum):
     """Cloud command execution status."""
 
-    RECEIVED = "received"      # Command received from Cloud
+    RECEIVED = "received"  # Command received from Cloud
     IN_PROGRESS = "in_progress"  # Execution started
-    COMPLETED = "completed"    # Successfully executed
-    FAILED = "failed"         # Execution failed
-    SKIPPED = "skipped"       # Skipped (duplicate/expired)
+    COMPLETED = "completed"  # Successfully executed
+    FAILED = "failed"  # Execution failed
+    SKIPPED = "skipped"  # Skipped (duplicate/expired)
 
 
 @dataclass
@@ -574,18 +609,24 @@ class CommandEntry:
             payload_ref=data.get("payload_ref"),
             result=data.get("result"),
             error_message=data.get("error_message"),
-            received_at=datetime.fromisoformat(data["received_at"])
-            if "received_at" in data
-            else datetime.utcnow(),
-            executed_at=datetime.fromisoformat(data["executed_at"])
-            if data.get("executed_at")
-            else None,
-            created_at=datetime.fromisoformat(data["created_at"])
-            if "created_at" in data
-            else datetime.utcnow(),
-            updated_at=datetime.fromisoformat(data["updated_at"])
-            if "updated_at" in data
-            else datetime.utcnow(),
+            received_at=(
+                datetime.fromisoformat(data["received_at"])
+                if "received_at" in data
+                else datetime.utcnow()
+            ),
+            executed_at=(
+                datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None
+            ),
+            created_at=(
+                datetime.fromisoformat(data["created_at"])
+                if "created_at" in data
+                else datetime.utcnow()
+            ),
+            updated_at=(
+                datetime.fromisoformat(data["updated_at"])
+                if "updated_at" in data
+                else datetime.utcnow()
+            ),
         )
 
 
@@ -854,7 +895,11 @@ class CommandJournal:
         row = cursor.fetchone()
         if row:
             status = row["status"]
-            return status in (CommandStatus.COMPLETED.value, CommandStatus.FAILED.value, CommandStatus.SKIPPED.value)
+            return status in (
+                CommandStatus.COMPLETED.value,
+                CommandStatus.FAILED.value,
+                CommandStatus.SKIPPED.value,
+            )
 
         # Also check by idempotency_key if provided
         if idempotency_key:

@@ -78,7 +78,9 @@ def sample_snapshot(temp_dir):
 
     # Add changes
     snapshot.add_change("SP500", "2024-03-15", added=["SMCI"], removed=["WHR"], reason="Rebalance")
-    snapshot.add_change("SP500", "2024-06-20", added=["UBER"], removed=["LMND"], reason="Acquisition")
+    snapshot.add_change(
+        "SP500", "2024-06-20", added=["UBER"], removed=["LMND"], reason="Acquisition"
+    )
 
     return snapshot
 
@@ -95,12 +97,14 @@ def sample_trading_df():
     for symbol in symbols:
         for i in range(n_days):
             ts = 1704067200 + i * 86400  # 2024-01-01 + i days
-            rows.append({
-                "timestamp": ts,
-                "symbol": symbol,
-                "close": 100.0 + np.random.randn(),
-                "volume": 1000.0,
-            })
+            rows.append(
+                {
+                    "timestamp": ts,
+                    "symbol": symbol,
+                    "close": 100.0 + np.random.randn(),
+                    "volume": 1000.0,
+                }
+            )
 
     return pd.DataFrame(rows)
 
@@ -135,7 +139,7 @@ class TestDelistingTracker:
             reason="acquisition",
             successor_symbol="NEWCO",
             last_price=50.25,
-            metadata={"acquirer": "BigCorp", "deal_price": 55.00}
+            metadata={"acquirer": "BigCorp", "deal_price": 55.00},
         )
 
         event = tracker.get_delisting("ACME")
@@ -176,10 +180,7 @@ class TestDelistingTracker:
         assert len(all_events) == 3
 
         # Q1 2024 only
-        q1_events = sample_tracker.get_delistings(
-            start_date="2024-01-01",
-            end_date="2024-03-31"
-        )
+        q1_events = sample_tracker.get_delistings(start_date="2024-01-01", end_date="2024-03-31")
         assert len(q1_events) == 1
         assert q1_events[0].symbol == "WHR"
 
@@ -298,9 +299,7 @@ class TestUniverseSnapshot:
         assert len(all_changes) == 2
 
         q1_changes = sample_snapshot.get_changes(
-            "SP500",
-            start_date="2024-01-01",
-            end_date="2024-03-31"
+            "SP500", start_date="2024-01-01", end_date="2024-03-31"
         )
         assert len(q1_changes) == 1
 
@@ -402,11 +401,13 @@ class TestValidation:
     def test_validate_clean_data(self, sample_tracker):
         """Validation should pass for clean data."""
         # Data only for non-delisted symbols
-        clean_df = pd.DataFrame({
-            "timestamp": [1704067200, 1704153600],  # 2024-01-01, 2024-01-02
-            "symbol": ["AAPL", "AAPL"],
-            "close": [150.0, 151.0],
-        })
+        clean_df = pd.DataFrame(
+            {
+                "timestamp": [1704067200, 1704153600],  # 2024-01-01, 2024-01-02
+                "symbol": ["AAPL", "AAPL"],
+                "close": [150.0, 151.0],
+            }
+        )
 
         violations = validate_no_survivorship_bias(clean_df, tracker=sample_tracker)
         assert len(violations) == 0

@@ -11,19 +11,25 @@ import pytest
 from packages.agent.broker.adapters.sim import SimBrokerConnector
 from packages.agent.execution.smart_order_router import SmartOrderRouter, Venue
 from packages.agent.execution.live_factory import (
-    BrokerLiquidityProvider, make_venue_submit, routed_broker_submit, build_live_stack,
+    BrokerLiquidityProvider,
+    make_venue_submit,
+    routed_broker_submit,
+    build_live_stack,
 )
 from packages.agent.execution.engine import Order, OrderType
 
 
 def _venues():
-    return [Venue("V1", fee_bps=0.5, liquidity=5e6, impact_coef=0.1),
-            Venue("V2", fee_bps=0.8, liquidity=5e6, impact_coef=0.1)]
+    return [
+        Venue("V1", fee_bps=0.5, liquidity=5e6, impact_coef=0.1),
+        Venue("V2", fee_bps=0.8, liquidity=5e6, impact_coef=0.1),
+    ]
 
 
 def _conns(symbol="AAPL", price=100.0):
     c1, c2 = SimBrokerConnector(broker_name="V1"), SimBrokerConnector(broker_name="V2")
-    c1.set_price(symbol, price); c2.set_price(symbol, price)
+    c1.set_price(symbol, price)
+    c2.set_price(symbol, price)
     return {"V1": c1, "V2": c2}
 
 
@@ -42,8 +48,13 @@ def test_routed_submit_splits_and_dispatches():
     provider = BrokerLiquidityProvider(conns)
     record = []
     submit = routed_broker_submit(sor, conns, lambda s: 100.0, provider, record=record)
-    order = Order(client_order_id="o1", symbol="AAPL", side="buy",
-                  order_type=OrderType.MARKET, quantity=Decimal("2000"))  # 200k notional
+    order = Order(
+        client_order_id="o1",
+        symbol="AAPL",
+        side="buy",
+        order_type=OrderType.MARKET,
+        quantity=Decimal("2000"),
+    )  # 200k notional
     ok, broker_id, err = submit(order)
     assert ok and broker_id.startswith("routed:")
     assert record and record[0]["dispatch"]["all_ok"]
@@ -51,8 +62,11 @@ def test_routed_submit_splits_and_dispatches():
     venues_hit = {d["venue"] for d in record[0]["dispatch"]["dispatches"]}
     assert len(venues_hit) >= 1
     # positions actually created on the venues
-    total = sum(float(c.get_position("AAPL").quantity) for c in conns.values()
-                if c.get_position("AAPL") is not None)
+    total = sum(
+        float(c.get_position("AAPL").quantity)
+        for c in conns.values()
+        if c.get_position("AAPL") is not None
+    )
     assert total == pytest.approx(2000.0, rel=1e-3)
 
 
@@ -66,11 +80,18 @@ def test_build_live_stack_uses_sor():
     assert stack["sor"] is sor
     # submit an order through the engine -> routed + dispatched
     from packages.shared.contracts.intent import OrderIntent, IntentType, IntentSide
+
     eng = stack["engine"]
-    res = eng.execute(OrderIntent(strategy_id="s", symbol="AAPL",
-                                  intent_type=IntentType.MARKET_ENTRY, side=IntentSide.LONG,
-                                  target_quantity=Decimal("100")),   # 10k notional < 25% conc limit
-                      current_price=Decimal("100"))
+    res = eng.execute(
+        OrderIntent(
+            strategy_id="s",
+            symbol="AAPL",
+            intent_type=IntentType.MARKET_ENTRY,
+            side=IntentSide.LONG,
+            target_quantity=Decimal("100"),
+        ),  # 10k notional < 25% conc limit
+        current_price=Decimal("100"),
+    )
     assert res.success
     assert stack["sor_routes"], "live routing should be recorded"
     assert str(res.order.broker_order_id).startswith("routed:")

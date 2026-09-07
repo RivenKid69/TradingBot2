@@ -28,6 +28,7 @@ DOCS_DIR = PROJECT_ROOT / "docs"
 # Documentation Structure Tests
 # ============================================================================
 
+
 class TestDocumentationStructure:
     """Tests for documentation file structure."""
 
@@ -86,31 +87,30 @@ class TestDocumentationStructure:
         ]
 
         for section in required_sections:
-            assert section.lower() in content.lower(), \
-                f"CCEA_OVERVIEW.md missing section: {section}"
+            assert (
+                section.lower() in content.lower()
+            ), f"CCEA_OVERVIEW.md missing section: {section}"
 
     def test_cloud_docs_directory_exists(self):
         """Test Cloud documentation directory exists."""
         cloud_dir = DOCS_DIR / "cloud"
-        assert cloud_dir.exists() and cloud_dir.is_dir(), \
-            "docs/cloud/ directory missing"
+        assert cloud_dir.exists() and cloud_dir.is_dir(), "docs/cloud/ directory missing"
 
     def test_agent_docs_directory_exists(self):
         """Test Agent documentation directory exists."""
         agent_dir = DOCS_DIR / "agent"
-        assert agent_dir.exists() and agent_dir.is_dir(), \
-            "docs/agent/ directory missing"
+        assert agent_dir.exists() and agent_dir.is_dir(), "docs/agent/ directory missing"
 
     def test_runbooks_directory_exists(self):
         """Test runbooks directory exists."""
         runbooks_dir = DOCS_DIR / "runbooks"
-        assert runbooks_dir.exists() and runbooks_dir.is_dir(), \
-            "docs/runbooks/ directory missing"
+        assert runbooks_dir.exists() and runbooks_dir.is_dir(), "docs/runbooks/ directory missing"
 
 
 # ============================================================================
 # Legal Document Tests
 # ============================================================================
+
 
 class TestLegalDocuments:
     """Tests for legal document compliance."""
@@ -137,8 +137,7 @@ class TestLegalDocuments:
             pytest.skip("ToS not found")
 
         content = tos_path.read_text()
-        assert "CCEA" in content, \
-            "Terms of Service must mention CCEA architecture"
+        assert "CCEA" in content, "Terms of Service must mention CCEA architecture"
 
     def test_tos_has_not_investment_advice(self):
         """Test ToS has 'not investment advice' disclaimer."""
@@ -147,8 +146,9 @@ class TestLegalDocuments:
             pytest.skip("ToS not found")
 
         content = tos_path.read_text().lower()
-        assert "not" in content and "investment advice" in content, \
-            "Terms of Service must contain 'not investment advice' disclaimer"
+        assert (
+            "not" in content and "investment advice" in content
+        ), "Terms of Service must contain 'not investment advice' disclaimer"
 
     def test_privacy_policy_has_ccea_data_zones(self):
         """Test Privacy Policy mentions CCEA data zones."""
@@ -157,10 +157,10 @@ class TestLegalDocuments:
             pytest.skip("Privacy Policy not found")
 
         content = privacy_path.read_text()
-        assert "CCEA" in content, \
-            "Privacy Policy must mention CCEA architecture"
-        assert "Cloud" in content and "Agent" in content, \
-            "Privacy Policy must mention Cloud and Agent zones"
+        assert "CCEA" in content, "Privacy Policy must mention CCEA architecture"
+        assert (
+            "Cloud" in content and "Agent" in content
+        ), "Privacy Policy must mention Cloud and Agent zones"
 
     def test_privacy_policy_mentions_no_credentials_in_cloud(self):
         """Test Privacy Policy states credentials not stored in Cloud."""
@@ -172,13 +172,15 @@ class TestLegalDocuments:
         # Check for phrases like "never store" credentials, "local only", etc.
         never_store = "never" in content and ("store" in content or "stored" in content)
         credentials_local = "local" in content and ("credential" in content or "api key" in content)
-        assert never_store or credentials_local, \
-            "Privacy Policy must state credentials are NOT stored in Cloud"
+        assert (
+            never_store or credentials_local
+        ), "Privacy Policy must state credentials are NOT stored in Cloud"
 
 
 # ============================================================================
 # CCEA Security Boundary Tests
 # ============================================================================
+
 
 class TestCCEASecurityBoundaries:
     """Tests for CCEA security boundary enforcement."""
@@ -190,8 +192,9 @@ class TestCCEASecurityBoundaries:
             pytest.skip("Cloud README not found")
 
         content = cloud_readme.read_text().lower()
-        assert "never" in content and "order" in content, \
-            "Cloud docs must state Cloud NEVER executes orders"
+        assert (
+            "never" in content and "order" in content
+        ), "Cloud docs must state Cloud NEVER executes orders"
 
     def test_cloud_docs_mention_no_credentials(self):
         """Test Cloud docs clarify no credential storage."""
@@ -200,8 +203,9 @@ class TestCCEASecurityBoundaries:
             pytest.skip("Cloud README not found")
 
         content = cloud_readme.read_text().lower()
-        assert "never" in content and ("credential" in content or "api key" in content), \
-            "Cloud docs must state Cloud NEVER stores credentials"
+        assert "never" in content and (
+            "credential" in content or "api key" in content
+        ), "Cloud docs must state Cloud NEVER stores credentials"
 
     def test_agent_docs_mention_local_vault(self):
         """Test Agent docs mention local vault."""
@@ -210,10 +214,8 @@ class TestCCEASecurityBoundaries:
             pytest.skip("LOCAL_VAULT.md not found")
 
         content = vault_doc.read_text().lower()
-        assert "encrypt" in content, \
-            "Agent LOCAL_VAULT.md must mention encryption"
-        assert "local" in content, \
-            "Agent LOCAL_VAULT.md must emphasize local storage"
+        assert "encrypt" in content, "Agent LOCAL_VAULT.md must mention encryption"
+        assert "local" in content, "Agent LOCAL_VAULT.md must emphasize local storage"
 
     def test_schema_docs_mention_prohibited_fields(self):
         """Test Schema docs mention prohibited fields."""
@@ -225,13 +227,15 @@ class TestCCEASecurityBoundaries:
         prohibited_fields = ["side", "quantity", "price", "order_type"]
         found_prohibitions = sum(1 for f in prohibited_fields if f in content)
 
-        assert found_prohibitions >= 2, \
-            "Schema docs must list prohibited payload fields (side, quantity, price, etc.)"
+        assert (
+            found_prohibitions >= 2
+        ), "Schema docs must list prohibited payload fields (side, quantity, price, etc.)"
 
 
 # ============================================================================
 # Prohibited Payload Field Tests
 # ============================================================================
+
 
 class TestProhibitedPayloadFields:
     """Tests to ensure prohibited fields are not in Cloud code."""
@@ -259,9 +263,9 @@ class TestProhibitedPayloadFields:
             r'["\']order_type["\']\s*:\s*["\'](?:MARKET|LIMIT|market|limit)["\']',
             r'side\s*=\s*["\'](?:BUY|SELL)',
             # Sending orders from cloud (should never happen)
-            r'execute_order\s*\(',
-            r'submit_order\s*\(',
-            r'place_order\s*\(',
+            r"execute_order\s*\(",
+            r"submit_order\s*\(",
+            r"place_order\s*\(",
         ]
 
     def test_cloud_code_no_order_execution_calls(self, cloud_code_files, prohibited_patterns):
@@ -276,13 +280,13 @@ class TestProhibitedPayloadFields:
                 if re.search(pattern, content, re.IGNORECASE):
                     violations.append(f"{file_path}: matches pattern '{pattern}'")
 
-        assert not violations, \
-            f"Cloud code contains prohibited patterns:\n" + "\n".join(violations)
+        assert not violations, f"Cloud code contains prohibited patterns:\n" + "\n".join(violations)
 
 
 # ============================================================================
 # Cross-Reference Tests
 # ============================================================================
+
 
 class TestDocumentationCrossReferences:
     """Tests for documentation cross-reference integrity."""
@@ -294,8 +298,9 @@ class TestDocumentationCrossReferences:
             pytest.skip("CCEA_OVERVIEW.md not found")
 
         content = ccea_path.read_text()
-        assert "cloud/" in content.lower() or "docs/cloud" in content.lower(), \
-            "CCEA_OVERVIEW.md should reference cloud documentation"
+        assert (
+            "cloud/" in content.lower() or "docs/cloud" in content.lower()
+        ), "CCEA_OVERVIEW.md should reference cloud documentation"
 
     def test_ccea_overview_links_to_agent_docs(self):
         """Test CCEA_OVERVIEW.md links to agent docs."""
@@ -304,8 +309,9 @@ class TestDocumentationCrossReferences:
             pytest.skip("CCEA_OVERVIEW.md not found")
 
         content = ccea_path.read_text()
-        assert "agent/" in content.lower() or "docs/agent" in content.lower(), \
-            "CCEA_OVERVIEW.md should reference agent documentation"
+        assert (
+            "agent/" in content.lower() or "docs/agent" in content.lower()
+        ), "CCEA_OVERVIEW.md should reference agent documentation"
 
     def test_runbooks_exist_and_linked(self):
         """Test runbooks are linked from main runbook index."""
@@ -317,13 +323,13 @@ class TestDocumentationCrossReferences:
         required_runbooks = ["KILL_SWITCH", "RECOVERY", "AGENT_REVOCATION"]
 
         for runbook in required_runbooks:
-            assert runbook.lower() in content.lower(), \
-                f"Runbook index should reference {runbook}"
+            assert runbook.lower() in content.lower(), f"Runbook index should reference {runbook}"
 
 
 # ============================================================================
 # Version Consistency Tests
 # ============================================================================
+
 
 class TestVersionConsistency:
     """Tests for document version consistency."""
@@ -336,13 +342,12 @@ class TestVersionConsistency:
 
         content = tos_path.read_text()
         # Look for version pattern
-        version_match = re.search(r'Version[:\s]*(\d+\.\d+\.\d+)', content, re.IGNORECASE)
+        version_match = re.search(r"Version[:\s]*(\d+\.\d+\.\d+)", content, re.IGNORECASE)
 
         if version_match:
             version = version_match.group(1)
-            major = int(version.split('.')[0])
-            assert major >= 2, \
-                f"Terms of Service should be version 2.0.0+ (found {version})"
+            major = int(version.split(".")[0])
+            assert major >= 2, f"Terms of Service should be version 2.0.0+ (found {version})"
 
     def test_privacy_policy_version_is_2_0_or_higher(self):
         """Test Privacy Policy has been updated (version 2.0+)."""
@@ -351,18 +356,18 @@ class TestVersionConsistency:
             pytest.skip("Privacy Policy not found")
 
         content = privacy_path.read_text()
-        version_match = re.search(r'Version[:\s]*(\d+\.\d+\.\d+)', content, re.IGNORECASE)
+        version_match = re.search(r"Version[:\s]*(\d+\.\d+\.\d+)", content, re.IGNORECASE)
 
         if version_match:
             version = version_match.group(1)
-            major = int(version.split('.')[0])
-            assert major >= 2, \
-                f"Privacy Policy should be version 2.0.0+ (found {version})"
+            major = int(version.split(".")[0])
+            assert major >= 2, f"Privacy Policy should be version 2.0.0+ (found {version})"
 
 
 # ============================================================================
 # UI Guardrails Tests
 # ============================================================================
+
 
 class TestUIGuardrails:
     """Tests for UI guardrails documentation."""
@@ -370,8 +375,7 @@ class TestUIGuardrails:
     def test_onboarding_guardrails_exists(self):
         """Test onboarding guardrails document exists."""
         guardrails_path = DOCS_DIR / "ui" / "ONBOARDING_GUARDRAILS.md"
-        assert guardrails_path.exists(), \
-            "UI onboarding guardrails document not found"
+        assert guardrails_path.exists(), "UI onboarding guardrails document not found"
 
     def test_onboarding_guardrails_has_disclaimers(self):
         """Test onboarding guardrails mentions disclaimers."""
@@ -380,8 +384,7 @@ class TestUIGuardrails:
             pytest.skip("Onboarding guardrails not found")
 
         content = guardrails_path.read_text().lower()
-        assert "disclaimer" in content, \
-            "Onboarding guardrails must include disclaimers"
+        assert "disclaimer" in content, "Onboarding guardrails must include disclaimers"
 
     def test_onboarding_guardrails_has_risk_warning(self):
         """Test onboarding guardrails includes risk warnings."""
@@ -390,8 +393,9 @@ class TestUIGuardrails:
             pytest.skip("Onboarding guardrails not found")
 
         content = guardrails_path.read_text().lower()
-        assert "risk" in content and "warning" in content, \
-            "Onboarding guardrails must include risk warnings"
+        assert (
+            "risk" in content and "warning" in content
+        ), "Onboarding guardrails must include risk warnings"
 
     def test_onboarding_guardrails_has_acknowledgments(self):
         """Test onboarding guardrails defines acknowledgment flows."""
@@ -400,8 +404,7 @@ class TestUIGuardrails:
             pytest.skip("Onboarding guardrails not found")
 
         content = guardrails_path.read_text().lower()
-        assert "acknowledg" in content, \
-            "Onboarding guardrails must define acknowledgment flows"
+        assert "acknowledg" in content, "Onboarding guardrails must define acknowledgment flows"
 
     def test_onboarding_guardrails_has_ai_disclosure(self):
         """Test onboarding guardrails includes AI system disclosure."""
@@ -410,13 +413,15 @@ class TestUIGuardrails:
             pytest.skip("Onboarding guardrails not found")
 
         content = guardrails_path.read_text().lower()
-        assert "ai" in content and ("generated" in content or "system" in content), \
-            "Onboarding guardrails must include AI system disclosure"
+        assert "ai" in content and (
+            "generated" in content or "system" in content
+        ), "Onboarding guardrails must include AI system disclosure"
 
 
 # ============================================================================
 # Architecture Document Tests
 # ============================================================================
+
 
 class TestArchitectureDocumentation:
     """Tests for main architecture documentation."""
@@ -428,8 +433,7 @@ class TestArchitectureDocumentation:
             pytest.skip("README.md not found")
 
         content = readme_path.read_text()
-        assert "CCEA" in content, \
-            "README.md must mention CCEA architecture"
+        assert "CCEA" in content, "README.md must mention CCEA architecture"
 
     def test_architecture_md_exists(self):
         """Test ARCHITECTURE.md exists."""
@@ -443,13 +447,15 @@ class TestArchitectureDocumentation:
             pytest.skip("ARCHITECTURE.md not found")
 
         content = arch_path.read_text().lower()
-        assert "cloud" in content and "agent" in content, \
-            "ARCHITECTURE.md must describe Cloud/Agent separation"
+        assert (
+            "cloud" in content and "agent" in content
+        ), "ARCHITECTURE.md must describe Cloud/Agent separation"
 
 
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestDocumentationIntegrity:
     """Integration tests for documentation integrity."""
@@ -463,7 +469,7 @@ class TestDocumentationIntegrity:
         ]
 
         broken_links = []
-        link_pattern = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+        link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
         for doc_path in key_docs:
             if not doc_path.exists():
@@ -474,11 +480,11 @@ class TestDocumentationIntegrity:
                 link_text, link_url = match.groups()
 
                 # Skip external links
-                if link_url.startswith(('http://', 'https://', '#')):
+                if link_url.startswith(("http://", "https://", "#")):
                     continue
 
                 # Resolve relative path
-                if link_url.startswith('./'):
+                if link_url.startswith("./"):
                     link_url = link_url[2:]
 
                 target_path = doc_path.parent / link_url
@@ -499,16 +505,16 @@ class TestDocumentationIntegrity:
         missing_version = []
         for doc in legal_dir.glob("*.md"):
             content = doc.read_text()
-            if not re.search(r'version', content, re.IGNORECASE):
+            if not re.search(r"version", content, re.IGNORECASE):
                 missing_version.append(doc.name)
 
-        assert not missing_version, \
-            f"Legal documents missing version: {missing_version}"
+        assert not missing_version, f"Legal documents missing version: {missing_version}"
 
 
 # ============================================================================
 # Telemetry Redaction Tests
 # ============================================================================
+
 
 class TestTelemetryRedactionDocumentation:
     """Tests for telemetry redaction documentation."""
@@ -520,8 +526,9 @@ class TestTelemetryRedactionDocumentation:
             pytest.skip("Privacy Policy not found")
 
         content = privacy_path.read_text().lower()
-        assert "redact" in content or "telemetry" in content, \
-            "Privacy Policy must mention telemetry redaction"
+        assert (
+            "redact" in content or "telemetry" in content
+        ), "Privacy Policy must mention telemetry redaction"
 
     def test_agent_docs_mention_redaction(self):
         """Test Agent docs mention telemetry redaction."""
@@ -539,13 +546,13 @@ class TestTelemetryRedactionDocumentation:
                     found_redaction = True
                     break
 
-        assert found_redaction, \
-            "Documentation must mention telemetry redaction"
+        assert found_redaction, "Documentation must mention telemetry redaction"
 
 
 # ============================================================================
 # Kill Switch Documentation Tests
 # ============================================================================
+
 
 class TestKillSwitchDocumentation:
     """Tests for kill switch documentation."""
@@ -553,8 +560,7 @@ class TestKillSwitchDocumentation:
     def test_kill_switch_runbook_exists(self):
         """Test kill switch runbook exists."""
         killswitch_path = DOCS_DIR / "runbooks" / "KILL_SWITCH.md"
-        assert killswitch_path.exists(), \
-            "Kill switch runbook not found"
+        assert killswitch_path.exists(), "Kill switch runbook not found"
 
     def test_kill_switch_has_trigger_commands(self):
         """Test kill switch runbook has trigger commands."""
@@ -563,8 +569,7 @@ class TestKillSwitchDocumentation:
             pytest.skip("Kill switch runbook not found")
 
         content = killswitch_path.read_text().lower()
-        assert "trigger" in content, \
-            "Kill switch runbook must include trigger instructions"
+        assert "trigger" in content, "Kill switch runbook must include trigger instructions"
 
     def test_kill_switch_has_recovery_steps(self):
         """Test kill switch runbook has recovery steps."""
@@ -573,8 +578,9 @@ class TestKillSwitchDocumentation:
             pytest.skip("Kill switch runbook not found")
 
         content = killswitch_path.read_text().lower()
-        assert "recover" in content or "reset" in content, \
-            "Kill switch runbook must include recovery steps"
+        assert (
+            "recover" in content or "reset" in content
+        ), "Kill switch runbook must include recovery steps"
 
 
 # ============================================================================

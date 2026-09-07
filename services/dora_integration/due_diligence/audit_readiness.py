@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class AuditType(Enum):
     """Types of audits we support."""
+
     CLIENT_OPERATIONAL = "client_operational"
     CLIENT_SECURITY = "client_security"
     NCA_INSPECTION = "nca_inspection"
@@ -54,6 +56,7 @@ class AuditType(Enum):
 
 class AuditScope(Enum):
     """Scope of audit coverage."""
+
     FULL = "full"  # Complete system review
     SECURITY = "security"  # Security controls only
     AVAILABILITY = "availability"  # BCP/DR only
@@ -64,6 +67,7 @@ class AuditScope(Enum):
 
 class AuditStatus(Enum):
     """Audit request status."""
+
     REQUESTED = "requested"
     ACKNOWLEDGED = "acknowledged"
     SCHEDULED = "scheduled"
@@ -77,6 +81,7 @@ class AuditStatus(Enum):
 
 class EvidenceType(Enum):
     """Types of audit evidence."""
+
     DOCUMENT = "document"  # Policies, procedures
     LOG = "log"  # System logs, audit trails
     CONFIGURATION = "configuration"  # System configs
@@ -89,6 +94,7 @@ class EvidenceType(Enum):
 
 class EvidenceCategory(Enum):
     """DORA-aligned evidence categories."""
+
     ICT_GOVERNANCE = "ict_governance"
     ICT_RISK_MANAGEMENT = "ict_risk_management"
     ICT_SECURITY = "ict_security"
@@ -105,9 +111,11 @@ class EvidenceCategory(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class AuditRequest:
     """Audit request from client or regulator."""
+
     request_id: str = ""
     request_date: str = ""
     requesting_entity: str = ""  # Client name or NCA
@@ -158,6 +166,7 @@ class AuditRequest:
 @dataclass
 class EvidenceItem:
     """Audit evidence item."""
+
     evidence_id: str = ""
     audit_id: str = ""
 
@@ -201,6 +210,7 @@ class EvidenceItem:
 @dataclass
 class AuditFinding:
     """Finding from an audit."""
+
     finding_id: str = ""
     audit_id: str = ""
 
@@ -237,6 +247,7 @@ class AuditFinding:
 @dataclass
 class EvidenceTemplate:
     """Template for generating standard evidence."""
+
     template_id: str = ""
     template_name: str = ""
     category: EvidenceCategory = EvidenceCategory.ICT_SECURITY
@@ -265,14 +276,14 @@ class EvidenceTemplate:
 # =============================================================================
 
 # Standard audit response SLAs (business days)
-AUDIT_SLA_ACKNOWLEDGMENT_DAYS = 2      # Acknowledge receipt of audit request
-AUDIT_SLA_SCHEDULING_DAYS = 5          # Schedule audit dates
+AUDIT_SLA_ACKNOWLEDGMENT_DAYS = 2  # Acknowledge receipt of audit request
+AUDIT_SLA_SCHEDULING_DAYS = 5  # Schedule audit dates
 AUDIT_SLA_EVIDENCE_STANDARD_DAYS = 10  # Deliver standard evidence package
-AUDIT_SLA_EVIDENCE_COMPLEX_DAYS = 20   # Deliver complex/historical evidence
-AUDIT_SLA_NCA_RESPONSE_DAYS = 5        # Response to NCA inspection requests
+AUDIT_SLA_EVIDENCE_COMPLEX_DAYS = 20  # Deliver complex/historical evidence
+AUDIT_SLA_NCA_RESPONSE_DAYS = 5  # Response to NCA inspection requests
 
 # Evidence retention per DORA requirements
-EVIDENCE_RETENTION_YEARS = 7           # Minimum retention period
+EVIDENCE_RETENTION_YEARS = 7  # Minimum retention period
 
 # Audit types and corresponding response expectations
 AUDIT_TYPE_SLAS = {
@@ -307,6 +318,7 @@ AUDIT_TYPE_SLAS = {
 # =============================================================================
 # Configuration
 # =============================================================================
+
 
 @dataclass
 class AuditReadinessConfig:
@@ -348,6 +360,7 @@ class AuditReadinessConfig:
 # Standard Evidence Templates
 # =============================================================================
 
+
 def get_standard_evidence_templates() -> List[EvidenceTemplate]:
     """Get standard evidence templates for common audit requests."""
     return [
@@ -366,7 +379,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Organization chart with ICT responsibilities",
             generation_method="manual",
         ),
-
         # ICT Risk Management
         EvidenceTemplate(
             template_name="ICT Risk Register",
@@ -383,7 +395,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Annual ICT risk assessment results",
             generation_method="manual",
         ),
-
         # ICT Security
         EvidenceTemplate(
             template_name="Security Policy",
@@ -407,7 +418,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Annual penetration test results and remediation",
             generation_method="manual",
         ),
-
         # Access Control
         EvidenceTemplate(
             template_name="Access Control Policy",
@@ -431,7 +441,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Privileged account activity logs",
             generation_method="automated",
         ),
-
         # ICT Continuity
         EvidenceTemplate(
             template_name="Business Continuity Plan",
@@ -454,7 +463,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Backup completion and verification records",
             generation_method="automated",
         ),
-
         # Incident Management
         EvidenceTemplate(
             template_name="Incident Management Policy",
@@ -477,7 +485,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Post-incident review reports for major incidents",
             generation_method="manual",
         ),
-
         # Change Management
         EvidenceTemplate(
             template_name="Change Management Policy",
@@ -493,7 +500,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="Production change records",
             generation_method="automated",
         ),
-
         # Third-Party Management
         EvidenceTemplate(
             template_name="Vendor Management Policy",
@@ -509,7 +515,6 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
             description="List of subcontractors with risk assessments",
             generation_method="automated",
         ),
-
         # ICT Testing
         EvidenceTemplate(
             template_name="Testing Strategy",
@@ -531,6 +536,7 @@ def get_standard_evidence_templates() -> List[EvidenceTemplate]:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class DORAuditReadiness:
     """
@@ -650,11 +656,14 @@ class DORAuditReadiness:
         self._evidence_by_audit[request.request_id] = set()
         self._findings_by_audit[request.request_id] = set()
 
-        self._log_event("audit_request_created", {
-            "request_id": request.request_id,
-            "requesting_entity": requesting_entity,
-            "audit_type": audit_type.value,
-        })
+        self._log_event(
+            "audit_request_created",
+            {
+                "request_id": request.request_id,
+                "requesting_entity": requesting_entity,
+                "audit_type": audit_type.value,
+            },
+        )
 
         return request
 
@@ -680,10 +689,13 @@ class DORAuditReadiness:
         deadline = datetime.fromisoformat(request.sla_deadline.replace("Z", "+00:00"))
         request.sla_met = ack_time <= deadline
 
-        self._log_event("audit_acknowledged", {
-            "request_id": request_id,
-            "sla_met": request.sla_met,
-        })
+        self._log_event(
+            "audit_acknowledged",
+            {
+                "request_id": request_id,
+                "sla_met": request.sla_met,
+            },
+        )
 
         return request
 
@@ -705,11 +717,14 @@ class DORAuditReadiness:
         if participants:
             request.our_participants = participants
 
-        self._log_event("audit_scheduled", {
-            "request_id": request_id,
-            "start_date": start_date,
-            "end_date": end_date,
-        })
+        self._log_event(
+            "audit_scheduled",
+            {
+                "request_id": request_id,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+        )
 
         return request
 
@@ -737,10 +752,13 @@ class DORAuditReadiness:
         if notes:
             request.notes = notes
 
-        self._log_event("audit_completed", {
-            "request_id": request_id,
-            "findings_count": len(self._findings_by_audit.get(request_id, set())),
-        })
+        self._log_event(
+            "audit_completed",
+            {
+                "request_id": request_id,
+                "findings_count": len(self._findings_by_audit.get(request_id, set())),
+            },
+        )
 
         return request
 
@@ -851,20 +869,25 @@ class DORAuditReadiness:
                 period_end=period_end,
             )
             if evidence:
-                package["evidence_items"].append({
-                    "evidence_id": evidence.evidence_id,
-                    "title": evidence.title,
-                    "category": evidence.category.value,
-                    "type": evidence.evidence_type.value,
-                })
+                package["evidence_items"].append(
+                    {
+                        "evidence_id": evidence.evidence_id,
+                        "title": evidence.title,
+                        "category": evidence.category.value,
+                        "type": evidence.evidence_type.value,
+                    }
+                )
 
         # Update request status
         request.status = AuditStatus.EVIDENCE_SUBMITTED
 
-        self._log_event("evidence_package_generated", {
-            "request_id": request_id,
-            "items_count": len(package["evidence_items"]),
-        })
+        self._log_event(
+            "evidence_package_generated",
+            {
+                "request_id": request_id,
+                "items_count": len(package["evidence_items"]),
+            },
+        )
 
         return package
 
@@ -970,11 +993,14 @@ class DORAuditReadiness:
         if request.status == AuditStatus.EVIDENCE_SUBMITTED:
             request.status = AuditStatus.FINDINGS_RECEIVED
 
-        self._log_event("finding_added", {
-            "finding_id": finding.finding_id,
-            "audit_id": audit_id,
-            "severity": severity,
-        })
+        self._log_event(
+            "finding_added",
+            {
+                "finding_id": finding.finding_id,
+                "audit_id": audit_id,
+                "severity": severity,
+            },
+        )
 
         return finding
 
@@ -1012,10 +1038,13 @@ class DORAuditReadiness:
         finding.completed_date = datetime.now(timezone.utc).isoformat()
         finding.remediation_evidence = evidence
 
-        self._log_event("remediation_completed", {
-            "finding_id": finding_id,
-            "audit_id": finding.audit_id,
-        })
+        self._log_event(
+            "remediation_completed",
+            {
+                "finding_id": finding_id,
+                "audit_id": finding.audit_id,
+            },
+        )
 
         return finding
 
@@ -1027,7 +1056,8 @@ class DORAuditReadiness:
     def get_open_findings(self) -> List[AuditFinding]:
         """Get all open (unremediated) findings."""
         return [
-            f for f in self._findings.values()
+            f
+            for f in self._findings.values()
             if f.remediation_status not in ["completed", "deferred"]
         ]
 
@@ -1163,6 +1193,7 @@ class DORAuditReadiness:
 # Factory Functions
 # =============================================================================
 
+
 def create_audit_readiness(
     config: Optional[AuditReadinessConfig] = None,
 ) -> DORAuditReadiness:
@@ -1185,8 +1216,10 @@ def create_audit_readiness(
 # When a shared infrastructure incident affects multiple EU regulated clients,
 # we must coordinate notifications while maintaining client confidentiality.
 
+
 class IncidentNotificationStatus(Enum):
     """Status of individual client notification."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     SENT = "sent"
@@ -1197,6 +1230,7 @@ class IncidentNotificationStatus(Enum):
 @dataclass
 class ClientNotificationRecord:
     """Record of notification sent to a single client."""
+
     client_id: str
     client_name: str
     contact_name: str = ""
@@ -1222,6 +1256,7 @@ class MultiClientIncident:
     - Preserve confidentiality between clients
     - Document timeline for each client's NCA reporting
     """
+
     incident_id: str = ""
     incident_type: str = ""  # data_breach, service_outage, security_incident
     severity: str = "high"  # critical, high, medium
@@ -1326,17 +1361,23 @@ class MultiClientIncidentCoordinator:
             )
 
         # Log creation
-        incident.timeline_events.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "event": "incident_created",
-            "details": f"Incident created affecting {len(affected_clients)} clients",
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "incident_created",
+                "details": f"Incident created affecting {len(affected_clients)} clients",
+            }
+        )
 
         self._incidents[incident.incident_id] = incident
-        self._log_incident_event(incident.incident_id, "created", {
-            "severity": severity,
-            "affected_clients_count": len(affected_clients),
-        })
+        self._log_incident_event(
+            incident.incident_id,
+            "created",
+            {
+                "severity": severity,
+                "affected_clients_count": len(affected_clients),
+            },
+        )
 
         return incident
 
@@ -1364,11 +1405,13 @@ class MultiClientIncidentCoordinator:
         incident.severity = final_severity
         incident.classification_time = datetime.now(timezone.utc).isoformat()
 
-        incident.timeline_events.append({
-            "timestamp": incident.classification_time,
-            "event": "incident_classified",
-            "details": f"Severity: {final_severity}, Scope: {affected_scope}",
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": incident.classification_time,
+                "event": "incident_classified",
+                "details": f"Severity: {final_severity}, Scope: {affected_scope}",
+            }
+        )
 
         return incident
 
@@ -1398,11 +1441,13 @@ class MultiClientIncidentCoordinator:
                 IncidentNotificationStatus.IN_PROGRESS
             )
 
-        incident.timeline_events.append({
-            "timestamp": incident.notification_start_time,
-            "event": "notifications_started",
-            "details": f"Starting parallel notification to {len(incident.affected_clients)} clients",
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": incident.notification_start_time,
+                "event": "notifications_started",
+                "details": f"Starting parallel notification to {len(incident.affected_clients)} clients",
+            }
+        )
 
         return incident
 
@@ -1441,16 +1486,19 @@ class MultiClientIncidentCoordinator:
         record.contact_method = contact_method
         record.notes = notes
 
-        incident.timeline_events.append({
-            "timestamp": record.notification_time,
-            "event": "client_notified",
-            "client_id": client_id,  # Note: In audit log, not shared between clients
-            "contact_method": contact_method,
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": record.notification_time,
+                "event": "client_notified",
+                "client_id": client_id,  # Note: In audit log, not shared between clients
+                "contact_method": contact_method,
+            }
+        )
 
         # Check if all notifications sent
         all_sent = all(
-            n.notification_status in [IncidentNotificationStatus.SENT, IncidentNotificationStatus.ACKNOWLEDGED]
+            n.notification_status
+            in [IncidentNotificationStatus.SENT, IncidentNotificationStatus.ACKNOWLEDGED]
             for n in incident.client_notifications.values()
         )
 
@@ -1460,19 +1508,23 @@ class MultiClientIncidentCoordinator:
 
             # Check SLA
             detection = datetime.fromisoformat(incident.detection_time.replace("Z", "+00:00"))
-            all_sent_time = datetime.fromisoformat(incident.all_notifications_sent_time.replace("Z", "+00:00"))
+            all_sent_time = datetime.fromisoformat(
+                incident.all_notifications_sent_time.replace("Z", "+00:00")
+            )
             elapsed_minutes = (all_sent_time - detection).total_seconds() / 60
 
             sla_target = self.NOTIFICATION_SLA.get(incident.severity, 60)
             incident.notification_sla_met = elapsed_minutes <= sla_target
 
-            incident.timeline_events.append({
-                "timestamp": incident.all_notifications_sent_time,
-                "event": "all_notifications_complete",
-                "elapsed_minutes": round(elapsed_minutes, 1),
-                "sla_target_minutes": sla_target,
-                "sla_met": incident.notification_sla_met,
-            })
+            incident.timeline_events.append(
+                {
+                    "timestamp": incident.all_notifications_sent_time,
+                    "event": "all_notifications_complete",
+                    "elapsed_minutes": round(elapsed_minutes, 1),
+                    "sla_target_minutes": sla_target,
+                    "sla_met": incident.notification_sla_met,
+                }
+            )
 
         return record
 
@@ -1505,11 +1557,13 @@ class MultiClientIncidentCoordinator:
         record.acknowledgment_time = datetime.now(timezone.utc).isoformat()
         record.acknowledged_by = acknowledged_by
 
-        incident.timeline_events.append({
-            "timestamp": record.acknowledgment_time,
-            "event": "client_acknowledged",
-            "client_id": client_id,
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": record.acknowledgment_time,
+                "event": "client_acknowledged",
+                "client_id": client_id,
+            }
+        )
 
         return record
 
@@ -1542,11 +1596,13 @@ class MultiClientIncidentCoordinator:
         record.follow_up_report_sent = True
         record.follow_up_report_time = datetime.now(timezone.utc).isoformat()
 
-        incident.timeline_events.append({
-            "timestamp": record.follow_up_report_time,
-            "event": "follow_up_report_sent",
-            "client_id": client_id,
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": record.follow_up_report_time,
+                "event": "follow_up_report_sent",
+                "client_id": client_id,
+            }
+        )
 
         return record
 
@@ -1672,7 +1728,9 @@ class MultiClientIncidentCoordinator:
                 "target_minutes": self.NOTIFICATION_SLA.get(incident.severity, 60),
                 "elapsed_minutes": round(elapsed_minutes, 1),
                 "remaining_minutes": round(max(0, sla_remaining), 1),
-                "met": incident.notification_sla_met if incident.all_notifications_sent_time else None,
+                "met": (
+                    incident.notification_sla_met if incident.all_notifications_sent_time else None
+                ),
             },
             "clients": [
                 {
@@ -1710,15 +1768,21 @@ class MultiClientIncidentCoordinator:
         incident.resolution_time = datetime.now(timezone.utc).isoformat()
         incident.root_cause_final = root_cause
 
-        incident.timeline_events.append({
-            "timestamp": incident.resolution_time,
-            "event": "incident_resolved",
-            "details": resolution_summary,
-        })
+        incident.timeline_events.append(
+            {
+                "timestamp": incident.resolution_time,
+                "event": "incident_resolved",
+                "details": resolution_summary,
+            }
+        )
 
-        self._log_incident_event(incident_id, "resolved", {
-            "resolution_summary": resolution_summary,
-        })
+        self._log_incident_event(
+            incident_id,
+            "resolved",
+            {
+                "resolution_summary": resolution_summary,
+            },
+        )
 
         return incident
 

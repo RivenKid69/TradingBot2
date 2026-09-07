@@ -155,7 +155,7 @@ def test_upgd_with_negative_utility():
     # Check optimizer state
     for i, param in enumerate(model.parameters()):
         if param in optimizer.state:
-            avg_util = optimizer.state[param]['avg_utility']
+            avg_util = optimizer.state[param]["avg_utility"]
             max_util = avg_util.max().item()
             min_util = avg_util.min().item()
             print(f"   Param {i}: avg_utility range = [{min_util:.6f}, {max_util:.6f}]")
@@ -180,8 +180,9 @@ def test_upgd_with_negative_utility():
 
     # Check parameter updates
     params_after = [p.data for p in model.parameters()]
-    max_change = max((after - before).abs().max().item()
-                     for before, after in zip(params_before, params_after))
+    max_change = max(
+        (after - before).abs().max().item() for before, after in zip(params_before, params_after)
+    )
 
     print(f"   Max parameter change: {max_change:.10f}")
 

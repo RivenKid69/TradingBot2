@@ -40,8 +40,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class SLATier(Enum):
     """SLA tier levels with increasing requirements."""
+
     STANDARD = "standard"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"
@@ -50,6 +52,7 @@ class SLATier(Enum):
 
 class CapacityStatus(Enum):
     """Infrastructure capacity validation status."""
+
     NOT_VALIDATED = "not_validated"
     VALIDATING = "validating"
     VALIDATED = "validated"
@@ -59,6 +62,7 @@ class CapacityStatus(Enum):
 
 class ApprovalStatus(Enum):
     """Engineering approval status for SLA commitments."""
+
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
@@ -68,6 +72,7 @@ class ApprovalStatus(Enum):
 
 class InfrastructureRequirement(Enum):
     """Infrastructure requirements for SLA tiers."""
+
     SINGLE_AZ = "single_az"
     MULTI_AZ = "multi_az"
     MULTI_REGION = "multi_region"
@@ -76,6 +81,7 @@ class InfrastructureRequirement(Enum):
 
 class OnCallRequirement(Enum):
     """On-call coverage requirements."""
+
     BUSINESS_HOURS = "business_hours"
     EXTENDED_HOURS = "extended_hours"  # 7am-11pm
     ONCALL_ROTATION = "oncall_rotation"  # 24/7 with rotation
@@ -86,6 +92,7 @@ class OnCallRequirement(Enum):
 # SLA Tier Definitions
 # =============================================================================
 
+
 @dataclass
 class SLATierDefinition:
     """
@@ -94,6 +101,7 @@ class SLATierDefinition:
     Defines what each tier offers and what infrastructure/capacity
     is required to support it.
     """
+
     tier: SLATier
     name: str
     description: str
@@ -176,7 +184,6 @@ def get_sla_tier_definitions() -> Dict[SLATier, SLATierDefinition]:
             requires_soc2=False,
             requires_iso27001=False,
         ),
-
         SLATier.PROFESSIONAL: SLATierDefinition(
             tier=SLATier.PROFESSIONAL,
             name="Professional",
@@ -204,7 +211,6 @@ def get_sla_tier_definitions() -> Dict[SLATier, SLATierDefinition]:
             requires_soc2=True,
             requires_iso27001=False,
         ),
-
         SLATier.ENTERPRISE: SLATierDefinition(
             tier=SLATier.ENTERPRISE,
             name="Enterprise",
@@ -232,7 +238,6 @@ def get_sla_tier_definitions() -> Dict[SLATier, SLATierDefinition]:
             requires_soc2=True,
             requires_iso27001=True,
         ),
-
         SLATier.CRITICAL: SLATierDefinition(
             tier=SLATier.CRITICAL,
             name="Critical Function",
@@ -267,6 +272,7 @@ def get_sla_tier_definitions() -> Dict[SLATier, SLATierDefinition]:
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class CapacityValidation:
     """
@@ -275,6 +281,7 @@ class CapacityValidation:
     Documents the validation of infrastructure capacity
     to support a specific SLA tier.
     """
+
     validation_id: str = ""
     tier: SLATier = SLATier.STANDARD
 
@@ -314,19 +321,21 @@ class CapacityValidation:
             return False
         if not self.expiry_date:
             return False
-        expiry = datetime.fromisoformat(self.expiry_date.replace('Z', '+00:00'))
+        expiry = datetime.fromisoformat(self.expiry_date.replace("Z", "+00:00"))
         return datetime.now(timezone.utc) < expiry
 
     @property
     def all_checks_passed(self) -> bool:
         """Check if all required checks passed."""
-        return all([
-            self.infrastructure_check,
-            self.replication_check,
-            self.backup_check,
-            self.oncall_check,
-            self.certification_check,
-        ])
+        return all(
+            [
+                self.infrastructure_check,
+                self.replication_check,
+                self.backup_check,
+                self.oncall_check,
+                self.certification_check,
+            ]
+        )
 
 
 @dataclass
@@ -337,6 +346,7 @@ class SLACommitmentRequest:
     Requires engineering approval before sales can
     offer the SLA tier to a client.
     """
+
     request_id: str = ""
     client_id: str = ""
     client_name: str = ""
@@ -406,6 +416,7 @@ class SLAGuardrailsConfig:
 # Current Capacity State
 # =============================================================================
 
+
 @dataclass
 class CurrentCapacityState:
     """
@@ -413,6 +424,7 @@ class CurrentCapacityState:
 
     Represents what the platform can actually support right now.
     """
+
     # Infrastructure
     has_multi_az: bool = True
     has_multi_region: bool = False
@@ -452,6 +464,7 @@ class CurrentCapacityState:
 # Main Service Class
 # =============================================================================
 
+
 class SLAGuardrails:
     """
     SLA Guardrails service for validating and approving SLA commitments.
@@ -467,7 +480,7 @@ class SLAGuardrails:
         self.capacity_validations: Dict[str, CapacityValidation] = {}
         self.commitment_requests: Dict[str, SLACommitmentRequest] = {}
         self.current_capacity = CurrentCapacityState()
-        self._lock = __import__('threading').Lock()
+        self._lock = __import__("threading").Lock()
 
         logger.info("SLA Guardrails service initialized")
 
@@ -491,7 +504,10 @@ class SLAGuardrails:
                 continue
             if definition.requires_multi_region and not self.current_capacity.has_multi_region:
                 continue
-            if definition.requires_sync_replication and not self.current_capacity.has_sync_replication:
+            if (
+                definition.requires_sync_replication
+                and not self.current_capacity.has_sync_replication
+            ):
                 continue
 
             # Check on-call requirements
@@ -531,8 +547,7 @@ class SLAGuardrails:
             tier=tier,
             validated_by=validated_by,
             expiry_date=(
-                datetime.now(timezone.utc) +
-                timedelta(days=self.config.validation_expiry_days)
+                datetime.now(timezone.utc) + timedelta(days=self.config.validation_expiry_days)
             ).isoformat(),
         )
 
@@ -562,7 +577,10 @@ class SLAGuardrails:
             replication_ok = False
             replication_issues.append("Synchronous replication required but not configured")
 
-        if self.current_capacity.current_backup_frequency_minutes > definition.backup_frequency_minutes:
+        if (
+            self.current_capacity.current_backup_frequency_minutes
+            > definition.backup_frequency_minutes
+        ):
             replication_ok = False
             replication_issues.append(
                 f"Backup frequency {self.current_capacity.current_backup_frequency_minutes}min "
@@ -576,7 +594,10 @@ class SLAGuardrails:
         }
 
         # Check backup
-        backup_ok = self.current_capacity.current_backup_frequency_minutes <= definition.backup_frequency_minutes
+        backup_ok = (
+            self.current_capacity.current_backup_frequency_minutes
+            <= definition.backup_frequency_minutes
+        )
         validation.backup_check = backup_ok
         validation.check_details["backup"] = {
             "passed": backup_ok,
@@ -751,8 +772,7 @@ class SLAGuardrails:
             request.approval_date = datetime.now(timezone.utc).isoformat()
             request.approval_notes = notes
             request.commitment_expiry_date = (
-                datetime.now(timezone.utc) +
-                timedelta(days=self.config.approval_expiry_days)
+                datetime.now(timezone.utc) + timedelta(days=self.config.approval_expiry_days)
             ).isoformat()
 
         logger.info(
@@ -829,7 +849,9 @@ class SLAGuardrails:
             if has_sync_replication is not None:
                 self.current_capacity.has_sync_replication = has_sync_replication
             if current_backup_frequency_minutes is not None:
-                self.current_capacity.current_backup_frequency_minutes = current_backup_frequency_minutes
+                self.current_capacity.current_backup_frequency_minutes = (
+                    current_backup_frequency_minutes
+                )
             if current_oncall_mode is not None:
                 self.current_capacity.current_oncall_mode = current_oncall_mode
             if current_oncall_engineers is not None:
@@ -852,7 +874,8 @@ class SLAGuardrails:
         """Get all pending approval requests."""
         with self._lock:
             return [
-                req for req in self.commitment_requests.values()
+                req
+                for req in self.commitment_requests.values()
                 if req.approval_status == ApprovalStatus.PENDING
             ]
 
@@ -864,9 +887,7 @@ class SLAGuardrails:
         with self._lock:
             for validation in self.capacity_validations.values():
                 if validation.status == CapacityStatus.VALIDATED and validation.expiry_date:
-                    expiry = datetime.fromisoformat(
-                        validation.expiry_date.replace('Z', '+00:00')
-                    )
+                    expiry = datetime.fromisoformat(validation.expiry_date.replace("Z", "+00:00"))
                     if expiry <= threshold:
                         expiring.append(validation)
 
@@ -887,9 +908,7 @@ class SLAGuardrails:
             "report_date": datetime.now(timezone.utc).isoformat(),
             "capacity_state": asdict(self.current_capacity),
             "available_tiers": [t.value for t in available_tiers],
-            "unavailable_tiers": [
-                t.value for t in SLATier if t not in available_tiers
-            ],
+            "unavailable_tiers": [t.value for t in SLATier if t not in available_tiers],
             "pending_approvals": pending_count,
             "expiring_validations": expiring_count,
             "total_validations": len(self.capacity_validations),
@@ -910,6 +929,7 @@ class SLAGuardrails:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_sla_guardrails(
     config: Optional[SLAGuardrailsConfig] = None,

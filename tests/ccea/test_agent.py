@@ -85,7 +85,7 @@ class TestCommandFilter:
                 "nested": {
                     "price": 100.0,  # PROHIBITED nested
                 }
-            }
+            },
         }
 
         allowed, reason = filter.is_allowed(command)
@@ -323,10 +323,7 @@ class TestApprovalManager:
 
         # Should not be in pending anymore
         pending = manager.get_pending()
-        timeout_request = next(
-            (r for r in pending if r.request_id == request.request_id),
-            None
-        )
+        timeout_request = next((r for r in pending if r.request_id == request.request_id), None)
 
         # Expired requests should be removed or marked
         if timeout_request:

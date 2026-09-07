@@ -31,6 +31,7 @@ def _make_worker(mode: str) -> _Worker:
 def test_publish_decision_queue_mode():
     worker = _make_worker("queue")
     called = []
+
     def _emit(order, symbol, bar_close_ms, *, bar_open_ms=None):
         called.append(order)
         return True
@@ -46,6 +47,7 @@ def test_publish_decision_queue_mode():
 def test_publish_decision_drop_mode():
     worker = _make_worker("drop")
     called = []
+
     def _emit(order, symbol, bar_close_ms, *, bar_open_ms=None):
         called.append(order)
         return True

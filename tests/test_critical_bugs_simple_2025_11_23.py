@@ -6,6 +6,7 @@ and can run in CI/CD pipelines without dependencies.
 
 Reference: CRITICAL_BUGS_ANALYSIS_2025_11_23.md
 """
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -14,6 +15,7 @@ import pytest
 # ==============================================================================
 # Problem #1: Data Leakage - Technical Indicators Shift (SIMPLIFIED)
 # ==============================================================================
+
 
 def test_indicator_shift_logic():
     """
@@ -27,29 +29,27 @@ def test_indicator_shift_logic():
         content = f.read()
 
     # ASSERTION 1: Comment about CRITICAL FIX should be present
-    assert "CRITICAL FIX (2025-11-23)" in content, (
-        "CRITICAL FIX comment not found! The data leakage fix may have been removed."
-    )
+    assert (
+        "CRITICAL FIX (2025-11-23)" in content
+    ), "CRITICAL FIX comment not found! The data leakage fix may have been removed."
 
     # ASSERTION 2: Code should shift indicators
-    assert "_indicators_to_shift" in content, (
-        "_indicators_to_shift variable not found! Indicator shift logic may be missing."
-    )
+    assert (
+        "_indicators_to_shift" in content
+    ), "_indicators_to_shift variable not found! Indicator shift logic may be missing."
 
     # ASSERTION 3: RSI should be in the list of indicators to shift
-    assert '"rsi"' in content or "'rsi'" in content, (
-        "RSI not found in indicator shift list!"
-    )
+    assert '"rsi"' in content or "'rsi'" in content, "RSI not found in indicator shift list!"
 
     # ASSERTION 4: SMA pattern should be detected and shifted
-    assert "startswith(\"sma_\")" in content or "startswith('sma_')" in content, (
-        "SMA pattern detection not found! SMA columns may not be shifted."
-    )
+    assert (
+        'startswith("sma_")' in content or "startswith('sma_')" in content
+    ), "SMA pattern detection not found! SMA columns may not be shifted."
 
     # ASSERTION 5: Shift operation should be applied to indicators
-    assert "self.df[_indicator] = self.df[_indicator].shift(1)" in content, (
-        "Shift operation not found! Indicators may not be shifted."
-    )
+    assert (
+        "self.df[_indicator] = self.df[_indicator].shift(1)" in content
+    ), "Shift operation not found! Indicators may not be shifted."
 
     print("[OK] All data leakage fix checks passed!")
 
@@ -59,12 +59,14 @@ def test_close_and_indicator_shift_synchronization():
     Test that close and indicators are shifted together (logic verification).
     """
     # Create test dataframe
-    df = pd.DataFrame({
-        "close": [100.0, 101.0, 102.0, 103.0, 104.0],
-        "rsi": [50.0, 55.0, 60.0, 65.0, 70.0],
-        "sma_1200": [99.0, 100.0, 101.0, 102.0, 103.0],
-        "macd": [-1.0, -0.5, 0.0, 0.5, 1.0],
-    })
+    df = pd.DataFrame(
+        {
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "rsi": [50.0, 55.0, 60.0, 65.0, 70.0],
+            "sma_1200": [99.0, 100.0, 101.0, 102.0, 103.0],
+            "macd": [-1.0, -0.5, 0.0, 0.5, 1.0],
+        }
+    )
 
     # Store original values
     original_close = df["close"].copy()
@@ -87,22 +89,22 @@ def test_close_and_indicator_shift_synchronization():
     assert pd.isna(df["close"].iloc[0]), "close[0] should be NaN after shift"
 
     # ASSERTION 2: close[1] should equal original_close[0]
-    assert df["close"].iloc[1] == original_close.iloc[0], (
-        f"close[1] should be {original_close.iloc[0]}, got {df['close'].iloc[1]}"
-    )
+    assert (
+        df["close"].iloc[1] == original_close.iloc[0]
+    ), f"close[1] should be {original_close.iloc[0]}, got {df['close'].iloc[1]}"
 
     # ASSERTION 3: rsi[0] should be NaN after shift (same as close)
     assert pd.isna(df["rsi"].iloc[0]), "rsi[0] should be NaN after shift"
 
     # ASSERTION 4: rsi[1] should equal original_rsi[0] (same shift as close)
-    assert df["rsi"].iloc[1] == original_rsi.iloc[0], (
-        f"rsi[1] should be {original_rsi.iloc[0]}, got {df['rsi'].iloc[1]}"
-    )
+    assert (
+        df["rsi"].iloc[1] == original_rsi.iloc[0]
+    ), f"rsi[1] should be {original_rsi.iloc[0]}, got {df['rsi'].iloc[1]}"
 
     # ASSERTION 5: sma[1] should equal original_sma[0] (same shift as close)
-    assert df["sma_1200"].iloc[1] == original_sma.iloc[0], (
-        f"sma_1200[1] should be {original_sma.iloc[0]}, got {df['sma_1200'].iloc[1]}"
-    )
+    assert (
+        df["sma_1200"].iloc[1] == original_sma.iloc[0]
+    ), f"sma_1200[1] should be {original_sma.iloc[0]}, got {df['sma_1200'].iloc[1]}"
 
     # ASSERTION 6: All three should be shifted by SAME amount (temporal consistency)
     # At index 2: all should refer to original index 1
@@ -120,10 +122,12 @@ def test_no_data_leakage_after_shift():
     Scenario: Price spike at index 2 → spike should appear at index 3 after shift.
     """
     # Create data with spike at index 2
-    df = pd.DataFrame({
-        "close": [100.0, 100.0, 200.0, 100.0, 100.0],  # Spike at index 2
-        "rsi": [50.0, 50.0, 90.0, 50.0, 50.0],         # RSI spike at index 2
-    })
+    df = pd.DataFrame(
+        {
+            "close": [100.0, 100.0, 200.0, 100.0, 100.0],  # Spike at index 2
+            "rsi": [50.0, 50.0, 90.0, 50.0, 50.0],  # RSI spike at index 2
+        }
+    )
 
     # Apply shift (THE FIX)
     df["close"] = df["close"].shift(1)
@@ -133,20 +137,16 @@ def test_no_data_leakage_after_shift():
     # (spike is at original index 2, but after shift it appears at index 3)
 
     # At index 2: NO spike (shows data from original index 1)
-    assert df["close"].iloc[2] == 100.0, (
-        f"close[2] should be 100.0 (no spike), got {df['close'].iloc[2]}"
-    )
-    assert df["rsi"].iloc[2] == 50.0, (
-        f"rsi[2] should be 50.0 (no spike), got {df['rsi'].iloc[2]}"
-    )
+    assert (
+        df["close"].iloc[2] == 100.0
+    ), f"close[2] should be 100.0 (no spike), got {df['close'].iloc[2]}"
+    assert df["rsi"].iloc[2] == 50.0, f"rsi[2] should be 50.0 (no spike), got {df['rsi'].iloc[2]}"
 
     # At index 3: Spike appears (data from original index 2)
-    assert df["close"].iloc[3] == 200.0, (
-        f"close[3] should be 200.0 (spike), got {df['close'].iloc[3]}"
-    )
-    assert df["rsi"].iloc[3] == 90.0, (
-        f"rsi[3] should be 90.0 (spike), got {df['rsi'].iloc[3]}"
-    )
+    assert (
+        df["close"].iloc[3] == 200.0
+    ), f"close[3] should be 200.0 (spike), got {df['close'].iloc[3]}"
+    assert df["rsi"].iloc[3] == 90.0, f"rsi[3] should be 90.0 (spike), got {df['rsi'].iloc[3]}"
 
     print("[OK] No data leakage verification passed!")
 
@@ -154,6 +154,7 @@ def test_no_data_leakage_after_shift():
 # ==============================================================================
 # Problem #2: Bankruptcy NaN Crash (SIMPLIFIED)
 # ==============================================================================
+
 
 def test_bankruptcy_penalty_code_exists():
     """
@@ -167,32 +168,31 @@ def test_bankruptcy_penalty_code_exists():
         content = f.read()
 
     # ASSERTION 1: CRITICAL FIX comment should be present
-    assert "CRITICAL FIX (2025-11-23)" in content, (
-        "CRITICAL FIX comment not found in reward.pyx! The bankruptcy fix may have been removed."
-    )
+    assert (
+        "CRITICAL FIX (2025-11-23)" in content
+    ), "CRITICAL FIX comment not found in reward.pyx! The bankruptcy fix may have been removed."
 
     # ASSERTION 2: Should return penalty instead of NAN
-    assert "return -10.0" in content or "return -10." in content, (
-        "Bankruptcy penalty return statement not found! Fix may be missing."
-    )
+    assert (
+        "return -10.0" in content or "return -10." in content
+    ), "Bankruptcy penalty return statement not found! Fix may be missing."
 
     # ASSERTION 3: Should NOT return NAN for bankruptcy
     # (old code: return NAN)
     # New code should have penalty before NAN check
-    lines = content.split('\n')
+    lines = content.split("\n")
     found_penalty_before_nan = False
     for i, line in enumerate(lines):
         if "return -10.0" in line or "return -10." in line:
             # Check if this is in bankruptcy condition
             # Look for "net_worth <= 0" or "prev_net_worth <= 0" nearby
-            context = '\n'.join(lines[max(0, i-5):min(len(lines), i+5)])
+            context = "\n".join(lines[max(0, i - 5) : min(len(lines), i + 5)])
             if "net_worth <= 0" in context or "prev_net_worth <= 0" in context:
                 found_penalty_before_nan = True
                 break
 
     assert found_penalty_before_nan, (
-        "Bankruptcy penalty not found in correct context! "
-        "Fix may not be properly implemented."
+        "Bankruptcy penalty not found in correct context! " "Fix may not be properly implemented."
     )
 
     print("[OK] Bankruptcy penalty fix verification passed!")
@@ -204,6 +204,7 @@ def test_bankruptcy_penalty_logic():
 
     This simulates what the fixed Cython code should do.
     """
+
     def log_return_fixed(net_worth, prev_net_worth):
         """Fixed version with bankruptcy penalty."""
         import math
@@ -228,17 +229,17 @@ def test_bankruptcy_penalty_logic():
 
     # Test Case 3: Bankruptcy (net_worth = 0)
     reward_bankruptcy = log_return_fixed(0.0, 1000.0)
-    assert reward_bankruptcy == -10.0, (
-        f"Bankruptcy should return -10.0 penalty, got {reward_bankruptcy}"
-    )
+    assert (
+        reward_bankruptcy == -10.0
+    ), f"Bankruptcy should return -10.0 penalty, got {reward_bankruptcy}"
     assert np.isfinite(reward_bankruptcy), "Bankruptcy should return FINITE value, not NaN"
     assert not np.isnan(reward_bankruptcy), "Bankruptcy should NOT return NaN!"
 
     # Test Case 4: Bankruptcy (prev_net_worth = 0)
     reward_bankruptcy2 = log_return_fixed(1000.0, 0.0)
-    assert reward_bankruptcy2 == -10.0, (
-        f"Bankruptcy (prev=0) should return -10.0 penalty, got {reward_bankruptcy2}"
-    )
+    assert (
+        reward_bankruptcy2 == -10.0
+    ), f"Bankruptcy (prev=0) should return -10.0 penalty, got {reward_bankruptcy2}"
 
     # Test Case 5: Penalty magnitude check
     assert abs(reward_bankruptcy) > 5 * abs(reward_loss), (
@@ -256,12 +257,15 @@ def test_bankruptcy_does_not_crash_training():
     This simulates what happens in distributional_ppo.py GAE computation.
     """
     # Create rewards array with bankruptcy event
-    rewards = np.array([
-        [0.01],   # Normal
-        [0.02],   # Normal
-        [-10.0],  # Bankruptcy penalty (FINITE, not NaN!)
-        [0.0],    # After bankruptcy
-    ], dtype=np.float32)
+    rewards = np.array(
+        [
+            [0.01],  # Normal
+            [0.02],  # Normal
+            [-10.0],  # Bankruptcy penalty (FINITE, not NaN!)
+            [0.0],  # After bankruptcy
+        ],
+        dtype=np.float32,
+    )
 
     # CRITICAL ASSERTION: Rewards should all be finite
     assert np.all(np.isfinite(rewards)), (
@@ -285,6 +289,7 @@ def test_bankruptcy_does_not_crash_training():
 # Integration Tests
 # ==============================================================================
 
+
 def test_both_fixes_are_present():
     """
     Verify that both critical fixes are present in the codebase.
@@ -294,8 +299,7 @@ def test_both_fixes_are_present():
         trading_content = f.read()
 
     fix1_present = (
-        "CRITICAL FIX (2025-11-23)" in trading_content and
-        "_indicators_to_shift" in trading_content
+        "CRITICAL FIX (2025-11-23)" in trading_content and "_indicators_to_shift" in trading_content
     )
 
     # Check Fix #2: Bankruptcy penalty
@@ -303,8 +307,7 @@ def test_both_fixes_are_present():
         reward_content = f.read()
 
     fix2_present = (
-        "CRITICAL FIX (2025-11-23)" in reward_content and
-        "return -10.0" in reward_content
+        "CRITICAL FIX (2025-11-23)" in reward_content and "return -10.0" in reward_content
     )
 
     assert fix1_present, "Fix #1 (Data Leakage) is MISSING!"

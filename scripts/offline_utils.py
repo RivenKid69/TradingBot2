@@ -133,7 +133,11 @@ def resolve_split_artifact(
     artifact_cfg = split_mapping.get(artifact_key)
     artifact_mapping = _coerce_mapping(artifact_cfg)
 
-    input_cfg = artifact_mapping.get("input") if isinstance(artifact_mapping.get("input"), Mapping) else None
+    input_cfg = (
+        artifact_mapping.get("input")
+        if isinstance(artifact_mapping.get("input"), Mapping)
+        else None
+    )
     if isinstance(input_cfg, Mapping):
         config_start_ms = _parse_time_ms(input_cfg.get("start"))
         config_end_ms = _parse_time_ms(input_cfg.get("end"))
@@ -220,7 +224,9 @@ def validate_artifact_window(
     if not isinstance(window_block, Mapping):
         return
     actual_block = window_block.get("actual")
-    actual_start, actual_end = _extract_window_bounds(actual_block if isinstance(actual_block, Mapping) else {})
+    actual_start, actual_end = _extract_window_bounds(
+        actual_block if isinstance(actual_block, Mapping) else {}
+    )
     issues: list[str] = []
     split_start = split_info.split_start_ms
     split_end = split_info.split_end_ms
@@ -229,9 +235,7 @@ def validate_artifact_window(
             f"start {ms_to_iso(actual_start)} precedes split start {ms_to_iso(split_start)}"
         )
     if actual_end is not None and split_end is not None and actual_end > split_end:
-        issues.append(
-            f"end {ms_to_iso(actual_end)} exceeds split end {ms_to_iso(split_end)}"
-        )
+        issues.append(f"end {ms_to_iso(actual_end)} exceeds split end {ms_to_iso(split_end)}")
     if issues:
         message = "; ".join(issues)
         raise ValueError(f"{artifact_name} window out of range: {message}")
@@ -267,16 +271,12 @@ def resolve_artifact_path(
         )
     resolved_path = apply_split_tag(base_path, split_info.tag)
     if not resolved_path.exists():
-        raise FileNotFoundError(
-            f"resolved {artifact_name} artifact not found: {resolved_path}"
-        )
+        raise FileNotFoundError(f"resolved {artifact_name} artifact not found: {resolved_path}")
     metadata: Mapping[str, Any] | None = None
     if require_metadata or validate:
         metadata = load_artifact_metadata(resolved_path)
         if metadata is None and require_metadata:
-            raise ValueError(
-                f"{artifact_name} artifact {resolved_path} does not contain metadata"
-            )
+            raise ValueError(f"{artifact_name} artifact {resolved_path} does not contain metadata")
     if validate and metadata is not None:
         try:
             validate_artifact_window(split_info, metadata, artifact_name=artifact_name)

@@ -135,18 +135,14 @@ def make_mediator(filters_path: pathlib.Path, *, use_exec: bool = False):
 def test_unquantized_order_rejected(filters_file: pathlib.Path):
     med = make_mediator(filters_file)
     price = int(100.3 * PRICE_SCALE)
-    oid, qpos = med.add_limit_order(
-        is_buy_side=True, price_ticks=price, volume=0.25, timestamp=0
-    )
+    oid, qpos = med.add_limit_order(is_buy_side=True, price_ticks=price, volume=0.25, timestamp=0)
     assert (oid, qpos) == (0, 0)
 
 
 def test_quantized_order_accepted(filters_file: pathlib.Path):
     med = make_mediator(filters_file)
     price = int(100.5 * PRICE_SCALE)
-    oid, qpos = med.add_limit_order(
-        is_buy_side=True, price_ticks=price, volume=0.2, timestamp=0
-    )
+    oid, qpos = med.add_limit_order(is_buy_side=True, price_ticks=price, volume=0.2, timestamp=0)
     assert oid != 0
 
 

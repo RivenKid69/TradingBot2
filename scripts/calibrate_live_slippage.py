@@ -132,18 +132,20 @@ def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     else:
         regime_payload = pd.Series([None] * len(df), index=df.index, dtype=object)
 
-    out = pd.DataFrame({
-        "ts_ms": ts_series,
-        "symbol": symbol_series,
-        "slippage_bps": slip_series,
-        "spread_bps": spread_series,
-        "notional": notional_series,
-        "size": size_series,
-        "liquidity": liquidity_series,
-        "vol_factor": vol_series,
-        "execution_profile": exec_profile_series,
-        "market_regime": regime_payload,
-    })
+    out = pd.DataFrame(
+        {
+            "ts_ms": ts_series,
+            "symbol": symbol_series,
+            "slippage_bps": slip_series,
+            "spread_bps": spread_series,
+            "notional": notional_series,
+            "size": size_series,
+            "liquidity": liquidity_series,
+            "vol_factor": vol_series,
+            "execution_profile": exec_profile_series,
+            "market_regime": regime_payload,
+        }
+    )
 
     # Drop rows without symbols or slippage values
     out = out.dropna(subset=["symbol", "slippage_bps"])
@@ -160,9 +162,7 @@ def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         )
     if regime_series is not None:
         out["market_regime"] = out["market_regime"].astype(str)
-        out["market_regime"] = out["market_regime"].replace(
-            {val: np.nan for val in _NULL_STRINGS}
-        )
+        out["market_regime"] = out["market_regime"].replace({val: np.nan for val in _NULL_STRINGS})
     return out
 
 
@@ -251,7 +251,9 @@ def _fit_symbol_params(
         if calc["liquidity"].isna().all():
             calc["liquidity"] = calc["abs_notional"]
         calc["vol_factor"] = calc["vol_factor"].fillna(1.0)
-        calc = calc.dropna(subset=["size", "liquidity", "vol_factor", "impact_bps", "half_spread_bps"])
+        calc = calc.dropna(
+            subset=["size", "liquidity", "vol_factor", "impact_bps", "half_spread_bps"]
+        )
         calc = calc[(calc["size"] > 0) & (calc["liquidity"] > 0)]
         calc = calc.rename(columns={"impact_bps": "observed_slip_bps"})
         calc["observed_slip_bps"] = calc["observed_slip_bps"].astype(float)
@@ -265,7 +267,9 @@ def _fit_symbol_params(
         else:
             k_value = fit_k_closed_form(calc)
 
-        default_spread = float(np.nanmedian(g["spread_bps"])) if not g["spread_bps"].isna().all() else 0.0
+        default_spread = (
+            float(np.nanmedian(g["spread_bps"])) if not g["spread_bps"].isna().all() else 0.0
+        )
         half_spread = g["half_spread_bps"].dropna()
         min_half_spread = float(half_spread.quantile(0.1)) if not half_spread.empty else 0.0
 
@@ -287,9 +291,13 @@ def _fit_symbol_params(
             # Fallback: simple quantiles are not available, build linear bins
             abs_values = g["abs_notional"].to_numpy()
             if len(abs_values) >= 2:
-                bins = np.linspace(abs_values.min(), abs_values.max(), num=min(notional_bins, len(abs_values)) + 1)
+                bins = np.linspace(
+                    abs_values.min(), abs_values.max(), num=min(notional_bins, len(abs_values)) + 1
+                )
                 if np.all(np.isfinite(bins)) and len(np.unique(bins)) > 1:
-                    g["_bucket"] = pd.cut(g["abs_notional"], bins=np.unique(bins), labels=False, include_lowest=True)
+                    g["_bucket"] = pd.cut(
+                        g["abs_notional"], bins=np.unique(bins), labels=False, include_lowest=True
+                    )
 
         grouped = g.groupby("_bucket")
         for bucket_id, bucket_df in grouped:
@@ -299,7 +307,11 @@ def _fit_symbol_params(
             bucket_upper = float(bucket_df["abs_notional"].max())
             bucket_info.append(
                 {
-                    "bucket": int(bucket_id) if bucket_id is not None and bucket_id != -1 else len(bucket_info),
+                    "bucket": (
+                        int(bucket_id)
+                        if bucket_id is not None and bucket_id != -1
+                        else len(bucket_info)
+                    ),
                     "lower_notional": bucket_lower,
                     "upper_notional": bucket_upper,
                     "mean_notional": float(bucket_df["abs_notional"].mean()),
@@ -329,12 +341,14 @@ def _fit_symbol_params(
             "impact_std_bps": float(g["impact_bps"].std(ddof=0)),
             "notional_curve": bucket_info,
             "hourly_multipliers": hourly,
-            "regime_multipliers": {
-                "column": regime_col,
-                "values": tag_stats,
-            }
-            if regime_col
-            else {},
+            "regime_multipliers": (
+                {
+                    "column": regime_col,
+                    "values": tag_stats,
+                }
+                if regime_col
+                else {}
+            ),
             "execution_profile_counts": dict(exec_counts),
         }
 
@@ -461,7 +475,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s: %(message)s"
+    )
 
     report = build_report(
         args.fills,
@@ -473,13 +489,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     out_path = Path(args.out)
     if args.dry_run:
         LOGGER.info("dry-run requested, not writing %s", out_path)
-        LOGGER.info("summary: %s", json.dumps(report, indent=2, sort_keys=False, ensure_ascii=False))
+        LOGGER.info(
+            "summary: %s", json.dumps(report, indent=2, sort_keys=False, ensure_ascii=False)
+        )
         return
 
     if out_path.exists() and not args.overwrite:
-        raise SystemExit(
-            f"Output file {out_path} already exists; use --overwrite to replace it"
-        )
+        raise SystemExit(f"Output file {out_path} already exists; use --overwrite to replace it")
 
     _dump_report(report, out_path)
     LOGGER.info("wrote calibration artifact to %s", out_path)
@@ -487,4 +503,3 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-

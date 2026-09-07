@@ -93,6 +93,7 @@ ADL_RANK_THRESHOLDS = [0.2, 0.4, 0.6, 0.8]  # Score thresholds for ranks 1-5
 
 class LiquidationType(str, Enum):
     """Type of liquidation."""
+
     FULL = "full"
     PARTIAL = "partial"
     BANKRUPTCY = "bankruptcy"  # Position goes below 0
@@ -100,6 +101,7 @@ class LiquidationType(str, Enum):
 
 class ADLRank(int, Enum):
     """Auto-Deleveraging rank (1-5, 5 = highest priority)."""
+
     RANK_1 = 1  # Lowest risk
     RANK_2 = 2
     RANK_3 = 3
@@ -109,6 +111,7 @@ class ADLRank(int, Enum):
 
 class CascadePhase(str, Enum):
     """Phase of liquidation cascade."""
+
     INITIAL = "initial"
     PROPAGATING = "propagating"
     DAMPENING = "dampening"
@@ -132,6 +135,7 @@ class LiquidationOrderInfo:
         is_adl: True if this is an ADL order (not regular liquidation)
         source_account_id: Optional identifier for source account
     """
+
     symbol: str
     side: str  # "BUY" or "SELL"
     qty: Decimal
@@ -173,6 +177,7 @@ class LiquidationFillResult:
         caused_adl: True if fill depleted insurance fund and triggered ADL
         cascade_triggered: True if fill triggered additional liquidations
     """
+
     order_info: LiquidationOrderInfo
     fill_price: Decimal
     fill_qty: Decimal
@@ -205,6 +210,7 @@ class CascadeWave:
         price_impact_bps: Price impact from this wave
         timestamp_ms: Wave timestamp
     """
+
     wave_number: int
     liquidation_count: int
     total_qty: Decimal
@@ -229,6 +235,7 @@ class CascadeResult:
         final_price: Price after cascade completion
         duration_ms: Total cascade duration
     """
+
     initial_event: LiquidationOrderInfo
     waves: List[CascadeWave] = field(default_factory=list)
     total_liquidations: int = 0
@@ -258,6 +265,7 @@ class CascadeResult:
 
 class ADLQueueEntry(NamedTuple):
     """Entry in the ADL queue."""
+
     account_id: str
     symbol: str
     side: str  # Position side ("LONG" or "SHORT")
@@ -281,6 +289,7 @@ class InsuranceFundState:
         total_payouts: Cumulative payouts
         is_depleted: True if balance is zero or negative
     """
+
     balance: Decimal
     high_water_mark: Decimal
     last_contribution_ms: int = 0
@@ -310,6 +319,7 @@ class FundingPeriodState:
     - Wider spreads
     - Higher impact
     """
+
     current_funding_rate: Decimal
     next_funding_time_ms: int
     time_to_funding_ms: int
@@ -654,29 +664,35 @@ class LiquidationCascadeSimulator:
                 at_risk = position_tracker.get_positions_at_risk(
                     symbol=initial_liquidation.symbol,
                     current_price=current_price,
-                    price_move_bps=impact_bps if initial_liquidation.is_long_liquidation else -impact_bps,
+                    price_move_bps=(
+                        impact_bps if initial_liquidation.is_long_liquidation else -impact_bps
+                    ),
                 )
 
                 for pos in at_risk:
-                    new_liquidations.append(LiquidationOrderInfo(
-                        symbol=initial_liquidation.symbol,
-                        side="SELL" if pos.get("qty", 0) > 0 else "BUY",
-                        qty=abs(Decimal(str(pos.get("qty", "0")))),
-                        bankruptcy_price=Decimal(str(pos.get("liquidation_price", "0"))),
-                        mark_price=new_price,
-                        timestamp_ms=start_ts + wave_num * 100,  # 100ms per wave
-                    ))
+                    new_liquidations.append(
+                        LiquidationOrderInfo(
+                            symbol=initial_liquidation.symbol,
+                            side="SELL" if pos.get("qty", 0) > 0 else "BUY",
+                            qty=abs(Decimal(str(pos.get("qty", "0")))),
+                            bankruptcy_price=Decimal(str(pos.get("liquidation_price", "0"))),
+                            mark_price=new_price,
+                            timestamp_ms=start_ts + wave_num * 100,  # 100ms per wave
+                        )
+                    )
 
             # Create synthetic liquidation if no tracker
             if not new_liquidations:
-                new_liquidations = [LiquidationOrderInfo(
-                    symbol=initial_liquidation.symbol,
-                    side=initial_liquidation.side,
-                    qty=wave_qty,
-                    bankruptcy_price=new_price,
-                    mark_price=new_price,
-                    timestamp_ms=start_ts + wave_num * 100,
-                )]
+                new_liquidations = [
+                    LiquidationOrderInfo(
+                        symbol=initial_liquidation.symbol,
+                        side=initial_liquidation.side,
+                        qty=wave_qty,
+                        bankruptcy_price=new_price,
+                        mark_price=new_price,
+                        timestamp_ms=start_ts + wave_num * 100,
+                    )
+                ]
 
             wave = CascadeWave(
                 wave_number=wave_num,
@@ -725,12 +741,14 @@ class LiquidationCascadeSimulator:
             Dict with estimated impact metrics
         """
         # Sum of geometric series: initial × (1 - decay^n) / (1 - decay)
-        total_qty_factor = (1 - self._cascade_decay ** self._max_waves) / (1 - self._cascade_decay)
+        total_qty_factor = (1 - self._cascade_decay**self._max_waves) / (1 - self._cascade_decay)
         estimated_total_qty = float(initial_qty) * total_qty_factor
 
         # Aggregate impact
         participation = estimated_total_qty / adv if adv > 0 else 0.0
-        estimated_impact_bps = self._price_impact_coef * volatility * math.sqrt(participation) * 10000
+        estimated_impact_bps = (
+            self._price_impact_coef * volatility * math.sqrt(participation) * 10000
+        )
 
         return {
             "estimated_waves": min(self._max_waves, 5),
@@ -902,7 +920,10 @@ class InsuranceFundManager:
         result = []
         for ts, amount, _ in reversed(recent):
             running_balance -= amount
-            util = float((self._state.high_water_mark - running_balance) / self._state.high_water_mark) * 100
+            util = (
+                float((self._state.high_water_mark - running_balance) / self._state.high_water_mark)
+                * 100
+            )
             result.append((ts, util))
 
         return list(reversed(result))
@@ -1000,12 +1021,14 @@ class ADLQueueManager:
             pnl = (mark_price - entry) * qty
             pnl_ratio = float(pnl / margin) if margin > 0 else 0.0
 
-            scored.append({
-                "account_id": pos.get("account_id", f"acc_{len(scored)}"),
-                "qty": abs(qty),
-                "pnl_ratio": pnl_ratio,
-                "leverage": leverage,
-            })
+            scored.append(
+                {
+                    "account_id": pos.get("account_id", f"acc_{len(scored)}"),
+                    "qty": abs(qty),
+                    "pnl_ratio": pnl_ratio,
+                    "leverage": leverage,
+                }
+            )
 
         if not scored:
             return []
@@ -1034,16 +1057,18 @@ class ADLQueueManager:
                 if score >= threshold:
                     rank = i + 2
 
-            queue.append(ADLQueueEntry(
-                account_id=s["account_id"],
-                symbol=symbol,
-                side=side,
-                qty=s["qty"],
-                pnl_percentile=pnl_pct,
-                leverage_percentile=lev_pct,
-                rank=min(rank, 5),
-                estimated_adl_qty=s["qty"],
-            ))
+            queue.append(
+                ADLQueueEntry(
+                    account_id=s["account_id"],
+                    symbol=symbol,
+                    side=side,
+                    qty=s["qty"],
+                    pnl_percentile=pnl_pct,
+                    leverage_percentile=lev_pct,
+                    rank=min(rank, 5),
+                    estimated_adl_qty=s["qty"],
+                )
+            )
 
         # Sort by rank descending
         queue.sort(key=lambda x: (-x.rank, -x.pnl_percentile))

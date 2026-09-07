@@ -184,14 +184,18 @@ class MockMediator:
         norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # было cvd_168h
         norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # было yang_zhang_24h
         norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # было yang_zhang_168h
-        norm_cols[4] = self._get_safe_float(row, "garch_200h", 0.0)  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+        norm_cols[4] = self._get_safe_float(
+            row, "garch_200h", 0.0
+        )  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
         norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # было garch_24h
         norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # было ret_15m
         norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # было ret_60m
 
         # Additional 8 (43->51, обновлено для 4h)
         norm_cols[8] = self._get_safe_float(row, "ret_4h", 0.0)  # было ret_5m
-        norm_cols[9] = self._get_safe_float(row, "sma_12000", 0.0)  # было sma_60. 50 баров = 12000 минут = 200h
+        norm_cols[9] = self._get_safe_float(
+            row, "sma_12000", 0.0
+        )  # было sma_60. 50 баров = 12000 минут = 200h
         norm_cols[10] = self._get_safe_float(row, "yang_zhang_30d", 0.0)  # было yang_zhang_720h
         norm_cols[11] = self._get_safe_float(row, "parkinson_48h", 0.0)  # было parkinson_24h
         norm_cols[12] = self._get_safe_float(row, "parkinson_7d", 0.0)  # было parkinson_168h
@@ -262,10 +266,18 @@ class MockMediator:
         units = self._coerce_finite(getattr(state, "units", 0.0), default=0.0)
         cash = self._coerce_finite(getattr(state, "cash", 0.0), default=0.0)
 
-        last_vol_imbalance = self._coerce_finite(getattr(state, "last_vol_imbalance", 0.0), default=0.0)
-        last_trade_intensity = self._coerce_finite(getattr(state, "last_trade_intensity", 0.0), default=0.0)
-        last_realized_spread = self._coerce_finite(getattr(state, "last_realized_spread", 0.0), default=0.0)
-        last_agent_fill_ratio = self._coerce_finite(getattr(state, "last_agent_fill_ratio", 0.0), default=0.0)
+        last_vol_imbalance = self._coerce_finite(
+            getattr(state, "last_vol_imbalance", 0.0), default=0.0
+        )
+        last_trade_intensity = self._coerce_finite(
+            getattr(state, "last_trade_intensity", 0.0), default=0.0
+        )
+        last_realized_spread = self._coerce_finite(
+            getattr(state, "last_realized_spread", 0.0), default=0.0
+        )
+        last_agent_fill_ratio = self._coerce_finite(
+            getattr(state, "last_agent_fill_ratio", 0.0), default=0.0
+        )
 
         fear_greed_value = self._get_safe_float(row, "fear_greed_value", 50.0)
         has_fear_greed = abs(fear_greed_value - 50.0) > 0.1
@@ -343,7 +355,9 @@ def test_observation_size_and_non_zero():
             "cvd_7d": [(i % 20) / 20.0 for i in range(200)],  # было cvd_168h
             "yang_zhang_48h": [0.01 + (i % 5) * 0.001 for i in range(200)],  # было yang_zhang_24h
             "yang_zhang_7d": [0.015 + (i % 7) * 0.001 for i in range(200)],  # было yang_zhang_168h
-            "garch_200h": [0.02 + (i % 3) * 0.002 for i in range(200)],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [
+                0.02 + (i % 3) * 0.002 for i in range(200)
+            ],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.025 + (i % 4) * 0.002 for i in range(200)],  # было garch_24h
             "ret_12h": [(i % 15) * 0.0001 for i in range(200)],  # было ret_15m
             "ret_24h": [(i % 25) * 0.0002 for i in range(200)],  # было ret_60m
@@ -389,7 +403,9 @@ def test_technical_indicators_present():
             "cvd_7d": [0.3],  # было cvd_168h
             "yang_zhang_48h": [0.025],  # было yang_zhang_24h
             "yang_zhang_7d": [0.030],  # было yang_zhang_168h
-            "garch_200h": [0.028],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [
+                0.028
+            ],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.032],  # было garch_24h
             "ret_12h": [0.001],  # было ret_15m
             "ret_24h": [0.002],  # было ret_60m
@@ -438,7 +454,9 @@ def test_cvd_garch_yangzhang_in_obs():
             "cvd_7d": [2.0],  # Non-zero value (было cvd_168h)
             "yang_zhang_48h": [0.05],  # Non-zero value (было yang_zhang_24h)
             "yang_zhang_7d": [0.06],  # было yang_zhang_168h
-            "garch_200h": [0.04],  # Non-zero value (было garch_12h). 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [
+                0.04
+            ],  # Non-zero value (было garch_12h). 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.045],  # было garch_24h
             "ret_12h": [0.001],  # было ret_15m
             "ret_24h": [0.002],  # было ret_60m
@@ -459,11 +477,15 @@ def test_cvd_garch_yangzhang_in_obs():
     norm_cols_region = obs[32:40]
 
     # These should be non-zero after tanh normalization
-    assert not np.allclose(norm_cols_region, 0.0), "norm_cols should contain non-zero values from indicators"
+    assert not np.allclose(
+        norm_cols_region, 0.0
+    ), "norm_cols should contain non-zero values from indicators"
 
     # Check that at least cvd, garch, yang_zhang contribute
     # (values should be in reasonable range after passing through obs_builder)
-    assert np.any(np.abs(norm_cols_region) > 0.01), "Expected significant values in norm_cols from indicators"
+    assert np.any(
+        np.abs(norm_cols_region) > 0.01
+    ), "Expected significant values in norm_cols from indicators"
 
     print(f"✓ Test 3 passed: cvd_24h, garch_7d, yang_zhang_48h present in obs")
 
@@ -486,9 +508,15 @@ def test_observations_in_training_env():
             "rsi": [50 + (i % 40) for i in range(n_steps)],
             "cvd_24h": [np.sin(i * 0.05) * 0.5 for i in range(n_steps)],
             "cvd_7d": [np.cos(i * 0.02) * 0.3 for i in range(n_steps)],  # было cvd_168h
-            "yang_zhang_48h": [0.02 + (i % 10) * 0.001 for i in range(n_steps)],  # было yang_zhang_24h
-            "yang_zhang_7d": [0.025 + (i % 15) * 0.001 for i in range(n_steps)],  # было yang_zhang_168h
-            "garch_200h": [0.03 + (i % 5) * 0.002 for i in range(n_steps)],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "yang_zhang_48h": [
+                0.02 + (i % 10) * 0.001 for i in range(n_steps)
+            ],  # было yang_zhang_24h
+            "yang_zhang_7d": [
+                0.025 + (i % 15) * 0.001 for i in range(n_steps)
+            ],  # было yang_zhang_168h
+            "garch_200h": [
+                0.03 + (i % 5) * 0.002 for i in range(n_steps)
+            ],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.035 + (i % 8) * 0.002 for i in range(n_steps)],  # было garch_24h
             "ret_12h": [(i % 20) * 0.0001 for i in range(n_steps)],  # было ret_15m
             "ret_24h": [(i % 30) * 0.0002 for i in range(n_steps)],  # было ret_60m
@@ -548,7 +576,9 @@ def test_observation_works_without_indicators():
 
     # May have fewer non-zero values, but should not crash
     non_zero_count = np.count_nonzero(obs)
-    assert non_zero_count >= 3, f"Expected >=3 non-zero values (price, volumes, state), got {non_zero_count}"
+    assert (
+        non_zero_count >= 3
+    ), f"Expected >=3 non-zero values (price, volumes, state), got {non_zero_count}"
 
     print(f"✓ Test 5 passed: Fallback works without indicators")
 

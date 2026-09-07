@@ -28,6 +28,7 @@ from core_models import (
     as_dict,
 )
 
+
 def _dec(x: Any, *, default: str = "0") -> Decimal:
     if isinstance(x, Decimal):
         return x
@@ -38,6 +39,7 @@ def _dec(x: Any, *, default: str = "0") -> Decimal:
             return Decimal(default)
         except InvalidOperation:
             return Decimal("0")
+
 
 def _get(d: Dict[str, Any], *keys: str, default: Any = None) -> Any:
     for k in keys:
@@ -198,6 +200,7 @@ def _derive_exec_status(trade: Dict[str, Any]) -> Tuple[ExecStatus, Optional[str
         return ExecStatus.NEW, raw_str
     return ExecStatus.FILLED, raw_str
 
+
 def _as_side(trade: Dict[str, Any]) -> Side:
     v = _get(trade, "side", "SIDE", "s", "buy_sell", default=None)
     if v is None:
@@ -215,6 +218,7 @@ def _as_side(trade: Dict[str, Any]) -> Side:
     except Exception:
         return Side.BUY
 
+
 def _as_liquidity(trade: Dict[str, Any]) -> Liquidity:
     v = _get(trade, "liquidity", "L", default=None)
     if isinstance(v, str):
@@ -227,6 +231,7 @@ def _as_liquidity(trade: Dict[str, Any]) -> Liquidity:
     if isinstance(is_maker, bool):
         return Liquidity.MAKER if is_maker else Liquidity.TAKER
     return Liquidity.UNKNOWN
+
 
 def _as_ordertype(trade: Dict[str, Any], *, parent: Dict[str, Any]) -> OrderType:
     v = _get(trade, "order_type", "type", default=None)
@@ -243,12 +248,25 @@ def _as_ordertype(trade: Dict[str, Any], *, parent: Dict[str, Any]) -> OrderType
         return OrderType.LIMIT
     return OrderType.MARKET
 
+
 def _price_and_qty(trade: Dict[str, Any]) -> Tuple[Decimal, Decimal]:
-    price = _dec(_get(trade, "price", "avg_price", "p", "match_price", "fill_price", "limit_price", default="0"))
+    price = _dec(
+        _get(
+            trade,
+            "price",
+            "avg_price",
+            "p",
+            "match_price",
+            "fill_price",
+            "limit_price",
+            default="0",
+        )
+    )
     qty = _dec(_get(trade, "qty", "quantity", "filled_qty", "q", default="0"))
     # величина qty — абсолютная; знак в core задаёт side
     qty = qty.copy_abs()
     return price, qty
+
 
 def _ts(trade: Dict[str, Any], parent: Dict[str, Any]) -> int:
     v = _get(trade, "ts", "timestamp", "T", default=None)
@@ -263,7 +281,10 @@ def _ts(trade: Dict[str, Any], parent: Dict[str, Any]) -> int:
     except Exception:
         return 0
 
-def _order_and_trade_ids(trade: Dict[str, Any], parent: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+
+def _order_and_trade_ids(
+    trade: Dict[str, Any], parent: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[str]]:
     oid = _get(trade, "order_id", "oid", default=None)
     if oid is None:
         # ExecutionSimulator.to_dict() может отдавать список new_order_ids
@@ -272,6 +293,7 @@ def _order_and_trade_ids(trade: Dict[str, Any], parent: Dict[str, Any]) -> Tuple
             oid = str(noids[0])
     tid = _get(trade, "trade_id", "tid", "id", default=None)
     return (str(oid) if oid is not None else None, str(tid) if tid is not None else None)
+
 
 def trade_dict_to_core_exec_report(
     trade: Dict[str, Any],
@@ -300,7 +322,11 @@ def trade_dict_to_core_exec_report(
         ts=ts_ms,
         run_id=run_id,
         symbol=symbol,
-        execution_profile=str(parent.get("execution_profile")) if parent.get("execution_profile") is not None else None,
+        execution_profile=(
+            str(parent.get("execution_profile"))
+            if parent.get("execution_profile") is not None
+            else None
+        ),
         side=side,
         order_type=order_type,
         price=price,
@@ -315,6 +341,7 @@ def trade_dict_to_core_exec_report(
         pnl=None,
         meta=meta,
     )
+
 
 def _distribute_fee(total_fee: Decimal, trades: List[CoreExecReport]) -> List[CoreExecReport]:
     if total_fee is None:
@@ -334,26 +361,29 @@ def _distribute_fee(total_fee: Decimal, trades: List[CoreExecReport]) -> List[Co
         raw_payload = meta.get("raw")
         if isinstance(raw_payload, Mapping):
             _attach_capacity_meta(meta, raw_payload)
-        out.append(CoreExecReport(
-            ts=t.ts,
-            run_id=t.run_id,
-            symbol=t.symbol,
-            execution_profile=t.execution_profile,
-            side=t.side,
-            order_type=t.order_type,
-            price=t.price,
-            quantity=t.quantity,
-            fee=share,
-            fee_asset=t.fee_asset,
-            exec_status=t.exec_status,
-            liquidity=t.liquidity,
-            client_order_id=t.client_order_id,
-            order_id=t.order_id,
-            trade_id=t.trade_id,
-            pnl=t.pnl,
-            meta=meta,
-        ))
+        out.append(
+            CoreExecReport(
+                ts=t.ts,
+                run_id=t.run_id,
+                symbol=t.symbol,
+                execution_profile=t.execution_profile,
+                side=t.side,
+                order_type=t.order_type,
+                price=t.price,
+                quantity=t.quantity,
+                fee=share,
+                fee_asset=t.fee_asset,
+                exec_status=t.exec_status,
+                liquidity=t.liquidity,
+                client_order_id=t.client_order_id,
+                order_id=t.order_id,
+                trade_id=t.trade_id,
+                pnl=t.pnl,
+                meta=meta,
+            )
+        )
     return out
+
 
 def sim_report_dict_to_core_exec_reports(
     d: Dict[str, Any],
@@ -370,7 +400,9 @@ def sim_report_dict_to_core_exec_reports(
     if not isinstance(trades_src, list):
         trades_src = []
     reports: List[CoreExecReport] = [
-        trade_dict_to_core_exec_report(t, parent=d, symbol=symbol, run_id=run_id, client_order_id=client_order_id)
+        trade_dict_to_core_exec_report(
+            t, parent=d, symbol=symbol, run_id=run_id, client_order_id=client_order_id
+        )
         for t in trades_src
     ]
     status_val = str(d.get("status") or "").upper()

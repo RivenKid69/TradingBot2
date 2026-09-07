@@ -37,6 +37,7 @@ MAX_CONFIG_SIZE_KB: Final[int] = 1024  # 1MB max config size
 
 class ConfigChangeType(Enum):
     """Types of config changes."""
+
     ADDED = auto()
     REMOVED = auto()
     MODIFIED = auto()
@@ -48,6 +49,7 @@ class ConfigChange:
     """
     Single configuration change.
     """
+
     path: str  # Dot-notation path (e.g., "strategy.risk.max_position")
     change_type: ConfigChangeType
     old_value: Any = None
@@ -70,6 +72,7 @@ class ConfigDiff:
     """
     Diff between two configuration versions.
     """
+
     old_digest: str
     new_digest: str
     changes: List[ConfigChange] = field(default_factory=list)
@@ -126,9 +129,13 @@ class ConfigDiff:
 
         for change in self.changes:
             if change.change_type == ConfigChangeType.ADDED:
-                lines.append(f"+ {change.path}: {_format_value(change.new_value, change.is_sensitive)}")
+                lines.append(
+                    f"+ {change.path}: {_format_value(change.new_value, change.is_sensitive)}"
+                )
             elif change.change_type == ConfigChangeType.REMOVED:
-                lines.append(f"- {change.path}: {_format_value(change.old_value, change.is_sensitive)}")
+                lines.append(
+                    f"- {change.path}: {_format_value(change.old_value, change.is_sensitive)}"
+                )
             elif change.change_type == ConfigChangeType.MODIFIED:
                 lines.append(f"  {change.path}:")
                 lines.append(f"-   {_format_value(change.old_value, change.is_sensitive)}")
@@ -165,6 +172,7 @@ class ConfigVersion:
     """
     A versioned configuration snapshot.
     """
+
     config_id: str = field(default_factory=lambda: str(uuid4()))
     digest: str = ""
     content: Dict[str, Any] = field(default_factory=dict)
@@ -188,9 +196,18 @@ class ConfigVersion:
 
 # Sensitive key patterns for redaction
 SENSITIVE_PATTERNS: Final[Set[str]] = {
-    "key", "secret", "password", "token", "credential",
-    "api_key", "api_secret", "access_token", "private",
-    "bearer", "authorization", "auth_token",
+    "key",
+    "secret",
+    "password",
+    "token",
+    "credential",
+    "api_key",
+    "api_secret",
+    "access_token",
+    "private",
+    "bearer",
+    "authorization",
+    "auth_token",
 }
 
 
@@ -308,7 +325,7 @@ class ConfigManager:
         """Save config index to disk."""
         data = {
             "current_id": self._current.config_id if self._current else None,
-            "history": self._history[-self._max_history:],
+            "history": self._history[-self._max_history :],
             "saved_at": datetime.utcnow().isoformat(),
         }
 
@@ -434,27 +451,33 @@ class ConfigManager:
             is_sensitive = _is_sensitive_key(key.split(".")[-1])
 
             if key not in old_flat:
-                changes.append(ConfigChange(
-                    path=key,
-                    change_type=ConfigChangeType.ADDED,
-                    new_value=new_flat[key],
-                    is_sensitive=is_sensitive,
-                ))
+                changes.append(
+                    ConfigChange(
+                        path=key,
+                        change_type=ConfigChangeType.ADDED,
+                        new_value=new_flat[key],
+                        is_sensitive=is_sensitive,
+                    )
+                )
             elif key not in new_flat:
-                changes.append(ConfigChange(
-                    path=key,
-                    change_type=ConfigChangeType.REMOVED,
-                    old_value=old_flat[key],
-                    is_sensitive=is_sensitive,
-                ))
+                changes.append(
+                    ConfigChange(
+                        path=key,
+                        change_type=ConfigChangeType.REMOVED,
+                        old_value=old_flat[key],
+                        is_sensitive=is_sensitive,
+                    )
+                )
             elif old_flat[key] != new_flat[key]:
-                changes.append(ConfigChange(
-                    path=key,
-                    change_type=ConfigChangeType.MODIFIED,
-                    old_value=old_flat[key],
-                    new_value=new_flat[key],
-                    is_sensitive=is_sensitive,
-                ))
+                changes.append(
+                    ConfigChange(
+                        path=key,
+                        change_type=ConfigChangeType.MODIFIED,
+                        old_value=old_flat[key],
+                        new_value=new_flat[key],
+                        is_sensitive=is_sensitive,
+                    )
+                )
 
         return ConfigDiff(
             old_digest=old_digest,
@@ -565,6 +588,7 @@ class ConfigManager:
         if schema:
             try:
                 import jsonschema
+
                 jsonschema.validate(config, schema)
             except ImportError:
                 pass  # jsonschema not available

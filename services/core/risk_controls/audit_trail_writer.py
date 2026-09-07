@@ -237,9 +237,7 @@ class AuditTrailWriter:
             # Initialize retention manager
             if self.config.enable_retention_management:
                 retention_config = self.config.retention_config or RetentionPolicyConfig()
-                self._retention_manager = create_retention_manager(
-                    self._storage, retention_config
-                )
+                self._retention_manager = create_retention_manager(self._storage, retention_config)
 
             self._state = WriterState.STOPPED
             logger.info(
@@ -600,11 +598,7 @@ class AuditTrailWriter:
         Returns:
             True if record was written/queued successfully.
         """
-        remaining = (
-            Decimal(str(remaining_quantity))
-            if remaining_quantity is not None
-            else None
-        )
+        remaining = Decimal(str(remaining_quantity)) if remaining_quantity is not None else None
 
         record = create_order_filled_record(
             firm_lei=self.config.firm_lei,

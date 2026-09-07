@@ -1,4 +1,5 @@
 """Comprehensive tests for services.ops_kill_switch module."""
+
 import json
 import tempfile
 import time
@@ -153,14 +154,16 @@ class TestRecordError:
         # Counter should be reset and then incremented
         assert ops_kill_switch._counters["rest"] == 1
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_record_error_executes_alert_command(self, mock_run):
         """Test alert command is executed when tripped."""
         mock_run.return_value = MagicMock(returncode=0)
-        ops_kill_switch.init({
-            "rest_limit": 1,
-            "alert_command": ["echo", "Alert!"],
-        })
+        ops_kill_switch.init(
+            {
+                "rest_limit": 1,
+                "alert_command": ["echo", "Alert!"],
+            }
+        )
 
         ops_kill_switch.record_error("rest")
 
@@ -189,11 +192,13 @@ class TestRecordDuplicate:
         state_path = tmp_path / "test_dup_state.json"
         flag_path = tmp_path / "test_dup_flag.txt"
 
-        ops_kill_switch.init({
-            "duplicate_limit": 3,  # Trip when counter >= 3
-            "state_path": str(state_path),
-            "flag_path": str(flag_path),
-        })
+        ops_kill_switch.init(
+            {
+                "duplicate_limit": 3,  # Trip when counter >= 3
+                "state_path": str(state_path),
+                "flag_path": str(flag_path),
+            }
+        )
 
         ops_kill_switch.record_duplicate()  # counter=1
         ops_kill_switch.record_duplicate()  # counter=2

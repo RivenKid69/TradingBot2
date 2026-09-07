@@ -70,9 +70,7 @@ class PositionState:
         if isinstance(other, PositionState):
             return (
                 math.isclose(self.qty, other.qty, rel_tol=1e-12, abs_tol=1e-12)
-                and math.isclose(
-                    self.avg_price, other.avg_price, rel_tol=1e-12, abs_tol=1e-12
-                )
+                and math.isclose(self.avg_price, other.avg_price, rel_tol=1e-12, abs_tol=1e-12)
                 and self.last_update_ms == other.last_update_ms
             )
         if isinstance(other, (int, float)):
@@ -302,9 +300,7 @@ class TradingState:
             open_orders=orders,
             cash=_coerce_float(data.get("cash")),
             equity=(
-                float(data.get("equity"))
-                if isinstance(data.get("equity"), (int, float))
-                else None
+                float(data.get("equity")) if isinstance(data.get("equity"), (int, float)) else None
             ),
             last_processed_bar_ms=last_processed,
             seen_signals=_ensure_list(data.get("seen_signals")),
@@ -321,9 +317,7 @@ class TradingState:
         )
 
         leftovers = {
-            str(key): copy.deepcopy(value)
-            for key, value in data.items()
-            if key not in known_keys
+            str(key): copy.deepcopy(value) for key, value in data.items() if key not in known_keys
         }
         if leftovers:
             state.metadata.setdefault("_legacy", {}).update(leftovers)
@@ -515,6 +509,7 @@ class SQLiteBackend:
         if not row:
             return TradingState()
         keys = set(row.keys())
+
         def _load_json(value: Any, default: Any) -> Any:
             if value is None:
                 return default
@@ -532,9 +527,7 @@ class SQLiteBackend:
                 return default
 
         raw_last_processed = (
-            row["last_processed_bar_ms"]
-            if "last_processed_bar_ms" in keys
-            else None
+            row["last_processed_bar_ms"] if "last_processed_bar_ms" in keys else None
         )
         if isinstance(raw_last_processed, (bytes, bytearray)):
             try:
@@ -566,9 +559,15 @@ class SQLiteBackend:
             "entry_limits": json.loads(row["entry_limits"] or "{}"),
             "last_prices": json.loads(row["last_prices"] or "{}"),
             "exposure_state": json.loads(row["exposure_state"] or "{}"),
-            "total_notional": row["total_notional"] if "total_notional" in keys and row["total_notional"] is not None else 0.0,
+            "total_notional": (
+                row["total_notional"]
+                if "total_notional" in keys and row["total_notional"] is not None
+                else 0.0
+            ),
             "git_hash": row["git_hash"] if "git_hash" in keys else None,
-            "version": row["version"] if "version" in keys and row["version"] else CURRENT_STATE_VERSION,
+            "version": (
+                row["version"] if "version" in keys and row["version"] else CURRENT_STATE_VERSION
+            ),
             "metadata": json.loads(row["metadata"] or "{}") if "metadata" in keys else {},
             "last_update_ms": row["last_update_ms"] if "last_update_ms" in keys else None,
         }
@@ -665,6 +664,7 @@ def update_open_order(
     if not key:
         raise ValueError("order_key must be non-empty")
     with _state_lock:
+
         def _matches(order: OrderState, needle: str) -> bool:
             if not needle:
                 return False
@@ -684,9 +684,7 @@ def update_open_order(
             payload.update(kwargs)
             if not payload:
                 _state.open_orders = [
-                    existing
-                    for existing in _state.open_orders
-                    if not _matches(existing, key)
+                    existing for existing in _state.open_orders if not _matches(existing, key)
                 ]
                 _state.version = CURRENT_STATE_VERSION
                 return
@@ -702,9 +700,7 @@ def update_open_order(
         _state.open_orders = [
             existing
             for existing in _state.open_orders
-            if not any(
-                _matches(existing, ident) for ident in identifiers if ident
-            )
+            if not any(_matches(existing, ident) for ident in identifiers if ident)
         ]
         _state.open_orders.append(order)
         _state.version = CURRENT_STATE_VERSION

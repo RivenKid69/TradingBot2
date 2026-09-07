@@ -9,6 +9,7 @@ This module tests the adaptive advantage normalization approach:
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -16,6 +17,7 @@ import numpy as np
 
 class TestResults:
     """Track test results."""
+
     def __init__(self):
         self.passed = 0
         self.failed = 0
@@ -64,15 +66,21 @@ def test_normal_normalization():
         mean = np.mean(advantages)
         std = np.std(advantages, ddof=1)
 
-        assert std > ADV_STD_SKIP_THRESHOLD, f"Test setup error: std={std} should be > {ADV_STD_SKIP_THRESHOLD}"
+        assert (
+            std > ADV_STD_SKIP_THRESHOLD
+        ), f"Test setup error: std={std} should be > {ADV_STD_SKIP_THRESHOLD}"
 
         # Should normalize
         std_clamped = max(std, ADV_STD_FLOOR)
         normalized = (advantages - mean) / std_clamped
 
         # Verify normalization happened correctly
-        assert approx_equal(np.mean(normalized), 0.0), f"Mean should be ~0, got {np.mean(normalized)}"
-        assert approx_equal(np.std(normalized, ddof=1), 1.0, abs_tol=1e-5), f"Std should be ~1, got {np.std(normalized, ddof=1)}"
+        assert approx_equal(
+            np.mean(normalized), 0.0
+        ), f"Mean should be ~0, got {np.mean(normalized)}"
+        assert approx_equal(
+            np.std(normalized, ddof=1), 1.0, abs_tol=1e-5
+        ), f"Std should be ~1, got {np.std(normalized, ddof=1)}"
         assert np.all(np.isfinite(normalized)), "All values should be finite"
 
         results.record_pass("test_normal_normalization")
@@ -86,19 +94,17 @@ def test_low_std_with_floor():
         # Create advantages with low but not too low variance
         base = 0.001
         noise = 2e-4  # Increased noise to get std > 1e-4
-        advantages = np.array([
-            base - noise,
-            base - noise/2,
-            base,
-            base + noise/2,
-            base + noise
-        ], dtype=np.float32)
+        advantages = np.array(
+            [base - noise, base - noise / 2, base, base + noise / 2, base + noise], dtype=np.float32
+        )
 
         mean = np.mean(advantages)
         std = np.std(advantages, ddof=1)
 
         # Verify std is in the target range
-        assert 1e-4 < std < ADV_STD_SKIP_THRESHOLD, f"Test setup error: std={std:.2e} should be between 1e-4 and {ADV_STD_SKIP_THRESHOLD}"
+        assert (
+            1e-4 < std < ADV_STD_SKIP_THRESHOLD
+        ), f"Test setup error: std={std:.2e} should be between 1e-4 and {ADV_STD_SKIP_THRESHOLD}"
 
         # Should normalize (std >= SKIP_THRESHOLD is False, so we normalize)
         # But std > FLOOR, so floor is not used
@@ -124,7 +130,9 @@ def test_very_low_std_skip_normalization():
         std = np.std(advantages, ddof=1)
 
         # Verify std is very small
-        assert std < ADV_STD_SKIP_THRESHOLD, f"Test setup error: std={std:.2e} should be < {ADV_STD_SKIP_THRESHOLD}"
+        assert (
+            std < ADV_STD_SKIP_THRESHOLD
+        ), f"Test setup error: std={std:.2e} should be < {ADV_STD_SKIP_THRESHOLD}"
 
         # Should skip normalization - advantages would remain unchanged
         # This is the desired behavior
@@ -318,8 +326,9 @@ def test_floor_vs_skip_threshold():
     """Test the relationship between floor and skip threshold."""
     try:
         # FLOOR should be less than SKIP_THRESHOLD
-        assert ADV_STD_FLOOR < ADV_STD_SKIP_THRESHOLD, \
-            f"Floor ({ADV_STD_FLOOR}) should be < skip threshold ({ADV_STD_SKIP_THRESHOLD})"
+        assert (
+            ADV_STD_FLOOR < ADV_STD_SKIP_THRESHOLD
+        ), f"Floor ({ADV_STD_FLOOR}) should be < skip threshold ({ADV_STD_SKIP_THRESHOLD})"
 
         # Recommended: SKIP_THRESHOLD should be 10x FLOOR
         ratio = ADV_STD_SKIP_THRESHOLD / ADV_STD_FLOOR

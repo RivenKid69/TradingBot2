@@ -35,9 +35,7 @@ class TestCloudSignatureVerifier:
     @pytest.fixture
     def verifier(self, cloud_keypair):
         """Create verifier with Cloud public key."""
-        return CloudSignatureVerifier(
-            cloud_public_key_pem=cloud_keypair.get_public_key_pem()
-        )
+        return CloudSignatureVerifier(cloud_public_key_pem=cloud_keypair.get_public_key_pem())
 
     @pytest.fixture
     def signed_message(self, cloud_keypair):
@@ -346,9 +344,7 @@ class TestSignatureVerificationSecurity:
 
     def test_tampered_message_fails(self, cloud_keypair):
         """Test that tampered messages fail verification."""
-        verifier = CloudSignatureVerifier(
-            cloud_public_key_pem=cloud_keypair.get_public_key_pem()
-        )
+        verifier = CloudSignatureVerifier(cloud_public_key_pem=cloud_keypair.get_public_key_pem())
 
         # Sign original message
         signed = sign_json(
@@ -405,9 +401,7 @@ class TestSignatureVerificationSecurity:
 
     def test_signature_algorithm_mismatch_detected(self, cloud_keypair):
         """Test that algorithm mismatches are detected."""
-        verifier = CloudSignatureVerifier(
-            cloud_public_key_pem=cloud_keypair.get_public_key_pem()
-        )
+        verifier = CloudSignatureVerifier(cloud_public_key_pem=cloud_keypair.get_public_key_pem())
 
         # Try to verify with EC key against Ed25519 public key
         ec_keypair = generate_keypair(KeyAlgorithm.ECDSA_P256)

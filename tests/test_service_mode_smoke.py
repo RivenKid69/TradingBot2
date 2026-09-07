@@ -100,7 +100,9 @@ def test_service_signal_runner_order_mode_instantiation(monkeypatch, tmp_path):
         ws = None
 
     cfg = module.SignalRunnerConfig(logs_dir=str(tmp_path / "logs"), run_id="test-order")
-    run_cfg = SimpleNamespace(execution=SimpleNamespace(mode="order"), slippage_regime_updates=False)
+    run_cfg = SimpleNamespace(
+        execution=SimpleNamespace(mode="order"), slippage_regime_updates=False
+    )
 
     runner = module.ServiceSignalRunner(
         DummyAdapter(),
@@ -125,7 +127,9 @@ def test_service_signal_runner_execution_mode_normalization(monkeypatch, tmp_pat
         ws = None
 
     cfg = module.SignalRunnerConfig(logs_dir=str(tmp_path / "logs"), run_id="test-normalized")
-    run_cfg = SimpleNamespace(execution=SimpleNamespace(mode=" bar "), slippage_regime_updates=False)
+    run_cfg = SimpleNamespace(
+        execution=SimpleNamespace(mode=" bar "), slippage_regime_updates=False
+    )
 
     runner = module.ServiceSignalRunner(
         DummyAdapter(),
@@ -270,7 +274,9 @@ def _make_execution_sim_stub() -> ModuleType:
             self.run_config = None
 
         def set_adv_store(self, *args, **kwargs):  # pragma: no cover - smoke helper
-            self._adv_store = kwargs.get("store") if "store" in kwargs else args[0] if args else None
+            self._adv_store = (
+                kwargs.get("store") if "store" in kwargs else args[0] if args else None
+            )
 
         def has_adv_store(self):  # pragma: no cover - smoke helper
             return self._adv_store is not None
@@ -287,7 +293,9 @@ def _make_sim_executor_stub() -> ModuleType:
 
     class SimExecutor:
         @staticmethod
-        def configure_simulator_execution(sim, cfg, default_profile):  # pragma: no cover - smoke helper
+        def configure_simulator_execution(
+            sim, cfg, default_profile
+        ):  # pragma: no cover - smoke helper
             return ("entry", default_profile, False, False)
 
         @staticmethod
@@ -336,8 +344,10 @@ def test_service_backtest_bar_mode_no_execution_sim(monkeypatch, tmp_path):
 
     exchange_pkg_stub, exchange_specs_stub = _make_exchange_stubs()
 
-    with block_import("execution_sim"), temp_module("exchange", exchange_pkg_stub), temp_module(
-        "exchange.specs", exchange_specs_stub
+    with (
+        block_import("execution_sim"),
+        temp_module("exchange", exchange_pkg_stub),
+        temp_module("exchange.specs", exchange_specs_stub),
     ):
         module = importlib.import_module("service_backtest")
         from impl_bar_executor import BarExecutor
@@ -362,10 +372,12 @@ def test_service_backtest_order_mode_instantiation(monkeypatch, tmp_path):
     sim_adapter_stub = _make_sim_adapter_stub()
     exchange_pkg_stub, exchange_specs_stub = _make_exchange_stubs()
 
-    with temp_module("execution_sim", exec_stub), temp_module("impl_sim_executor", sim_executor_stub), temp_module(
-        "sandbox.sim_adapter", sim_adapter_stub
-    ), temp_module("exchange", exchange_pkg_stub), temp_module(
-        "exchange.specs", exchange_specs_stub
+    with (
+        temp_module("execution_sim", exec_stub),
+        temp_module("impl_sim_executor", sim_executor_stub),
+        temp_module("sandbox.sim_adapter", sim_adapter_stub),
+        temp_module("exchange", exchange_pkg_stub),
+        temp_module("exchange.specs", exchange_specs_stub),
     ):
         module = importlib.import_module("service_backtest")
         sim = exec_stub.ExecutionSimulator()
@@ -380,4 +392,3 @@ def test_service_backtest_order_mode_instantiation(monkeypatch, tmp_path):
 
         assert hasattr(service, "sim_bridge")
         assert service.sim_bridge.sim is sim
-

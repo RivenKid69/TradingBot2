@@ -94,8 +94,8 @@ class RebalanceResult:
     batch: Optional[IntentBatch]
     reconciliation: Optional[Dict[str, Any]]
     sent: bool
-    risk_report: Optional[Dict[str, Any]] = None       # pre-trade VaR/CVaR/стресс (P1)
-    execution_plan: Optional[Dict[str, Any]] = None    # impact-aware TWAP/VWAP/POV slices (P1)
+    risk_report: Optional[Dict[str, Any]] = None  # pre-trade VaR/CVaR/стресс (P1)
+    execution_plan: Optional[Dict[str, Any]] = None  # impact-aware TWAP/VWAP/POV slices (P1)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -116,14 +116,14 @@ class CrossSectionalLiveRunner:
         self,
         *,
         risk_guard: Optional[PortfolioRiskGuard] = None,
-        position_provider: Any = None,   # .get_positions() -> {symbol: notional}
-        agent_client: Any = None,        # .send_intents(batch)
+        position_provider: Any = None,  # .get_positions() -> {symbol: notional}
+        agent_client: Any = None,  # .send_intents(batch)
         reconcile_tolerance: float = 0.01,
-        pretrade_analyzer: Any = None,   # PreTradeRiskAnalyzer (VaR/CVaR/стресс) — P1
-        risk_limits: Any = None,         # service_pretrade_risk.RiskLimits — P1
-        scheduler: Any = None,           # RebalanceScheduler (TWAP/VWAP/POV slices) — P1
-        prices_provider: Any = None,     # .get_prices() -> {symbol: price} (для scheduler)
-        adv_provider: Any = None,        # .get_adv() -> {symbol: adv} (для scheduler)
+        pretrade_analyzer: Any = None,  # PreTradeRiskAnalyzer (VaR/CVaR/стресс) — P1
+        risk_limits: Any = None,  # service_pretrade_risk.RiskLimits — P1
+        scheduler: Any = None,  # RebalanceScheduler (TWAP/VWAP/POV slices) — P1
+        prices_provider: Any = None,  # .get_prices() -> {symbol: price} (для scheduler)
+        adv_provider: Any = None,  # .get_adv() -> {symbol: adv} (для scheduler)
     ) -> None:
         self.risk_guard = risk_guard
         self.position_provider = position_provider
@@ -151,7 +151,9 @@ class CrossSectionalLiveRunner:
             for s, v in targets.items()
         ]
         key = idempotency_key or _idempotency_key(ts_ms, targets)
-        return IntentBatch(ts_ms=int(ts_ms), equity=float(equity), intents=intents, idempotency_key=key)
+        return IntentBatch(
+            ts_ms=int(ts_ms), equity=float(equity), intents=intents, idempotency_key=key
+        )
 
     def current_weights(self, equity: float) -> pd.Series:
         if self.position_provider is None or float(equity) == 0.0:
@@ -200,7 +202,8 @@ class CrossSectionalLiveRunner:
         if self.pretrade_analyzer is not None:
             try:
                 rep = self.pretrade_analyzer.pretrade_check(
-                    target_weights, limits=self.risk_limits, strict=True)
+                    target_weights, limits=self.risk_limits, strict=True
+                )
                 risk_report = rep.to_dict()
                 if not rep.approved:
                     decision.approved = False
@@ -211,11 +214,17 @@ class CrossSectionalLiveRunner:
         if not decision.approved:
             logger.warning("rebalance blocked: %s", decision.violations)
             return RebalanceResult(
-                approved=False, decision=decision, batch=None, reconciliation=None, sent=False,
+                approved=False,
+                decision=decision,
+                batch=None,
+                reconciliation=None,
+                sent=False,
                 risk_report=risk_report,
             )
 
-        batch = self.build_intents(target_weights, equity, ts_ms=ts_ms, idempotency_key=idempotency_key)
+        batch = self.build_intents(
+            target_weights, equity, ts_ms=ts_ms, idempotency_key=idempotency_key
+        )
 
         # P1: impact-aware execution-plan (TWAP/VWAP/POV slices) для Agent
         execution_plan = None
@@ -226,7 +235,8 @@ class CrossSectionalLiveRunner:
                 if self.adv_provider is not None:
                     adv = pd.Series(self.adv_provider.get_adv() or {}, dtype="float64")
                 plan = self.scheduler.build_plan(
-                    target_weights, cur if len(cur) else None, prices, float(equity), adv=adv)
+                    target_weights, cur if len(cur) else None, prices, float(equity), adv=adv
+                )
                 execution_plan = plan.to_dict()
             except Exception as exc:  # pragma: no cover
                 logger.warning("execution scheduler failed: %s", exc)
@@ -237,10 +247,17 @@ class CrossSectionalLiveRunner:
             self.agent_client.send_intents(batch)
             sent = True
 
-        recon = self.reconcile(target_weights, equity) if self.position_provider is not None else None
+        recon = (
+            self.reconcile(target_weights, equity) if self.position_provider is not None else None
+        )
         return RebalanceResult(
-            approved=True, decision=decision, batch=batch, reconciliation=recon, sent=sent,
-            risk_report=risk_report, execution_plan=execution_plan,
+            approved=True,
+            decision=decision,
+            batch=batch,
+            reconciliation=recon,
+            sent=sent,
+            risk_report=risk_report,
+            execution_plan=execution_plan,
         )
 
 

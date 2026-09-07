@@ -52,12 +52,8 @@ class MinimalBoxEnv(gym.Env):
 
     def __init__(self, seed: int = 0, max_steps: int = 2, time_limit: bool = False) -> None:
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._max_steps = max_steps
         self._step_count = 0
@@ -151,7 +147,10 @@ def _build_time_limit_eval(
 ):
     code = None
     for const in DistributionalPPO.collect_rollouts.__code__.co_consts:
-        if isinstance(const, type(DistributionalPPO.collect_rollouts.__code__)) and const.co_name == "_evaluate_time_limit_value":
+        if (
+            isinstance(const, type(DistributionalPPO.collect_rollouts.__code__))
+            and const.co_name == "_evaluate_time_limit_value"
+        ):
             code = const
             break
     assert code is not None

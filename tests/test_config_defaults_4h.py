@@ -17,7 +17,9 @@ def test_config_class_defaults():
         content = f.read()
 
     # Ищем все определения execution_profile с дефолтными значениями
-    pattern = r'execution_profile:\s*ExecutionProfile\s*=\s*Field\(\s*default=ExecutionProfile\.(\w+)'
+    pattern = (
+        r"execution_profile:\s*ExecutionProfile\s*=\s*Field\(\s*default=ExecutionProfile\.(\w+)"
+    )
     matches = re.findall(pattern, content)
 
     print(f"  Найдено {len(matches)} дефолтных значений execution_profile")
@@ -71,6 +73,7 @@ def test_timing_yaml_consistency():
     print("Проверка согласованности timing.yaml...")
 
     import yaml
+
     with open("configs/timing.yaml", "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 

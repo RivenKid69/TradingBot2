@@ -31,6 +31,7 @@ from typing import Optional
 try:
     from hypothesis import given, strategies as st, assume, settings, HealthCheck
     from hypothesis.strategies import composite
+
     HAS_HYPOTHESIS = True
 except ImportError:
     HAS_HYPOTHESIS = False
@@ -54,6 +55,7 @@ from execution_providers import (
 # Custom Strategies
 # =============================================================================
 
+
 @composite
 def forex_pair_strategy(draw):
     """Generate valid forex pair symbols."""
@@ -71,7 +73,9 @@ def forex_order_strategy(draw):
     """Generate valid forex orders."""
     symbol = draw(forex_pair_strategy())
     side = draw(st.sampled_from(["BUY", "SELL"]))
-    qty = draw(st.floats(min_value=1000.0, max_value=10_000_000.0, allow_nan=False, allow_infinity=False))
+    qty = draw(
+        st.floats(min_value=1000.0, max_value=10_000_000.0, allow_nan=False, allow_infinity=False)
+    )
 
     return Order(
         symbol=symbol,
@@ -90,7 +94,9 @@ def market_state_strategy(draw):
     base_ts = 1700049600000  # 2023-11-15 12:00 UTC
 
     bid = draw(st.floats(min_value=0.1, max_value=200.0, allow_nan=False, allow_infinity=False))
-    spread_pips = draw(st.floats(min_value=0.1, max_value=50.0, allow_nan=False, allow_infinity=False))
+    spread_pips = draw(
+        st.floats(min_value=0.1, max_value=50.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Convert spread to price units (assuming non-JPY pair)
     spread = spread_pips * 0.0001
@@ -107,17 +113,20 @@ def market_state_strategy(draw):
 @composite
 def participation_strategy(draw):
     """Generate valid participation ratios."""
-    return draw(st.floats(
-        min_value=0.0001,
-        max_value=0.1,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
+    return draw(
+        st.floats(
+            min_value=0.0001,
+            max_value=0.1,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
 
 # =============================================================================
 # Slippage Monotonicity Tests
 # =============================================================================
+
 
 class TestSlippageMonotonicity:
     """Test that slippage increases monotonically with participation."""
@@ -193,6 +202,7 @@ class TestSlippageMonotonicity:
 # Pair Classification Tests
 # =============================================================================
 
+
 class TestPairClassification:
     """Test pair classification properties."""
 
@@ -238,6 +248,7 @@ class TestPairClassification:
 # =============================================================================
 # Session Detection Tests
 # =============================================================================
+
 
 class TestSessionDetection:
     """Test session detection properties."""
@@ -299,6 +310,7 @@ class TestSessionDetection:
 # Session Liquidity Ordering Tests
 # =============================================================================
 
+
 class TestSessionLiquidityOrdering:
     """Test session liquidity ordering properties."""
 
@@ -334,6 +346,7 @@ class TestSessionLiquidityOrdering:
 # Spread Bounds Tests
 # =============================================================================
 
+
 class TestSpreadBounds:
     """Test spread-related properties."""
 
@@ -360,6 +373,7 @@ class TestSpreadBounds:
 # Fee Computation Tests
 # =============================================================================
 
+
 class TestFeeComputation:
     """Test fee computation properties."""
 
@@ -368,8 +382,12 @@ class TestFeeComputation:
         self.fee_provider = ForexFeeProvider()
 
     @given(
-        notional=st.floats(min_value=1000.0, max_value=10_000_000.0, allow_nan=False, allow_infinity=False),
-        qty=st.floats(min_value=1000.0, max_value=10_000_000.0, allow_nan=False, allow_infinity=False),
+        notional=st.floats(
+            min_value=1000.0, max_value=10_000_000.0, allow_nan=False, allow_infinity=False
+        ),
+        qty=st.floats(
+            min_value=1000.0, max_value=10_000_000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=50)
     def test_fee_non_negative(self, notional: float, qty: float):
@@ -385,9 +403,15 @@ class TestFeeComputation:
         assert fee >= 0, f"Fee should be non-negative: {fee}"
 
     @given(
-        notional1=st.floats(min_value=1000.0, max_value=5_000_000.0, allow_nan=False, allow_infinity=False),
-        notional2=st.floats(min_value=1000.0, max_value=5_000_000.0, allow_nan=False, allow_infinity=False),
-        qty=st.floats(min_value=1000.0, max_value=5_000_000.0, allow_nan=False, allow_infinity=False),
+        notional1=st.floats(
+            min_value=1000.0, max_value=5_000_000.0, allow_nan=False, allow_infinity=False
+        ),
+        notional2=st.floats(
+            min_value=1000.0, max_value=5_000_000.0, allow_nan=False, allow_infinity=False
+        ),
+        qty=st.floats(
+            min_value=1000.0, max_value=5_000_000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=50)
     def test_fee_proportional_to_quantity(self, notional1: float, notional2: float, qty: float):
@@ -406,6 +430,7 @@ class TestFeeComputation:
 # =============================================================================
 # Volatility Regime Tests
 # =============================================================================
+
 
 class TestVolatilityRegime:
     """Test volatility regime detection properties."""
@@ -442,17 +467,21 @@ class TestVolatilityRegime:
 # Cross-Asset Class Tests
 # =============================================================================
 
+
 class TestCrossAssetProperties:
     """Test properties across asset classes."""
 
     @given(
-        participation=st.floats(min_value=0.0001, max_value=0.01, allow_nan=False, allow_infinity=False)
+        participation=st.floats(
+            min_value=0.0001, max_value=0.01, allow_nan=False, allow_infinity=False
+        )
     )
     @settings(max_examples=30)
     def test_forex_lower_impact_than_crypto(self, participation: float):
         """Forex should have lower impact coefficient than crypto (more liquid)."""
         forex_config = ForexParametricConfig()
         from execution_providers import CryptoParametricConfig
+
         crypto_config = CryptoParametricConfig()
 
         # Forex base impact should be lower (more liquid)
@@ -471,6 +500,7 @@ class TestCrossAssetProperties:
 # =============================================================================
 # Idempotency Tests
 # =============================================================================
+
 
 class TestIdempotency:
     """Test that operations are idempotent."""
@@ -514,6 +544,7 @@ class TestIdempotency:
 # Numerical Stability Tests
 # =============================================================================
 
+
 class TestNumericalStability:
     """Test numerical stability properties."""
 
@@ -556,7 +587,9 @@ class TestNumericalStability:
 
     @given(
         bid=st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False),
-        spread_pips=st.floats(min_value=0.1, max_value=100.0, allow_nan=False, allow_infinity=False),
+        spread_pips=st.floats(
+            min_value=0.1, max_value=100.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=50)
     def test_no_nan_with_various_prices(self, bid: float, spread_pips: float):

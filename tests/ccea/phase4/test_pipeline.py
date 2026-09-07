@@ -77,7 +77,8 @@ class TestPublishPipeline:
         src.mkdir()
 
         (src / "__init__.py").write_text("# Package\n")
-        (src / "strategy.py").write_text('''
+        (src / "strategy.py").write_text(
+            '''
 """Test strategy."""
 class TestStrategy:
     """Simple test strategy."""
@@ -86,7 +87,8 @@ class TestStrategy:
 
     def run(self):
         return {"status": "ok"}
-''')
+'''
+        )
         return src
 
     @pytest.fixture

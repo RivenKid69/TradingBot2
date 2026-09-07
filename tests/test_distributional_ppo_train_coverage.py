@@ -22,6 +22,7 @@ torch.manual_seed(42)
 
 def _make_env(max_steps: int = 8, n_envs: int = 1, reward_scale: float = 0.1) -> DummyVecEnv:
     """Create minimal test environment."""
+
     def _env_fn():
         import gymnasium
 
@@ -90,6 +91,7 @@ def _setup_and_collect(model, env, n_steps=8):
 # =============================================================================
 # VF Clipping Modes with normalize_returns combinations
 # =============================================================================
+
 
 class TestVfClipNormalizeReturnsCombos:
     """Test all VF clip mode + normalize_returns combinations."""
@@ -203,6 +205,7 @@ class TestVfClipNormalizeReturnsCombos:
 # Multi-epoch and batch size variations
 # =============================================================================
 
+
 class TestEpochBatchVariations:
     """Test different epoch and batch size configurations."""
 
@@ -240,6 +243,7 @@ class TestEpochBatchVariations:
 # =============================================================================
 # Value scale variations
 # =============================================================================
+
 
 class TestValueScaleVariations:
     """Test value scale configurations."""
@@ -280,6 +284,7 @@ class TestValueScaleVariations:
 # =============================================================================
 # CVaR configurations
 # =============================================================================
+
 
 class TestCvarConfigurations:
     """Test CVaR configurations."""
@@ -329,6 +334,7 @@ class TestCvarConfigurations:
 # Multi-environment configurations
 # =============================================================================
 
+
 class TestMultiEnvConfigurations:
     """Test multi-environment configurations."""
 
@@ -365,6 +371,7 @@ class TestMultiEnvConfigurations:
 # =============================================================================
 # GAE lambda variations
 # =============================================================================
+
 
 class TestGaeLambdaVariations:
     """Test GAE lambda variations."""
@@ -406,6 +413,7 @@ class TestGaeLambdaVariations:
 # Entropy coefficient variations
 # =============================================================================
 
+
 class TestEntCoefVariations:
     """Test entropy coefficient variations."""
 
@@ -437,6 +445,7 @@ class TestEntCoefVariations:
 # =============================================================================
 # VF coefficient variations
 # =============================================================================
+
 
 class TestVfCoefVariations:
     """Test VF coefficient variations."""
@@ -470,6 +479,7 @@ class TestVfCoefVariations:
 # Gradient norm clipping variations
 # =============================================================================
 
+
 class TestGradNormVariations:
     """Test gradient norm clipping variations."""
 
@@ -501,6 +511,7 @@ class TestGradNormVariations:
 # =============================================================================
 # Target KL variations
 # =============================================================================
+
 
 class TestTargetKlVariations:
     """Test target KL variations."""
@@ -534,6 +545,7 @@ class TestTargetKlVariations:
 # Clip range variations
 # =============================================================================
 
+
 class TestClipRangeVariations:
     """Test clip range variations."""
 
@@ -557,6 +569,7 @@ class TestClipRangeVariations:
 # =============================================================================
 # VF clip warmup variations
 # =============================================================================
+
 
 class TestVfClipWarmupVariations:
     """Test VF clip warmup variations."""
@@ -598,6 +611,7 @@ class TestVfClipWarmupVariations:
 # =============================================================================
 # Combined complex configurations
 # =============================================================================
+
 
 class TestCombinedConfigurations:
     """Test complex combined configurations."""
@@ -665,6 +679,7 @@ class TestCombinedConfigurations:
 # Learn method variations
 # =============================================================================
 
+
 class TestLearnMethodVariations:
     """Test learn() method variations."""
 
@@ -702,6 +717,7 @@ class TestLearnMethodVariations:
 # =============================================================================
 # Reward scale variations (affects value processing)
 # =============================================================================
+
 
 class TestRewardScaleVariations:
     """Test with different reward scales."""

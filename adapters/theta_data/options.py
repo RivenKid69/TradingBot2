@@ -70,6 +70,7 @@ logger = logging.getLogger(__name__)
 # Try to import thetadata library
 try:
     from thetadata import ThetaClient
+
     THETA_DATA_AVAILABLE = True
 except ImportError:
     ThetaClient = None
@@ -97,6 +98,7 @@ VALID_INTERVALS = ["1min", "5min", "15min", "30min", "1h", "1d"]
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ThetaDataConfig:
     """
@@ -112,6 +114,7 @@ class ThetaDataConfig:
         cache_ttl_sec: Cache TTL for chain data
         use_15min_delay: Use free 15-min delayed data
     """
+
     api_key: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
@@ -125,6 +128,7 @@ class ThetaDataConfig:
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class ThetaDataQuote:
@@ -150,6 +154,7 @@ class ThetaDataQuote:
         underlying_price: Underlying price
         timestamp: Quote timestamp
     """
+
     contract: OptionsContractSpec
     bid: Optional[Decimal] = None
     ask: Optional[Decimal] = None
@@ -208,6 +213,7 @@ class ThetaDataTrade:
         exchange: Exchange code
         condition: Trade condition
     """
+
     contract: OptionsContractSpec
     price: Decimal
     size: int
@@ -226,6 +232,7 @@ class ThetaDataChain:
         quotes: List of option quotes
         timestamp: Chain snapshot timestamp
     """
+
     underlying: str
     quotes: List[ThetaDataQuote] = field(default_factory=list)
     timestamp: Optional[datetime] = None
@@ -258,6 +265,7 @@ class ThetaDataChain:
 # =============================================================================
 # Theta Data Options Adapter
 # =============================================================================
+
 
 class ThetaDataOptionsAdapter(MarketDataAdapter):
     """
@@ -313,7 +321,9 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
                 password=self._config.get("password"),
                 use_terminal=self._config.get("use_terminal", False),
                 timeout_sec=self._config.get("timeout_sec", 30.0),
-                rate_limit_per_min=self._config.get("rate_limit_per_min", DEFAULT_RATE_LIMIT_PER_MIN),
+                rate_limit_per_min=self._config.get(
+                    "rate_limit_per_min", DEFAULT_RATE_LIMIT_PER_MIN
+                ),
                 cache_ttl_sec=self._config.get("cache_ttl_sec", 300.0),
                 use_15min_delay=self._config.get("use_15min_delay", True),
             )
@@ -353,9 +363,7 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
             return self._client
 
         if not THETA_DATA_AVAILABLE:
-            raise ImportError(
-                "thetadata not installed. Install with: pip install thetadata"
-            )
+            raise ImportError("thetadata not installed. Install with: pip install thetadata")
 
         try:
             self._client = ThetaClient(
@@ -447,10 +455,7 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
             exps = client.get_expirations(underlying.upper())
 
             # Convert to date objects
-            return [
-                datetime.strptime(str(exp), "%Y%m%d").date()
-                for exp in exps
-            ]
+            return [datetime.strptime(str(exp), "%Y%m%d").date() for exp in exps]
 
         except Exception as e:
             logger.error(f"Failed to get expirations for {underlying}: {e}")
@@ -555,19 +560,67 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 
                                 quote = ThetaDataQuote(
                                     contract=contract,
-                                    bid=Decimal(str(row.get("bid", 0))) if pd.notna(row.get("bid")) else None,
-                                    ask=Decimal(str(row.get("ask", 0))) if pd.notna(row.get("ask")) else None,
-                                    bid_size=int(row.get("bid_size", 0)) if pd.notna(row.get("bid_size")) else None,
-                                    ask_size=int(row.get("ask_size", 0)) if pd.notna(row.get("ask_size")) else None,
-                                    last=Decimal(str(row.get("last", 0))) if pd.notna(row.get("last")) else None,
-                                    volume=int(row.get("volume", 0)) if pd.notna(row.get("volume")) else None,
-                                    open_interest=int(row.get("open_interest", 0)) if pd.notna(row.get("open_interest")) else None,
+                                    bid=(
+                                        Decimal(str(row.get("bid", 0)))
+                                        if pd.notna(row.get("bid"))
+                                        else None
+                                    ),
+                                    ask=(
+                                        Decimal(str(row.get("ask", 0)))
+                                        if pd.notna(row.get("ask"))
+                                        else None
+                                    ),
+                                    bid_size=(
+                                        int(row.get("bid_size", 0))
+                                        if pd.notna(row.get("bid_size"))
+                                        else None
+                                    ),
+                                    ask_size=(
+                                        int(row.get("ask_size", 0))
+                                        if pd.notna(row.get("ask_size"))
+                                        else None
+                                    ),
+                                    last=(
+                                        Decimal(str(row.get("last", 0)))
+                                        if pd.notna(row.get("last"))
+                                        else None
+                                    ),
+                                    volume=(
+                                        int(row.get("volume", 0))
+                                        if pd.notna(row.get("volume"))
+                                        else None
+                                    ),
+                                    open_interest=(
+                                        int(row.get("open_interest", 0))
+                                        if pd.notna(row.get("open_interest"))
+                                        else None
+                                    ),
                                     iv=float(row.get("iv", 0)) if pd.notna(row.get("iv")) else None,
-                                    delta=float(row.get("delta", 0)) if pd.notna(row.get("delta")) else None,
-                                    gamma=float(row.get("gamma", 0)) if pd.notna(row.get("gamma")) else None,
-                                    theta=float(row.get("theta", 0)) if pd.notna(row.get("theta")) else None,
-                                    vega=float(row.get("vega", 0)) if pd.notna(row.get("vega")) else None,
-                                    underlying_price=Decimal(str(row.get("underlying_price", 0))) if pd.notna(row.get("underlying_price")) else None,
+                                    delta=(
+                                        float(row.get("delta", 0))
+                                        if pd.notna(row.get("delta"))
+                                        else None
+                                    ),
+                                    gamma=(
+                                        float(row.get("gamma", 0))
+                                        if pd.notna(row.get("gamma"))
+                                        else None
+                                    ),
+                                    theta=(
+                                        float(row.get("theta", 0))
+                                        if pd.notna(row.get("theta"))
+                                        else None
+                                    ),
+                                    vega=(
+                                        float(row.get("vega", 0))
+                                        if pd.notna(row.get("vega"))
+                                        else None
+                                    ),
+                                    underlying_price=(
+                                        Decimal(str(row.get("underlying_price", 0)))
+                                        if pd.notna(row.get("underlying_price"))
+                                        else None
+                                    ),
                                     timestamp=datetime.now(),
                                 )
 
@@ -647,7 +700,9 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
                 right=right,
                 start_date=start_str,
                 end_date=end_str,
-                interval_size=int(interval.replace("min", "").replace("h", "60").replace("d", "1440")),
+                interval_size=int(
+                    interval.replace("min", "").replace("h", "60").replace("d", "1440")
+                ),
             )
 
             if data is None or data.empty:
@@ -732,9 +787,9 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 
             # Convert ms to datetime
             if "timestamp_ms" in df.columns:
-                df["timestamp"] = pd.to_datetime(
-                    trade_date.strftime("%Y-%m-%d")
-                ) + pd.to_timedelta(df["timestamp_ms"], unit="ms")
+                df["timestamp"] = pd.to_datetime(trade_date.strftime("%Y-%m-%d")) + pd.to_timedelta(
+                    df["timestamp_ms"], unit="ms"
+                )
 
             return df
 
@@ -811,8 +866,10 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 
         # Find matching quote
         for quote in chain.quotes:
-            if (quote.contract.strike == contract.strike and
-                quote.contract.option_type == contract.option_type):
+            if (
+                quote.contract.strike == contract.strike
+                and quote.contract.option_type == contract.option_type
+            ):
                 return quote
 
         return None
@@ -846,8 +903,10 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 
             for contract in group_contracts:
                 for quote in chain.quotes:
-                    if (quote.contract.strike == contract.strike and
-                        quote.contract.option_type == contract.option_type):
+                    if (
+                        quote.contract.strike == contract.strike
+                        and quote.contract.option_type == contract.option_type
+                    ):
                         quotes.append(quote)
                         break
 
@@ -942,15 +1001,17 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 
             bars = []
             for _, row in df.tail(limit).iterrows():
-                bars.append(Bar(
-                    ts=int(row.get("timestamp", datetime.now()).timestamp() * 1000),
-                    symbol=symbol,
-                    open=Decimal(str(row.get("open", 0))),
-                    high=Decimal(str(row.get("high", 0))),
-                    low=Decimal(str(row.get("low", 0))),
-                    close=Decimal(str(row.get("close", 0))),
-                    volume=Decimal(str(row.get("volume", 0))),
-                ))
+                bars.append(
+                    Bar(
+                        ts=int(row.get("timestamp", datetime.now()).timestamp() * 1000),
+                        symbol=symbol,
+                        open=Decimal(str(row.get("open", 0))),
+                        high=Decimal(str(row.get("high", 0))),
+                        low=Decimal(str(row.get("low", 0))),
+                        close=Decimal(str(row.get("close", 0))),
+                        volume=Decimal(str(row.get("volume", 0))),
+                    )
+                )
             return bars
 
         else:
@@ -974,15 +1035,22 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 
                 bars = []
                 for _, row in data.tail(limit).iterrows():
-                    bars.append(Bar(
-                        ts=int(datetime.combine(row.get("date", date.today()), datetime.min.time()).timestamp() * 1000),
-                        symbol=symbol.upper(),
-                        open=Decimal(str(row.get("open", 0))),
-                        high=Decimal(str(row.get("high", 0))),
-                        low=Decimal(str(row.get("low", 0))),
-                        close=Decimal(str(row.get("close", 0))),
-                        volume=Decimal(str(row.get("volume", 0))),
-                    ))
+                    bars.append(
+                        Bar(
+                            ts=int(
+                                datetime.combine(
+                                    row.get("date", date.today()), datetime.min.time()
+                                ).timestamp()
+                                * 1000
+                            ),
+                            symbol=symbol.upper(),
+                            open=Decimal(str(row.get("open", 0))),
+                            high=Decimal(str(row.get("high", 0))),
+                            low=Decimal(str(row.get("low", 0))),
+                            close=Decimal(str(row.get("close", 0))),
+                            volume=Decimal(str(row.get("volume", 0))),
+                        )
+                    )
                 return bars
 
             except Exception as e:
@@ -1011,6 +1079,7 @@ class ThetaDataOptionsAdapter(MarketDataAdapter):
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_theta_data_adapter(
     username: Optional[str] = None,

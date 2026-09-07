@@ -18,34 +18,36 @@ def test_issue_1():
     print("ISSUE #1: Winsorization with all-NaN columns")
     print("=" * 80)
 
-    df = pd.DataFrame({
-        'timestamp': range(10),
-        'symbol': ['BTC'] * 10,
-        'close': [100.0 + i for i in range(10)],
-        'volume': [1.0 + i for i in range(10)],
-        'all_nan_feature': [np.nan] * 10,  # Entirely NaN
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": range(10),
+            "symbol": ["BTC"] * 10,
+            "close": [100.0 + i for i in range(10)],
+            "volume": [1.0 + i for i in range(10)],
+            "all_nan_feature": [np.nan] * 10,  # Entirely NaN
+        }
+    )
 
     pipe = FeaturePipeline(enable_winsorization=True, strict_idempotency=True)
-    pipe.fit({'BTC': df.copy()})
+    pipe.fit({"BTC": df.copy()})
 
-    stats = pipe.stats.get('all_nan_feature', {})
+    stats = pipe.stats.get("all_nan_feature", {})
     print(f"\nStats for all_nan_feature: {stats}")
 
     # Check if issue is FIXED
-    if stats.get('is_all_nan', False):
+    if stats.get("is_all_nan", False):
         print("\n[FIXED] Issue resolved:")
         print("  - Column marked as is_all_nan=True")
 
         # Verify NO winsorize_bounds
-        if 'winsorize_bounds' not in stats:
+        if "winsorize_bounds" not in stats:
             print("  - No winsorize_bounds (correct)")
         else:
             print("  - WARNING: winsorize_bounds still present (unexpected)")
 
         # Test transform
         result = pipe.transform_df(df.copy())
-        z_col = 'all_nan_feature_z'
+        z_col = "all_nan_feature_z"
 
         if z_col in result.columns:
             z_vals = result[z_col]
@@ -75,11 +77,11 @@ def test_issue_2():
 
     # Check if NaN filtering code exists (lines 262-334)
     try:
-        with open('service_train.py', 'r', encoding='utf-8') as f:
+        with open("service_train.py", "r", encoding="utf-8") as f:
             content = f.read()
 
         # Look for NaN filtering logic
-        if 'rows_with_nan_mask' in content and 'X.isna().any().any()' in content:
+        if "rows_with_nan_mask" in content and "X.isna().any().any()" in content:
             print("\n[FIXED] Issue resolved:")
             print("  - NaN filtering code detected in service_train.py")
             print("  - Checks for X.isna().any().any()")
@@ -101,15 +103,17 @@ def test_issue_3():
     print("ISSUE #3: Repeated transform_df() causes double shift")
     print("=" * 80)
 
-    df = pd.DataFrame({
-        'timestamp': range(10),
-        'symbol': ['BTC'] * 10,
-        'close': [100.0 + i for i in range(10)],
-        'volume': [1.0 + i for i in range(10)],
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": range(10),
+            "symbol": ["BTC"] * 10,
+            "close": [100.0 + i for i in range(10)],
+            "volume": [1.0 + i for i in range(10)],
+        }
+    )
 
     pipe = FeaturePipeline(enable_winsorization=False, strict_idempotency=True)
-    pipe.fit({'BTC': df.copy()})
+    pipe.fit({"BTC": df.copy()})
 
     result1 = pipe.transform_df(df.copy())
     print(f"First transform: close[0]={result1['close'].iloc[0]} (should be NaN)")
@@ -159,5 +163,5 @@ def main():
     return len(issues)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

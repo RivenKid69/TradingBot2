@@ -34,6 +34,7 @@ MAX_SESSIONS_PER_WORKSPACE: Final[int] = 50
 
 class SessionState(str, Enum):
     """Session state."""
+
     ACTIVE = "active"
     IDLE = "idle"
     EXPIRED = "expired"
@@ -43,6 +44,7 @@ class SessionState(str, Enum):
 @dataclass
 class SessionConfig:
     """IDE session configuration."""
+
     timeout_minutes: int = DEFAULT_SESSION_TIMEOUT_MINUTES
     max_notebooks: int = 10
     max_editor_sessions: int = 20
@@ -62,6 +64,7 @@ class IDESession:
 
     Tracks all active notebooks, editors, and resources.
     """
+
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     workspace_id: UUID = field(default_factory=uuid.uuid4)
     user_id: UUID = field(default_factory=uuid.uuid4)
@@ -136,7 +139,9 @@ class IDESessionManager:
 
             workspace_sessions = self._workspace_sessions.get(workspace_id, set())
             if len(workspace_sessions) >= MAX_SESSIONS_PER_WORKSPACE:
-                raise ValueError(f"Maximum sessions per workspace ({MAX_SESSIONS_PER_WORKSPACE}) exceeded")
+                raise ValueError(
+                    f"Maximum sessions per workspace ({MAX_SESSIONS_PER_WORKSPACE}) exceeded"
+                )
 
             session = IDESession(
                 workspace_id=workspace_id,

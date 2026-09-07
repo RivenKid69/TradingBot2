@@ -54,7 +54,7 @@ def test_factor_attribution_no_specific_when_returns_in_factor_span():
     rng = np.random.default_rng(2)
     # r_t = B @ f_t  → доходности лежат в span факторов → specific = 0
     f = rng.normal(size=(2, 2))  # 2 периода × 2 фактора
-    R = f @ B.to_numpy().T       # 2×5
+    R = f @ B.to_numpy().T  # 2×5
     asset_returns = pd.DataFrame(R, index=TS, columns=SYMS)
     weights = pd.DataFrame(rng.normal(0, 0.3, (2, 5)), index=TS, columns=SYMS)
     rep = factor_attribution(weights, asset_returns, B)

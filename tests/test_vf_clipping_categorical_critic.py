@@ -6,6 +6,7 @@ instead of the correct double max required by PPO.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -57,19 +58,23 @@ def test_vf_clipping_triple_max_issue():
     print(f"Correct loss (method 2): {correct_loss_method2.item():.4f}")
 
     # Verify that triple max >= double max (always true mathematically)
-    assert current_loss >= correct_loss_method1, (
-        "Triple max should always be >= double max (method 1)"
-    )
-    assert current_loss >= correct_loss_method2, (
-        "Triple max should always be >= double max (method 2)"
-    )
+    assert (
+        current_loss >= correct_loss_method1
+    ), "Triple max should always be >= double max (method 1)"
+    assert (
+        current_loss >= correct_loss_method2
+    ), "Triple max should always be >= double max (method 2)"
 
     # In this example, triple max is strictly greater than both double max values
     print(f"\nLoss inflation from triple max:")
-    print(f"  vs method 1: {(current_loss - correct_loss_method1).item():.4f} "
-          f"({((current_loss / correct_loss_method1 - 1) * 100).item():.2f}% higher)")
-    print(f"  vs method 2: {(current_loss - correct_loss_method2).item():.4f} "
-          f"({((current_loss / correct_loss_method2 - 1) * 100).item():.2f}% higher)")
+    print(
+        f"  vs method 1: {(current_loss - correct_loss_method1).item():.4f} "
+        f"({((current_loss / correct_loss_method1 - 1) * 100).item():.2f}% higher)"
+    )
+    print(
+        f"  vs method 2: {(current_loss - correct_loss_method2).item():.4f} "
+        f"({((current_loss / correct_loss_method2 - 1) * 100).item():.2f}% higher)"
+    )
 
     # Element-wise comparison to show where triple max differs
     print(f"\nElement-wise comparison:")
@@ -89,14 +94,18 @@ def test_vf_clipping_triple_max_issue():
     # The bug is confirmed if any element shows inflation
     has_inflation = (inflation_vs_method1.sum() > 0) or (inflation_vs_method2.sum() > 0)
     print(f"\n{'=' * 60}")
-    print(f"BUG CONFIRMED: Triple max creates inflated loss!" if has_inflation else "No inflation detected")
+    print(
+        f"BUG CONFIRMED: Triple max creates inflated loss!"
+        if has_inflation
+        else "No inflation detected"
+    )
     print(f"{'=' * 60}")
 
     return {
-        'current_loss': current_loss.item(),
-        'correct_loss_method1': correct_loss_method1.item(),
-        'correct_loss_method2': correct_loss_method2.item(),
-        'has_inflation': has_inflation,
+        "current_loss": current_loss.item(),
+        "correct_loss_method1": correct_loss_method1.item(),
+        "correct_loss_method2": correct_loss_method2.item(),
+        "has_inflation": has_inflation,
     }
 
 

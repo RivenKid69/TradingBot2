@@ -4,6 +4,7 @@ import math
 from typing import Optional
 
 import pytest
+
 torch = pytest.importorskip("torch")
 
 pytest.importorskip("sb3_contrib")
@@ -81,7 +82,9 @@ class DummyCategoricalPolicy(torch.nn.Module):
 
 
 class DummyModel:
-    def __init__(self, policy: torch.nn.Module, ret_mean: float, ret_std: float, *, use_quantile: bool) -> None:
+    def __init__(
+        self, policy: torch.nn.Module, ret_mean: float, ret_std: float, *, use_quantile: bool
+    ) -> None:
         self.policy = policy
         self.device = torch.device("cpu")
         self.normalize_returns = True
@@ -120,7 +123,9 @@ def test_quantile_live_update_preserves_raw_predictions() -> None:
     torch.manual_seed(0)
     policy = DummyQuantilePolicy(input_dim=3, num_quantiles=5)
     with torch.no_grad():
-        policy.quantile_head.linear.weight.copy_(torch.ones_like(policy.quantile_head.linear.weight))
+        policy.quantile_head.linear.weight.copy_(
+            torch.ones_like(policy.quantile_head.linear.weight)
+        )
         policy.quantile_head.linear.bias.fill_(0.25)
     model = DummyModel(policy, ret_mean=0.5, ret_std=0.7, use_quantile=True)
     holdout_batch = _make_holdout(batch_size=32, input_dim=3, model=model)
@@ -175,7 +180,9 @@ def test_quantile_live_update_preserves_raw_predictions() -> None:
     scale_expected = old_std / new_std
     shift_expected = (old_mean - new_mean) / new_std
     weight_expected = torch.ones_like(policy.quantile_head.linear.weight) * scale_expected
-    bias_expected = torch.full_like(policy.quantile_head.linear.bias, 0.25 * scale_expected + shift_expected)
+    bias_expected = torch.full_like(
+        policy.quantile_head.linear.bias, 0.25 * scale_expected + shift_expected
+    )
     assert torch.allclose(policy.quantile_head.linear.weight, weight_expected, atol=1e-6)
     assert torch.allclose(policy.quantile_head.linear.bias, bias_expected, atol=1e-6)
 
@@ -323,6 +330,11 @@ def test_categorical_live_update_preserves_expectation() -> None:
 
     assert torch.allclose(updated_raw, baseline_raw, atol=1e-6)
     scale = old_std / metrics.std
-    assert math.isclose(float(policy.atoms[0]), scale * (-1.0) + (old_mean - metrics.mean) / metrics.std, rel_tol=1e-6, abs_tol=1e-6)
+    assert math.isclose(
+        float(policy.atoms[0]),
+        scale * (-1.0) + (old_mean - metrics.mean) / metrics.std,
+        rel_tol=1e-6,
+        abs_tol=1e-6,
+    )
     expected_delta = (policy.v_max - policy.v_min) / max(policy.atoms.numel() - 1, 1)
     assert math.isclose(policy.delta_z, expected_delta, rel_tol=1e-6, abs_tol=1e-6)

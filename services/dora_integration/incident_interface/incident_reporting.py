@@ -68,8 +68,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ReportType(Enum):
     """Report types per CDR 2025/301."""
+
     INITIAL_NOTIFICATION = "initial_notification"
     INTERMEDIATE_REPORT = "intermediate_report"
     FINAL_REPORT = "final_report"
@@ -78,6 +80,7 @@ class ReportType(Enum):
 
 class ReportStatus(Enum):
     """Report submission status."""
+
     DRAFT = "draft"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
@@ -89,6 +92,7 @@ class ReportStatus(Enum):
 
 class IncidentTypeCode(Enum):
     """Incident type codes per ITS Annex."""
+
     CYBER_ATTACK = "CYBA"
     SYSTEM_FAILURE = "SYSF"
     EXTERNAL_EVENT = "EXTE"
@@ -99,6 +103,7 @@ class IncidentTypeCode(Enum):
 
 class RootCauseCategory(Enum):
     """Root cause categories per ITS."""
+
     MALICIOUS_INTERNAL = "malicious_internal"
     MALICIOUS_EXTERNAL = "malicious_external"
     ACCIDENTAL_INTERNAL = "accidental_internal"
@@ -112,21 +117,24 @@ class RootCauseCategory(Enum):
 
 class CompetentAuthorityType(Enum):
     """Types of competent authorities."""
-    NCA_PRIMARY = "nca_primary"          # Primary national competent authority
-    NCA_SECONDARY = "nca_secondary"      # Secondary (if applicable)
-    ECB = "ecb"                          # For significant credit institutions
-    ESA = "esa"                          # European Supervisory Authority
+
+    NCA_PRIMARY = "nca_primary"  # Primary national competent authority
+    NCA_SECONDARY = "nca_secondary"  # Secondary (if applicable)
+    ECB = "ecb"  # For significant credit institutions
+    ESA = "esa"  # European Supervisory Authority
 
 
 # =============================================================================
 # Data Structures - Competent Authority
 # =============================================================================
 
+
 @dataclass
 class CompetentAuthority:
     """
     Competent authority information for incident reporting.
     """
+
     authority_id: str = ""
     name: str = ""
     authority_type: CompetentAuthorityType = CompetentAuthorityType.NCA_PRIMARY
@@ -155,6 +163,7 @@ class CompetentAuthority:
 # Data Structures - Reports per ITS Annex
 # =============================================================================
 
+
 @dataclass
 class InitialNotificationReport:
     """
@@ -163,6 +172,7 @@ class InitialNotificationReport:
     Contains limited mandatory fields to minimize burden during active incident.
     Deadline: 4 hours from classification OR 24 hours from detection (whichever earlier).
     """
+
     report_id: str = ""
     incident_id: str = ""
     report_type: ReportType = ReportType.INITIAL_NOTIFICATION
@@ -210,7 +220,9 @@ class InitialNotificationReport:
 
     def __post_init__(self):
         if not self.report_id:
-            self.report_id = f"RPT-INIT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.report_id = (
+                f"RPT-INIT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -223,6 +235,7 @@ class IntermediateReport:
     Contains more detailed information as investigation progresses.
     Deadline: 72 hours from initial notification.
     """
+
     report_id: str = ""
     incident_id: str = ""
     report_type: ReportType = ReportType.INTERMEDIATE_REPORT
@@ -285,7 +298,9 @@ class IntermediateReport:
 
     def __post_init__(self):
         if not self.report_id:
-            self.report_id = f"RPT-INT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.report_id = (
+                f"RPT-INT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -298,6 +313,7 @@ class FinalReport:
     Complete information after incident resolution.
     Deadline: 1 month from resolution (or from intermediate if not resolved).
     """
+
     report_id: str = ""
     incident_id: str = ""
     report_type: ReportType = ReportType.FINAL_REPORT
@@ -384,7 +400,9 @@ class FinalReport:
 
     def __post_init__(self):
         if not self.report_id:
-            self.report_id = f"RPT-FIN-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.report_id = (
+                f"RPT-FIN-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -397,6 +415,7 @@ class ClientDataPackage:
     This is the primary export for ICT providers - a complete package
     of incident data that clients can use to file their NCA reports.
     """
+
     package_id: str = ""
     incident_id: str = ""
     client_id: str = ""
@@ -449,7 +468,9 @@ class ClientDataPackage:
 
     def __post_init__(self):
         if not self.package_id:
-            self.package_id = f"PKG-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.package_id = (
+                f"PKG-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.generated_at:
             self.generated_at = datetime.now(timezone.utc).isoformat()
 
@@ -459,6 +480,7 @@ class ReportSubmission:
     """
     Record of report submission to competent authority.
     """
+
     submission_id: str = ""
     report_id: str = ""
     report_type: ReportType = ReportType.INITIAL_NOTIFICATION
@@ -491,9 +513,11 @@ class ReportSubmission:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class IncidentReportingConfig:
     """Configuration for incident reporting."""
+
     # Deadlines per CDR 2025/301 (in hours)
     initial_notification_hours_from_classification: int = 4
     initial_notification_hours_from_detection: int = 24
@@ -529,6 +553,7 @@ class IncidentReportingConfig:
 # =============================================================================
 # Main Reporting Engine
 # =============================================================================
+
 
 class DORAIncidentReporter:
     """
@@ -749,10 +774,7 @@ class DORAIncidentReporter:
     ) -> List[ClientDataPackage]:
         """Get all packages for a client."""
         with self._lock:
-            return [
-                p for p in self._client_packages.values()
-                if p.client_id == client_id
-            ]
+            return [p for p in self._client_packages.values() if p.client_id == client_id]
 
     def get_packages_for_incident(
         self,
@@ -760,10 +782,7 @@ class DORAIncidentReporter:
     ) -> List[ClientDataPackage]:
         """Get all packages for an incident."""
         with self._lock:
-            return [
-                p for p in self._client_packages.values()
-                if p.incident_id == incident_id
-            ]
+            return [p for p in self._client_packages.values() if p.incident_id == incident_id]
 
     # =========================================================================
     # Deadline Calculation
@@ -825,9 +844,7 @@ class DORAIncidentReporter:
         Returns:
             Deadline datetime (ISO format)
         """
-        initial = datetime.fromisoformat(
-            initial_notification_datetime.replace("Z", "+00:00")
-        )
+        initial = datetime.fromisoformat(initial_notification_datetime.replace("Z", "+00:00"))
         deadline = initial + timedelta(hours=self.config.intermediate_report_hours)
 
         if self.config.weekend_extension_enabled:
@@ -885,9 +902,7 @@ class DORAIncidentReporter:
             next_business_day = deadline + timedelta(days=days_until_monday)
 
             # Set to noon
-            extended = next_business_day.replace(
-                hour=12, minute=0, second=0, microsecond=0
-            )
+            extended = next_business_day.replace(hour=12, minute=0, second=0, microsecond=0)
             return extended
 
         return deadline
@@ -1206,17 +1221,12 @@ class DORAIncidentReporter:
         """
         with self._lock:
             initial = [
-                r for r in self._initial_notifications.values()
-                if r.incident_id == incident_id
+                r for r in self._initial_notifications.values() if r.incident_id == incident_id
             ]
             intermediate = [
-                r for r in self._intermediate_reports.values()
-                if r.incident_id == incident_id
+                r for r in self._intermediate_reports.values() if r.incident_id == incident_id
             ]
-            final = [
-                r for r in self._final_reports.values()
-                if r.incident_id == incident_id
-            ]
+            final = [r for r in self._final_reports.values() if r.incident_id == incident_id]
 
         return {
             "initial": initial,
@@ -1233,9 +1243,18 @@ class DORAIncidentReporter:
                 self._intermediate_reports.values(),
                 self._final_reports.values(),
             ]:
-                pending.extend([r for r in reports if r.status in (
-                    ReportStatus.DRAFT, ReportStatus.PENDING_APPROVAL, ReportStatus.APPROVED
-                )])
+                pending.extend(
+                    [
+                        r
+                        for r in reports
+                        if r.status
+                        in (
+                            ReportStatus.DRAFT,
+                            ReportStatus.PENDING_APPROVAL,
+                            ReportStatus.APPROVED,
+                        )
+                    ]
+                )
         return pending
 
     def get_overdue_reports(self) -> List[Any]:
@@ -1252,9 +1271,7 @@ class DORAIncidentReporter:
                 for r in reports:
                     if r.status not in (ReportStatus.SUBMITTED, ReportStatus.ACKNOWLEDGED):
                         if r.deadline:
-                            deadline = datetime.fromisoformat(
-                                r.deadline.replace("Z", "+00:00")
-                            )
+                            deadline = datetime.fromisoformat(r.deadline.replace("Z", "+00:00"))
                             if now > deadline:
                                 overdue.append(r)
 
@@ -1340,9 +1357,7 @@ class DORAIncidentReporter:
         if not period_end:
             period_end = datetime.now(timezone.utc).isoformat()
         if not period_start:
-            period_start = (
-                datetime.now(timezone.utc) - timedelta(days=30)
-            ).isoformat()
+            period_start = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         with self._lock:
             total_initial = len(self._initial_notifications)
@@ -1396,6 +1411,7 @@ class DORAIncidentReporter:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_incident_reporter(
     config: Optional[IncidentReportingConfig] = None,

@@ -43,6 +43,7 @@ CONSENT_REQUEST_EXPIRY_DAYS: Final[int] = 7
 
 class ConsentType(str, Enum):
     """Types of support consent."""
+
     SUPPORT_DATA_ACCESS = "support_data_access"
     SUPPORT_DATA_EXPORT = "support_data_export"
     SUPPORT_LOG_ACCESS = "support_log_access"
@@ -51,22 +52,24 @@ class ConsentType(str, Enum):
 
 class ConsentStatus(str, Enum):
     """Consent record status."""
-    PENDING = "pending"           # Awaiting customer approval
-    ACTIVE = "active"             # Consent granted and valid
-    EXPIRED = "expired"           # Consent expired naturally
-    REVOKED = "revoked"           # Customer revoked consent
-    DENIED = "denied"             # Customer denied request
+
+    PENDING = "pending"  # Awaiting customer approval
+    ACTIVE = "active"  # Consent granted and valid
+    EXPIRED = "expired"  # Consent expired naturally
+    REVOKED = "revoked"  # Customer revoked consent
+    DENIED = "denied"  # Customer denied request
 
 
 class ConsentScope(str, Enum):
     """Data scope for consent."""
-    TELEMETRY = "telemetry"                 # Telemetry data access
-    LOGS = "logs"                           # Application logs
-    CONFIG = "config"                       # Workspace configuration
-    STRATEGY_METADATA = "strategy_metadata" # Strategy names, versions (not code)
-    COMMANDS = "commands"                   # Command history
-    AUDIT = "audit"                         # Audit logs (where user is subject)
-    FULL = "full"                           # All above combined
+
+    TELEMETRY = "telemetry"  # Telemetry data access
+    LOGS = "logs"  # Application logs
+    CONFIG = "config"  # Workspace configuration
+    STRATEGY_METADATA = "strategy_metadata"  # Strategy names, versions (not code)
+    COMMANDS = "commands"  # Command history
+    AUDIT = "audit"  # Audit logs (where user is subject)
+    FULL = "full"  # All above combined
 
 
 # Valid scopes per consent type
@@ -103,6 +106,7 @@ class ConsentRequest:
     Created when support agent needs data access.
     Awaits customer approval before becoming active.
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     consent_type: ConsentType = ConsentType.SUPPORT_DATA_ACCESS
 
@@ -111,20 +115,22 @@ class ConsentRequest:
     support_ticket_id: str = ""
 
     # Customer context
-    user_id: str = ""           # Customer user who will approve
-    workspace_id: str = ""      # Workspace scope
-    organization_id: str = ""   # Organization context
+    user_id: str = ""  # Customer user who will approve
+    workspace_id: str = ""  # Workspace scope
+    organization_id: str = ""  # Organization context
 
     # Scope
     scopes: Set[ConsentScope] = field(default_factory=lambda: {ConsentScope.FULL})
-    purpose: str = ""           # Why access is needed
+    purpose: str = ""  # Why access is needed
 
     # Duration
     requested_duration_hours: int = DEFAULT_CONSENT_DURATION_HOURS
 
     # Timing
     created_at: datetime = field(default_factory=datetime.utcnow)
-    expires_at: datetime = field(default_factory=lambda: datetime.utcnow() + timedelta(days=CONSENT_REQUEST_EXPIRY_DAYS))
+    expires_at: datetime = field(
+        default_factory=lambda: datetime.utcnow() + timedelta(days=CONSENT_REQUEST_EXPIRY_DAYS)
+    )
 
     # Status
     status: ConsentStatus = ConsentStatus.PENDING
@@ -161,14 +167,15 @@ class ConsentRecord:
     Created when customer approves a consent request.
     Contains all required fields for audit compliance.
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     consent_type: ConsentType = ConsentType.SUPPORT_DATA_ACCESS
-    request_id: str = ""        # Original request ID
+    request_id: str = ""  # Original request ID
 
     # Customer context
-    user_id: str = ""           # Customer user who granted consent
-    workspace_id: str = ""      # Workspace scope
-    organization_id: str = ""   # Organization context
+    user_id: str = ""  # Customer user who granted consent
+    workspace_id: str = ""  # Workspace scope
+    organization_id: str = ""  # Organization context
     granted_by_email: str = ""  # Email of granting user
 
     # Support context
@@ -181,7 +188,9 @@ class ConsentRecord:
 
     # Timing
     granted_at: datetime = field(default_factory=datetime.utcnow)
-    expires_at: datetime = field(default_factory=lambda: datetime.utcnow() + timedelta(hours=DEFAULT_CONSENT_DURATION_HOURS))
+    expires_at: datetime = field(
+        default_factory=lambda: datetime.utcnow() + timedelta(hours=DEFAULT_CONSENT_DURATION_HOURS)
+    )
 
     # Status
     status: ConsentStatus = ConsentStatus.ACTIVE
@@ -192,7 +201,7 @@ class ConsentRecord:
     revocation_reason: Optional[str] = None
 
     # Audit trail
-    access_count: int = 0       # Number of data accesses under this consent
+    access_count: int = 0  # Number of data accesses under this consent
     last_access_at: Optional[datetime] = None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -239,6 +248,7 @@ class ConsentRecord:
 @dataclass
 class ConsentVerificationResult:
     """Result of consent verification check."""
+
     has_consent: bool = False
     consent_id: Optional[str] = None
     consent_type: Optional[ConsentType] = None
@@ -390,7 +400,8 @@ class SupportConsentService:
         """Get all pending consent requests for a user."""
         with self._lock:
             return [
-                r for r in self._requests.values()
+                r
+                for r in self._requests.values()
                 if r.user_id == user_id and r.status == ConsentStatus.PENDING and not r.is_expired
             ]
 
@@ -694,25 +705,29 @@ class SupportConsentService:
         }
 
         if request:
-            entry.update({
-                "request_id": request.id,
-                "consent_type": request.consent_type.value,
-                "user_id": request.user_id,
-                "workspace_id": request.workspace_id,
-                "support_agent_id": request.support_agent_id,
-                "support_ticket_id": request.support_ticket_id,
-            })
+            entry.update(
+                {
+                    "request_id": request.id,
+                    "consent_type": request.consent_type.value,
+                    "user_id": request.user_id,
+                    "workspace_id": request.workspace_id,
+                    "support_agent_id": request.support_agent_id,
+                    "support_ticket_id": request.support_ticket_id,
+                }
+            )
 
         if consent:
-            entry.update({
-                "consent_id": consent.id,
-                "request_id": consent.request_id,
-                "consent_type": consent.consent_type.value,
-                "user_id": consent.user_id,
-                "workspace_id": consent.workspace_id,
-                "support_agent_id": consent.support_agent_id,
-                "support_ticket_id": consent.support_ticket_id,
-            })
+            entry.update(
+                {
+                    "consent_id": consent.id,
+                    "request_id": consent.request_id,
+                    "consent_type": consent.consent_type.value,
+                    "user_id": consent.user_id,
+                    "workspace_id": consent.workspace_id,
+                    "support_agent_id": consent.support_agent_id,
+                    "support_ticket_id": consent.support_ticket_id,
+                }
+            )
 
         self._audit_log.append(entry)
 
@@ -737,8 +752,7 @@ class SupportConsentService:
             # Clean up old expired requests (older than 30 days)
             cutoff = datetime.utcnow() - timedelta(days=30)
             expired_request_ids = [
-                r.id for r in self._requests.values()
-                if r.is_expired and r.created_at < cutoff
+                r.id for r in self._requests.values() if r.is_expired and r.created_at < cutoff
             ]
             for rid in expired_request_ids:
                 del self._requests[rid]

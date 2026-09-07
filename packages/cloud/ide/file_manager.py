@@ -54,32 +54,48 @@ MAX_FILENAME_LENGTH: Final[int] = 255
 MAX_DIRECTORY_DEPTH: Final[int] = 20
 
 # Allowed file extensions
-ALLOWED_EXTENSIONS: Final[frozenset] = frozenset({
-    ".py", ".pyx", ".pxd",  # Python
-    ".yaml", ".yml",  # YAML
-    ".json",  # JSON
-    ".toml",  # TOML
-    ".ini", ".cfg",  # Config
-    ".md", ".rst", ".txt",  # Docs
-    ".sh", ".bash",  # Scripts
-    ".csv", ".tsv",  # Data
-    ".pkl", ".pickle",  # Pickled data
-    ".pt", ".pth", ".onnx", ".h5",  # Models
-    ".npy", ".npz",  # NumPy
-    ".parquet",  # Columnar
-    ".sql",  # SQL
-    ".dockerfile",  # Docker
-    ".gitignore", ".env.example",  # Git/Config
-})
+ALLOWED_EXTENSIONS: Final[frozenset] = frozenset(
+    {
+        ".py",
+        ".pyx",
+        ".pxd",  # Python
+        ".yaml",
+        ".yml",  # YAML
+        ".json",  # JSON
+        ".toml",  # TOML
+        ".ini",
+        ".cfg",  # Config
+        ".md",
+        ".rst",
+        ".txt",  # Docs
+        ".sh",
+        ".bash",  # Scripts
+        ".csv",
+        ".tsv",  # Data
+        ".pkl",
+        ".pickle",  # Pickled data
+        ".pt",
+        ".pth",
+        ".onnx",
+        ".h5",  # Models
+        ".npy",
+        ".npz",  # NumPy
+        ".parquet",  # Columnar
+        ".sql",  # SQL
+        ".dockerfile",  # Docker
+        ".gitignore",
+        ".env.example",  # Git/Config
+    }
+)
 
 # Prohibited path patterns
 PROHIBITED_PATTERNS: Final[List[re.Pattern]] = [
-    re.compile(r'\.\.'),  # Path traversal
-    re.compile(r'^/'),  # Absolute path
+    re.compile(r"\.\."),  # Path traversal
+    re.compile(r"^/"),  # Absolute path
     re.compile(r'[<>:"|?*\x00-\x1f]'),  # Invalid characters
-    re.compile(r'(^|/)\.git(/|$)'),  # Git internals
-    re.compile(r'(^|/)__pycache__(/|$)'),  # Python cache
-    re.compile(r'(^|/)node_modules(/|$)'),  # Node modules
+    re.compile(r"(^|/)\.git(/|$)"),  # Git internals
+    re.compile(r"(^|/)__pycache__(/|$)"),  # Python cache
+    re.compile(r"(^|/)node_modules(/|$)"),  # Node modules
 ]
 
 
@@ -90,6 +106,7 @@ PROHIBITED_PATTERNS: Final[List[re.Pattern]] = [
 
 class FileType(str, Enum):
     """File type."""
+
     FILE = "file"
     DIRECTORY = "directory"
     SYMLINK = "symlink"
@@ -97,6 +114,7 @@ class FileType(str, Enum):
 
 class FilePermission(Flag):
     """File permissions (Unix-like)."""
+
     NONE = 0
     READ = auto()
     WRITE = auto()
@@ -117,6 +135,7 @@ class StrategyFile:
 
     Provides file metadata and content access.
     """
+
     path: str
     file_type: FileType = FileType.FILE
     size_bytes: int = 0
@@ -200,6 +219,7 @@ class StrategyFile:
 @dataclass
 class DirectoryListing:
     """Directory listing result."""
+
     path: str
     files: List[StrategyFile]
     total_size: int = 0
@@ -210,6 +230,7 @@ class DirectoryListing:
 @dataclass
 class StorageQuota:
     """Storage quota for workspace."""
+
     max_storage_bytes: int = MAX_WORKSPACE_STORAGE
     max_file_size_bytes: int = MAX_FILE_SIZE
     max_files: int = 10000
@@ -558,7 +579,7 @@ class VirtualFileSystem:
                 if path:
                     if not file_path.startswith(path + "/"):
                         continue
-                    relative = file_path[len(path) + 1:]
+                    relative = file_path[len(path) + 1 :]
                 else:
                     relative = file_path
 

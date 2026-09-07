@@ -30,19 +30,22 @@ from data_loader_multi_asset import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_equity_df():
     """Create sample equity DataFrame."""
     timestamps = pd.date_range("2024-01-01", periods=100, freq="4h")
-    return pd.DataFrame({
-        "timestamp": [int(ts.timestamp()) for ts in timestamps],
-        "symbol": "AAPL",
-        "open": np.random.uniform(150, 160, 100),
-        "high": np.random.uniform(160, 170, 100),
-        "low": np.random.uniform(140, 150, 100),
-        "close": np.random.uniform(150, 160, 100),
-        "volume": np.random.uniform(1000000, 5000000, 100),
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": [int(ts.timestamp()) for ts in timestamps],
+            "symbol": "AAPL",
+            "open": np.random.uniform(150, 160, 100),
+            "high": np.random.uniform(160, 170, 100),
+            "low": np.random.uniform(140, 150, 100),
+            "close": np.random.uniform(150, 160, 100),
+            "volume": np.random.uniform(1000000, 5000000, 100),
+        }
+    )
 
 
 @pytest.fixture
@@ -57,12 +60,13 @@ def sample_parquet_file(sample_equity_df, tmp_path):
 # Test load_multi_asset_data with corporate actions
 # =============================================================================
 
+
 class TestLoadMultiAssetDataCorporateActions:
     """Tests for load_multi_asset_data corporate actions integration."""
 
     def test_equity_loads_with_corporate_actions_default(self, sample_parquet_file):
         """Test that equity data loads with corporate actions by default."""
-        with patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust:
             mock_adjust.side_effect = lambda df, symbol: df  # Pass through
 
             all_dfs, _ = load_multi_asset_data(
@@ -76,7 +80,7 @@ class TestLoadMultiAssetDataCorporateActions:
 
     def test_equity_skips_corporate_actions_when_disabled(self, sample_parquet_file):
         """Test that corporate actions can be disabled."""
-        with patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust:
             all_dfs, _ = load_multi_asset_data(
                 paths=[sample_parquet_file],
                 asset_class=AssetClass.EQUITY,
@@ -89,7 +93,7 @@ class TestLoadMultiAssetDataCorporateActions:
 
     def test_crypto_skips_corporate_actions(self, sample_parquet_file):
         """Test that crypto data never applies corporate actions."""
-        with patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust:
             # Even with adjust_corporate_actions=True, crypto should skip it
             all_dfs, _ = load_multi_asset_data(
                 paths=[sample_parquet_file],
@@ -102,8 +106,10 @@ class TestLoadMultiAssetDataCorporateActions:
 
     def test_add_corp_features_when_enabled(self, sample_parquet_file):
         """Test that corporate action features are added when enabled."""
-        with patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust, \
-             patch('data_loader_multi_asset.add_corporate_action_features') as mock_features:
+        with (
+            patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust,
+            patch("data_loader_multi_asset.add_corporate_action_features") as mock_features,
+        ):
             mock_adjust.side_effect = lambda df, symbol: df
             mock_features.side_effect = lambda df, symbol: df
 
@@ -121,12 +127,13 @@ class TestLoadMultiAssetDataCorporateActions:
 # Test load_stock_data convenience function
 # =============================================================================
 
+
 class TestLoadStockDataCorporateActions:
     """Tests for load_stock_data corporate actions integration."""
 
     def test_passes_corporate_actions_param(self, sample_parquet_file):
         """Test that corporate actions params are passed through."""
-        with patch('data_loader_multi_asset.load_multi_asset_data') as mock_load:
+        with patch("data_loader_multi_asset.load_multi_asset_data") as mock_load:
             mock_load.return_value = ({}, {})
 
             load_stock_data(
@@ -142,7 +149,7 @@ class TestLoadStockDataCorporateActions:
 
     def test_defaults_to_adjust_true(self, sample_parquet_file):
         """Test that adjust_corporate_actions defaults to True."""
-        with patch('data_loader_multi_asset.load_multi_asset_data') as mock_load:
+        with patch("data_loader_multi_asset.load_multi_asset_data") as mock_load:
             mock_load.return_value = ({}, {})
 
             load_stock_data(paths=[sample_parquet_file])
@@ -154,6 +161,7 @@ class TestLoadStockDataCorporateActions:
 # =============================================================================
 # Test load_from_adapter with corporate actions
 # =============================================================================
+
 
 class TestLoadFromAdapterCorporateActions:
     """Tests for load_from_adapter corporate actions integration."""
@@ -171,8 +179,10 @@ class TestLoadFromAdapterCorporateActions:
         mock_bar.trades = 10000
         mock_bar.vwap = 152.0
 
-        with patch('adapters.registry.create_market_data_adapter') as mock_create, \
-             patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with (
+            patch("adapters.registry.create_market_data_adapter") as mock_create,
+            patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust,
+        ):
             mock_adapter = MagicMock()
             mock_adapter.get_bars.return_value = [mock_bar]
             mock_create.return_value = mock_adapter
@@ -200,8 +210,10 @@ class TestLoadFromAdapterCorporateActions:
         mock_bar.trades = 50000
         mock_bar.vwap = 42200.0
 
-        with patch('adapters.registry.create_market_data_adapter') as mock_create, \
-             patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with (
+            patch("adapters.registry.create_market_data_adapter") as mock_create,
+            patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust,
+        ):
             mock_adapter = MagicMock()
             mock_adapter.get_bars.return_value = [mock_bar]
             mock_create.return_value = mock_adapter
@@ -219,12 +231,13 @@ class TestLoadFromAdapterCorporateActions:
 # Test load_alpaca_data and load_polygon_data
 # =============================================================================
 
+
 class TestAlpacaPolygonCorporateActions:
     """Tests for Alpaca and Polygon convenience functions."""
 
     def test_load_alpaca_data_passes_params(self):
         """Test that load_alpaca_data passes corporate actions params."""
-        with patch('data_loader_multi_asset.load_from_adapter') as mock_load:
+        with patch("data_loader_multi_asset.load_from_adapter") as mock_load:
             mock_load.return_value = ({}, {})
 
             load_alpaca_data(
@@ -239,7 +252,7 @@ class TestAlpacaPolygonCorporateActions:
 
     def test_load_polygon_data_passes_params(self):
         """Test that load_polygon_data passes corporate actions params."""
-        with patch('data_loader_multi_asset.load_from_adapter') as mock_load:
+        with patch("data_loader_multi_asset.load_from_adapter") as mock_load:
             mock_load.return_value = ({}, {})
 
             load_polygon_data(
@@ -257,6 +270,7 @@ class TestAlpacaPolygonCorporateActions:
 # Integration test with actual CorporateActionsService
 # =============================================================================
 
+
 class TestCorporateActionsServiceIntegration:
     """Integration tests with actual CorporateActionsService."""
 
@@ -265,7 +279,7 @@ class TestCorporateActionsServiceIntegration:
         from data_loader_multi_asset import apply_split_adjustment
 
         # Mock the service to avoid external API calls
-        with patch('services.corporate_actions.get_service') as mock_get_service:
+        with patch("services.corporate_actions.get_service") as mock_get_service:
             mock_service = MagicMock()
             mock_service.adjust_prices.return_value = sample_equity_df.copy()
             mock_get_service.return_value = mock_service
@@ -281,7 +295,7 @@ class TestCorporateActionsServiceIntegration:
         from data_loader_multi_asset import add_corporate_action_features
 
         # Mock the service
-        with patch('services.corporate_actions.get_service') as mock_get_service:
+        with patch("services.corporate_actions.get_service") as mock_get_service:
             mock_service = MagicMock()
             mock_service.compute_gap_features.return_value = sample_equity_df.copy()
             mock_service.get_dividends.return_value = []
@@ -298,12 +312,13 @@ class TestCorporateActionsServiceIntegration:
 # Test backward compatibility
 # =============================================================================
 
+
 class TestBackwardCompatibility:
     """Test that existing code continues to work."""
 
     def test_load_multi_asset_data_default_params(self, sample_parquet_file):
         """Test that default params maintain backward compatibility."""
-        with patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust:
             mock_adjust.side_effect = lambda df, symbol: df
 
             # Call without new params - should still work
@@ -319,20 +334,22 @@ class TestBackwardCompatibility:
         """Test that crypto loading is unchanged."""
         # Create crypto-like data
         timestamps = pd.date_range("2024-01-01", periods=100, freq="4h")
-        crypto_df = pd.DataFrame({
-            "timestamp": [int(ts.timestamp()) for ts in timestamps],
-            "symbol": "BTCUSDT",
-            "open": np.random.uniform(40000, 45000, 100),
-            "high": np.random.uniform(45000, 50000, 100),
-            "low": np.random.uniform(35000, 40000, 100),
-            "close": np.random.uniform(40000, 45000, 100),
-            "volume": np.random.uniform(100, 500, 100),
-        })
+        crypto_df = pd.DataFrame(
+            {
+                "timestamp": [int(ts.timestamp()) for ts in timestamps],
+                "symbol": "BTCUSDT",
+                "open": np.random.uniform(40000, 45000, 100),
+                "high": np.random.uniform(45000, 50000, 100),
+                "low": np.random.uniform(35000, 40000, 100),
+                "close": np.random.uniform(40000, 45000, 100),
+                "volume": np.random.uniform(100, 500, 100),
+            }
+        )
 
         file_path = tmp_path / "BTCUSDT.parquet"
         crypto_df.to_parquet(file_path)
 
-        with patch('data_loader_multi_asset.apply_split_adjustment') as mock_adjust:
+        with patch("data_loader_multi_asset.apply_split_adjustment") as mock_adjust:
             all_dfs, _ = load_multi_asset_data(
                 paths=[str(file_path)],
                 asset_class=AssetClass.CRYPTO,

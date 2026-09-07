@@ -235,7 +235,9 @@ class AlgorithmRecord:
             "compliance_reviewer": self.compliance_reviewer,
             "status": self.status.value,
             "deployment_date": self.deployment_date.isoformat() if self.deployment_date else None,
-            "last_modification": self.last_modification.isoformat() if self.last_modification else None,
+            "last_modification": (
+                self.last_modification.isoformat() if self.last_modification else None
+            ),
             "retirement_date": self.retirement_date.isoformat() if self.retirement_date else None,
             "asset_classes": self.asset_classes,
             "instruments": self.instruments,
@@ -245,7 +247,9 @@ class AlgorithmRecord:
             "max_order_size": self.max_order_size,
             "max_position_size": self.max_position_size,
             "max_daily_turnover": self.max_daily_turnover,
-            "last_conformance_test": self.last_conformance_test.isoformat() if self.last_conformance_test else None,
+            "last_conformance_test": (
+                self.last_conformance_test.isoformat() if self.last_conformance_test else None
+            ),
             "conformance_test_passed": self.conformance_test_passed,
             "test_environment": self.test_environment,
             "test_report_path": self.test_report_path,
@@ -280,10 +284,7 @@ class AlgorithmRecord:
         except ValueError:
             status = AlgorithmStatus.DEVELOPMENT
 
-        risk_controls = [
-            AlgorithmRiskControl.from_dict(rc)
-            for rc in data.get("risk_controls", [])
-        ]
+        risk_controls = [AlgorithmRiskControl.from_dict(rc) for rc in data.get("risk_controls", [])]
 
         return cls(
             algorithm_id=data.get("algorithm_id", str(uuid.uuid4())),
@@ -337,12 +338,18 @@ class AlgorithmRecord:
             "responsible_person": self.responsible_person,
             "contact_email": self.responsible_email,
             "contact_phone": self.responsible_phone,
-            "deployment_date": self.deployment_date.date().isoformat() if self.deployment_date else None,
+            "deployment_date": (
+                self.deployment_date.date().isoformat() if self.deployment_date else None
+            ),
             "status": self.status.value,
             "asset_classes": self.asset_classes,
             "trading_venues": self.venues,
             "risk_controls_count": len(self.risk_controls),
-            "last_conformance_test": self.last_conformance_test.date().isoformat() if self.last_conformance_test else None,
+            "last_conformance_test": (
+                self.last_conformance_test.date().isoformat()
+                if self.last_conformance_test
+                else None
+            ),
             "conformance_passed": self.conformance_test_passed,
         }
 
@@ -648,7 +655,8 @@ class AlgorithmRegistry:
             all_algos = list(self._algorithms.values())
             active = [a for a in all_algos if a.is_active()]
             retired_this_year = [
-                a for a in all_algos
+                a
+                for a in all_algos
                 if a.retirement_date and a.retirement_date.year == datetime.utcnow().year
             ]
 
@@ -680,8 +688,8 @@ class AlgorithmRegistry:
             "compliance_status": {
                 "risk_controls_adequate": len(with_risk_controls) == len(active),
                 "testing_current": all(
-                    a.last_conformance_test and
-                    (datetime.utcnow() - a.last_conformance_test).days < 365
+                    a.last_conformance_test
+                    and (datetime.utcnow() - a.last_conformance_test).days < 365
                     for a in active
                 ),
                 "documentation_complete": len(with_responsible_person) == len(active),

@@ -287,10 +287,7 @@ class TestAlertManager:
         rule = AlertRule(name="Original", workspace_id=workspace_id)
         created = await manager.create_rule(rule)
 
-        updated = await manager.update_rule(
-            created.rule_id,
-            {"name": "Updated", "enabled": False}
-        )
+        updated = await manager.update_rule(created.rule_id, {"name": "Updated", "enabled": False})
 
         assert updated is not None
         assert updated.name == "Updated"

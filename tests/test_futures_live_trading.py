@@ -85,6 +85,7 @@ from services.futures_margin_monitor import (
 # FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def mock_market_data():
     """Create mock market data provider."""
@@ -182,6 +183,7 @@ def mock_margin_provider():
 # TESTS: FuturesLiveRunnerConfig
 # ============================================================================
 
+
 class TestFuturesLiveRunnerConfig:
     """Tests for FuturesLiveRunnerConfig."""
 
@@ -240,6 +242,7 @@ class TestFuturesLiveRunnerConfig:
 # TESTS: FuturesLiveRunner Lifecycle
 # ============================================================================
 
+
 class TestFuturesLiveRunnerLifecycle:
     """Tests for FuturesLiveRunner lifecycle management."""
 
@@ -254,7 +257,9 @@ class TestFuturesLiveRunnerLifecycle:
         assert runner.state == LiveRunnerState.INITIALIZING
         assert runner.is_running is False
 
-    def test_start_transitions_to_running(self, runner_config, mock_market_data, mock_order_executor):
+    def test_start_transitions_to_running(
+        self, runner_config, mock_market_data, mock_order_executor
+    ):
         """Test start transitions through states to RUNNING."""
         runner = FuturesLiveRunner(
             config=runner_config,
@@ -269,7 +274,9 @@ class TestFuturesLiveRunnerLifecycle:
 
         runner.stop()
 
-    def test_stop_transitions_to_stopped(self, runner_config, mock_market_data, mock_order_executor):
+    def test_stop_transitions_to_stopped(
+        self, runner_config, mock_market_data, mock_order_executor
+    ):
         """Test stop transitions to STOPPED."""
         runner = FuturesLiveRunner(
             config=runner_config,
@@ -331,6 +338,7 @@ class TestFuturesLiveRunnerLifecycle:
 # TESTS: FuturesLiveRunner Position Management
 # ============================================================================
 
+
 class TestFuturesLiveRunnerPositions:
     """Tests for FuturesLiveRunner position management."""
 
@@ -345,7 +353,9 @@ class TestFuturesLiveRunnerPositions:
         positions = runner.get_positions()
         assert positions == {}
 
-    def test_get_position_by_symbol(self, runner_config, mock_market_data, mock_order_executor, sample_position):
+    def test_get_position_by_symbol(
+        self, runner_config, mock_market_data, mock_order_executor, sample_position
+    ):
         """Test get_position by symbol."""
         runner = FuturesLiveRunner(
             config=runner_config,
@@ -374,6 +384,7 @@ class TestFuturesLiveRunnerPositions:
 # ============================================================================
 # TESTS: FuturesLiveRunner Order Management
 # ============================================================================
+
 
 class TestFuturesLiveRunnerOrders:
     """Tests for FuturesLiveRunner order management."""
@@ -408,6 +419,7 @@ class TestFuturesLiveRunnerOrders:
 # ============================================================================
 # TESTS: FuturesLiveRunner Health
 # ============================================================================
+
 
 class TestFuturesLiveRunnerHealth:
     """Tests for FuturesLiveRunner health checks."""
@@ -481,6 +493,7 @@ class TestFuturesLiveRunnerHealth:
 # TESTS: FuturesLiveRunner Events
 # ============================================================================
 
+
 class TestFuturesLiveRunnerEvents:
     """Tests for FuturesLiveRunner event handling."""
 
@@ -502,7 +515,9 @@ class TestFuturesLiveRunnerEvents:
 
         runner.stop()
 
-    def test_event_emitted_on_state_change(self, runner_config, mock_market_data, mock_order_executor):
+    def test_event_emitted_on_state_change(
+        self, runner_config, mock_market_data, mock_order_executor
+    ):
         """Test that events are emitted on state changes."""
         events_received = []
 
@@ -526,6 +541,7 @@ class TestFuturesLiveRunnerEvents:
 # ============================================================================
 # TESTS: FuturesLiveRunner Statistics
 # ============================================================================
+
 
 class TestFuturesLiveRunnerStats:
     """Tests for FuturesLiveRunner statistics."""
@@ -563,6 +579,7 @@ class TestFuturesLiveRunnerStats:
 # ============================================================================
 # TESTS: FuturesPositionSynchronizer
 # ============================================================================
+
 
 class TestFuturesPositionSynchronizer:
     """Tests for FuturesPositionSynchronizer."""
@@ -691,6 +708,7 @@ class TestADLRiskLevel:
 # ============================================================================
 # TESTS: FuturesMarginMonitor
 # ============================================================================
+
 
 class TestMarginMonitorConfig:
     """Tests for MarginMonitorConfig."""
@@ -1136,9 +1154,7 @@ class TestFuturesMarginMonitor:
         monitor = FuturesMarginMonitor(config, mock_margin_provider)
         monitor.check_once()
 
-        suggestions = monitor.get_reduction_suggestions(
-            {"BTCUSDT": sample_position}
-        )
+        suggestions = monitor.get_reduction_suggestions({"BTCUSDT": sample_position})
 
         # Should have suggestions when margin is at risk
         assert len(suggestions) > 0
@@ -1160,6 +1176,7 @@ class TestFuturesMarginMonitor:
 # ============================================================================
 # TESTS: Factory Functions
 # ============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -1216,6 +1233,7 @@ class TestFactoryFunctions:
 # ============================================================================
 # TESTS: Integration Scenarios
 # ============================================================================
+
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows."""
@@ -1346,10 +1364,13 @@ class TestIntegrationScenarios:
 # TESTS: Error Handling
 # ============================================================================
 
+
 class TestErrorHandling:
     """Tests for error handling scenarios."""
 
-    def test_runner_handles_disconnection(self, runner_config, mock_market_data, mock_order_executor):
+    def test_runner_handles_disconnection(
+        self, runner_config, mock_market_data, mock_order_executor
+    ):
         """Test runner handles disconnection gracefully."""
         runner = FuturesLiveRunner(
             config=runner_config,
@@ -1415,10 +1436,13 @@ class TestErrorHandling:
 # TESTS: Thread Safety
 # ============================================================================
 
+
 class TestThreadSafety:
     """Tests for thread safety."""
 
-    def test_concurrent_position_access(self, runner_config, mock_market_data, mock_order_executor, sample_position):
+    def test_concurrent_position_access(
+        self, runner_config, mock_market_data, mock_order_executor, sample_position
+    ):
         """Test concurrent position access is thread-safe."""
         runner = FuturesLiveRunner(
             config=runner_config,

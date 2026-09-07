@@ -107,8 +107,8 @@ INSTITUTIONAL_SPREADS: Dict[str, float] = {
 # Positive = receive, Negative = pay
 DEFAULT_SWAP_RATES: Dict[str, Tuple[float, float]] = {
     # (long_swap, short_swap) in pips/day
-    "EUR_USD": (-0.5, 0.2),   # Pay to be long EUR (lower rates)
-    "USD_JPY": (0.3, -0.5),   # Receive to be long USD (higher rates)
+    "EUR_USD": (-0.5, 0.2),  # Pay to be long EUR (lower rates)
+    "USD_JPY": (0.3, -0.5),  # Receive to be long USD (higher rates)
     "GBP_USD": (-0.3, 0.1),
     "AUD_USD": (-0.2, 0.0),
     "USD_CHF": (0.1, -0.3),
@@ -272,11 +272,11 @@ class OandaFeeAdapter(FeeAdapter):
         if self._is_exotic(norm):
             return 40.0  # Default exotic spread
         elif self._is_cross(norm):
-            return 3.0   # Default cross spread
+            return 3.0  # Default cross spread
         elif self._is_minor(norm):
-            return 2.0   # Default minor spread
+            return 2.0  # Default minor spread
         else:
-            return 1.5   # Default major spread
+            return 1.5  # Default major spread
 
     def get_spread_cost(
         self,

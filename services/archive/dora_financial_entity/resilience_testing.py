@@ -54,39 +54,43 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class TestCategory(Enum):
     """Test categories per DORA Article 24(1)."""
+
     VULNERABILITY_ASSESSMENT = "vulnerability_assessment"  # Art. 24(1)(a)
-    OPEN_SOURCE_ANALYSIS = "open_source_analysis"          # Art. 24(1)(a)
-    NETWORK_SECURITY = "network_security"                  # Art. 24(1)(a)
-    GAP_ANALYSIS = "gap_analysis"                          # Art. 24(1)(a)
-    PHYSICAL_SECURITY = "physical_security"                # Art. 24(1)(a)
-    QUESTIONNAIRE = "questionnaire"                        # Art. 24(1)(a)
-    SOURCE_CODE_REVIEW = "source_code_review"              # Art. 24(1)(a)
-    SCENARIO_BASED = "scenario_based"                      # Art. 24(1)(a)
-    COMPATIBILITY = "compatibility"                         # Art. 24(1)(a)
-    PERFORMANCE = "performance"                            # Art. 24(1)(a)
-    END_TO_END = "end_to_end"                              # Art. 24(1)(a)
-    PENETRATION_TESTING = "penetration_testing"            # Art. 24(1)(a)
+    OPEN_SOURCE_ANALYSIS = "open_source_analysis"  # Art. 24(1)(a)
+    NETWORK_SECURITY = "network_security"  # Art. 24(1)(a)
+    GAP_ANALYSIS = "gap_analysis"  # Art. 24(1)(a)
+    PHYSICAL_SECURITY = "physical_security"  # Art. 24(1)(a)
+    QUESTIONNAIRE = "questionnaire"  # Art. 24(1)(a)
+    SOURCE_CODE_REVIEW = "source_code_review"  # Art. 24(1)(a)
+    SCENARIO_BASED = "scenario_based"  # Art. 24(1)(a)
+    COMPATIBILITY = "compatibility"  # Art. 24(1)(a)
+    PERFORMANCE = "performance"  # Art. 24(1)(a)
+    END_TO_END = "end_to_end"  # Art. 24(1)(a)
+    PENETRATION_TESTING = "penetration_testing"  # Art. 24(1)(a)
 
 
 class TestFrequency(Enum):
     """Test execution frequencies."""
-    CONTINUOUS = "continuous"      # Real-time/continuous monitoring
+
+    CONTINUOUS = "continuous"  # Real-time/continuous monitoring
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     QUARTERLY = "quarterly"
     SEMI_ANNUAL = "semi_annual"
     ANNUAL = "annual"
-    BIENNIAL = "biennial"          # Every 2 years
-    TRIENNIAL = "triennial"        # Every 3 years (TLPT minimum)
-    ON_CHANGE = "on_change"        # Triggered by system changes
-    AD_HOC = "ad_hoc"              # As needed
+    BIENNIAL = "biennial"  # Every 2 years
+    TRIENNIAL = "triennial"  # Every 3 years (TLPT minimum)
+    ON_CHANGE = "on_change"  # Triggered by system changes
+    AD_HOC = "ad_hoc"  # As needed
 
 
 class TestStatus(Enum):
     """Test execution status."""
+
     PLANNED = "planned"
     SCHEDULED = "scheduled"
     IN_PROGRESS = "in_progress"
@@ -98,6 +102,7 @@ class TestStatus(Enum):
 
 class TestResult(Enum):
     """Test result outcomes."""
+
     PASSED = "passed"
     PASSED_WITH_FINDINGS = "passed_with_findings"
     FAILED = "failed"
@@ -107,47 +112,53 @@ class TestResult(Enum):
 
 class FindingSeverity(Enum):
     """Severity levels for test findings."""
-    CRITICAL = "critical"    # Immediate action required
-    HIGH = "high"            # Action within 7 days
-    MEDIUM = "medium"        # Action within 30 days
-    LOW = "low"              # Action within 90 days
+
+    CRITICAL = "critical"  # Immediate action required
+    HIGH = "high"  # Action within 7 days
+    MEDIUM = "medium"  # Action within 30 days
+    LOW = "low"  # Action within 90 days
     INFORMATIONAL = "informational"  # No action required
 
 
 class FindingStatus(Enum):
     """Status of test findings."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
-    ACCEPTED = "accepted"       # Risk accepted
+    ACCEPTED = "accepted"  # Risk accepted
     FALSE_POSITIVE = "false_positive"
     DEFERRED = "deferred"
 
 
 class TesterType(Enum):
     """Type of testing party per Article 24(4)."""
-    INTERNAL = "internal"        # Internal resources
-    EXTERNAL = "external"        # External service providers
-    MIXED = "mixed"              # Combination
+
+    INTERNAL = "internal"  # Internal resources
+    EXTERNAL = "external"  # External service providers
+    MIXED = "mixed"  # Combination
 
 
 class SystemCriticality(Enum):
     """System criticality levels for testing prioritization."""
-    CRITICAL = "critical"        # Critical functions
-    HIGH = "high"                # Important functions
-    MEDIUM = "medium"            # Standard functions
-    LOW = "low"                  # Support functions
+
+    CRITICAL = "critical"  # Critical functions
+    HIGH = "high"  # Important functions
+    MEDIUM = "medium"  # Standard functions
+    LOW = "low"  # Support functions
 
 
 # =============================================================================
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class TestScope:
     """
     Test scope definition per Article 24(3).
     """
+
     scope_id: str = ""
     name: str = ""
     description: str = ""
@@ -191,6 +202,7 @@ class TestDefinition:
     """
     Test definition per Article 24(1).
     """
+
     test_id: str = ""
     name: str = ""
     description: str = ""
@@ -243,6 +255,7 @@ class TestExecution:
     """
     Test execution record per Article 24(5).
     """
+
     execution_id: str = ""
     test_id: str = ""
     scope_id: str = ""
@@ -305,7 +318,9 @@ class TestExecution:
 
     def __post_init__(self):
         if not self.execution_id:
-            self.execution_id = f"EXEC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.execution_id = (
+                f"EXEC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -315,6 +330,7 @@ class TestFinding:
     """
     Finding from a test execution per Article 24(5).
     """
+
     finding_id: str = ""
     execution_id: str = ""
 
@@ -335,7 +351,7 @@ class TestFinding:
 
     # Risk assessment
     likelihood: str = ""  # high, medium, low
-    impact: str = ""      # high, medium, low
+    impact: str = ""  # high, medium, low
     risk_rating: str = ""
     cvss_score: Optional[float] = None
     cve_ids: List[str] = field(default_factory=list)
@@ -377,6 +393,7 @@ class TestingProgramme:
     """
     Digital Operational Resilience Testing Programme per Article 24.
     """
+
     programme_id: str = ""
     name: str = ""
     description: str = ""
@@ -438,6 +455,7 @@ class TestingCycle:
     """
     Testing cycle (quarterly, annual) tracking.
     """
+
     cycle_id: str = ""
     programme_id: str = ""
     cycle_name: str = ""
@@ -482,15 +500,17 @@ class TestingCycle:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ResilienceTestingConfig:
     """Configuration for Resilience Testing Programme."""
+
     # Programme defaults
     default_review_frequency_days: int = 365
 
     # Test frequencies (days)
     vulnerability_scan_frequency_days: int = 90  # Quarterly
-    penetration_test_frequency_days: int = 365   # Annual
+    penetration_test_frequency_days: int = 365  # Annual
     source_code_review_on_release: bool = True
 
     # Findings SLA (days)
@@ -660,6 +680,7 @@ DEFAULT_TEST_DEFINITIONS = [
 # Main Class Implementation
 # =============================================================================
 
+
 class DORAResilienceTestingProgramme:
     """
     DORA Article 24 compliant Digital Operational Resilience Testing Programme.
@@ -781,7 +802,8 @@ class DORAResilienceTestingProgramme:
         """
         programme = TestingProgramme(
             name=name,
-            description=description or f"Digital Operational Resilience Testing Programme for {entity_name}",
+            description=description
+            or f"Digital Operational Resilience Testing Programme for {entity_name}",
             entity_name=entity_name,
             entity_type=entity_type,
             entity_size=entity_size,
@@ -813,17 +835,19 @@ class DORAResilienceTestingProgramme:
 
         # Calculate next review date
         programme.next_review_date = (
-            datetime.now(timezone.utc) +
-            timedelta(days=self.config.default_review_frequency_days)
+            datetime.now(timezone.utc) + timedelta(days=self.config.default_review_frequency_days)
         ).isoformat()
 
         self._programmes[programme.programme_id] = programme
 
-        self._log_event("programme_created", {
-            "programme_id": programme.programme_id,
-            "entity_name": entity_name,
-            "entity_type": entity_type,
-        })
+        self._log_event(
+            "programme_created",
+            {
+                "programme_id": programme.programme_id,
+                "entity_name": entity_name,
+                "entity_type": entity_type,
+            },
+        )
 
         logger.info(f"Testing programme created: {programme.programme_id}")
         return programme
@@ -905,11 +929,14 @@ class DORAResilienceTestingProgramme:
 
         self._scopes[scope.scope_id] = scope
 
-        self._log_event("scope_created", {
-            "scope_id": scope.scope_id,
-            "name": name,
-            "systems_count": len(scope.systems),
-        })
+        self._log_event(
+            "scope_created",
+            {
+                "scope_id": scope.scope_id,
+                "name": name,
+                "systems_count": len(scope.systems),
+            },
+        )
 
         return scope
 
@@ -990,11 +1017,14 @@ class DORAResilienceTestingProgramme:
 
         self._test_definitions[definition.test_id] = definition
 
-        self._log_event("test_definition_created", {
-            "test_id": definition.test_id,
-            "name": name,
-            "category": category.value,
-        })
+        self._log_event(
+            "test_definition_created",
+            {
+                "test_id": definition.test_id,
+                "name": name,
+                "category": category.value,
+            },
+        )
 
         return definition
 
@@ -1008,8 +1038,7 @@ class DORAResilienceTestingProgramme:
     ) -> List[TestDefinition]:
         """Get test definitions by category."""
         return [
-            t for t in self._test_definitions.values()
-            if t.category == category and t.is_active
+            t for t in self._test_definitions.values() if t.category == category and t.is_active
         ]
 
     def get_all_test_definitions(self) -> List[TestDefinition]:
@@ -1075,11 +1104,14 @@ class DORAResilienceTestingProgramme:
         # Update test definition last scheduled
         test_def.next_scheduled_date = scheduled_start
 
-        self._log_event("test_scheduled", {
-            "execution_id": execution.execution_id,
-            "test_id": test_id,
-            "scheduled_start": scheduled_start,
-        })
+        self._log_event(
+            "test_scheduled",
+            {
+                "execution_id": execution.execution_id,
+                "test_id": test_id,
+                "scheduled_start": scheduled_start,
+            },
+        )
 
         logger.info(f"Test scheduled: {execution.execution_id}")
         return execution
@@ -1114,10 +1146,13 @@ class DORAResilienceTestingProgramme:
         if testers:
             execution.testers = testers
 
-        self._log_event("test_started", {
-            "execution_id": execution_id,
-            "started_at": now,
-        })
+        self._log_event(
+            "test_started",
+            {
+                "execution_id": execution_id,
+                "started_at": now,
+            },
+        )
 
         return execution
 
@@ -1173,14 +1208,20 @@ class DORAResilienceTestingProgramme:
         # Update findings count
         findings = self.get_findings_for_execution(execution_id)
         execution.findings_count = len(findings)
-        execution.critical_findings = sum(1 for f in findings if f.severity == FindingSeverity.CRITICAL)
+        execution.critical_findings = sum(
+            1 for f in findings if f.severity == FindingSeverity.CRITICAL
+        )
         execution.high_findings = sum(1 for f in findings if f.severity == FindingSeverity.HIGH)
         execution.medium_findings = sum(1 for f in findings if f.severity == FindingSeverity.MEDIUM)
         execution.low_findings = sum(1 for f in findings if f.severity == FindingSeverity.LOW)
-        execution.informational_findings = sum(1 for f in findings if f.severity == FindingSeverity.INFORMATIONAL)
+        execution.informational_findings = sum(
+            1 for f in findings if f.severity == FindingSeverity.INFORMATIONAL
+        )
 
         # Check if remediation required
-        execution.remediation_required = execution.critical_findings > 0 or execution.high_findings > 0
+        execution.remediation_required = (
+            execution.critical_findings > 0 or execution.high_findings > 0
+        )
         if execution.remediation_required:
             # Set remediation deadline based on most severe finding
             if execution.critical_findings > 0:
@@ -1191,11 +1232,14 @@ class DORAResilienceTestingProgramme:
                 datetime.now(timezone.utc) + timedelta(days=deadline_days)
             ).isoformat()
 
-        self._log_event("test_completed", {
-            "execution_id": execution_id,
-            "result": result.value,
-            "findings_count": execution.findings_count,
-        })
+        self._log_event(
+            "test_completed",
+            {
+                "execution_id": execution_id,
+                "result": result.value,
+                "findings_count": execution.findings_count,
+            },
+        )
 
         logger.info(f"Test completed: {execution_id} - Result: {result.value}")
         return execution
@@ -1213,10 +1257,13 @@ class DORAResilienceTestingProgramme:
         execution.status = TestStatus.CANCELLED
         execution.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("test_cancelled", {
-            "execution_id": execution_id,
-            "reason": reason,
-        })
+        self._log_event(
+            "test_cancelled",
+            {
+                "execution_id": execution_id,
+                "reason": reason,
+            },
+        )
 
         return execution
 
@@ -1370,12 +1417,15 @@ class DORAResilienceTestingProgramme:
 
         self._findings[finding.finding_id] = finding
 
-        self._log_event("finding_recorded", {
-            "finding_id": finding.finding_id,
-            "execution_id": execution_id,
-            "severity": severity.value,
-            "title": title,
-        })
+        self._log_event(
+            "finding_recorded",
+            {
+                "finding_id": finding.finding_id,
+                "execution_id": execution_id,
+                "severity": severity.value,
+                "title": title,
+            },
+        )
 
         # Alert on critical findings
         if severity == FindingSeverity.CRITICAL and self.config.alert_on_critical_finding:
@@ -1413,11 +1463,14 @@ class DORAResilienceTestingProgramme:
         finding.status = status
         finding.updated_at = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("finding_status_updated", {
-            "finding_id": finding_id,
-            "status": status.value,
-            "updated_by": updated_by,
-        })
+        self._log_event(
+            "finding_status_updated",
+            {
+                "finding_id": finding_id,
+                "status": status.value,
+                "updated_by": updated_by,
+            },
+        )
 
         return finding
 
@@ -1447,11 +1500,14 @@ class DORAResilienceTestingProgramme:
             finding.verified_by = verified_by
             finding.verified_at = now
 
-        self._log_event("finding_resolved", {
-            "finding_id": finding_id,
-            "resolved_by": resolved_by,
-            "verified": verified,
-        })
+        self._log_event(
+            "finding_resolved",
+            {
+                "finding_id": finding_id,
+                "resolved_by": resolved_by,
+                "verified": verified,
+            },
+        )
 
         return finding
 
@@ -1469,7 +1525,8 @@ class DORAResilienceTestingProgramme:
     def get_open_findings(self) -> List[TestFinding]:
         """Get all open findings."""
         return [
-            f for f in self._findings.values()
+            f
+            for f in self._findings.values()
             if f.status in (FindingStatus.OPEN, FindingStatus.IN_PROGRESS)
         ]
 
@@ -1491,9 +1548,7 @@ class DORAResilienceTestingProgramme:
             if not finding.remediation_deadline:
                 continue
 
-            deadline = datetime.fromisoformat(
-                finding.remediation_deadline.replace("Z", "+00:00")
-            )
+            deadline = datetime.fromisoformat(finding.remediation_deadline.replace("Z", "+00:00"))
             if now > deadline:
                 overdue.append(finding)
 
@@ -1543,11 +1598,14 @@ class DORAResilienceTestingProgramme:
 
         self._cycles[cycle.cycle_id] = cycle
 
-        self._log_event("cycle_created", {
-            "cycle_id": cycle.cycle_id,
-            "programme_id": programme_id,
-            "cycle_type": cycle_type,
-        })
+        self._log_event(
+            "cycle_created",
+            {
+                "cycle_id": cycle.cycle_id,
+                "programme_id": programme_id,
+                "cycle_type": cycle_type,
+            },
+        )
 
         return cycle
 
@@ -1567,9 +1625,9 @@ class DORAResilienceTestingProgramme:
 
         # Count completed executions
         completed = [
-            e for e in self._executions.values()
-            if e.execution_id in cycle.planned_executions
-            and e.status == TestStatus.COMPLETED
+            e
+            for e in self._executions.values()
+            if e.execution_id in cycle.planned_executions and e.status == TestStatus.COMPLETED
         ]
 
         cycle.completed_count = len(completed)
@@ -1577,7 +1635,8 @@ class DORAResilienceTestingProgramme:
         if cycle.planned_count > 0:
             cycle.pass_rate = (
                 sum(1 for e in completed if e.result == TestResult.PASSED)
-                / cycle.planned_count * 100
+                / cycle.planned_count
+                * 100
             )
 
         # Update findings count
@@ -1587,13 +1646,9 @@ class DORAResilienceTestingProgramme:
 
         cycle.total_findings = len(findings)
         cycle.open_findings = sum(
-            1 for f in findings
-            if f.status in (FindingStatus.OPEN, FindingStatus.IN_PROGRESS)
+            1 for f in findings if f.status in (FindingStatus.OPEN, FindingStatus.IN_PROGRESS)
         )
-        cycle.resolved_findings = sum(
-            1 for f in findings
-            if f.status == FindingStatus.RESOLVED
-        )
+        cycle.resolved_findings = sum(1 for f in findings if f.status == FindingStatus.RESOLVED)
 
         # Update status
         if cycle.completed_count >= cycle.planned_count:
@@ -1671,7 +1726,9 @@ class DORAResilienceTestingProgramme:
             "article_reference": "Article 24",
             "assessment_date": datetime.now(timezone.utc).isoformat(),
             "overall_compliant": compliant_count == total_count,
-            "compliance_percentage": (compliant_count / total_count * 100) if total_count > 0 else 0,
+            "compliance_percentage": (
+                (compliant_count / total_count * 100) if total_count > 0 else 0
+            ),
             "category_status": category_status,
             "overdue_tests": len(self.get_overdue_tests()),
             "open_critical_findings": len(self.get_findings_by_severity(FindingSeverity.CRITICAL)),
@@ -1704,9 +1761,12 @@ class DORAResilienceTestingProgramme:
         end_date = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
 
         year_executions = [
-            e for e in self._executions.values()
-            if e.actual_start and
-            start_date <= datetime.fromisoformat(e.actual_start.replace("Z", "+00:00")) <= end_date
+            e
+            for e in self._executions.values()
+            if e.actual_start
+            and start_date
+            <= datetime.fromisoformat(e.actual_start.replace("Z", "+00:00"))
+            <= end_date
         ]
 
         # Aggregate findings
@@ -1724,7 +1784,9 @@ class DORAResilienceTestingProgramme:
             "high": sum(1 for f in year_findings if f.severity == FindingSeverity.HIGH),
             "medium": sum(1 for f in year_findings if f.severity == FindingSeverity.MEDIUM),
             "low": sum(1 for f in year_findings if f.severity == FindingSeverity.LOW),
-            "informational": sum(1 for f in year_findings if f.severity == FindingSeverity.INFORMATIONAL),
+            "informational": sum(
+                1 for f in year_findings if f.severity == FindingSeverity.INFORMATIONAL
+            ),
         }
 
         resolved_findings = sum(1 for f in year_findings if f.status == FindingStatus.RESOLVED)
@@ -1751,7 +1813,9 @@ class DORAResilienceTestingProgramme:
                 "pass_rate": (passed_tests / completed_tests * 100) if completed_tests > 0 else 0,
                 "total_findings": len(year_findings),
                 "findings_resolved": resolved_findings,
-                "resolution_rate": (resolved_findings / len(year_findings) * 100) if year_findings else 100,
+                "resolution_rate": (
+                    (resolved_findings / len(year_findings) * 100) if year_findings else 100
+                ),
             },
             "findings_by_severity": findings_by_severity,
             "tests_by_category": tests_by_category,
@@ -1792,9 +1856,7 @@ class DORAResilienceTestingProgramme:
         # Check for external testing
         external_tests = sum(1 for e in executions if e.tester_type == TesterType.EXTERNAL)
         if external_tests == 0:
-            recommendations.append(
-                "Include external independent testing per Article 24(4)"
-            )
+            recommendations.append("Include external independent testing per Article 24(4)")
 
         return recommendations
 
@@ -1816,8 +1878,7 @@ class DORAResilienceTestingProgramme:
                 raise ValueError(f"Execution {execution_id} not found")
             executions = [asdict(self._executions[execution_id])]
             findings = [
-                asdict(f) for f in self._findings.values()
-                if f.execution_id == execution_id
+                asdict(f) for f in self._findings.values() if f.execution_id == execution_id
             ]
         else:
             executions = [asdict(e) for e in self._executions.values()]
@@ -1861,16 +1922,18 @@ class DORAResilienceTestingProgramme:
 
         # Filter executions
         period_executions = [
-            e for e in self._executions.values()
-            if e.created_at and
-            start_dt <= datetime.fromisoformat(e.created_at.replace("Z", "+00:00")) <= end_dt
+            e
+            for e in self._executions.values()
+            if e.created_at
+            and start_dt <= datetime.fromisoformat(e.created_at.replace("Z", "+00:00")) <= end_dt
         ]
 
         # Filter findings
         period_findings = [
-            f for f in self._findings.values()
-            if f.created_at and
-            start_dt <= datetime.fromisoformat(f.created_at.replace("Z", "+00:00")) <= end_dt
+            f
+            for f in self._findings.values()
+            if f.created_at
+            and start_dt <= datetime.fromisoformat(f.created_at.replace("Z", "+00:00")) <= end_dt
         ]
 
         # Calculate statistics
@@ -1882,26 +1945,29 @@ class DORAResilienceTestingProgramme:
             "period_end": period_end,
             "total_executions": len(period_executions),
             "completed_executions": completed,
-            "completion_rate": (completed / len(period_executions) * 100) if period_executions else 0,
+            "completion_rate": (
+                (completed / len(period_executions) * 100) if period_executions else 0
+            ),
             "passed_tests": passed,
             "pass_rate": (passed / completed * 100) if completed > 0 else 0,
             "total_findings": len(period_findings),
             "findings_by_severity": {
-                "critical": sum(1 for f in period_findings if f.severity == FindingSeverity.CRITICAL),
+                "critical": sum(
+                    1 for f in period_findings if f.severity == FindingSeverity.CRITICAL
+                ),
                 "high": sum(1 for f in period_findings if f.severity == FindingSeverity.HIGH),
                 "medium": sum(1 for f in period_findings if f.severity == FindingSeverity.MEDIUM),
                 "low": sum(1 for f in period_findings if f.severity == FindingSeverity.LOW),
             },
-            "findings_resolved": sum(1 for f in period_findings if f.status == FindingStatus.RESOLVED),
+            "findings_resolved": sum(
+                1 for f in period_findings if f.status == FindingStatus.RESOLVED
+            ),
             "mean_time_to_resolve_days": self._calculate_mttr(period_findings),
         }
 
     def _calculate_mttr(self, findings: List[TestFinding]) -> float:
         """Calculate mean time to resolve findings."""
-        resolved = [
-            f for f in findings
-            if f.status == FindingStatus.RESOLVED and f.resolved_at
-        ]
+        resolved = [f for f in findings if f.status == FindingStatus.RESOLVED and f.resolved_at]
 
         if not resolved:
             return 0.0
@@ -1937,6 +2003,7 @@ class DORAResilienceTestingProgramme:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_resilience_testing_programme(
     config: Optional[ResilienceTestingConfig] = None,

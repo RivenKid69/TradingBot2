@@ -15,6 +15,7 @@ sys.modules["execution_sim"] = exec_mod
 spec_exec.loader.exec_module(exec_mod)
 ExecutionSimulator = exec_mod.ExecutionSimulator
 
+
 # Load latency implementation
 def _load_latency_impl():
     spec_lat = importlib.util.spec_from_file_location("impl_latency", BASE / "impl_latency.py")
@@ -22,6 +23,7 @@ def _load_latency_impl():
     sys.modules["impl_latency"] = lat_mod
     spec_lat.loader.exec_module(lat_mod)
     return lat_mod
+
 
 lat_mod = _load_latency_impl()
 LatencyCfg = lat_mod.LatencyCfg

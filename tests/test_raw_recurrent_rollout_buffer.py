@@ -29,12 +29,14 @@ from distributional_ppo import RawRecurrentRolloutBuffer, RNNStates
 
 class MockObservationSpace:
     """Mock observation space for testing."""
+
     def __init__(self, shape: Tuple[int, ...] = (4,)):
         self.shape = shape
 
 
 class MockActionSpace:
     """Mock action space for testing."""
+
     def __init__(self, shape: Tuple[int, ...] = (2,)):
         self.shape = shape
         self.n = 2  # Discrete action space size

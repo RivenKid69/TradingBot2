@@ -16,16 +16,18 @@ from no_trade import compute_no_trade_mask
 class TuneConfig:
     score_col: str = "score"
     # для классификации:
-    y_col: Optional[str] = None            # бинарная метка (0/1). Если задана — считаем precision/recall/F1.
+    y_col: Optional[str] = None  # бинарная метка (0/1). Если задана — считаем precision/recall/F1.
     # для регрессии:
-    ret_col: Optional[str] = None          # эффективный ретёрн (например, eff_ret_60). Если задан — считаем Sharpe/mean.
+    ret_col: Optional[str] = (
+        None  # эффективный ретёрн (например, eff_ret_60). Если задан — считаем Sharpe/mean.
+    )
     ts_col: str = "ts_ms"
     symbol_col: str = "symbol"
-    direction: str = "greater"             # "greater" → сигнал если score >= thr; "less" → если score <= thr
+    direction: str = "greater"  # "greater" → сигнал если score >= thr; "less" → если score <= thr
     # частотные ограничения:
-    target_signals_per_day: float = 1.5    # желаемые сигналы в день (суммарно по всем символам)
-    tolerance: float = 0.5                 # допустимое отклонение от целевого значения
-    min_signal_gap_s: int = 0              # кулдаун между сигналами в секундах (как в проде)
+    target_signals_per_day: float = 1.5  # желаемые сигналы в день (суммарно по всем символам)
+    tolerance: float = 0.5  # допустимое отклонение от целевого значения
+    min_signal_gap_s: int = 0  # кулдаун между сигналами в секундах (как в проде)
     # перебор порогов:
     min_thr: float = 0.50
     max_thr: float = 0.99
@@ -34,10 +36,11 @@ class TuneConfig:
     sandbox_yaml_for_no_trade: Optional[str] = None
     drop_no_trade: bool = True
     # выбор целевой метрики:
-    optimize_for: str = "sharpe"           # "sharpe" для регрессии; "precision" или "f1" для классификации
+    optimize_for: str = "sharpe"  # "sharpe" для регрессии; "precision" или "f1" для классификации
 
 
 # -------------------- helpers: YAML --------------------
+
 
 def load_min_signal_gap_s_from_yaml(yaml_path: str) -> int:
     try:
@@ -47,11 +50,12 @@ def load_min_signal_gap_s_from_yaml(yaml_path: str) -> int:
         return 0
 
 
-
-
 # -------------------- helpers: cooldown --------------------
 
-def enforce_cooldown(df: pd.DataFrame, *, ts_col: str, symbol_col: str, min_signal_gap_s: int) -> pd.DataFrame:
+
+def enforce_cooldown(
+    df: pd.DataFrame, *, ts_col: str, symbol_col: str, min_signal_gap_s: int
+) -> pd.DataFrame:
     """
     Оставляет сигналы с учётом кулдауна между ними по каждому символу.
     Вход df должен быть отсортирован по [symbol, ts_col].
@@ -76,6 +80,7 @@ def enforce_cooldown(df: pd.DataFrame, *, ts_col: str, symbol_col: str, min_sign
 
 
 # -------------------- helpers: metrics --------------------
+
 
 def _signals_per_day(df: pd.DataFrame, ts_col: str) -> float:
     if df.empty:
@@ -145,6 +150,7 @@ def _returns_metrics(df_sel: pd.DataFrame, ret_col: str) -> Dict[str, float]:
 
 # -------------------- core: tuning --------------------
 
+
 def tune_threshold(
     df: pd.DataFrame,
     cfg: TuneConfig,
@@ -169,7 +175,9 @@ def tune_threshold(
 
     # учёт no-trade
     if cfg.sandbox_yaml_for_no_trade and cfg.drop_no_trade:
-        mask_block = compute_no_trade_mask(d, ts_col=cfg.ts_col, sandbox_yaml_path=cfg.sandbox_yaml_for_no_trade)
+        mask_block = compute_no_trade_mask(
+            d, ts_col=cfg.ts_col, sandbox_yaml_path=cfg.sandbox_yaml_for_no_trade
+        )
         d = d.loc[~mask_block].reset_index(drop=True)
 
     # сетка порогов
@@ -191,7 +199,12 @@ def tune_threshold(
             sel = d[d[cfg.score_col] <= thr]
 
         # кулдаун
-        sel_cd = enforce_cooldown(sel, ts_col=cfg.ts_col, symbol_col=cfg.symbol_col, min_signal_gap_s=int(cfg.min_signal_gap_s))
+        sel_cd = enforce_cooldown(
+            sel,
+            ts_col=cfg.ts_col,
+            symbol_col=cfg.symbol_col,
+            min_signal_gap_s=int(cfg.min_signal_gap_s),
+        )
 
         spd = _signals_per_day(sel_cd, ts_col=cfg.ts_col)
 
@@ -206,11 +219,13 @@ def tune_threshold(
                 sel_cd = sel_cd.copy()
                 sel_cd["_total_positives"] = total_positives
             precision, recall, f1 = _classification_metrics(sel_cd, cfg.y_col)
-            row.update({
-                "precision": float(precision),
-                "recall": float(recall),
-                "f1": float(f1),
-            })
+            row.update(
+                {
+                    "precision": float(precision),
+                    "recall": float(recall),
+                    "f1": float(f1),
+                }
+            )
 
         if cfg.ret_col is not None and cfg.ret_col in d.columns:
             rmetrics = _returns_metrics(sel_cd, cfg.ret_col)
@@ -226,7 +241,11 @@ def tune_threshold(
     mask_freq = (res["signals_per_day"] >= lo) & (res["signals_per_day"] <= hi)
     candidate = res.loc[mask_freq].copy()
 
-    key_metric = "trade_sharpe" if cfg.optimize_for.lower() == "sharpe" else ("precision" if cfg.optimize_for.lower() == "precision" else "f1")
+    key_metric = (
+        "trade_sharpe"
+        if cfg.optimize_for.lower() == "sharpe"
+        else ("precision" if cfg.optimize_for.lower() == "precision" else "f1")
+    )
     if candidate.empty:
         # нет порога, удовлетворяющего частоте — возьмём близкий по частоте, а затем лучший по метрике
         res = res.copy()

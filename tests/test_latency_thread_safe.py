@@ -32,9 +32,11 @@ def test_seasonal_latency_thread_safe_concurrent():
     ts_low = int(base_dt.timestamp() * 1000 + hour_low * 3_600_000)
 
     orig_sample = model.sample
+
     def slow_sample():
         time.sleep(0.001)
         return orig_sample()
+
     model.sample = slow_sample
 
     high_results: list[int] = []

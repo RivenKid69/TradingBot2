@@ -92,14 +92,22 @@ def run_from_config(cfg: IngestConfig) -> None:
             cmd = [
                 sys.executable,
                 _script_path("ingest_klines.py"),
-                "--market", market,
-                "--symbols", sym,
-                "--interval", interval,
-                "--start", start,
-                "--end", end,
-                "--out-dir", klines_dir,
-                "--limit", str(api_limit),
-                "--sleep-ms", str(sleep_ms),
+                "--market",
+                market,
+                "--symbols",
+                sym,
+                "--interval",
+                interval,
+                "--start",
+                start,
+                "--end",
+                end,
+                "--out-dir",
+                klines_dir,
+                "--limit",
+                str(api_limit),
+                "--sleep-ms",
+                str(sleep_ms),
             ]
             _run(cmd)
 
@@ -116,9 +124,12 @@ def run_from_config(cfg: IngestConfig) -> None:
             cmd = [
                 sys.executable,
                 _script_path("agg_klines.py"),
-                "--in-path", in_path,
-                "--interval", target,
-                "--out-path", out_path,
+                "--in-path",
+                in_path,
+                "--interval",
+                target,
+                "--out-path",
+                out_path,
             ]
             _run(cmd)
 
@@ -129,13 +140,20 @@ def run_from_config(cfg: IngestConfig) -> None:
             cmd = [
                 sys.executable,
                 _script_path("ingest_funding_mark.py"),
-                "--symbol", sym,
-                "--start", start,
-                "--end", end,
-                "--mark-interval", mark_interval,
-                "--out-dir", futures_dir,
-                "--limit", str(api_limit),
-                "--sleep-ms", str(sleep_ms),
+                "--symbol",
+                sym,
+                "--start",
+                start,
+                "--end",
+                end,
+                "--mark-interval",
+                mark_interval,
+                "--out-dir",
+                futures_dir,
+                "--limit",
+                str(api_limit),
+                "--sleep-ms",
+                str(sleep_ms),
             ]
             _run(cmd)
 
@@ -151,10 +169,14 @@ def run_from_config(cfg: IngestConfig) -> None:
         cmd = [
             sys.executable,
             _script_path("make_prices_from_klines.py"),
-            "--in-klines", in_path,
-            "--symbol", sym,
-            "--price-col", "close",
-            "--out", prices_out,
+            "--in-klines",
+            in_path,
+            "--symbol",
+            sym,
+            "--price-col",
+            "close",
+            "--out",
+            prices_out,
         ]
         _run(cmd)
     else:
@@ -164,15 +186,23 @@ def run_from_config(cfg: IngestConfig) -> None:
             if not os.path.exists(in_path):
                 print(f"Предупреждение: нет {in_path}, пропускаю prices для {sym}")
                 continue
-            out_sym = f"{stem}_{sym}.parquet" if ext.lower() == ".parquet" else os.path.join(prices_out, f"prices_{sym}.parquet")
+            out_sym = (
+                f"{stem}_{sym}.parquet"
+                if ext.lower() == ".parquet"
+                else os.path.join(prices_out, f"prices_{sym}.parquet")
+            )
             _ensure_dir(out_sym)
             cmd = [
                 sys.executable,
                 _script_path("make_prices_from_klines.py"),
-                "--in-klines", in_path,
-                "--symbol", sym,
-                "--price-col", "close",
-                "--out", out_sym,
+                "--in-klines",
+                in_path,
+                "--symbol",
+                sym,
+                "--price-col",
+                "close",
+                "--out",
+                out_sym,
             ]
             _run(cmd)
 

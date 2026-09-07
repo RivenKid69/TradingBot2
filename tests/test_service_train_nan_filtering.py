@@ -128,8 +128,7 @@ def test_nan_targets_are_filtered():
         # 3. Правильное количество строк (10 исходных - 2 с NaN = 8)
         expected_samples = 8
         assert len(trainer.received_y) == expected_samples, (
-            f"Ожидалось {expected_samples} валидных строк, "
-            f"получено {len(trainer.received_y)}"
+            f"Ожидалось {expected_samples} валидных строк, " f"получено {len(trainer.received_y)}"
         )
 
         # 4. X и y имеют одинаковую длину
@@ -256,9 +255,9 @@ def test_multiple_symbols_nan_filtering():
 
         assert trainer.received_y is not None
         assert trainer.received_y.isna().sum() == 0, "Есть NaN в таргетах"
-        assert len(trainer.received_y) == expected_valid_rows, (
-            f"Ожидалось {expected_valid_rows} строк, получено {len(trainer.received_y)}"
-        )
+        assert (
+            len(trainer.received_y) == expected_valid_rows
+        ), f"Ожидалось {expected_valid_rows} строк, получено {len(trainer.received_y)}"
 
         print(
             f"✓ Тест пройден: {len(symbols)} символов, "
@@ -275,11 +274,13 @@ def test_edge_case_single_symbol_single_row():
 
     После shift(-1) будет NaN, и не останется данных для обучения.
     """
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT"],
-        "ts_ms": [0],
-        "close": [100.0],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT"],
+            "ts_ms": [0],
+            "close": [100.0],
+        }
+    )
 
     temp_dir = tempfile.mkdtemp()
 
@@ -319,11 +320,13 @@ def test_edge_case_all_nan_targets():
 
     Такое может случиться, если у каждого символа только одна строка.
     """
-    df = pd.DataFrame({
-        "symbol": ["BTCUSDT", "ETHUSDT", "BNBUSDT"],
-        "ts_ms": [0, 0, 0],
-        "close": [100.0, 200.0, 300.0],
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT", "ETHUSDT", "BNBUSDT"],
+            "ts_ms": [0, 0, 0],
+            "close": [100.0, 200.0, 300.0],
+        }
+    )
 
     temp_dir = tempfile.mkdtemp()
 

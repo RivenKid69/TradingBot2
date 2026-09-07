@@ -22,12 +22,14 @@ class TestComputeGapFeatures:
         """Test basic gap percentage calculation."""
         from features_pipeline import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 110.0, 105.0],
-            "high": [101.0, 112.0, 108.0],
-            "low": [99.0, 108.0, 103.0],
-            "close": [100.0, 111.0, 106.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 110.0, 105.0],
+                "high": [101.0, 112.0, 108.0],
+                "low": [99.0, 108.0, 103.0],
+                "close": [100.0, 111.0, 106.0],
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -42,12 +44,14 @@ class TestComputeGapFeatures:
         from features_pipeline import compute_gap_features
 
         # Create gaps of different sizes
-        df = pd.DataFrame({
-            "open": [100.0, 100.3, 102.5, 106.0, 115.0],
-            "high": [101.0, 101.0, 103.0, 107.0, 116.0],
-            "low": [99.0, 99.0, 101.0, 105.0, 114.0],
-            "close": [100.0, 100.0, 102.0, 106.0, 115.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 100.3, 102.5, 106.0, 115.0],
+                "high": [101.0, 101.0, 103.0, 107.0, 116.0],
+                "low": [99.0, 99.0, 101.0, 105.0, 114.0],
+                "close": [100.0, 100.0, 102.0, 106.0, 115.0],
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -59,12 +63,14 @@ class TestComputeGapFeatures:
         from features_pipeline import compute_gap_features
 
         # Gap up that gets filled
-        df_filled = pd.DataFrame({
-            "open": [100.0, 110.0],
-            "high": [101.0, 112.0],
-            "low": [99.0, 99.0],   # Low reaches below previous close → filled
-            "close": [100.0, 108.0],
-        })
+        df_filled = pd.DataFrame(
+            {
+                "open": [100.0, 110.0],
+                "high": [101.0, 112.0],
+                "low": [99.0, 99.0],  # Low reaches below previous close → filled
+                "close": [100.0, 108.0],
+            }
+        )
 
         result_filled = compute_gap_features(df_filled)
         assert "gap_filled" in result_filled.columns
@@ -73,12 +79,14 @@ class TestComputeGapFeatures:
         """Test gap fill ratio calculation."""
         from features_pipeline import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 110.0],
-            "high": [101.0, 112.0],
-            "low": [99.0, 105.0],
-            "close": [100.0, 108.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 110.0],
+                "high": [101.0, 112.0],
+                "low": [99.0, 105.0],
+                "close": [100.0, 108.0],
+            }
+        )
 
         result = compute_gap_features(df)
         assert "gap_fill_ratio" in result.columns
@@ -87,14 +95,16 @@ class TestComputeGapFeatures:
         """Test that original columns are preserved."""
         from features_pipeline import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 105.0],
-            "high": [101.0, 106.0],
-            "low": [99.0, 104.0],
-            "close": [100.0, 105.0],
-            "volume": [1000, 1100],
-            "custom": ["a", "b"],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0],
+                "high": [101.0, 106.0],
+                "low": [99.0, 104.0],
+                "close": [100.0, 105.0],
+                "volume": [1000, 1100],
+                "custom": ["a", "b"],
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -118,14 +128,16 @@ class TestGapFeatureNormalization:
         lows = np.minimum(opens, closes) - np.abs(np.random.randn(n)) * 0.2
 
         # Add some gaps
-        opens[1:] = closes[:-1] * (1 + np.random.randn(n-1) * 0.01)
+        opens[1:] = closes[:-1] * (1 + np.random.randn(n - 1) * 0.01)
 
-        df = pd.DataFrame({
-            "open": opens,
-            "high": highs,
-            "low": lows,
-            "close": closes,
-        })
+        df = pd.DataFrame(
+            {
+                "open": opens,
+                "high": highs,
+                "low": lows,
+                "close": closes,
+            }
+        )
 
         result = compute_gap_features(df)
 
@@ -156,12 +168,14 @@ class TestBackwardCompatibility:
         """Test that original columns are not modified."""
         from features_pipeline import compute_gap_features
 
-        df = pd.DataFrame({
-            "open": [100.0, 105.0],
-            "high": [101.0, 106.0],
-            "low": [99.0, 104.0],
-            "close": [100.0, 105.0],
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0],
+                "high": [101.0, 106.0],
+                "low": [99.0, 104.0],
+                "close": [100.0, 105.0],
+            }
+        )
 
         original_close = df["close"].copy()
 
@@ -174,12 +188,15 @@ class TestBackwardCompatibility:
         from features_pipeline import compute_gap_features
 
         dates = pd.to_datetime(["2024-01-01", "2024-01-02"])
-        df = pd.DataFrame({
-            "open": [100.0, 105.0],
-            "high": [101.0, 106.0],
-            "low": [99.0, 104.0],
-            "close": [100.0, 105.0],
-        }, index=dates)
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 105.0],
+                "high": [101.0, 106.0],
+                "low": [99.0, 104.0],
+                "close": [100.0, 105.0],
+            },
+            index=dates,
+        )
 
         result = compute_gap_features(df)
 

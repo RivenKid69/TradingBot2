@@ -58,6 +58,7 @@ MS_PER_DAY = 86_400_000  # Milliseconds per day
 
 class PDTStatus(str, Enum):
     """PDT account status."""
+
     EXEMPT = "EXEMPT"  # Account >= $25k, no restrictions
     COMPLIANT = "COMPLIANT"  # Under $25k but within day trade limit
     WARNING = "WARNING"  # 2/3 day trades used, near limit
@@ -67,6 +68,7 @@ class PDTStatus(str, Enum):
 
 class DayTradeType(str, Enum):
     """Type of day trade."""
+
     LONG_ROUND_TRIP = "LONG_ROUND_TRIP"  # Buy then sell same day
     SHORT_ROUND_TRIP = "SHORT_ROUND_TRIP"  # Short then cover same day
 
@@ -75,9 +77,11 @@ class DayTradeType(str, Enum):
 # Data Classes
 # =========================
 
+
 @dataclass
 class DayTrade:
     """Record of a completed day trade."""
+
     symbol: str
     timestamp_ms: int
     trade_type: DayTradeType
@@ -97,6 +101,7 @@ class DayTrade:
 @dataclass
 class OpenPosition:
     """Track an open intraday position."""
+
     symbol: str
     side: str  # "LONG" or "SHORT"
     open_timestamp_ms: int
@@ -108,6 +113,7 @@ class OpenPosition:
 @dataclass
 class PDTTrackerConfig:
     """Configuration for PDT tracker."""
+
     # Account settings
     initial_equity: float = 30_000.0  # Starting equity
     pdt_threshold: float = PDT_EQUITY_THRESHOLD  # Threshold for PDT exemption
@@ -139,33 +145,34 @@ class PDTTrackerConfig:
 # US Stock Market Holidays 2024-2025
 US_MARKET_HOLIDAYS_2024_2025 = [
     # 2024
-    (2024, 1, 1),   # New Year's Day
+    (2024, 1, 1),  # New Year's Day
     (2024, 1, 15),  # MLK Day
     (2024, 2, 19),  # Presidents Day
     (2024, 3, 29),  # Good Friday
     (2024, 5, 27),  # Memorial Day
     (2024, 6, 19),  # Juneteenth
-    (2024, 7, 4),   # Independence Day
-    (2024, 9, 2),   # Labor Day
-    (2024, 11, 28), # Thanksgiving
-    (2024, 12, 25), # Christmas
+    (2024, 7, 4),  # Independence Day
+    (2024, 9, 2),  # Labor Day
+    (2024, 11, 28),  # Thanksgiving
+    (2024, 12, 25),  # Christmas
     # 2025
-    (2025, 1, 1),   # New Year's Day
+    (2025, 1, 1),  # New Year's Day
     (2025, 1, 20),  # MLK Day
     (2025, 2, 17),  # Presidents Day
     (2025, 4, 18),  # Good Friday
     (2025, 5, 26),  # Memorial Day
     (2025, 6, 19),  # Juneteenth
-    (2025, 7, 4),   # Independence Day
-    (2025, 9, 1),   # Labor Day
-    (2025, 11, 27), # Thanksgiving
-    (2025, 12, 25), # Christmas
+    (2025, 7, 4),  # Independence Day
+    (2025, 9, 1),  # Labor Day
+    (2025, 11, 27),  # Thanksgiving
+    (2025, 12, 25),  # Christmas
 ]
 
 
 # =========================
 # PDT Tracker Implementation
 # =========================
+
 
 class PDTTracker:
     """
@@ -316,10 +323,7 @@ class PDTTracker:
         """Get the start of the rolling day trade window."""
         # Rolling window is N business days ending today (inclusive)
         # So we go back (N-1) business days
-        return self._count_business_days_back(
-            current_date,
-            self._config.rolling_days - 1
-        )
+        return self._count_business_days_back(current_date, self._config.rolling_days - 1)
 
     # =========================
     # Day Trade Tracking
@@ -345,10 +349,7 @@ class PDTTracker:
         window_start = self._get_rolling_window_start(current_date)
         window_start_ms = int(window_start.timestamp() * 1000)
 
-        return [
-            trade for trade in self._day_trades
-            if trade.timestamp_ms >= window_start_ms
-        ]
+        return [trade for trade in self._day_trades if trade.timestamp_ms >= window_start_ms]
 
     def get_day_trade_count(
         self,
@@ -414,11 +415,17 @@ class PDTTracker:
 
         # Check if exempt
         if self.is_exempt:
-            return True, f"Account exempt (equity ${self._account_equity:,.2f} >= ${self._config.pdt_threshold:,.2f})"
+            return (
+                True,
+                f"Account exempt (equity ${self._account_equity:,.2f} >= ${self._config.pdt_threshold:,.2f})",
+            )
 
         # Check if flagged
         if self._is_pdt_flagged:
-            return False, "Account is flagged as Pattern Day Trader - requires $25,000 minimum equity"
+            return (
+                False,
+                "Account is flagged as Pattern Day Trader - requires $25,000 minimum equity",
+            )
 
         # Count day trades in window
         day_trade_count = self.get_day_trade_count(timestamp_ms)
@@ -426,13 +433,22 @@ class PDTTracker:
 
         if remaining <= 0:
             self._blocked_trades += 1
-            return False, f"PDT limit reached: {day_trade_count}/{self._config.max_day_trades} day trades in rolling {self._config.rolling_days} business days"
+            return (
+                False,
+                f"PDT limit reached: {day_trade_count}/{self._config.max_day_trades} day trades in rolling {self._config.rolling_days} business days",
+            )
 
         # Allow but warn if close to limit
         if remaining == 1:
-            return True, f"WARNING: Last day trade available ({day_trade_count}/{self._config.max_day_trades})"
+            return (
+                True,
+                f"WARNING: Last day trade available ({day_trade_count}/{self._config.max_day_trades})",
+            )
 
-        return True, f"{remaining} day trades remaining ({day_trade_count}/{self._config.max_day_trades} used)"
+        return (
+            True,
+            f"{remaining} day trades remaining ({day_trade_count}/{self._config.max_day_trades} used)",
+        )
 
     def would_trigger_pdt(
         self,
@@ -493,10 +509,7 @@ class PDTTracker:
         )
         self._open_positions[symbol.upper()].append(position)
 
-        logger.debug(
-            f"PDT: Recorded open position: {symbol} {side} "
-            f"{quantity} @ ${price:.2f}"
-        )
+        logger.debug(f"PDT: Recorded open position: {symbol} {side} " f"{quantity} @ ${price:.2f}")
 
     def record_close(
         self,
@@ -759,10 +772,7 @@ class PDTTracker:
             Number of trades removed
         """
         original_count = len(self._day_trades)
-        self._day_trades = [
-            t for t in self._day_trades
-            if t.timestamp_ms >= before_timestamp_ms
-        ]
+        self._day_trades = [t for t in self._day_trades if t.timestamp_ms >= before_timestamp_ms]
         removed = original_count - len(self._day_trades)
 
         if removed > 0:
@@ -829,6 +839,7 @@ class PDTTracker:
 # =========================
 # Factory Function
 # =========================
+
 
 def create_pdt_tracker(
     account_equity: float = 30_000.0,

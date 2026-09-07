@@ -381,10 +381,13 @@ class TestLoadOperations:
         """Test that load_all_pending skips corrupted files."""
         # Save valid request
         valid_id = uuid4()
-        persistence.save_pending(valid_id, {
-            "request_id": str(valid_id),
-            "status": "pending",
-        })
+        persistence.save_pending(
+            valid_id,
+            {
+                "request_id": str(valid_id),
+                "status": "pending",
+            },
+        )
 
         # Create corrupted file
         corrupted_path = persistence._config.storage_dir / "pending" / "corrupted.json"
@@ -435,18 +438,24 @@ class TestLoadOperations:
         # Save old record
         old_id = uuid4()
         old_time = datetime.utcnow() - timedelta(days=2)
-        persistence.save_history(old_id, {
-            "request_id": str(old_id),
-            "decided_at": old_time.isoformat(),
-        })
+        persistence.save_history(
+            old_id,
+            {
+                "request_id": str(old_id),
+                "decided_at": old_time.isoformat(),
+            },
+        )
 
         # Save recent record
         new_id = uuid4()
         new_time = datetime.utcnow()
-        persistence.save_history(new_id, {
-            "request_id": str(new_id),
-            "decided_at": new_time.isoformat(),
-        })
+        persistence.save_history(
+            new_id,
+            {
+                "request_id": str(new_id),
+                "decided_at": new_time.isoformat(),
+            },
+        )
 
         # Filter for last day
         since = datetime.utcnow() - timedelta(days=1)
@@ -473,10 +482,13 @@ class TestDeleteOperations:
     def test_delete_pending_success(self, persistence):
         """Test successful deletion of pending request."""
         request_id = uuid4()
-        persistence.save_pending(request_id, {
-            "request_id": str(request_id),
-            "status": "pending",
-        })
+        persistence.save_pending(
+            request_id,
+            {
+                "request_id": str(request_id),
+                "status": "pending",
+            },
+        )
 
         result = persistence.delete_pending(request_id)
 
@@ -513,10 +525,13 @@ class TestStatsAndUtilities:
 
         # Add history records
         for i in range(5):
-            persistence.save_history(uuid4(), {
-                "status": "approved",
-                "decided_at": datetime.utcnow().isoformat(),
-            })
+            persistence.save_history(
+                uuid4(),
+                {
+                    "status": "approved",
+                    "decided_at": datetime.utcnow().isoformat(),
+                },
+            )
 
         stats = persistence.get_stats()
 
@@ -572,18 +587,18 @@ class TestThreadSafety:
         def save_request(i):
             try:
                 request_id = uuid4()
-                persistence.save_pending(request_id, {
-                    "request_id": str(request_id),
-                    "index": i,
-                })
+                persistence.save_pending(
+                    request_id,
+                    {
+                        "request_id": str(request_id),
+                        "index": i,
+                    },
+                )
             except Exception as e:
                 with lock:
                     errors.append(str(e))
 
-        threads = [
-            threading.Thread(target=save_request, args=(i,))
-            for i in range(20)
-        ]
+        threads = [threading.Thread(target=save_request, args=(i,)) for i in range(20)]
 
         for t in threads:
             t.start()
@@ -600,10 +615,13 @@ class TestThreadSafety:
         request_ids = []
         for i in range(10):
             rid = uuid4()
-            persistence.save_pending(rid, {
-                "request_id": str(rid),
-                "value": i,
-            })
+            persistence.save_pending(
+                rid,
+                {
+                    "request_id": str(rid),
+                    "value": i,
+                },
+            )
             request_ids.append(rid)
 
         errors = []

@@ -86,11 +86,17 @@ class _TestMediator:
         self.env.state.net_worth = net_worth
         self.env.state.cash = cash
         self.env.state.units = 0.0
-        return obs, 0.0, False, False, {
-            "executed_notional": turnover_notional,
-            "turnover": turnover_notional,
-            "fee_total": fee_total,
-        }
+        return (
+            obs,
+            0.0,
+            False,
+            False,
+            {
+                "executed_notional": turnover_notional,
+                "turnover": turnover_notional,
+                "fee_total": fee_total,
+            },
+        )
 
 
 def _sample_ratio(rng: np.random.Generator) -> float:
@@ -260,7 +266,9 @@ def test_reward_clip_bar_matches_reference() -> None:
         )
         assert info["reward"] == pytest.approx(final_expected, rel=1e-9, abs=1e-9)
         assert reward_env == pytest.approx(final_expected, rel=1e-9, abs=1e-9)
-        assert info["turnover_notional"] == pytest.approx(abs(turnover_notional), rel=1e-9, abs=1e-9)
+        assert info["turnover_notional"] == pytest.approx(
+            abs(turnover_notional), rel=1e-9, abs=1e-9
+        )
         assert info["turnover_norm"] == pytest.approx(turnover_norm, rel=1e-9, abs=1e-9)
         assert info["turnover_penalty"] == pytest.approx(turnover_penalty, rel=1e-9, abs=1e-9)
         assert info["fee_total"] == pytest.approx(fee_total, rel=1e-9, abs=1e-9)
@@ -278,4 +286,3 @@ def test_reward_clip_bar_matches_reference() -> None:
     assert float(np.mean(rewards_arr > env.reward_cap)) <= 1e-9
 
     env.close()
-

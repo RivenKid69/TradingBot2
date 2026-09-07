@@ -263,6 +263,7 @@ class TestModuleFunctions:
         """Test init_tracing function."""
         # Reset global
         import packages.cloud.control_plane.tracing.tracer as tracer_module
+
         tracer_module._tracing_service = None
 
         service = init_tracing()
@@ -272,6 +273,7 @@ class TestModuleFunctions:
     def test_get_tracer_initializes_if_needed(self):
         """Test that get_tracer initializes service if needed."""
         import packages.cloud.control_plane.tracing.tracer as tracer_module
+
         tracer_module._tracing_service = None
 
         tracer = get_tracer()
@@ -332,8 +334,10 @@ class TestTracingMiddleware:
     @pytest.fixture
     def mock_app(self):
         """Create mock ASGI app."""
+
         async def app(scope, receive, send):
             pass
+
         return app
 
     def test_middleware_creation(self, mock_app):
@@ -367,6 +371,7 @@ class TestTraceRouteDecorator:
     @pytest.mark.asyncio
     async def test_async_function_decorated(self):
         """Test decorating async function."""
+
         @trace_route(name="test_operation")
         async def async_handler():
             return "result"
@@ -377,6 +382,7 @@ class TestTraceRouteDecorator:
 
     def test_sync_function_decorated(self):
         """Test decorating sync function."""
+
         @trace_route(name="test_sync")
         def sync_handler():
             return "sync_result"
@@ -388,6 +394,7 @@ class TestTraceRouteDecorator:
     @pytest.mark.asyncio
     async def test_decorator_with_exception(self):
         """Test decorator handles exceptions."""
+
         @trace_route(name="failing")
         async def failing_handler():
             raise ValueError("test error")
@@ -398,11 +405,8 @@ class TestTraceRouteDecorator:
     @pytest.mark.asyncio
     async def test_decorator_with_attributes(self):
         """Test decorator with custom attributes."""
-        @trace_route(
-            name="custom",
-            kind="client",
-            attributes={"custom.attr": "value"}
-        )
+
+        @trace_route(name="custom", kind="client", attributes={"custom.attr": "value"})
         async def handler():
             return "done"
 

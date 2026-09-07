@@ -47,6 +47,7 @@ DEFAULT_IP_WINDOW_SEC: Final[int] = 60  # 1 minute window
 # Exceptions
 # ============================================================================
 
+
 class RateLimitExceeded(Exception):
     """Raised when rate limit is exceeded."""
 
@@ -90,9 +91,11 @@ class AccountLockout(Exception):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class AttemptRecord:
     """Record of a login attempt."""
+
     timestamp: datetime
     success: bool
     ip_address: Optional[str] = None
@@ -102,6 +105,7 @@ class AttemptRecord:
 @dataclass
 class LockoutState:
     """State of account lockout."""
+
     locked_until: Optional[datetime] = None
     failed_attempts: int = 0
     lockout_count: int = 0  # Number of times locked out
@@ -144,6 +148,7 @@ class LockoutState:
 @dataclass
 class RateLimitState:
     """State of rate limiting for an IP/user."""
+
     request_count: int = 0
     window_start: Optional[datetime] = None
     blocked_until: Optional[datetime] = None
@@ -171,6 +176,7 @@ class RateLimitState:
 # ============================================================================
 # Rate Limiter
 # ============================================================================
+
 
 class RateLimiter:
     """
@@ -278,7 +284,9 @@ class RateLimiter:
         with self._lock:
             state = self._ip_rates.get(ip_address)
             if state and state.is_blocked:
-                retry_after = int((state.blocked_until - datetime.now(timezone.utc)).total_seconds())
+                retry_after = int(
+                    (state.blocked_until - datetime.now(timezone.utc)).total_seconds()
+                )
                 raise RateLimitExceeded(
                     message="Too many requests. Please try again later.",
                     retry_after=max(0, retry_after),
@@ -348,8 +356,14 @@ class RateLimiter:
             # Prune old attempts
             cutoff = now - timedelta(seconds=self._attempt_window_sec)
             state.attempts = [
-                a for a in state.attempts
-                if (a.timestamp.replace(tzinfo=timezone.utc) if a.timestamp.tzinfo is None else a.timestamp) > cutoff
+                a
+                for a in state.attempts
+                if (
+                    a.timestamp.replace(tzinfo=timezone.utc)
+                    if a.timestamp.tzinfo is None
+                    else a.timestamp
+                )
+                > cutoff
             ]
 
             if success:
@@ -364,7 +378,7 @@ class RateLimiter:
                 if state.failed_attempts >= self._max_attempts:
                     # Calculate lockout duration with exponential backoff
                     duration = self._lockout_duration_sec * (
-                        self._lockout_multiplier ** state.lockout_count
+                        self._lockout_multiplier**state.lockout_count
                     )
                     duration = min(duration, self._max_lockout_duration_sec)
 

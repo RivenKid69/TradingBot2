@@ -33,6 +33,7 @@ import uuid
 # Перечисления
 # =========================
 
+
 class Side(str, Enum):
     BUY = "BUY"
     SELL = "SELL"
@@ -67,6 +68,7 @@ class TimeFrame(str, Enum):
     """Канонический таймфрейм бара. Значения совместимы с биржевыми интервалами
     (Binance/Alpaca-стиль) и используются как единая точка правды для загрузчиков
     данных и CCEA-контрактов (`packages.shared.models` реэкспортирует отсюда)."""
+
     M1 = "1m"
     M5 = "5m"
     M15 = "15m"
@@ -79,14 +81,21 @@ class TimeFrame(str, Enum):
     @property
     def seconds(self) -> int:
         return {
-            "1m": 60, "5m": 300, "15m": 900, "30m": 1800,
-            "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800,
+            "1m": 60,
+            "5m": 300,
+            "15m": 900,
+            "30m": 1800,
+            "1h": 3600,
+            "4h": 14400,
+            "1d": 86400,
+            "1w": 604800,
         }[self.value]
 
 
 # =========================
 # Базовые сущности
 # =========================
+
 
 @dataclass(frozen=True)
 class OrderIntent:
@@ -95,12 +104,13 @@ class OrderIntent:
     Не фиксирует абсолютное количество. Используется как унифицированный выход,
     а затем может быть трансформировано в Order с учётом контекста (квантование, лимиты).
     """
+
     ts: int
     symbol: str
     side: Side
     order_type: OrderType
-    volume_frac: Decimal            # доля от максимально допустимой позиции по базовому активу ([-1..1])
-    price_offset_ticks: int = 0     # смещение цены в тиках для LIMIT; 0 = по референсу
+    volume_frac: Decimal  # доля от максимально допустимой позиции по базовому активу ([-1..1])
+    price_offset_ticks: int = 0  # смещение цены в тиках для LIMIT; 0 = по референсу
     time_in_force: TimeInForce = TimeInForce.GTC
     client_tag: str = field(default_factory=lambda: str(uuid.uuid4()))
     meta: Dict[str, Any] = field(default_factory=dict)
@@ -122,19 +132,21 @@ class OrderIntent:
             meta=dict(d.get("meta", {})),
         )
 
+
 @dataclass(frozen=True)
 class Instrument:
     """
     Описание торгового инструмента.
     """
+
     symbol: str
     base_asset: str
     quote_asset: str
-    tick_size: Decimal                   # минимальный шаг цены
-    step_size: Decimal                   # минимальный шаг количества
-    min_notional: Decimal                # минимальный ноционал в quote
-    price_scale: int = 0                 # количество знаков после запятой у цены (опционально)
-    qty_scale: int = 0                   # количество знаков после запятой у qty (опционально)
+    tick_size: Decimal  # минимальный шаг цены
+    step_size: Decimal  # минимальный шаг количества
+    min_notional: Decimal  # минимальный ноционал в quote
+    price_scale: int = 0  # количество знаков после запятой у цены (опционально)
+    qty_scale: int = 0  # количество знаков после запятой у qty (опционально)
     filters: Dict[str, Any] = field(default_factory=dict)  # сырой snapshot фильтров биржи
 
     def to_dict(self) -> Dict[str, Any]:
@@ -160,13 +172,14 @@ class Bar:
     """
     Свеча OHLCV. Все цены и объёмы — Decimal.
     """
-    ts: int                        # unix ms (UTC)
+
+    ts: int  # unix ms (UTC)
     symbol: str
     open: Decimal
     high: Decimal
     low: Decimal
     close: Decimal
-    volume_base: Optional[Decimal] = None   # объём в базовом активе (например BTC)
+    volume_base: Optional[Decimal] = None  # объём в базовом активе (например BTC)
     volume_quote: Optional[Decimal] = None  # объём в котировочной валюте (например USDT)
     trades: Optional[int] = None
     vwap: Optional[Decimal] = None
@@ -215,9 +228,10 @@ class Tick:
     """
     Снимок BBO/сделки.
     """
+
     ts: int
     symbol: str
-    price: Optional[Decimal] = None        # последняя цена сделки
+    price: Optional[Decimal] = None  # последняя цена сделки
     bid: Optional[Decimal] = None
     ask: Optional[Decimal] = None
     bid_qty: Optional[Decimal] = None
@@ -252,12 +266,14 @@ class Tick:
 # Ордер и исполнение
 # =========================
 
+
 @dataclass(frozen=True)
 class Order:
     """
     Запрос на размещение/модификацию ордера.
     Для MARKET price может быть None.
     """
+
     ts: int
     symbol: str
     side: Side
@@ -294,6 +310,7 @@ class ExecReport:
     Единый отчёт об исполнении. Используется и в симуляторе, и в live.
     Один отчёт — одна сделка/частичное исполнение.
     """
+
     ts: int
     run_id: str
     symbol: str
@@ -308,7 +325,7 @@ class ExecReport:
     client_order_id: Optional[str] = None
     order_id: Optional[str] = None
     trade_id: Optional[str] = None
-    pnl: Optional[Decimal] = None          # реализованный PnL по этой сделке, если считается на лету
+    pnl: Optional[Decimal] = None  # реализованный PnL по этой сделке, если считается на лету
     execution_profile: Optional[str] = None
     meta: Dict[str, Any] = field(default_factory=dict)
 
@@ -329,11 +346,15 @@ class ExecReport:
             fee_asset=str(d["fee_asset"]) if d.get("fee_asset") is not None else None,
             exec_status=ExecStatus(d.get("exec_status", "FILLED")),
             liquidity=Liquidity(d.get("liquidity", "UNKNOWN")),
-            client_order_id=str(d["client_order_id"]) if d.get("client_order_id") is not None else None,
+            client_order_id=(
+                str(d["client_order_id"]) if d.get("client_order_id") is not None else None
+            ),
             order_id=str(d["order_id"]) if d.get("order_id") is not None else None,
             trade_id=str(d["trade_id"]) if d.get("trade_id") is not None else None,
             pnl=to_decimal_opt(d.get("pnl")),
-            execution_profile=str(d.get("execution_profile")) if d.get("execution_profile") is not None else None,
+            execution_profile=(
+                str(d.get("execution_profile")) if d.get("execution_profile") is not None else None
+            ),
             meta=dict(d.get("meta", {})),
         )
 
@@ -342,12 +363,14 @@ class ExecReport:
 # Позиции, риски, отчёты
 # =========================
 
+
 @dataclass(frozen=True)
 class Position:
     """
     Аггрегированная позиция по символу.
     avg_entry_price == 0 при qty == 0.
     """
+
     symbol: str
     qty: Decimal
     avg_entry_price: Decimal
@@ -380,8 +403,9 @@ class PortfolioLimits:
     """
     Ограничения портфеля для RiskGuard/симулятора.
     """
-    max_notional: Optional[Decimal] = None          # абсолютный лимит по ноционалу портфеля
-    max_position_qty: Optional[Decimal] = None      # лимит по количеству на символ
+
+    max_notional: Optional[Decimal] = None  # абсолютный лимит по ноционалу портфеля
+    max_position_qty: Optional[Decimal] = None  # лимит по количеству на символ
     max_orders_per_min: Optional[int] = None
     max_drawdown_bps: Optional[int] = None
     meta: Dict[str, Any] = field(default_factory=dict)
@@ -394,8 +418,12 @@ class PortfolioLimits:
         return PortfolioLimits(
             max_notional=to_decimal_opt(d.get("max_notional")),
             max_position_qty=to_decimal_opt(d.get("max_position_qty")),
-            max_orders_per_min=int(d["max_orders_per_min"]) if d.get("max_orders_per_min") is not None else None,
-            max_drawdown_bps=int(d["max_drawdown_bps"]) if d.get("max_drawdown_bps") is not None else None,
+            max_orders_per_min=(
+                int(d["max_orders_per_min"]) if d.get("max_orders_per_min") is not None else None
+            ),
+            max_drawdown_bps=(
+                int(d["max_drawdown_bps"]) if d.get("max_drawdown_bps") is not None else None
+            ),
             meta=dict(d.get("meta", {})),
         )
 
@@ -405,6 +433,7 @@ class TradeLogRow:
     """
     Строка лога сделок. Совпадает по схеме с ExecReport + обязательные поля для удобства анализа.
     """
+
     ts: int
     run_id: str
     symbol: str
@@ -420,15 +449,15 @@ class TradeLogRow:
     order_id: Optional[str] = None
     trade_id: Optional[str] = None
     pnl: Optional[Decimal] = None
-    mark_price: Optional[Decimal] = None       # mark price в момент трейда
-    equity: Optional[Decimal] = None           # equity после трейда
-    notional: Optional[Decimal] = None         # absolute price*quantity
-    drawdown: Optional[Decimal] = None         # drawdown после трейда
-    slippage_bps: Optional[Decimal] = None     # slippage в bps
-    spread_bps: Optional[Decimal] = None       # спред в bps
-    latency_ms: Optional[int] = None           # латентность запроса
-    tif: Optional[str] = None                  # Time in force
-    ttl_steps: Optional[int] = None            # TTL в шагах
+    mark_price: Optional[Decimal] = None  # mark price в момент трейда
+    equity: Optional[Decimal] = None  # equity после трейда
+    notional: Optional[Decimal] = None  # absolute price*quantity
+    drawdown: Optional[Decimal] = None  # drawdown после трейда
+    slippage_bps: Optional[Decimal] = None  # slippage в bps
+    spread_bps: Optional[Decimal] = None  # спред в bps
+    latency_ms: Optional[int] = None  # латентность запроса
+    tif: Optional[str] = None  # Time in force
+    ttl_steps: Optional[int] = None  # TTL в шагах
     execution_profile: Optional[str] = None
     meta: Dict[str, Any] = field(default_factory=dict)
 
@@ -456,9 +485,13 @@ class TradeLogRow:
             drawdown=to_decimal_opt(er.meta.get("drawdown")),
             slippage_bps=to_decimal_opt(er.meta.get("slippage_bps")),
             spread_bps=to_decimal_opt(er.meta.get("spread_bps")),
-            latency_ms=int(er.meta.get("latency_ms", 0)) if er.meta.get("latency_ms") is not None else None,
+            latency_ms=(
+                int(er.meta.get("latency_ms", 0)) if er.meta.get("latency_ms") is not None else None
+            ),
             tif=str(er.meta.get("tif")) if er.meta.get("tif") is not None else None,
-            ttl_steps=int(er.meta.get("ttl_steps", 0)) if er.meta.get("ttl_steps") is not None else None,
+            ttl_steps=(
+                int(er.meta.get("ttl_steps", 0)) if er.meta.get("ttl_steps") is not None else None
+            ),
             execution_profile=er.execution_profile,
             meta=dict(er.meta),
         )
@@ -472,6 +505,7 @@ class EquityPoint:
     """
     Точка эквити для отчёта: кумулятивная стоимость портфеля в quote.
     """
+
     ts: int
     run_id: str
     symbol: str
@@ -481,7 +515,7 @@ class EquityPoint:
     unrealized_pnl: Decimal
     equity: Decimal
     mark_price: Decimal
-    notional: Optional[Decimal] = None               # текущий ноционал позиции (qty*mark_price)
+    notional: Optional[Decimal] = None  # текущий ноционал позиции (qty*mark_price)
     drawdown: Optional[Decimal] = None
     risk_paused_until_ms: int = 0
     risk_events_count: int = 0
@@ -501,6 +535,7 @@ class EquityPoint:
 
 JSONDict = Dict[str, Any]
 
+
 def to_decimal(x: Union[str, float, int, Decimal]) -> Decimal:
     if isinstance(x, Decimal):
         return x
@@ -509,8 +544,10 @@ def to_decimal(x: Union[str, float, int, Decimal]) -> Decimal:
     except (InvalidOperation, ValueError, TypeError):
         raise ValueError(f"Невалидное десятичное значение: {x!r}")
 
+
 def to_decimal_opt(x: Any) -> Optional[Decimal]:
     return None if x is None else to_decimal(x)
+
 
 def as_dict(obj: Any) -> JSONDict:
     """
@@ -520,6 +557,7 @@ def as_dict(obj: Any) -> JSONDict:
     - dataclass -> dict
     - list/dict -> обход по элементам
     """
+
     def _convert(v: Any) -> Any:
         if isinstance(v, Decimal):
             return str(v)
@@ -536,11 +574,13 @@ def as_dict(obj: Any) -> JSONDict:
     d = asdict(obj)
     return {k: _convert(v) for k, v in d.items()}
 
+
 def to_json(obj: Any) -> str:
     """
     JSON строка с Decimal как str, Enum как value.
     """
     return json.dumps(as_dict(obj), ensure_ascii=False, separators=(",", ":"))
+
 
 def from_dict(cls, data: Mapping[str, Any]):
     """
@@ -549,5 +589,3 @@ def from_dict(cls, data: Mapping[str, Any]):
     if hasattr(cls, "from_dict") and callable(getattr(cls, "from_dict")):
         return getattr(cls, "from_dict")(data)
     return cls(**data)  # type: ignore[misc]
-
-

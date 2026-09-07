@@ -49,23 +49,25 @@ logger = logging.getLogger(__name__)
 
 class DataNodeType(Enum):
     """Types of data nodes in the lineage graph."""
-    RAW_SOURCE = "raw_source"              # Original data source
-    EXTRACTED = "extracted"                 # Data extracted from source
-    CLEANED = "cleaned"                     # Cleaned/preprocessed data
-    TRANSFORMED = "transformed"             # Transformed features
-    AGGREGATED = "aggregated"               # Aggregated data
-    NORMALIZED = "normalized"               # Normalized/scaled data
-    FILTERED = "filtered"                   # Filtered subset
-    MERGED = "merged"                       # Merged from multiple sources
-    SPLIT = "split"                         # Split (train/val/test)
-    ANNOTATED = "annotated"                 # Annotated/labeled data
-    MODEL_INPUT = "model_input"             # Final input to model
-    MODEL_OUTPUT = "model_output"           # Model predictions
-    CACHED = "cached"                       # Cached intermediate data
+
+    RAW_SOURCE = "raw_source"  # Original data source
+    EXTRACTED = "extracted"  # Data extracted from source
+    CLEANED = "cleaned"  # Cleaned/preprocessed data
+    TRANSFORMED = "transformed"  # Transformed features
+    AGGREGATED = "aggregated"  # Aggregated data
+    NORMALIZED = "normalized"  # Normalized/scaled data
+    FILTERED = "filtered"  # Filtered subset
+    MERGED = "merged"  # Merged from multiple sources
+    SPLIT = "split"  # Split (train/val/test)
+    ANNOTATED = "annotated"  # Annotated/labeled data
+    MODEL_INPUT = "model_input"  # Final input to model
+    MODEL_OUTPUT = "model_output"  # Model predictions
+    CACHED = "cached"  # Cached intermediate data
 
 
 class TransformationType(Enum):
     """Types of data transformations."""
+
     # Cleaning
     MISSING_VALUE_IMPUTATION = "missing_value_imputation"
     OUTLIER_REMOVAL = "outlier_removal"
@@ -128,15 +130,16 @@ class DataNode:
     - Properties: Schema, statistics, quality metrics
     - Metadata: Version, timestamps, tags
     """
+
     node_id: str = ""
     name: str = ""
     node_type: str = ""
     description: str = ""
 
     # Provenance
-    source_system: str = ""       # E.g., "binance", "alpaca", "internal"
-    source_location: str = ""     # E.g., file path, API endpoint, table name
-    extraction_method: str = ""   # E.g., "api_call", "file_read", "database_query"
+    source_system: str = ""  # E.g., "binance", "alpaca", "internal"
+    source_location: str = ""  # E.g., file path, API endpoint, table name
+    extraction_method: str = ""  # E.g., "api_call", "file_read", "database_query"
 
     # Schema
     columns: List[str] = field(default_factory=list)
@@ -198,6 +201,7 @@ class DataTransformation:
     - Code/function reference
     - Validation status
     """
+
     transformation_id: str = ""
     transformation_type: str = ""
     name: str = ""
@@ -250,6 +254,7 @@ class DataTransformation:
 @dataclass
 class LineageEdge:
     """An edge in the lineage graph connecting nodes through transformations."""
+
     edge_id: str = ""
     source_node_id: str = ""
     target_node_id: str = ""
@@ -271,6 +276,7 @@ class LineageEdge:
 @dataclass
 class DataLineageConfig:
     """Configuration for Data Lineage Tracking."""
+
     # Storage
     storage_path: str = "logs/ai_act/data_lineage"
     enable_persistence: bool = True
@@ -333,14 +339,24 @@ class LineageGraph:
                     if input_id in self._nodes:
                         if output_id not in self._nodes[input_id].child_ids:
                             self._nodes[input_id].child_ids.append(output_id)
-                        if transformation.transformation_id not in self._nodes[input_id].transformation_ids:
-                            self._nodes[input_id].transformation_ids.append(transformation.transformation_id)
+                        if (
+                            transformation.transformation_id
+                            not in self._nodes[input_id].transformation_ids
+                        ):
+                            self._nodes[input_id].transformation_ids.append(
+                                transformation.transformation_id
+                            )
 
                     if output_id in self._nodes:
                         if input_id not in self._nodes[output_id].parent_ids:
                             self._nodes[output_id].parent_ids.append(input_id)
-                        if transformation.transformation_id not in self._nodes[output_id].transformation_ids:
-                            self._nodes[output_id].transformation_ids.append(transformation.transformation_id)
+                        if (
+                            transformation.transformation_id
+                            not in self._nodes[output_id].transformation_ids
+                        ):
+                            self._nodes[output_id].transformation_ids.append(
+                                transformation.transformation_id
+                            )
 
     def get_node(self, node_id: str) -> Optional[DataNode]:
         """Get a node by ID."""
@@ -486,7 +502,9 @@ class LineageGraph:
         for node_data in data.get("nodes", {}).values():
             graph._nodes[node_data["node_id"]] = DataNode.from_dict(node_data)
         for trans_data in data.get("transformations", {}).values():
-            graph._transformations[trans_data["transformation_id"]] = DataTransformation.from_dict(trans_data)
+            graph._transformations[trans_data["transformation_id"]] = DataTransformation.from_dict(
+                trans_data
+            )
         for edge_data in data.get("edges", {}).values():
             graph._edges[edge_data["edge_id"]] = LineageEdge(**edge_data)
         return graph
@@ -849,7 +867,11 @@ class DataLineageTracker:
             DataNode representing the normalized data
         """
         return self.track_transformation(
-            transformation_type=TransformationType.NORMALIZATION if method == "z_score" else TransformationType.STANDARDIZATION,
+            transformation_type=(
+                TransformationType.NORMALIZATION
+                if method == "z_score"
+                else TransformationType.STANDARDIZATION
+            ),
             input_nodes=[input_node],
             output_name=output_name,
             output_df=output_df,
@@ -1013,7 +1035,9 @@ class DataLineageTracker:
                 "transformations_by_type": {},
             },
             "model_inputs": {
-                "count": len([n for n in leaf_nodes if n.node_type == DataNodeType.MODEL_INPUT.value]),
+                "count": len(
+                    [n for n in leaf_nodes if n.node_type == DataNodeType.MODEL_INPUT.value]
+                ),
                 "inputs": [
                     {
                         "name": n.name,
@@ -1031,8 +1055,9 @@ class DataLineageTracker:
         # Count transformations by type
         for trans in self._graph._transformations.values():
             t_type = trans.transformation_type
-            doc["preparation_processes"]["transformations_by_type"][t_type] = \
+            doc["preparation_processes"]["transformations_by_type"][t_type] = (
                 doc["preparation_processes"]["transformations_by_type"].get(t_type, 0) + 1
+            )
 
         return doc
 
@@ -1066,23 +1091,29 @@ class DataLineageTracker:
             report_lines.append(f"{i}. {trans['transformation_type']}")
             report_lines.append(f"   Name: {trans['name']}")
             report_lines.append(f"   Executed: {trans['executed_at']}")
-            if trans['parameters']:
-                report_lines.append(f"   Parameters: {json.dumps(trans['parameters'], default=str)[:100]}...")
+            if trans["parameters"]:
+                report_lines.append(
+                    f"   Parameters: {json.dumps(trans['parameters'], default=str)[:100]}..."
+                )
             report_lines.append("")
 
-        report_lines.extend([
-            "-" * 40,
-            "ANCESTOR NODES",
-            "-" * 40,
-        ])
+        report_lines.extend(
+            [
+                "-" * 40,
+                "ANCESTOR NODES",
+                "-" * 40,
+            ]
+        )
 
         for ancestor in lineage["ancestors"]:
             report_lines.append(f"- {ancestor['name']} ({ancestor['node_type']})")
 
-        report_lines.extend([
-            "",
-            "=" * 60,
-        ])
+        report_lines.extend(
+            [
+                "",
+                "=" * 60,
+            ]
+        )
 
         return "\n".join(report_lines)
 
@@ -1134,7 +1165,9 @@ class DataLineageTracker:
         trans_path = self._storage_path / "transformations"
         trans_path.mkdir(exist_ok=True)
 
-        with open(trans_path / f"{transformation.transformation_id}.json", "w", encoding="utf-8") as f:
+        with open(
+            trans_path / f"{transformation.transformation_id}.json", "w", encoding="utf-8"
+        ) as f:
             json.dump(transformation.to_dict(), f, indent=2, default=str)
 
     # =========================================================================
@@ -1167,12 +1200,14 @@ class DataLineageTracker:
 
             if transformation.transformation_type in maintain_count_types:
                 if output_rows != total_input_rows:
-                    results["checks"].append({
-                        "check": "row_count_maintained",
-                        "passed": False,
-                        "expected": total_input_rows,
-                        "actual": output_rows,
-                    })
+                    results["checks"].append(
+                        {
+                            "check": "row_count_maintained",
+                            "passed": False,
+                            "expected": total_input_rows,
+                            "actual": output_rows,
+                        }
+                    )
                     results["valid"] = False
 
         # Column validation
@@ -1190,11 +1225,13 @@ class DataLineageTracker:
 
                     if not all_input_cols.issubset(actual_cols):
                         missing = all_input_cols - actual_cols
-                        results["checks"].append({
-                            "check": "merge_columns_preserved",
-                            "passed": False,
-                            "missing_columns": list(missing),
-                        })
+                        results["checks"].append(
+                            {
+                                "check": "merge_columns_preserved",
+                                "passed": False,
+                                "missing_columns": list(missing),
+                            }
+                        )
                         results["valid"] = False
 
         return results

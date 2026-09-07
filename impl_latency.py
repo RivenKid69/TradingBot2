@@ -30,11 +30,14 @@ except Exception:  # pragma: no cover - optional dependency for older deployment
     LatencyVolatilityCache = None  # type: ignore
 
 import numpy as np
+
 try:
     from runtime_flags import seasonality_enabled
 except Exception:  # pragma: no cover - fallback when module not found
+
     def seasonality_enabled(default: bool = True) -> bool:
         return default
+
 
 from utils_time import hour_of_week
 from utils.prometheus import Counter
@@ -49,7 +52,9 @@ try:
     )
 except Exception:  # pragma: no cover - fallback
     try:
-        import pathlib, sys
+        import pathlib
+        import sys
+
         sys.path.append(str(pathlib.Path(__file__).resolve().parent))
         from utils_time import (
             load_hourly_seasonality,
@@ -57,8 +62,10 @@ except Exception:  # pragma: no cover - fallback
             watch_seasonality_file,
         )
     except Exception:  # pragma: no cover
+
         def load_hourly_seasonality(*a, **k):
             return None  # type: ignore
+
 
 logger = logging.getLogger(__name__)
 seasonality_logger = logging.getLogger("seasonality").getChild(__name__)
@@ -73,6 +80,7 @@ try:
     from latency import LatencyModel, validate_multipliers
 except Exception:  # pragma: no cover
     LatencyModel = None  # type: ignore
+
     def validate_multipliers(multipliers, *, expected_len=168, cap=10.0):  # type: ignore
         return [float(x) for x in multipliers]
 
@@ -168,9 +176,7 @@ class _LatencyWithSeasonality:
         with self._lock:
             self._vol_update = callback
 
-    def update_volatility(
-        self, symbol: str | None, ts_ms: int, value: float | None
-    ) -> None:
+    def update_volatility(self, symbol: str | None, ts_ms: int, value: float | None) -> None:
         if value is None:
             return
         with self._lock:
@@ -254,7 +260,9 @@ class _LatencyWithSeasonality:
         except Exception:
             pass
         if vol_debug.get("reason"):
-            vol_debug.setdefault("vol_mult", float(vol_mult) if math.isfinite(vol_mult) else vol_mult)
+            vol_debug.setdefault(
+                "vol_mult", float(vol_mult) if math.isfinite(vol_mult) else vol_mult
+            )
             vol_mult = 1.0
         for key in ("value", "mean", "std", "zscore", "clip", "gamma", "window"):
             vol_debug.setdefault(key, vol_debug.get(key))
@@ -402,6 +410,7 @@ class _LatencyWithSeasonality:
         avg_lat = [lat_sum[i] / count[i] if count[i] else 0.0 for i in range(n)]
         return {"multiplier": avg_mult, "latency_ms": avg_lat, "count": count}
 
+
 class LatencyImpl:
     @staticmethod
     def _normalize_default(
@@ -420,9 +429,7 @@ class LatencyImpl:
             if not math.isfinite(val) or val <= 0.0:
                 return base
             return [float(val)] * length
-        if isinstance(default, Sequence) and not isinstance(
-            default, (str, bytes, bytearray)
-        ):
+        if isinstance(default, Sequence) and not isinstance(default, (str, bytes, bytearray)):
             try:
                 arr = [float(x) for x in list(default)]
             except (TypeError, ValueError):
@@ -517,15 +524,19 @@ class LatencyImpl:
 
     def __init__(self, cfg: LatencyCfg) -> None:
         self.cfg = cfg
-        self._model = LatencyModel(
-            base_ms=int(cfg.base_ms),
-            jitter_ms=int(cfg.jitter_ms),
-            spike_p=float(cfg.spike_p),
-            spike_mult=float(cfg.spike_mult),
-            timeout_ms=int(cfg.timeout_ms),
-            retries=int(cfg.retries),
-            seed=int(cfg.seed),
-        ) if LatencyModel is not None else None
+        self._model = (
+            LatencyModel(
+                base_ms=int(cfg.base_ms),
+                jitter_ms=int(cfg.jitter_ms),
+                spike_p=float(cfg.spike_p),
+                spike_mult=float(cfg.spike_mult),
+                timeout_ms=int(cfg.timeout_ms),
+                retries=int(cfg.retries),
+                seed=int(cfg.seed),
+            )
+            if LatencyModel is not None
+            else None
+        )
         expected = 7 if cfg.seasonality_day_only else 168
         self.latency = self._normalize_default(cfg.seasonality_default, length=expected)
         self._latency_cache: List[float] = list(self.latency)
@@ -548,9 +559,7 @@ class LatencyImpl:
         use_requested = bool(cfg.use_seasonality)
         cli_hint = None
         if path and refresh_days > 0 and use_requested:
-            cli_hint = (
-                f"python scripts/build_hourly_seasonality.py --out {path} --window-days {refresh_days}"
-            )
+            cli_hint = f"python scripts/build_hourly_seasonality.py --out {path} --window-days {refresh_days}"
             needs_refresh = False
             now = datetime.now(timezone.utc)
             mtime_dt: Optional[datetime] = None
@@ -724,15 +733,14 @@ class LatencyImpl:
                     else:
                         self.latency = list(combined)
                         self._latency_cache = list(self.latency)
-        self.latency = list(
-            validate_multipliers(self.latency, expected_len=len(self.latency))
-        )
+        self.latency = list(validate_multipliers(self.latency, expected_len=len(self.latency)))
         self._latency_cache = list(self.latency)
         if self._has_seasonality and loaded_from_file and path:
             self._log_seasonality_enabled(path)
         self.attached_sim = None
         self._wrapper: _LatencyWithSeasonality | None = None
         if self._has_seasonality and cfg.seasonality_auto_reload and path:
+
             def _reload(data: Dict[str, np.ndarray]) -> None:
                 arr = data.get("latency")
                 if arr is not None:
@@ -950,7 +958,11 @@ class LatencyImpl:
             updater = getattr(cache, "update_latency_factor", None)
             if not callable(updater):
                 return
-            sym = symbol or getattr(sim_obj, "_latency_symbol", None) or getattr(sim_obj, "symbol", None)
+            sym = (
+                symbol
+                or getattr(sim_obj, "_latency_symbol", None)
+                or getattr(sim_obj, "symbol", None)
+            )
             if sym is None:
                 return
             sym_norm = str(sym).upper()
@@ -990,9 +1002,7 @@ class LatencyImpl:
         elif self._model is not None:
             self._model.reset_stats()
 
-    def update_volatility(
-        self, symbol: Optional[str], ts_ms: int, value: float | None
-    ) -> None:
+    def update_volatility(self, symbol: Optional[str], ts_ms: int, value: float | None) -> None:
         if self._wrapper is None:
             return
         updater = getattr(self._wrapper, "update_volatility", None)
@@ -1080,34 +1090,34 @@ class LatencyImpl:
             seasonality_default = d.get("seasonality_default")
         else:
             seasonality_default = 1.0
-        return LatencyImpl(LatencyCfg(
-            base_ms=int(d.get("base_ms", 250)),
-            jitter_ms=int(d.get("jitter_ms", 50)),
-            spike_p=float(d.get("spike_p", 0.01)),
-            spike_mult=float(d.get("spike_mult", 5.0)),
-            timeout_ms=int(d.get("timeout_ms", 2500)),
-            retries=int(d.get("retries", 1)),
-            seed=int(d.get("seed", 0)),
-            symbol=(d.get("symbol") if d.get("symbol") is not None else None),
-            seasonality_path=seasonality_path,
-            latency_seasonality_path=latency_seasonality_path,
-            refresh_period_days=refresh_period_days,
-            seasonality_default=seasonality_default,
-            use_seasonality=bool(d.get("use_seasonality", True)),
-            seasonality_override=d.get("seasonality_override"),
-            seasonality_override_path=d.get("seasonality_override_path"),
-            seasonality_hash=d.get("seasonality_hash"),
-            seasonality_interpolate=bool(d.get("seasonality_interpolate", False)),
-            seasonality_day_only=bool(d.get("seasonality_day_only", False)),
-            seasonality_auto_reload=bool(d.get("seasonality_auto_reload", False)),
-            vol_metric=str(vol_metric) if vol_metric is not None else "sigma",
-            vol_window=int(vol_window) if vol_window is not None else 120,
-            volatility_gamma=(
-                float(volatility_gamma) if volatility_gamma is not None else 0.0
-            ),
-            zscore_clip=float(zscore_clip) if zscore_clip is not None else 3.0,
-            min_ms=int(min_ms) if min_ms is not None else 0,
-            max_ms=int(max_ms) if max_ms is not None else 10000,
-            debug_log=bool(debug_log),
-            vol_debug_log=bool(vol_debug_log),
-        ))
+        return LatencyImpl(
+            LatencyCfg(
+                base_ms=int(d.get("base_ms", 250)),
+                jitter_ms=int(d.get("jitter_ms", 50)),
+                spike_p=float(d.get("spike_p", 0.01)),
+                spike_mult=float(d.get("spike_mult", 5.0)),
+                timeout_ms=int(d.get("timeout_ms", 2500)),
+                retries=int(d.get("retries", 1)),
+                seed=int(d.get("seed", 0)),
+                symbol=(d.get("symbol") if d.get("symbol") is not None else None),
+                seasonality_path=seasonality_path,
+                latency_seasonality_path=latency_seasonality_path,
+                refresh_period_days=refresh_period_days,
+                seasonality_default=seasonality_default,
+                use_seasonality=bool(d.get("use_seasonality", True)),
+                seasonality_override=d.get("seasonality_override"),
+                seasonality_override_path=d.get("seasonality_override_path"),
+                seasonality_hash=d.get("seasonality_hash"),
+                seasonality_interpolate=bool(d.get("seasonality_interpolate", False)),
+                seasonality_day_only=bool(d.get("seasonality_day_only", False)),
+                seasonality_auto_reload=bool(d.get("seasonality_auto_reload", False)),
+                vol_metric=str(vol_metric) if vol_metric is not None else "sigma",
+                vol_window=int(vol_window) if vol_window is not None else 120,
+                volatility_gamma=(float(volatility_gamma) if volatility_gamma is not None else 0.0),
+                zscore_clip=float(zscore_clip) if zscore_clip is not None else 3.0,
+                min_ms=int(min_ms) if min_ms is not None else 0,
+                max_ms=int(max_ms) if max_ms is not None else 10000,
+                debug_log=bool(debug_log),
+                vol_debug_log=bool(vol_debug_log),
+            )
+        )

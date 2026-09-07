@@ -24,15 +24,17 @@ from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from datetime import datetime, date
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 
 # Mock missing imports before importing the module under test
-sys.modules.setdefault('services.futures_feature_flags', MagicMock())
+sys.modules.setdefault("services.futures_feature_flags", MagicMock())
 
 # Import the module under test - use try/except for robustness
 try:
     import train_model_multi_patch as tmp
+
     MODULE_LOADED = True
 except ImportError as e:
     MODULE_LOADED = False
@@ -42,6 +44,7 @@ except ImportError as e:
 # =============================================================================
 # Test Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def sample_returns():
@@ -68,15 +71,17 @@ def negative_returns():
 def sample_dataframe():
     """Sample DataFrame for data processing tests."""
     np.random.seed(42)
-    dates = pd.date_range('2024-01-01', periods=100, freq='4h')
-    return pd.DataFrame({
-        'timestamp': dates.astype(np.int64) // 10**9,
-        'open': np.random.uniform(100, 110, 100),
-        'high': np.random.uniform(110, 120, 100),
-        'low': np.random.uniform(90, 100, 100),
-        'close': np.random.uniform(100, 110, 100),
-        'volume': np.random.uniform(1000, 10000, 100),
-    })
+    dates = pd.date_range("2024-01-01", periods=100, freq="4h")
+    return pd.DataFrame(
+        {
+            "timestamp": dates.astype(np.int64) // 10**9,
+            "open": np.random.uniform(100, 110, 100),
+            "high": np.random.uniform(110, 120, 100),
+            "low": np.random.uniform(90, 100, 100),
+            "close": np.random.uniform(100, 110, 100),
+            "volume": np.random.uniform(1000, 10000, 100),
+        }
+    )
 
 
 @pytest.fixture
@@ -102,7 +107,7 @@ def mock_model():
     model.logger.record = Mock()
     model.policy = Mock()
     model.policy.optimizer = Mock()
-    model.policy.optimizer.param_groups = [{'lr': 0.001}]
+    model.policy.optimizer.param_groups = [{"lr": 0.001}]
     model.num_timesteps = 1000
     model.parameters = Mock(return_value=iter([torch.nn.Parameter(torch.zeros(10))]))
     return model
@@ -131,51 +136,54 @@ def mock_vec_env():
 # Test _cfg_get Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestCfgGet:
     """Tests for the _cfg_get universal config getter."""
 
     def test_dict_access_simple(self):
         """Test simple dictionary access."""
-        cfg = {'key': 'value'}
-        assert tmp._cfg_get(cfg, 'key') == 'value'
+        cfg = {"key": "value"}
+        assert tmp._cfg_get(cfg, "key") == "value"
 
     def test_dict_access_default(self):
         """Test default value when key not found."""
-        cfg = {'key': 'value'}
-        assert tmp._cfg_get(cfg, 'missing', 'default') == 'default'
+        cfg = {"key": "value"}
+        assert tmp._cfg_get(cfg, "missing", "default") == "default"
 
     def test_dict_access_none_value(self):
         """Test that None values are returned correctly."""
-        cfg = {'key': None}
-        assert tmp._cfg_get(cfg, 'key', 'default') is None
+        cfg = {"key": None}
+        assert tmp._cfg_get(cfg, "key", "default") is None
 
     def test_dataclass_access(self):
         """Test dataclass attribute access."""
+
         @dataclass
         class Config:
-            key: str = 'value'
+            key: str = "value"
 
         cfg = Config()
-        assert tmp._cfg_get(cfg, 'key') == 'value'
+        assert tmp._cfg_get(cfg, "key") == "value"
 
     def test_empty_path(self):
         """Test empty path returns default."""
-        cfg = {'key': 'value'}
-        result = tmp._cfg_get(cfg, '', 'default')
+        cfg = {"key": "value"}
+        result = tmp._cfg_get(cfg, "", "default")
         # Empty path behavior depends on implementation
-        assert result is not None or result == 'default'
+        assert result is not None or result == "default"
 
     def test_missing_nested_key(self):
         """Test missing nested key returns default."""
-        cfg = {'level1': {'level2': 'value'}}
-        result = tmp._cfg_get(cfg, 'level1.missing', 'default')
-        assert result == 'default' or result is None
+        cfg = {"level1": {"level2": "value"}}
+        result = tmp._cfg_get(cfg, "level1.missing", "default")
+        assert result == "default" or result is None
 
 
 # =============================================================================
 # Test _assign_nested Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestAssignNested:
@@ -184,31 +192,32 @@ class TestAssignNested:
     def test_simple_assignment(self):
         """Test simple key assignment."""
         d = {}
-        tmp._assign_nested(d, 'key', 'value')
-        assert d == {'key': 'value'}
+        tmp._assign_nested(d, "key", "value")
+        assert d == {"key": "value"}
 
     def test_nested_assignment(self):
         """Test nested key assignment with dot notation."""
         d = {}
-        tmp._assign_nested(d, 'level1.level2.level3', 'value')
-        assert d == {'level1': {'level2': {'level3': 'value'}}}
+        tmp._assign_nested(d, "level1.level2.level3", "value")
+        assert d == {"level1": {"level2": {"level3": "value"}}}
 
     def test_existing_nested_path(self):
         """Test assignment to existing nested path."""
-        d = {'level1': {'existing': 'data'}}
-        tmp._assign_nested(d, 'level1.level2', 'value')
-        assert d == {'level1': {'existing': 'data', 'level2': 'value'}}
+        d = {"level1": {"existing": "data"}}
+        tmp._assign_nested(d, "level1.level2", "value")
+        assert d == {"level1": {"existing": "data", "level2": "value"}}
 
     def test_overwrite_existing_value(self):
         """Test overwriting existing value."""
-        d = {'key': 'old'}
-        tmp._assign_nested(d, 'key', 'new')
-        assert d == {'key': 'new'}
+        d = {"key": "old"}
+        tmp._assign_nested(d, "key", "new")
+        assert d == {"key": "new"}
 
 
 # =============================================================================
 # Test Timestamp Functions
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestCoerceTimestamp:
@@ -261,12 +270,12 @@ class TestFmtTs:
         ts = 1704067200  # 2024-01-01 00:00:00 UTC
         result = tmp._fmt_ts(ts)
         assert isinstance(result, str)
-        assert '2024' in result
+        assert "2024" in result
 
     def test_format_none(self):
         """Test None timestamp formatting."""
         result = tmp._fmt_ts(None)
-        assert 'None' in str(result) or result is None
+        assert "None" in str(result) or result is None
 
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
@@ -275,7 +284,7 @@ class TestNormalizeInterval:
 
     def test_dict_with_start_end(self):
         """Test dict with start/end keys."""
-        interval = {'start': 1704067200, 'end': 1704153600}
+        interval = {"start": 1704067200, "end": 1704153600}
         result = tmp._normalize_interval(interval)
         assert result == (1704067200, 1704153600)
 
@@ -305,6 +314,7 @@ class TestNormalizeInterval:
 # =============================================================================
 # Test Metric Functions
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSharpeRatio:
@@ -416,6 +426,7 @@ class TestResolveAnnSqrt:
 # Test Callback Classes
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestNanGuardCallback:
     """Tests for NanGuardCallback."""
@@ -443,10 +454,7 @@ class TestSortinoPruningCallback:
     def test_initialization(self, mock_optuna_trial, mock_vec_env):
         """Test callback initialization."""
         callback = tmp.SortinoPruningCallback(
-            trial=mock_optuna_trial,
-            eval_env=mock_vec_env,
-            n_eval_episodes=5,
-            eval_freq=1000
+            trial=mock_optuna_trial, eval_env=mock_vec_env, n_eval_episodes=5, eval_freq=1000
         )
         assert callback.trial == mock_optuna_trial
         assert callback.n_eval_episodes == 5
@@ -474,6 +482,7 @@ class TestSortinoPruningCallback:
 # Test Environment Wrapper Functions
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestFreezeVecnormalize:
     """Tests for _freeze_vecnormalize function."""
@@ -497,6 +506,7 @@ class TestFreezeVecnormalize:
 # =============================================================================
 # Test Multiprocessing Configuration
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestConfigureStartMethod:
@@ -522,7 +532,7 @@ class TestExtractGradSanity:
 
     def test_extract_flag_value(self):
         """Test extracting --grad-sanity flag."""
-        argv = ['--config', 'test.yaml', '--grad-sanity', '2']
+        argv = ["--config", "test.yaml", "--grad-sanity", "2"]
 
         # Access the function from main block context
         def _extract_grad_sanity(argv):
@@ -537,11 +547,11 @@ class TestExtractGradSanity:
             return None
 
         result = _extract_grad_sanity(argv)
-        assert result == '2'
+        assert result == "2"
 
     def test_extract_flag_equals_syntax(self):
         """Test extracting --grad-sanity=value syntax."""
-        argv = ['--config', 'test.yaml', '--grad-sanity=3']
+        argv = ["--config", "test.yaml", "--grad-sanity=3"]
 
         def _extract_grad_sanity(argv):
             for idx, arg in enumerate(argv):
@@ -555,11 +565,11 @@ class TestExtractGradSanity:
             return None
 
         result = _extract_grad_sanity(argv)
-        assert result == '3'
+        assert result == "3"
 
     def test_no_flag_returns_none(self):
         """Test no flag returns None."""
-        argv = ['--config', 'test.yaml']
+        argv = ["--config", "test.yaml"]
 
         def _extract_grad_sanity(argv):
             for idx, arg in enumerate(argv):
@@ -580,6 +590,7 @@ class TestExtractGradSanity:
 # Test Interval Formatting
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestFormatInterval:
     """Tests for _format_interval function."""
@@ -595,6 +606,7 @@ class TestFormatInterval:
 # =============================================================================
 # Test Edge Cases and Error Handling
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestEdgeCases:
@@ -614,8 +626,8 @@ class TestEdgeCases:
 
     def test_cfg_get_with_none_config(self):
         """Test _cfg_get with None config."""
-        result = tmp._cfg_get(None, 'key', 'default')
-        assert result == 'default'
+        result = tmp._cfg_get(None, "key", "default")
+        assert result == "default"
 
     def test_coerce_timestamp_with_large_value(self):
         """Test _coerce_timestamp with large value."""
@@ -659,20 +671,21 @@ class TestIntegrationScenarios:
 # Test Sharpe/Sortino Edge Cases
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestMetricEdgeCases:
     """Additional edge case tests for metric functions."""
 
     def test_sharpe_with_inf_returns(self):
         """Test Sharpe ratio with infinity returns."""
-        returns = np.array([0.01, float('inf'), 0.02])
+        returns = np.array([0.01, float("inf"), 0.02])
         result = tmp.sharpe_ratio(returns)
         # Should handle gracefully
         assert isinstance(result, float)
 
     def test_sharpe_with_nan_returns(self):
         """Test Sharpe ratio with NaN returns."""
-        returns = np.array([0.01, float('nan'), 0.02])
+        returns = np.array([0.01, float("nan"), 0.02])
         result = tmp.sharpe_ratio(returns)
         # Should handle gracefully
         assert isinstance(result, float)
@@ -697,6 +710,7 @@ class TestMetricEdgeCases:
 # Test _export_training_dataset Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestExportTrainingDataset:
     """Tests for _export_training_dataset function."""
@@ -704,102 +718,111 @@ class TestExportTrainingDataset:
     def test_export_simple_dataframes(self, tmp_path):
         """Test exporting simple dataframes."""
         dfs = {
-            'BTCUSDT': pd.DataFrame({
-                'timestamp': [1704067200, 1704070800, 1704074400],
-                'close': [42000.0, 42100.0, 42200.0],
-                'role': ['train', 'train', 'val'],
-            })
+            "BTCUSDT": pd.DataFrame(
+                {
+                    "timestamp": [1704067200, 1704070800, 1704074400],
+                    "close": [42000.0, 42100.0, 42200.0],
+                    "role": ["train", "train", "val"],
+                }
+            )
         }
 
         result = tmp._export_training_dataset(
             dfs,
-            role_column='role',
-            timestamp_column='timestamp',
+            role_column="role",
+            timestamp_column="timestamp",
             artifacts_dir=tmp_path,
-            split_version='v1',
+            split_version="v1",
             inferred_test=False,
         )
 
         assert result.exists()
-        assert (tmp_path / 'training_summary.json').exists()
+        assert (tmp_path / "training_summary.json").exists()
 
     def test_export_empty_raises(self, tmp_path):
         """Test that empty dfs raises ValueError."""
         with pytest.raises(ValueError, match="No dataframes"):
             tmp._export_training_dataset(
                 {},
-                role_column='role',
-                timestamp_column='timestamp',
+                role_column="role",
+                timestamp_column="timestamp",
                 artifacts_dir=tmp_path,
-                split_version='v1',
+                split_version="v1",
                 inferred_test=False,
             )
 
     def test_export_all_empty_dataframes_raises(self, tmp_path):
         """Test that all empty dataframes raises ValueError."""
-        dfs = {'BTCUSDT': pd.DataFrame()}
+        dfs = {"BTCUSDT": pd.DataFrame()}
 
         with pytest.raises(ValueError, match="empty"):
             tmp._export_training_dataset(
                 dfs,
-                role_column='role',
-                timestamp_column='timestamp',
+                role_column="role",
+                timestamp_column="timestamp",
                 artifacts_dir=tmp_path,
-                split_version='v1',
+                split_version="v1",
                 inferred_test=False,
             )
 
     def test_export_missing_timestamp_raises(self, tmp_path):
         """Test that missing timestamp column raises KeyError."""
         dfs = {
-            'BTCUSDT': pd.DataFrame({
-                'close': [42000.0, 42100.0],
-            })
+            "BTCUSDT": pd.DataFrame(
+                {
+                    "close": [42000.0, 42100.0],
+                }
+            )
         }
 
         with pytest.raises(KeyError):
             tmp._export_training_dataset(
                 dfs,
-                role_column='role',
-                timestamp_column='timestamp',
+                role_column="role",
+                timestamp_column="timestamp",
                 artifacts_dir=tmp_path,
-                split_version='v1',
+                split_version="v1",
                 inferred_test=False,
             )
 
     def test_export_multiple_symbols(self, tmp_path):
         """Test exporting multiple symbols."""
         dfs = {
-            'BTCUSDT': pd.DataFrame({
-                'timestamp': [1704067200, 1704070800],
-                'close': [42000.0, 42100.0],
-            }),
-            'ETHUSDT': pd.DataFrame({
-                'timestamp': [1704067200, 1704070800],
-                'close': [2200.0, 2210.0],
-            })
+            "BTCUSDT": pd.DataFrame(
+                {
+                    "timestamp": [1704067200, 1704070800],
+                    "close": [42000.0, 42100.0],
+                }
+            ),
+            "ETHUSDT": pd.DataFrame(
+                {
+                    "timestamp": [1704067200, 1704070800],
+                    "close": [2200.0, 2210.0],
+                }
+            ),
         }
 
         result = tmp._export_training_dataset(
             dfs,
-            role_column='role',
-            timestamp_column='timestamp',
+            role_column="role",
+            timestamp_column="timestamp",
             artifacts_dir=tmp_path,
-            split_version='v1',
+            split_version="v1",
             inferred_test=True,
         )
 
         assert result.exists()
 
         # Check summary
-        with open(tmp_path / 'training_summary.json') as f:
+        with open(tmp_path / "training_summary.json") as f:
             summary = json.load(f)
-        assert len(summary['symbols']) == 2
+        assert len(summary["symbols"]) == 2
 
 
 # =============================================================================
 # Test _install_torch_intrinsic_stub Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestInstallTorchIntrinsicStub:
@@ -823,6 +846,7 @@ class TestInstallTorchIntrinsicStub:
 # =============================================================================
 # Test _coerce_positive_seconds Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestCoercePositiveSeconds:
@@ -855,12 +879,12 @@ class TestCoercePositiveSeconds:
 
     def test_nan_returns_none(self):
         """Test NaN returns None."""
-        result = tmp._coerce_positive_seconds(float('nan'))
+        result = tmp._coerce_positive_seconds(float("nan"))
         assert result is None
 
     def test_inf_returns_none(self):
         """Test Infinity returns None."""
-        result = tmp._coerce_positive_seconds(float('inf'))
+        result = tmp._coerce_positive_seconds(float("inf"))
         assert result is None
 
     def test_string_returns_none(self):
@@ -877,6 +901,7 @@ class TestCoercePositiveSeconds:
 # =============================================================================
 # Test _resolve_bar_seconds Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestResolveBarSeconds:
@@ -919,6 +944,7 @@ class TestResolveBarSeconds:
 # Test _annualization_sqrt_from_env Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestAnnualizationSqrtFromEnv:
     """Tests for _annualization_sqrt_from_env function."""
@@ -945,6 +971,7 @@ class TestAnnualizationSqrtFromEnv:
 # =============================================================================
 # Test _value_changed Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestValueChanged:
@@ -979,6 +1006,7 @@ class TestValueChanged:
 # =============================================================================
 # Test _flatten_candidates Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestFlattenCandidates:
@@ -1023,6 +1051,7 @@ class TestFlattenCandidates:
 # Test AdversarialCallback Class
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestAdversarialCallback:
     """Tests for AdversarialCallback class."""
@@ -1033,13 +1062,13 @@ class TestAdversarialCallback:
         callback = tmp.AdversarialCallback(
             eval_env=mock_env,
             eval_freq=1000,
-            regimes=['normal', 'crisis'],
+            regimes=["normal", "crisis"],
             regime_duration=100,
         )
 
         assert callback.eval_env == mock_env
         assert callback.eval_freq == 1000
-        assert callback.regimes == ['normal', 'crisis']
+        assert callback.regimes == ["normal", "crisis"]
         assert callback.regime_duration == 100
 
     def test_model_attribute_initialized(self):
@@ -1048,7 +1077,7 @@ class TestAdversarialCallback:
         callback = tmp.AdversarialCallback(
             eval_env=mock_env,
             eval_freq=1000,
-            regimes=['normal'],
+            regimes=["normal"],
             regime_duration=100,
         )
 
@@ -1060,7 +1089,7 @@ class TestAdversarialCallback:
         callback = tmp.AdversarialCallback(
             eval_env=mock_env,
             eval_freq=1000,
-            regimes=['normal'],
+            regimes=["normal"],
             regime_duration=100,
         )
 
@@ -1070,6 +1099,7 @@ class TestAdversarialCallback:
 # =============================================================================
 # Test _wrap_action_space_if_needed Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestWrapActionSpaceIfNeeded:
@@ -1102,6 +1132,7 @@ class TestWrapActionSpaceIfNeeded:
 # Test _wrap_futures_env_if_needed Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestWrapFuturesEnvIfNeeded:
     """Tests for _wrap_futures_env_if_needed function."""
@@ -1110,7 +1141,7 @@ class TestWrapFuturesEnvIfNeeded:
         """Test non-futures asset class returns original env."""
         result = tmp._wrap_futures_env_if_needed(
             mock_env,
-            asset_class='spot',
+            asset_class="spot",
         )
 
         assert result is mock_env
@@ -1119,8 +1150,8 @@ class TestWrapFuturesEnvIfNeeded:
         """Test crypto futures wrapping (may be disabled by feature flag)."""
         result = tmp._wrap_futures_env_if_needed(
             mock_env,
-            asset_class='crypto_futures',
-            futures_config={'initial_leverage': 10},
+            asset_class="crypto_futures",
+            futures_config={"initial_leverage": 10},
         )
 
         # Result depends on feature flag
@@ -1131,6 +1162,7 @@ class TestWrapFuturesEnvIfNeeded:
 # Test _PopArtHoldoutLoaderWrapper Class
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestPopArtHoldoutLoaderWrapper:
     """Tests for _PopArtHoldoutLoaderWrapper class."""
@@ -1140,7 +1172,7 @@ class TestPopArtHoldoutLoaderWrapper:
         batch_cls = Mock()
 
         wrapper = tmp._PopArtHoldoutLoaderWrapper(
-            path=tmp_path / 'holdout.npz',
+            path=tmp_path / "holdout.npz",
             batch_size=64,
             seed=42,
             min_samples=100,
@@ -1156,7 +1188,7 @@ class TestPopArtHoldoutLoaderWrapper:
         batch_cls = Mock()
 
         wrapper = tmp._PopArtHoldoutLoaderWrapper(
-            path=tmp_path / 'nonexistent.npz',
+            path=tmp_path / "nonexistent.npz",
             batch_size=64,
             seed=42,
             min_samples=100,
@@ -1172,7 +1204,7 @@ class TestPopArtHoldoutLoaderWrapper:
         mock_env = Mock()
 
         wrapper = tmp._PopArtHoldoutLoaderWrapper(
-            path=tmp_path / 'holdout.npz',
+            path=tmp_path / "holdout.npz",
             batch_size=64,
             seed=42,
             min_samples=100,
@@ -1188,7 +1220,7 @@ class TestPopArtHoldoutLoaderWrapper:
         batch_cls = Mock()
 
         # Create valid NPZ file
-        npz_path = tmp_path / 'holdout.npz'
+        npz_path = tmp_path / "holdout.npz"
         obs = np.random.randn(100, 64).astype(np.float32)
         returns = np.random.randn(100, 1).astype(np.float32)
         starts = np.zeros(100, dtype=np.float32)
@@ -1250,14 +1282,15 @@ class TestPopArtHoldoutLoaderWrapper:
 # Test _file_sha256 Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestFileSha256:
     """Tests for _file_sha256 function."""
 
     def test_valid_file(self, tmp_path):
         """Test SHA256 of valid file."""
-        test_file = tmp_path / 'test.txt'
-        test_file.write_text('test content')
+        test_file = tmp_path / "test.txt"
+        test_file.write_text("test content")
 
         result = tmp._file_sha256(str(test_file))
 
@@ -1266,7 +1299,7 @@ class TestFileSha256:
 
     def test_missing_file_returns_none(self):
         """Test missing file returns None."""
-        result = tmp._file_sha256('/nonexistent/path')
+        result = tmp._file_sha256("/nonexistent/path")
         assert result is None
 
     def test_none_path_returns_none(self):
@@ -1276,7 +1309,7 @@ class TestFileSha256:
 
     def test_empty_path_returns_none(self):
         """Test empty path returns None."""
-        result = tmp._file_sha256('')
+        result = tmp._file_sha256("")
         assert result is None
 
 
@@ -1284,13 +1317,14 @@ class TestFileSha256:
 # Test _build_popart_holdout_loader Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestBuildPopartHoldoutLoader:
     """Tests for _build_popart_holdout_loader function."""
 
     def test_returns_none_when_disabled(self):
         """Test returns None when PopArt is disabled."""
-        controller_cfg = {'enabled': False}
+        controller_cfg = {"enabled": False}
 
         result = tmp._build_popart_holdout_loader(controller_cfg)
 
@@ -1298,7 +1332,7 @@ class TestBuildPopartHoldoutLoader:
 
     def test_returns_none_even_when_enabled(self):
         """Test returns None even when enabled (PopArt is disabled globally)."""
-        controller_cfg = {'enabled': True}
+        controller_cfg = {"enabled": True}
 
         result = tmp._build_popart_holdout_loader(controller_cfg)
 
@@ -1309,6 +1343,7 @@ class TestBuildPopartHoldoutLoader:
 # =============================================================================
 # Test _log_annualization Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestLogAnnualization:
@@ -1329,6 +1364,7 @@ class TestLogAnnualization:
 # Test _snapshot_model_param_keys Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSnapshotModelParamKeys:
     """Tests for _snapshot_model_param_keys function."""
@@ -1337,12 +1373,12 @@ class TestSnapshotModelParamKeys:
         """Test with dict params."""
         cfg = Mock()
         cfg.model = Mock()
-        cfg.model.params = {'lr': 0.001, 'gamma': 0.99}
+        cfg.model.params = {"lr": 0.001, "gamma": 0.99}
 
         result = tmp._snapshot_model_param_keys(cfg)
 
-        assert 'lr' in result
-        assert 'gamma' in result
+        assert "lr" in result
+        assert "gamma" in result
 
     def test_with_none_model(self):
         """Test with None model."""
@@ -1358,6 +1394,7 @@ class TestSnapshotModelParamKeys:
 # Test _propagate_train_window_alias Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestPropagateTrainWindowAlias:
     """Tests for _propagate_train_window_alias function."""
@@ -1365,55 +1402,56 @@ class TestPropagateTrainWindowAlias:
     def test_start_ts_alias(self):
         """Test start_ts sets both aliases."""
         block = {}
-        tmp._propagate_train_window_alias(block, 'start_ts', 1000)
+        tmp._propagate_train_window_alias(block, "start_ts", 1000)
 
-        assert block['start_ts'] == 1000
-        assert block['train_start_ts'] == 1000
+        assert block["start_ts"] == 1000
+        assert block["train_start_ts"] == 1000
 
     def test_train_start_ts_alias(self):
         """Test train_start_ts sets both aliases."""
         block = {}
-        tmp._propagate_train_window_alias(block, 'train_start_ts', 2000)
+        tmp._propagate_train_window_alias(block, "train_start_ts", 2000)
 
-        assert block['start_ts'] == 2000
-        assert block['train_start_ts'] == 2000
+        assert block["start_ts"] == 2000
+        assert block["train_start_ts"] == 2000
 
     def test_end_ts_alias(self):
         """Test end_ts sets both aliases."""
         block = {}
-        tmp._propagate_train_window_alias(block, 'end_ts', 3000)
+        tmp._propagate_train_window_alias(block, "end_ts", 3000)
 
-        assert block['end_ts'] == 3000
-        assert block['train_end_ts'] == 3000
+        assert block["end_ts"] == 3000
+        assert block["train_end_ts"] == 3000
 
     def test_train_end_ts_alias(self):
         """Test train_end_ts sets both aliases."""
         block = {}
-        tmp._propagate_train_window_alias(block, 'train_end_ts', 4000)
+        tmp._propagate_train_window_alias(block, "train_end_ts", 4000)
 
-        assert block['end_ts'] == 4000
-        assert block['train_end_ts'] == 4000
+        assert block["end_ts"] == 4000
+        assert block["train_end_ts"] == 4000
 
     def test_dotted_key_ignored(self):
         """Test dotted keys are ignored."""
         block = {}
-        tmp._propagate_train_window_alias(block, 'foo.start_ts', 1000)
+        tmp._propagate_train_window_alias(block, "foo.start_ts", 1000)
 
-        assert 'start_ts' not in block
-        assert 'train_start_ts' not in block
+        assert "start_ts" not in block
+        assert "train_start_ts" not in block
 
     def test_unrelated_key_ignored(self):
         """Test unrelated keys don't affect aliases."""
         block = {}
-        tmp._propagate_train_window_alias(block, 'other_key', 1000)
+        tmp._propagate_train_window_alias(block, "other_key", 1000)
 
-        assert 'start_ts' not in block
-        assert 'end_ts' not in block
+        assert "start_ts" not in block
+        assert "end_ts" not in block
 
 
 # =============================================================================
 # Test _ensure_train_window_aliases Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestEnsureTrainWindowAliases:
@@ -1421,51 +1459,52 @@ class TestEnsureTrainWindowAliases:
 
     def test_start_ts_propagates_to_train_start_ts(self):
         """Test start_ts propagates when train_start_ts is None."""
-        block = {'start_ts': 1000}
+        block = {"start_ts": 1000}
         tmp._ensure_train_window_aliases(block)
 
-        assert block['train_start_ts'] == 1000
+        assert block["train_start_ts"] == 1000
 
     def test_train_start_ts_propagates_to_start_ts(self):
         """Test train_start_ts propagates when start_ts is None."""
-        block = {'train_start_ts': 2000}
+        block = {"train_start_ts": 2000}
         tmp._ensure_train_window_aliases(block)
 
-        assert block['start_ts'] == 2000
+        assert block["start_ts"] == 2000
 
     def test_end_ts_propagates_to_train_end_ts(self):
         """Test end_ts propagates when train_end_ts is None."""
-        block = {'end_ts': 3000}
+        block = {"end_ts": 3000}
         tmp._ensure_train_window_aliases(block)
 
-        assert block['train_end_ts'] == 3000
+        assert block["train_end_ts"] == 3000
 
     def test_train_end_ts_propagates_to_end_ts(self):
         """Test train_end_ts propagates when end_ts is None."""
-        block = {'train_end_ts': 4000}
+        block = {"train_end_ts": 4000}
         tmp._ensure_train_window_aliases(block)
 
-        assert block['end_ts'] == 4000
+        assert block["end_ts"] == 4000
 
     def test_mismatch_uses_train_start_ts(self):
         """Test mismatch between start_ts and train_start_ts."""
-        block = {'start_ts': 1000, 'train_start_ts': 2000}
+        block = {"start_ts": 1000, "train_start_ts": 2000}
         tmp._ensure_train_window_aliases(block)
 
-        assert block['start_ts'] == 2000  # train_start_ts wins
+        assert block["start_ts"] == 2000  # train_start_ts wins
 
     def test_empty_block_unchanged(self):
         """Test empty block stays empty."""
         block = {}
         tmp._ensure_train_window_aliases(block)
 
-        assert 'start_ts' not in block
-        assert 'train_start_ts' not in block
+        assert "start_ts" not in block
+        assert "train_start_ts" not in block
 
 
 # =============================================================================
 # Test _extract_env_runtime_overrides Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestExtractEnvRuntimeOverrides:
@@ -1487,45 +1526,48 @@ class TestExtractEnvRuntimeOverrides:
 
     def test_decision_timing_extraction(self):
         """Test decision_timing is extracted."""
-        env_block = {'decision_timing': 'CLOSE_TO_OPEN'}
+        env_block = {"decision_timing": "CLOSE_TO_OPEN"}
         kwargs, decision = tmp._extract_env_runtime_overrides(env_block)
 
         from trading_patchnew import DecisionTiming
+
         assert decision == DecisionTiming.CLOSE_TO_OPEN
 
     def test_decision_mode_alias(self):
         """Test decision_mode alias is supported."""
-        env_block = {'decision_mode': 'INTRA_HOUR_WITH_LATENCY'}
+        env_block = {"decision_mode": "INTRA_HOUR_WITH_LATENCY"}
         kwargs, decision = tmp._extract_env_runtime_overrides(env_block)
 
         from trading_patchnew import DecisionTiming
+
         assert decision == DecisionTiming.INTRA_HOUR_WITH_LATENCY
 
     def test_no_trade_enabled(self):
         """Test no_trade.enabled extraction."""
-        env_block = {'no_trade': {'enabled': True}}
+        env_block = {"no_trade": {"enabled": True}}
         kwargs, decision = tmp._extract_env_runtime_overrides(env_block)
 
-        assert kwargs.get('no_trade_enabled') is True
+        assert kwargs.get("no_trade_enabled") is True
 
     def test_no_trade_policy_ignore(self):
         """Test no_trade.policy extraction with ignore."""
-        env_block = {'no_trade': {'enabled': True, 'policy': 'ignore'}}
+        env_block = {"no_trade": {"enabled": True, "policy": "ignore"}}
         kwargs, decision = tmp._extract_env_runtime_overrides(env_block)
 
-        assert kwargs.get('no_trade_policy') == 'ignore'
+        assert kwargs.get("no_trade_policy") == "ignore"
 
     def test_session_section_extraction(self):
         """Test session section extraction."""
-        env_block = {'session': {'start_time': '09:30', 'end_time': '16:00'}}
+        env_block = {"session": {"start_time": "09:30", "end_time": "16:00"}}
         kwargs, decision = tmp._extract_env_runtime_overrides(env_block)
 
-        assert kwargs.get('session') == {'start_time': '09:30', 'end_time': '16:00'}
+        assert kwargs.get("session") == {"start_time": "09:30", "end_time": "16:00"}
 
 
 # =============================================================================
 # Test _extract_offline_split_overrides Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestExtractOfflineSplitOverrides:
@@ -1533,45 +1575,39 @@ class TestExtractOfflineSplitOverrides:
 
     def test_none_payload_returns_empty(self):
         """Test None payload returns empty dict."""
-        result = tmp._extract_offline_split_overrides(None, 'dataset1')
+        result = tmp._extract_offline_split_overrides(None, "dataset1")
 
         assert result == {}
 
     def test_empty_payload_returns_empty(self):
         """Test empty payload returns empty dict."""
-        result = tmp._extract_offline_split_overrides({}, 'dataset1')
+        result = tmp._extract_offline_split_overrides({}, "dataset1")
 
         assert result == {}
 
     def test_with_splits_block(self):
         """Test extraction from splits block."""
         payload = {
-            'datasets': {
-                'dataset1': {
-                    'splits': {
-                        'time': {
-                            'train': {'start_ts': 1000, 'end_ts': 2000},
-                            'val': {'start_ts': 2000, 'end_ts': 3000}
+            "datasets": {
+                "dataset1": {
+                    "splits": {
+                        "time": {
+                            "train": {"start_ts": 1000, "end_ts": 2000},
+                            "val": {"start_ts": 2000, "end_ts": 3000},
                         }
                     }
                 }
             }
         }
-        result = tmp._extract_offline_split_overrides(payload, 'dataset1')
+        result = tmp._extract_offline_split_overrides(payload, "dataset1")
 
-        assert 'train' in result
-        assert 'val' in result
+        assert "train" in result
+        assert "val" in result
 
     def test_with_direct_phases(self):
         """Test extraction from direct phase keys."""
-        payload = {
-            'datasets': {
-                'dataset1': {
-                    'train': {'start_ts': 1000, 'end_ts': 2000}
-                }
-            }
-        }
-        result = tmp._extract_offline_split_overrides(payload, 'dataset1')
+        payload = {"datasets": {"dataset1": {"train": {"start_ts": 1000, "end_ts": 2000}}}}
+        result = tmp._extract_offline_split_overrides(payload, "dataset1")
 
         # Depends on internal logic
         assert isinstance(result, dict)
@@ -1581,13 +1617,14 @@ class TestExtractOfflineSplitOverrides:
 # Test _normalize_interval Edge Cases
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestNormalizeIntervalAdvanced:
     """Advanced tests for _normalize_interval function."""
 
     def test_dict_with_from_to(self):
         """Test dict with from/to keys."""
-        result = tmp._normalize_interval({'from': 1000, 'to': 2000})
+        result = tmp._normalize_interval({"from": 1000, "to": 2000})
 
         assert result[0] == 1000
         assert result[1] == 2000
@@ -1595,7 +1632,7 @@ class TestNormalizeIntervalAdvanced:
     def test_invalid_interval_raises(self):
         """Test invalid interval (end before start) raises."""
         with pytest.raises(ValueError):
-            tmp._normalize_interval({'start_ts': 2000, 'end_ts': 1000})
+            tmp._normalize_interval({"start_ts": 2000, "end_ts": 1000})
 
     def test_list_interval(self):
         """Test list interval format."""
@@ -1607,6 +1644,7 @@ class TestNormalizeIntervalAdvanced:
 # =============================================================================
 # Test _snapshot_model_param_keys Advanced Cases
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSnapshotModelParamKeysAdvanced:
@@ -1620,14 +1658,14 @@ class TestSnapshotModelParamKeysAdvanced:
         # Create a simple class with dict method instead of using Mock
         class ParamsWithDictMethod:
             def dict(self):
-                return {'key1': 'val1', 'key2': 'val2'}
+                return {"key1": "val1", "key2": "val2"}
 
         cfg.model.params = ParamsWithDictMethod()
 
         result = tmp._snapshot_model_param_keys(cfg)
 
-        assert 'key1' in result
-        assert 'key2' in result
+        assert "key1" in result
+        assert "key2" in result
 
     def test_with_params_having_attr_dict(self):
         """Test with params having __dict__ attribute."""
@@ -1636,20 +1674,21 @@ class TestSnapshotModelParamKeysAdvanced:
 
         class ParamsWithDict:
             def __init__(self):
-                self.key1 = 'val1'
-                self.key2 = 'val2'
+                self.key1 = "val1"
+                self.key2 = "val2"
 
         cfg.model.params = ParamsWithDict()
 
         result = tmp._snapshot_model_param_keys(cfg)
 
-        assert 'key1' in result
-        assert 'key2' in result
+        assert "key1" in result
+        assert "key2" in result
 
 
 # =============================================================================
 # Test _coerce_timestamp Edge Cases
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestCoerceTimestampAdvanced:
@@ -1657,17 +1696,17 @@ class TestCoerceTimestampAdvanced:
 
     def test_empty_string(self):
         """Test empty string returns None."""
-        result = tmp._coerce_timestamp('')
+        result = tmp._coerce_timestamp("")
         assert result is None
 
     def test_none_string(self):
         """Test 'none' string returns None."""
-        result = tmp._coerce_timestamp('none')
+        result = tmp._coerce_timestamp("none")
         assert result is None
 
     def test_whitespace_string(self):
         """Test whitespace string returns None."""
-        result = tmp._coerce_timestamp('   ')
+        result = tmp._coerce_timestamp("   ")
         assert result is None
 
     def test_milliseconds_heuristic(self):
@@ -1679,6 +1718,7 @@ class TestCoerceTimestampAdvanced:
     def test_numpy_int(self):
         """Test numpy integer type."""
         import numpy as np
+
         result = tmp._coerce_timestamp(np.int64(1000))
 
         assert result == 1000
@@ -1686,6 +1726,7 @@ class TestCoerceTimestampAdvanced:
     def test_numpy_float(self):
         """Test numpy float type."""
         import numpy as np
+
         result = tmp._coerce_timestamp(np.float64(1000.0))
 
         assert result == 1000
@@ -1693,14 +1734,16 @@ class TestCoerceTimestampAdvanced:
     def test_nan_float(self):
         """Test NaN float returns None."""
         import numpy as np
-        result = tmp._coerce_timestamp(float('nan'))
+
+        result = tmp._coerce_timestamp(float("nan"))
 
         assert result is None
 
     def test_pandas_timestamp_with_tz(self):
         """Test pandas Timestamp with timezone."""
         import pandas as pd
-        ts = pd.Timestamp('2024-01-01', tz='US/Eastern')
+
+        ts = pd.Timestamp("2024-01-01", tz="US/Eastern")
         result = tmp._coerce_timestamp(ts)
 
         assert result is not None
@@ -1710,6 +1753,7 @@ class TestCoerceTimestampAdvanced:
 # =============================================================================
 # Test Edge Cases for Various Functions
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestMiscEdgeCases:
@@ -1724,14 +1768,14 @@ class TestMiscEdgeCases:
 
     def test_value_changed_with_inf(self):
         """Test _value_changed with infinity values."""
-        result = tmp._value_changed(float('inf'), float('inf'))
+        result = tmp._value_changed(float("inf"), float("inf"))
 
         # Both inf should be considered equal
         assert result is False
 
     def test_resolve_bar_seconds_dict_access(self):
         """Test _resolve_bar_seconds with dict having bar_interval_seconds."""
-        cfg = {'bar_interval_seconds': 3600}
+        cfg = {"bar_interval_seconds": 3600}
         result = tmp._resolve_bar_seconds(cfg)
 
         # Should handle dict access
@@ -1742,57 +1786,62 @@ class TestMiscEdgeCases:
 # Test _cfg_get Advanced Cases
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestCfgGetAdvanced:
     """Advanced tests for _cfg_get function."""
 
     def test_with_callable_get_method(self):
         """Test with object having callable get method."""
+
         class ConfigWithGet:
             def get(self, key, default=None):
-                if key == 'test_key':
-                    return 'test_value'
+                if key == "test_key":
+                    return "test_value"
                 return default
 
         cfg = ConfigWithGet()
-        result = tmp._cfg_get(cfg, 'test_key')
+        result = tmp._cfg_get(cfg, "test_key")
 
-        assert result == 'test_value'
+        assert result == "test_value"
 
     def test_with_get_method_type_error(self):
         """Test with get method that raises TypeError."""
+
         class ConfigWithBadGet:
             def get(self, key):  # Only one argument
-                if key == 'test_key':
-                    return 'test_value'
+                if key == "test_key":
+                    return "test_value"
                 raise KeyError(key)
 
         cfg = ConfigWithBadGet()
-        result = tmp._cfg_get(cfg, 'test_key')
+        result = tmp._cfg_get(cfg, "test_key")
 
-        assert result == 'test_value'
+        assert result == "test_value"
 
     def test_with_model_dump_method(self):
         """Test with object having model_dump method."""
+
         class ConfigWithModelDump:
             def model_dump(self):
-                return {'key1': 'val1', 'key2': 'val2'}
+                return {"key1": "val1", "key2": "val2"}
 
         cfg = ConfigWithModelDump()
-        result = tmp._cfg_get(cfg, 'key1')
+        result = tmp._cfg_get(cfg, "key1")
 
-        assert result == 'val1'
+        assert result == "val1"
 
     def test_with_dict_method(self):
         """Test with object having dict() method."""
+
         class ConfigWithDict:
             def dict(self):
-                return {'key1': 'val1', 'key2': 'val2'}
+                return {"key1": "val1", "key2": "val2"}
 
         cfg = ConfigWithDict()
-        result = tmp._cfg_get(cfg, 'key1')
+        result = tmp._cfg_get(cfg, "key1")
 
-        assert result == 'val1'
+        assert result == "val1"
 
     def test_with_dataclass(self):
         """Test with dataclass config."""
@@ -1800,18 +1849,19 @@ class TestCfgGetAdvanced:
 
         @dataclass
         class DataclassConfig:
-            key1: str = 'val1'
-            key2: str = 'val2'
+            key1: str = "val1"
+            key2: str = "val2"
 
         cfg = DataclassConfig()
-        result = tmp._cfg_get(cfg, 'key1')
+        result = tmp._cfg_get(cfg, "key1")
 
-        assert result == 'val1'
+        assert result == "val1"
 
 
 # =============================================================================
 # Test _format_interval Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestFormatIntervalAdvanced:
@@ -1822,19 +1872,20 @@ class TestFormatIntervalAdvanced:
         result = tmp._format_interval((None, None))
 
         assert result is not None
-        assert 'None' in result  # Should show None for unbounded
+        assert "None" in result  # Should show None for unbounded
 
     def test_with_partial_none(self):
         """Test with one None value."""
         result = tmp._format_interval((1000, None))
 
         assert result is not None
-        assert 'None' in result  # End is None
+        assert "None" in result  # End is None
 
 
 # =============================================================================
 # Test _phase_bounds Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestPhaseBounds:
@@ -1844,18 +1895,18 @@ class TestPhaseBounds:
         """Test with valid DataFrames."""
         import pandas as pd
 
-        df1 = pd.DataFrame({'timestamp': [1000, 2000, 3000]})
-        df2 = pd.DataFrame({'timestamp': [4000, 5000, 6000]})
-        dfs = {'df1': df1, 'df2': df2}
+        df1 = pd.DataFrame({"timestamp": [1000, 2000, 3000]})
+        df2 = pd.DataFrame({"timestamp": [4000, 5000, 6000]})
+        dfs = {"df1": df1, "df2": df2}
 
-        result = tmp._phase_bounds(dfs, 'timestamp')
+        result = tmp._phase_bounds(dfs, "timestamp")
 
         assert result[0] == 1000  # min
         assert result[1] == 6000  # max
 
     def test_with_empty_dfs(self):
         """Test with empty dfs dict."""
-        result = tmp._phase_bounds({}, 'timestamp')
+        result = tmp._phase_bounds({}, "timestamp")
 
         assert result == (None, None)
 
@@ -1863,6 +1914,7 @@ class TestPhaseBounds:
 # =============================================================================
 # Test _fmt_ts Function Advanced
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestFmtTsAdvanced:
@@ -1872,12 +1924,13 @@ class TestFmtTsAdvanced:
         """Test with large timestamp."""
         result = tmp._fmt_ts(1704067200)  # 2024-01-01
 
-        assert '2024' in result
+        assert "2024" in result
 
 
 # =============================================================================
 # Test AdversarialCallback Advanced
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestAdversarialCallbackAdvanced:
@@ -1887,15 +1940,16 @@ class TestAdversarialCallbackAdvanced:
         """Test _resolve_sortino_factor returns default when no env attached."""
         # Use spec to prevent Mock from creating infinite child mocks
         from stable_baselines3.common.vec_env import VecEnv
+
         mock_env = Mock(spec=VecEnv)
         mock_env.get_attr = Mock(return_value=[None])
 
         # Mock _annualization_sqrt_from_env to prevent recursion
-        with patch.object(tmp, '_annualization_sqrt_from_env', return_value=(1.0, None)):
+        with patch.object(tmp, "_annualization_sqrt_from_env", return_value=(1.0, None)):
             callback = tmp.AdversarialCallback(
                 eval_env=mock_env,
                 eval_freq=100,
-                regimes=['normal'],
+                regimes=["normal"],
                 regime_duration=10,
             )
 
@@ -1907,6 +1961,7 @@ class TestAdversarialCallbackAdvanced:
 # =============================================================================
 # Test _get_distributional_ppo Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestGetDistributionalPpo:
@@ -1924,6 +1979,7 @@ class TestGetDistributionalPpo:
 # =============================================================================
 # Test ResolveAnnSqrt Advanced Cases
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestResolveAnnSqrtAdvanced:
@@ -1945,6 +2001,7 @@ class TestResolveAnnSqrtAdvanced:
 # =============================================================================
 # Test NanGuardCallback Advanced
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestNanGuardCallbackAdvanced:
@@ -1981,6 +2038,7 @@ class TestNanGuardCallbackAdvanced:
 # Test SortinoPruningCallback Advanced
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSortinoPruningCallbackAdvanced:
     """Advanced tests for SortinoPruningCallback class."""
@@ -1998,6 +2056,7 @@ class TestSortinoPruningCallbackAdvanced:
 # =============================================================================
 # Test _assign_nested Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestAssignNested:
@@ -2038,6 +2097,7 @@ class TestAssignNested:
 # Test _wrap_futures_env_if_needed Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestWrapFuturesEnvIfNeeded:
     """Tests for _wrap_futures_env_if_needed function."""
@@ -2067,6 +2127,7 @@ class TestWrapFuturesEnvIfNeeded:
 # Test SortinoPruningCallback Class
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSortinoPruningCallback:
     """Tests for SortinoPruningCallback class."""
@@ -2095,6 +2156,7 @@ class TestSortinoPruningCallback:
 # Test ObjectiveScorePruningCallback Class
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestObjectiveScorePruningCallback:
     """Tests for ObjectiveScorePruningCallback class."""
@@ -2122,6 +2184,7 @@ class TestObjectiveScorePruningCallback:
 # =============================================================================
 # Test _value_changed Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestValueChangedAdvanced:
@@ -2157,6 +2220,7 @@ class TestValueChangedAdvanced:
 # Test _install_torch_intrinsic_stub Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestInstallTorchIntrinsicStub:
     """Tests for _install_torch_intrinsic_stub function."""
@@ -2187,6 +2251,7 @@ class TestInstallTorchIntrinsicStub:
 # Test _log_annualization Function
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestLogAnnualization:
     """Tests for _log_annualization function."""
@@ -2206,6 +2271,7 @@ class TestLogAnnualization:
 # Test _normalize_interval Function Edge Cases
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestNormalizeIntervalEdgeCases:
     """Edge case tests for _normalize_interval function."""
@@ -2213,12 +2279,14 @@ class TestNormalizeIntervalEdgeCases:
     def test_with_numpy_int(self):
         """Test with numpy integer values."""
         import numpy as np
+
         result = tmp._normalize_interval((np.int64(1000), np.int64(2000)))
         assert result == (1000, 2000)
 
     def test_with_numpy_float(self):
         """Test with numpy float values."""
         import numpy as np
+
         result = tmp._normalize_interval((np.float64(1000.0), np.float64(2000.0)))
         assert result == (1000, 2000)
 
@@ -2226,6 +2294,7 @@ class TestNormalizeIntervalEdgeCases:
 # =============================================================================
 # Test _resolve_bar_seconds Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestResolveBarSecondsAdvanced:
@@ -2249,6 +2318,7 @@ class TestResolveBarSecondsAdvanced:
 # =============================================================================
 # Test sortino_ratio Edge Cases
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSortinoRatioEdgeCases:
@@ -2282,6 +2352,7 @@ class TestSortinoRatioEdgeCases:
 # Test sharpe_ratio Edge Cases
 # =============================================================================
 
+
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestSharpeRatioEdgeCases:
     """Edge case tests for sharpe_ratio function."""
@@ -2302,6 +2373,7 @@ class TestSharpeRatioEdgeCases:
 # =============================================================================
 # Test _annualization_sqrt_from_env Function
 # =============================================================================
+
 
 @pytest.mark.skipif(not MODULE_LOADED, reason="Module not loaded")
 class TestAnnualizationSqrtFromEnv:

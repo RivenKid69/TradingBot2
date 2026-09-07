@@ -10,7 +10,11 @@ import pytest
 
 from core_experiment import ModelStage, RunStatus
 from service_experiment_tracking import (
-    ArtifactSigner, ExperimentTracker, ModelRegistry, hash_config, sha256_file,
+    ArtifactSigner,
+    ExperimentTracker,
+    ModelRegistry,
+    hash_config,
+    sha256_file,
 )
 
 
@@ -76,9 +80,9 @@ def test_run_lifecycle_and_metrics(tracker):
     assert rec.status == RunStatus.FINISHED.value
     assert rec.params["lr"] == 0.001
     assert rec.tags["asset"] == "crypto"
-    assert rec.metrics["sharpe"] == 1.3            # последнее значение
+    assert rec.metrics["sharpe"] == 1.3  # последнее значение
     hist = tracker.read_metric_history("exp1", rid, "sharpe")
-    assert [h["value"] for h in hist] == [1.0, 1.3]   # полная история
+    assert [h["value"] for h in hist] == [1.0, 1.3]  # полная история
 
 
 def test_run_failure_marks_failed(tracker):
@@ -93,8 +97,12 @@ def test_run_failure_marks_failed(tracker):
 
 def test_lineage_capture(tracker):
     with tracker.run("exp1") as run:
-        run.set_lineage(dataset_uri="data/x.parquet", config_uri="configs/c.yaml",
-                        data_hash="dh", config_hash="ch")
+        run.set_lineage(
+            dataset_uri="data/x.parquet",
+            config_uri="configs/c.yaml",
+            data_hash="dh",
+            config_hash="ch",
+        )
         rid = run.run_id
     rec = tracker.get_run("exp1", rid)
     assert rec.lineage.dataset_uri == "data/x.parquet"
@@ -155,8 +163,8 @@ def test_rollback_to_previous_production(registry, tmp_path):
     registry.register("alpha", artifact_path=f)
     registry.register("alpha", artifact_path=f)
     registry.transition("alpha", 1, "production")
-    registry.transition("alpha", 2, "production")   # v1 -> archived
-    rolled = registry.rollback("alpha")             # вернуть на v1
+    registry.transition("alpha", 2, "production")  # v1 -> archived
+    rolled = registry.rollback("alpha")  # вернуть на v1
     assert rolled.version == 1
     assert registry.get("alpha", stage="production").version == 1
 
@@ -183,6 +191,6 @@ def test_registry_detects_tampered_artifact(registry, tmp_path):
 # --- helpers --------------------------------------------------------------
 def test_hash_config_deterministic():
     a = {"x": 1, "y": [1, 2], "z": {"k": "v"}}
-    b = {"z": {"k": "v"}, "y": [1, 2], "x": 1}   # другой порядок ключей
+    b = {"z": {"k": "v"}, "y": [1, 2], "x": 1}  # другой порядок ключей
     assert hash_config(a) == hash_config(b)
     assert hash_config(a) != hash_config({"x": 2})

@@ -77,8 +77,10 @@ logger = logging.getLogger(__name__)
 # Configuration
 # =========================
 
+
 class EventImpact(Enum):
     """Economic event impact level."""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -235,6 +237,7 @@ EVENT_SCHEDULES = {
 # OANDA Calendar API
 # =========================
 
+
 def fetch_calendar_oanda(
     config: CalendarDownloadConfig,
     api_key: Optional[str] = None,
@@ -302,18 +305,20 @@ def fetch_calendar_oanda(
             if config.high_impact_only and impact != "high":
                 continue
 
-            records.append({
-                "datetime": event.get("timestamp"),
-                "date": event.get("timestamp", "")[:10],
-                "time": event.get("timestamp", "")[11:16],
-                "currency": currency,
-                "event": event.get("title", ""),
-                "impact": impact,
-                "actual": event.get("actual"),
-                "forecast": event.get("forecast"),
-                "previous": event.get("previous"),
-                "source": "oanda",
-            })
+            records.append(
+                {
+                    "datetime": event.get("timestamp"),
+                    "date": event.get("timestamp", "")[:10],
+                    "time": event.get("timestamp", "")[11:16],
+                    "currency": currency,
+                    "event": event.get("title", ""),
+                    "impact": impact,
+                    "actual": event.get("actual"),
+                    "forecast": event.get("forecast"),
+                    "previous": event.get("previous"),
+                    "source": "oanda",
+                }
+            )
 
         if not records:
             return None
@@ -332,9 +337,23 @@ def _classify_impact(event_name: str, currency: str) -> str:
 
     # Check if it's a known high-impact event
     high_impact_keywords = [
-        "rate decision", "non-farm", "payroll", "cpi", "inflation",
-        "gdp", "employment", "retail sales", "pmi",
-        "fomc", "ecb", "boe", "boj", "rba", "rbnz", "snb", "boc",
+        "rate decision",
+        "non-farm",
+        "payroll",
+        "cpi",
+        "inflation",
+        "gdp",
+        "employment",
+        "retail sales",
+        "pmi",
+        "fomc",
+        "ecb",
+        "boe",
+        "boj",
+        "rba",
+        "rbnz",
+        "snb",
+        "boc",
     ]
 
     for keyword in high_impact_keywords:
@@ -342,8 +361,14 @@ def _classify_impact(event_name: str, currency: str) -> str:
             return "high"
 
     medium_impact_keywords = [
-        "trade balance", "industrial", "housing", "consumer",
-        "sentiment", "confidence", "speech", "testimony",
+        "trade balance",
+        "industrial",
+        "housing",
+        "consumer",
+        "sentiment",
+        "confidence",
+        "speech",
+        "testimony",
     ]
 
     for keyword in medium_impact_keywords:
@@ -368,7 +393,7 @@ FOREXFACTORY_CALENDAR_URL = f"{FOREXFACTORY_BASE_URL}/calendar"
 # User-Agent to avoid blocks (be a good citizen)
 FOREXFACTORY_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
     "Accept-Encoding": "gzip, deflate, br",
@@ -381,10 +406,10 @@ FOREXFACTORY_IMPACT_MAP = {
     "medium": "medium",
     "low": "low",
     "holiday": "low",
-    "red": "high",      # Red folder icon
-    "orange": "medium", # Orange folder icon
-    "yellow": "low",    # Yellow folder icon
-    "gray": "low",      # Gray = holiday/non-event
+    "red": "high",  # Red folder icon
+    "orange": "medium",  # Orange folder icon
+    "yellow": "low",  # Yellow folder icon
+    "gray": "low",  # Gray = holiday/non-event
 }
 
 
@@ -465,7 +490,7 @@ def fetch_calendar_forexfactory(
                     break
                 elif response.status_code == 429:
                     # Rate limited - back off exponentially
-                    wait_time = rate_limit_sec * (2 ** attempt)
+                    wait_time = rate_limit_sec * (2**attempt)
                     logger.warning(f"Rate limited by ForexFactory, waiting {wait_time}s")
                     time.sleep(wait_time)
                 else:
@@ -484,7 +509,9 @@ def fetch_calendar_forexfactory(
 
         # Progress logging for long downloads
         if weeks_processed % 10 == 0:
-            logger.info(f"ForexFactory: processed {weeks_processed} weeks, {len(all_records)} events")
+            logger.info(
+                f"ForexFactory: processed {weeks_processed} weeks, {len(all_records)} events"
+            )
 
     if not all_records:
         logger.warning("No events fetched from ForexFactory")
@@ -498,8 +525,7 @@ def fetch_calendar_forexfactory(
     df = df.sort_values("datetime").reset_index(drop=True)
 
     # Filter by date range
-    df = df[(df["datetime"] >= pd.Timestamp(start_dt)) &
-            (df["datetime"] <= pd.Timestamp(end_dt))]
+    df = df[(df["datetime"] >= pd.Timestamp(start_dt)) & (df["datetime"] <= pd.Timestamp(end_dt))]
 
     logger.info(f"ForexFactory: fetched {len(df)} events from {weeks_processed} weeks")
     return df
@@ -612,18 +638,20 @@ def _parse_forexfactory_page(
             else:
                 continue  # Skip events without date
 
-            records.append({
-                "datetime": event_dt.isoformat(),
-                "date": event_dt.strftime("%Y-%m-%d"),
-                "time": event_dt.strftime("%H:%M"),
-                "currency": currency,
-                "event": event_name,
-                "impact": impact,
-                "actual": actual,
-                "forecast": forecast,
-                "previous": previous,
-                "source": "forexfactory",
-            })
+            records.append(
+                {
+                    "datetime": event_dt.isoformat(),
+                    "date": event_dt.strftime("%Y-%m-%d"),
+                    "time": event_dt.strftime("%H:%M"),
+                    "currency": currency,
+                    "event": event_name,
+                    "impact": impact,
+                    "actual": actual,
+                    "forecast": forecast,
+                    "previous": previous,
+                    "source": "forexfactory",
+                }
+            )
 
         except Exception as e:
             # Skip malformed rows
@@ -751,6 +779,7 @@ def _parse_forexfactory_value(cell) -> Optional[str]:
 # Synthetic Calendar Generation
 # =========================
 
+
 def generate_synthetic_calendar(
     config: CalendarDownloadConfig,
 ) -> pd.DataFrame:
@@ -803,18 +832,20 @@ def generate_synthetic_calendar(
                 if event_date and start_dt <= event_date <= end_dt:
                     event_dt = event_date.replace(hour=event_hour, minute=30)
 
-                    records.append({
-                        "datetime": event_dt.isoformat(),
-                        "date": event_dt.strftime("%Y-%m-%d"),
-                        "time": event_dt.strftime("%H:%M"),
-                        "currency": currency,
-                        "event": event_name,
-                        "impact": "high" if event_name in high_impact_events[:5] else "medium",
-                        "actual": None,  # No actual values for synthetic
-                        "forecast": None,
-                        "previous": None,
-                        "source": "synthetic",
-                    })
+                    records.append(
+                        {
+                            "datetime": event_dt.isoformat(),
+                            "date": event_dt.strftime("%Y-%m-%d"),
+                            "time": event_dt.strftime("%H:%M"),
+                            "currency": currency,
+                            "event": event_name,
+                            "impact": "high" if event_name in high_impact_events[:5] else "medium",
+                            "actual": None,  # No actual values for synthetic
+                            "forecast": None,
+                            "previous": None,
+                            "source": "synthetic",
+                        }
+                    )
 
                 # Move to next month
                 if current_date.month == 12:
@@ -851,10 +882,10 @@ def _get_meeting_date(dt: datetime, currency: str) -> Optional[datetime]:
     meeting_patterns = {
         "USD": [15, 16],  # FOMC mid-month Wed/Thu
         "EUR": [10, 12],  # ECB typically early month
-        "GBP": [5, 8],    # BOE typically first week
+        "GBP": [5, 8],  # BOE typically first week
         "JPY": [15, 20],  # BOJ mid-month
-        "AUD": [3, 5],    # RBA first Tuesday
-        "CAD": [8, 10],   # BOC
+        "AUD": [3, 5],  # RBA first Tuesday
+        "CAD": [8, 10],  # BOC
         "NZD": [10, 12],  # RBNZ
         "CHF": [15, 18],  # SNB
     }
@@ -873,6 +904,7 @@ def _get_meeting_date(dt: datetime, currency: str) -> Optional[datetime]:
 # =========================
 # File I/O
 # =========================
+
 
 def save_calendar(
     df: pd.DataFrame,
@@ -910,6 +942,7 @@ def load_existing_calendar(config: CalendarDownloadConfig) -> Optional[pd.DataFr
 # =========================
 # Main Runner
 # =========================
+
 
 def download_calendar(config: CalendarDownloadConfig) -> Dict[str, Any]:
     """
@@ -977,6 +1010,7 @@ def download_calendar(config: CalendarDownloadConfig) -> Dict[str, Any]:
 # CLI
 # =========================
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download economic calendar for forex trading",
@@ -1015,7 +1049,8 @@ def parse_args() -> argparse.Namespace:
         help="Regenerate even if file exists",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose logging",
     )

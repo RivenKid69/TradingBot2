@@ -176,10 +176,7 @@ class TLPTAccessGrant:
     def is_active(self) -> bool:
         """Check if access grant is currently active."""
         now = datetime.utcnow()
-        return (
-            not self.revoked
-            and self.valid_from <= now <= self.valid_until
-        )
+        return not self.revoked and self.valid_from <= now <= self.valid_until
 
     def revoke(self, user: str, reason: str) -> None:
         """Revoke the access grant."""
@@ -263,9 +260,7 @@ class TLPTConfig:
     auto_revoke_on_expiry: bool = True
     documentation_retention_days: int = 2555  # 7 years
     require_dual_approval: bool = True
-    allowed_environments: list[str] = field(
-        default_factory=lambda: ["staging", "test"]
-    )
+    allowed_environments: list[str] = field(default_factory=lambda: ["staging", "test"])
 
 
 # =============================================================================
@@ -396,7 +391,8 @@ class TLPTCooperationService:
             created_at=datetime.utcnow(),
             created_by=created_by,
             file_path=file_path,
-            expiry_date=datetime.utcnow() + timedelta(days=self.config.documentation_retention_days),
+            expiry_date=datetime.utcnow()
+            + timedelta(days=self.config.documentation_retention_days),
         )
         self._documentation[doc.doc_id] = doc
         return doc

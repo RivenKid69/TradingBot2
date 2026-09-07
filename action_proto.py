@@ -30,6 +30,7 @@ from dataclasses import dataclass, asdict
 from enum import IntEnum
 from typing import Any, Mapping, Sequence
 
+
 # Сохраняем числовые коды для обратной совместимости с risk_guard и медиацией.
 class ActionType(IntEnum):
     HOLD = 0
@@ -54,12 +55,13 @@ class ActionProto:
         tif: Time-in-force ('GTC', 'IOC', 'FOK')
         client_tag: Optional client identifier
     """
+
     action_type: ActionType
     volume_frac: float  # TARGET position ∈ [-1, 1], NOT delta
     price_offset_ticks: int = 0
     ttl_steps: int = 0
     abs_price: float | None = None
-    tif: str = "GTC"           # 'GTC'|'IOC'|'FOK'
+    tif: str = "GTC"  # 'GTC'|'IOC'|'FOK'
     client_tag: str | None = None
 
     @staticmethod

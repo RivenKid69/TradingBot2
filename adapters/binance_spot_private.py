@@ -1,4 +1,5 @@
 """Binance Spot Private API helpers."""
+
 from __future__ import annotations
 
 import hashlib
@@ -38,6 +39,7 @@ def _classify_private_error(exc: Exception) -> str | None:
     global requests  # reuse optional import if available
     try:  # pragma: no cover - requests may be unavailable in tests
         import requests as _requests  # type: ignore
+
         requests = _requests
     except Exception:  # pragma: no cover - fallback to stub
         _requests = None
@@ -359,8 +361,7 @@ def reconcile_state(local_state, client) -> Dict[str, Any]:
     extra_open = sorted(local_order_ids - remote_order_ids)
 
     remote_positions = {
-        str(b.get("asset")):
-        float(b.get("free", 0.0)) + float(b.get("locked", 0.0))
+        str(b.get("asset")): float(b.get("free", 0.0)) + float(b.get("locked", 0.0))
         for b in balances
         if isinstance(b, Mapping)
     }
@@ -399,5 +400,3 @@ def reconcile_state(local_state, client) -> Dict[str, Any]:
         "extra_open_orders": extra_open,
         "position_diffs": position_diffs,
     }
-
-

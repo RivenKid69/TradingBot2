@@ -28,7 +28,9 @@ def _make_bar_worker() -> _Worker:
     )
     emissions: list[tuple[str, int]] = []
 
-    def _emit(order: object, symbol: str, bar_close_ms: int, *, bar_open_ms: int | None = None) -> bool:
+    def _emit(
+        order: object, symbol: str, bar_close_ms: int, *, bar_open_ms: int | None = None
+    ) -> bool:
         recorded_ts = bar_open_ms if bar_open_ms is not None else bar_close_ms
         emissions.append((symbol, recorded_ts))
         return True
@@ -294,4 +296,3 @@ def test_commit_exposure_waits_for_execution_metadata() -> None:
     assert worker._symbol_equity[symbol] == pytest.approx(2_000.0)
     assert id(order) not in worker._pending_weight
     assert order.meta.get("_daily_turnover_usd") is None
-

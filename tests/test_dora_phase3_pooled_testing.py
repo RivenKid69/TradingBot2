@@ -25,11 +25,12 @@ References:
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -57,6 +58,7 @@ from services.dora.pooled_testing import (
 # =============================================================================
 # Pooled Test Status Tests
 # =============================================================================
+
 
 class TestPooledTestStatus:
     """Tests for pooled test status enumeration."""
@@ -90,6 +92,7 @@ class TestPooledTestStatus:
 # Participant Role Tests
 # =============================================================================
 
+
 class TestParticipantRole:
     """Tests for participant role enumeration."""
 
@@ -113,6 +116,7 @@ class TestParticipantRole:
 # =============================================================================
 # Participant Status Tests
 # =============================================================================
+
 
 class TestParticipantStatus:
     """Tests for participant status enumeration."""
@@ -142,6 +146,7 @@ class TestParticipantStatus:
 # Cost Sharing Model Tests
 # =============================================================================
 
+
 class TestCostSharingModel:
     """Tests for cost sharing model enumeration."""
 
@@ -170,6 +175,7 @@ class TestCostSharingModel:
 # Provider Criticality Tests
 # =============================================================================
 
+
 class TestProviderCriticality:
     """Tests for provider criticality enumeration."""
 
@@ -190,6 +196,7 @@ class TestProviderCriticality:
 # Shared Provider Tests
 # =============================================================================
 
+
 class TestSharedProvider:
     """Tests for shared provider structure."""
 
@@ -201,10 +208,7 @@ class TestSharedProvider:
 
     def test_provider_with_name(self):
         """Test provider with specific name."""
-        provider = SharedProvider(
-            name="AWS",
-            provider_type="cloud"
-        )
+        provider = SharedProvider(name="AWS", provider_type="cloud")
         assert provider.name == "AWS"
         assert provider.provider_type == "cloud"
 
@@ -213,7 +217,7 @@ class TestSharedProvider:
         provider = SharedProvider(
             name="Major Cloud Provider",
             is_ctpp=True,
-            service_criticality=ProviderCriticality.CRITICAL
+            service_criticality=ProviderCriticality.CRITICAL,
         )
         assert provider.is_ctpp == True
 
@@ -228,6 +232,7 @@ class TestSharedProvider:
 # Pooled Testing Participant Tests
 # =============================================================================
 
+
 class TestPooledTestingParticipant:
     """Tests for pooled testing participant structure."""
 
@@ -239,17 +244,14 @@ class TestPooledTestingParticipant:
     def test_participant_with_entity(self):
         """Test participant with specific entity."""
         participant = PooledTestingParticipant(
-            entity_id="ENT-001",
-            entity_name="Investment Bank A",
-            role=ParticipantRole.PARTICIPANT
+            entity_id="ENT-001", entity_name="Investment Bank A", role=ParticipantRole.PARTICIPANT
         )
         assert participant.entity_name == "Investment Bank A"
 
     def test_participant_with_role(self):
         """Test participant with specific role."""
         participant = PooledTestingParticipant(
-            entity_name="Lead Bank",
-            role=ParticipantRole.ORGANIZER
+            entity_name="Lead Bank", role=ParticipantRole.ORGANIZER
         )
         assert participant.role == ParticipantRole.ORGANIZER
 
@@ -264,6 +266,7 @@ class TestPooledTestingParticipant:
 # Pooled Testing Scope Tests
 # =============================================================================
 
+
 class TestPooledTestingScope:
     """Tests for pooled testing scope structure."""
 
@@ -275,8 +278,7 @@ class TestPooledTestingScope:
     def test_scope_with_name(self):
         """Test scope with specific name."""
         scope = PooledTestingScope(
-            name="Cloud Infrastructure Testing",
-            description="Testing of shared cloud provider"
+            name="Cloud Infrastructure Testing", description="Testing of shared cloud provider"
         )
         assert scope.name == "Cloud Infrastructure Testing"
 
@@ -291,6 +293,7 @@ class TestPooledTestingScope:
 # Cost Sharing Agreement Tests
 # =============================================================================
 
+
 class TestCostSharingAgreement:
     """Tests for cost sharing agreement structure."""
 
@@ -303,9 +306,7 @@ class TestCostSharingAgreement:
     def test_agreement_with_model(self):
         """Test agreement with specific model."""
         agreement = CostSharingAgreement(
-            model=CostSharingModel.PROPORTIONAL_SIZE,
-            total_cost=500000.0,
-            currency="EUR"
+            model=CostSharingModel.PROPORTIONAL_SIZE, total_cost=500000.0, currency="EUR"
         )
         assert agreement.model == CostSharingModel.PROPORTIONAL_SIZE
         assert agreement.total_cost == 500000.0
@@ -321,6 +322,7 @@ class TestCostSharingAgreement:
 # Pooled Testing Engagement Tests
 # =============================================================================
 
+
 class TestPooledTestingEngagement:
     """Tests for pooled testing engagement structure."""
 
@@ -334,7 +336,7 @@ class TestPooledTestingEngagement:
         """Test engagement with specific name."""
         engagement = PooledTestingEngagement(
             name="Industry Cloud Provider TLPT 2025",
-            description="Joint TLPT for shared cloud infrastructure"
+            description="Joint TLPT for shared cloud infrastructure",
         )
         assert engagement.name == "Industry Cloud Provider TLPT 2025"
 
@@ -349,6 +351,7 @@ class TestPooledTestingEngagement:
 # Pooled Testing Results Tests
 # =============================================================================
 
+
 class TestPooledTestingResults:
     """Tests for pooled testing results structure."""
 
@@ -359,9 +362,7 @@ class TestPooledTestingResults:
 
     def test_results_with_engagement_id(self):
         """Test results with specific engagement ID."""
-        results = PooledTestingResults(
-            engagement_id="POOLED-001"
-        )
+        results = PooledTestingResults(engagement_id="POOLED-001")
         assert results.engagement_id == "POOLED-001"
 
     def test_results_auto_generates_id(self):
@@ -375,6 +376,7 @@ class TestPooledTestingResults:
 # Pooled Testing Config Tests
 # =============================================================================
 
+
 class TestPooledTestingConfig:
     """Tests for pooled testing configuration."""
 
@@ -385,15 +387,14 @@ class TestPooledTestingConfig:
 
     def test_config_with_entity_id(self):
         """Test config with entity ID."""
-        config = PooledTestingConfig(
-            entity_id="ENT-001"
-        )
+        config = PooledTestingConfig(entity_id="ENT-001")
         assert config.entity_id == "ENT-001"
 
 
 # =============================================================================
 # DORAPooledTesting Creation Tests
 # =============================================================================
+
 
 class TestDORAPooledTestingCreation:
     """Tests for DORAPooledTesting creation."""
@@ -414,14 +415,15 @@ class TestDORAPooledTestingCreation:
     def test_has_required_methods(self):
         """Test that pooled testing has required methods."""
         pooled = create_pooled_testing()
-        assert hasattr(pooled, 'create_engagement')
-        assert hasattr(pooled, 'add_participant')
-        assert hasattr(pooled, 'register_provider')
+        assert hasattr(pooled, "create_engagement")
+        assert hasattr(pooled, "add_participant")
+        assert hasattr(pooled, "register_provider")
 
 
 # =============================================================================
 # DORAPooledTesting Provider Management Tests
 # =============================================================================
+
 
 class TestDORAPooledTestingProvider:
     """Tests for provider management functionality."""
@@ -430,9 +432,7 @@ class TestDORAPooledTestingProvider:
         """Test registering a shared provider."""
         pooled = create_pooled_testing()
         provider = pooled.register_provider(
-            name="AWS",
-            provider_type="cloud",
-            service_criticality=ProviderCriticality.CRITICAL
+            name="AWS", provider_type="cloud", service_criticality=ProviderCriticality.CRITICAL
         )
         assert provider is not None
         assert provider.name == "AWS"
@@ -440,10 +440,7 @@ class TestDORAPooledTestingProvider:
     def test_get_provider(self):
         """Test retrieving a registered provider."""
         pooled = create_pooled_testing()
-        created = pooled.register_provider(
-            name="Azure",
-            provider_type="cloud"
-        )
+        created = pooled.register_provider(name="Azure", provider_type="cloud")
         retrieved = pooled.get_provider(created.provider_id)
         assert retrieved is not None
         assert retrieved.name == "Azure"
@@ -461,19 +458,16 @@ class TestDORAPooledTestingProvider:
 # DORAPooledTesting Engagement Tests
 # =============================================================================
 
+
 class TestDORAPooledTestingEngagement:
     """Tests for engagement management functionality."""
 
     def test_create_engagement(self):
         """Test creating a pooled testing engagement."""
         pooled = create_pooled_testing()
-        provider = pooled.register_provider(
-            name="Test Provider",
-            provider_type="cloud"
-        )
+        provider = pooled.register_provider(name="Test Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Pooled TLPT 2025",
-            provider_id=provider.provider_id
+            name="Pooled TLPT 2025", provider_id=provider.provider_id
         )
         assert engagement is not None
         assert engagement.name == "Pooled TLPT 2025"
@@ -482,10 +476,7 @@ class TestDORAPooledTestingEngagement:
         """Test retrieving an engagement."""
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="data")
-        created = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
-        )
+        created = pooled.create_engagement(name="Test Engagement", provider_id=provider.provider_id)
         retrieved = pooled.get_engagement(created.engagement_id)
         assert retrieved is not None
 
@@ -503,6 +494,7 @@ class TestDORAPooledTestingEngagement:
 # DORAPooledTesting Participant Tests
 # =============================================================================
 
+
 class TestDORAPooledTestingParticipant:
     """Tests for participant management functionality."""
 
@@ -511,13 +503,12 @@ class TestDORAPooledTestingParticipant:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         participant = pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank A",
-            role=ParticipantRole.ORGANIZER
+            role=ParticipantRole.ORGANIZER,
         )
         assert participant is not None
         assert participant.entity_name == "Bank A"
@@ -527,18 +518,17 @@ class TestDORAPooledTestingParticipant:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank A",
-            role=ParticipantRole.ORGANIZER
+            role=ParticipantRole.ORGANIZER,
         )
         pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank B",
-            role=ParticipantRole.PARTICIPANT
+            role=ParticipantRole.PARTICIPANT,
         )
         participants = pooled.get_participants(engagement.engagement_id)
         assert len(participants) >= 2
@@ -548,17 +538,15 @@ class TestDORAPooledTestingParticipant:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         participant = pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank A",
-            role=ParticipantRole.PARTICIPANT
+            role=ParticipantRole.PARTICIPANT,
         )
         updated = pooled.update_participant_status(
-            participant_id=participant.participant_id,
-            status=ParticipantStatus.CONFIRMED
+            participant_id=participant.participant_id, status=ParticipantStatus.CONFIRMED
         )
         assert updated.status == ParticipantStatus.CONFIRMED
 
@@ -566,6 +554,7 @@ class TestDORAPooledTestingParticipant:
 # =============================================================================
 # DORAPooledTesting Cost Sharing Tests
 # =============================================================================
+
 
 class TestDORAPooledTestingCostSharing:
     """Tests for cost sharing functionality."""
@@ -575,14 +564,13 @@ class TestDORAPooledTestingCostSharing:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         agreement = pooled.create_cost_sharing_agreement(
             engagement_id=engagement.engagement_id,
             model=CostSharingModel.EQUAL,
             total_cost=300000.0,
-            currency="EUR"
+            currency="EUR",
         )
         assert agreement is not None
         assert agreement.total_cost == 300000.0
@@ -592,23 +580,22 @@ class TestDORAPooledTestingCostSharing:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank A",
-            role=ParticipantRole.PARTICIPANT
+            role=ParticipantRole.PARTICIPANT,
         )
         pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank B",
-            role=ParticipantRole.PARTICIPANT
+            role=ParticipantRole.PARTICIPANT,
         )
         pooled.create_cost_sharing_agreement(
             engagement_id=engagement.engagement_id,
             model=CostSharingModel.EQUAL,
-            total_cost=200000.0
+            total_cost=200000.0,
         )
         shares = pooled.calculate_participant_shares(engagement.engagement_id)
         assert len(shares) >= 2
@@ -620,6 +607,7 @@ class TestDORAPooledTestingCostSharing:
 # DORAPooledTesting Scope Tests
 # =============================================================================
 
+
 class TestDORAPooledTestingScope:
     """Tests for scope management functionality."""
 
@@ -628,13 +616,12 @@ class TestDORAPooledTestingScope:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         scope = pooled.define_scope(
             engagement_id=engagement.engagement_id,
             name="Cloud Infrastructure Scope",
-            systems=["api_gateway", "authentication", "databases"]
+            systems=["api_gateway", "authentication", "databases"],
         )
         assert scope is not None
         assert "api_gateway" in scope.systems
@@ -644,6 +631,7 @@ class TestDORAPooledTestingScope:
 # DORAPooledTesting Results Tests
 # =============================================================================
 
+
 class TestDORAPooledTestingResults:
     """Tests for results management functionality."""
 
@@ -652,12 +640,9 @@ class TestDORAPooledTestingResults:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
-        results = pooled.create_results(
-            engagement_id=engagement.engagement_id
-        )
+        results = pooled.create_results(engagement_id=engagement.engagement_id)
         assert results is not None
         assert results.engagement_id == engagement.engagement_id
 
@@ -666,17 +651,14 @@ class TestDORAPooledTestingResults:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank A",
-            role=ParticipantRole.PARTICIPANT
+            role=ParticipantRole.PARTICIPANT,
         )
-        results = pooled.create_results(
-            engagement_id=engagement.engagement_id
-        )
+        results = pooled.create_results(engagement_id=engagement.engagement_id)
         distributed = pooled.distribute_results(results.results_id)
         assert distributed is not None
 
@@ -684,6 +666,7 @@ class TestDORAPooledTestingResults:
 # =============================================================================
 # DORAPooledTesting Attestation Tests
 # =============================================================================
+
 
 class TestDORAPooledTestingAttestation:
     """Tests for individual attestation tracking."""
@@ -693,17 +676,15 @@ class TestDORAPooledTestingAttestation:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
         participant = pooled.add_participant(
             engagement_id=engagement.engagement_id,
             entity_name="Bank A",
-            role=ParticipantRole.PARTICIPANT
+            role=ParticipantRole.PARTICIPANT,
         )
         attestation = pooled.create_participant_attestation(
-            engagement_id=engagement.engagement_id,
-            participant_id=participant.participant_id
+            engagement_id=engagement.engagement_id, participant_id=participant.participant_id
         )
         assert attestation is not None
 
@@ -712,24 +693,21 @@ class TestDORAPooledTestingAttestation:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Test Engagement",
-            provider_id=provider.provider_id
+            name="Test Engagement", provider_id=provider.provider_id
         )
-        pooled.add_participant(
-            engagement_id=engagement.engagement_id,
-            entity_name="Bank A"
-        )
-        pooled.add_participant(
-            engagement_id=engagement.engagement_id,
-            entity_name="Bank B"
-        )
+        pooled.add_participant(engagement_id=engagement.engagement_id, entity_name="Bank A")
+        pooled.add_participant(engagement_id=engagement.engagement_id, entity_name="Bank B")
         requirements = pooled.get_attestation_requirements(engagement.engagement_id)
-        assert requirements.get("individual_attestations_required") == True or "individual" in str(requirements).lower()
+        assert (
+            requirements.get("individual_attestations_required") == True
+            or "individual" in str(requirements).lower()
+        )
 
 
 # =============================================================================
 # Reporting Tests
 # =============================================================================
+
 
 class TestPooledTestingReporting:
     """Tests for reporting functionality."""
@@ -739,8 +717,7 @@ class TestPooledTestingReporting:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Report Test Engagement",
-            provider_id=provider.provider_id
+            name="Report Test Engagement", provider_id=provider.provider_id
         )
         report = pooled.generate_engagement_report(engagement.engagement_id)
         assert report is not None
@@ -751,13 +728,12 @@ class TestPooledTestingReporting:
         pooled = create_pooled_testing()
         provider = pooled.register_provider(name="Provider", provider_type="cloud")
         engagement = pooled.create_engagement(
-            name="Cost Test Engagement",
-            provider_id=provider.provider_id
+            name="Cost Test Engagement", provider_id=provider.provider_id
         )
         pooled.create_cost_sharing_agreement(
             engagement_id=engagement.engagement_id,
             model=CostSharingModel.EQUAL,
-            total_cost=150000.0
+            total_cost=150000.0,
         )
         summary = pooled.export_cost_summary(engagement.engagement_id)
         assert summary is not None

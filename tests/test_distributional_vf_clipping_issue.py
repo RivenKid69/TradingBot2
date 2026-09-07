@@ -19,6 +19,7 @@ The distribution changed RADICALLY (10x variance increase), but VF clipping allo
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -85,10 +86,10 @@ def test_quantile_parallel_shift_does_not_constrain_variance():
     assert clipped_std > old_std * 5, "Variance increased >5x despite clipping!"
 
     return {
-        'old_std': old_std.item(),
-        'new_std': new_std.item(),
-        'clipped_std': clipped_std.item(),
-        'variance_ratio': (clipped_std / old_std).item()
+        "old_std": old_std.item(),
+        "new_std": new_std.item(),
+        "clipped_std": clipped_std.item(),
+        "variance_ratio": (clipped_std / old_std).item(),
     }
 
 
@@ -113,7 +114,7 @@ def test_categorical_shift_and_project():
     # Old distribution: concentrated around 0 (low variance)
     old_probs = torch.zeros(num_atoms)
     center_idx = num_atoms // 2
-    old_probs[center_idx - 2:center_idx + 3] = torch.tensor([0.1, 0.2, 0.4, 0.2, 0.1])
+    old_probs[center_idx - 2 : center_idx + 3] = torch.tensor([0.1, 0.2, 0.4, 0.2, 0.1])
     old_mean = (old_probs * atoms).sum()
     old_std = torch.sqrt(((atoms - old_mean) ** 2 * old_probs).sum())
 

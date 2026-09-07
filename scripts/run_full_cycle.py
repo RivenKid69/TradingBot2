@@ -80,11 +80,7 @@ def build_ingest_config(args: argparse.Namespace) -> IngestConfig:
         slowness_kwargs["api_limit"] = args.api_limit
     if args.sleep_ms is not None:
         slowness_kwargs["sleep_ms"] = args.sleep_ms
-    slowness = (
-        SlownessConfig(**slowness_kwargs)
-        if slowness_kwargs
-        else SlownessConfig()
-    )
+    slowness = SlownessConfig(**slowness_kwargs) if slowness_kwargs else SlownessConfig()
 
     period = PeriodConfig(start=args.start, end=args.end)
 
@@ -114,9 +110,7 @@ def main() -> None:
         "--interval",
         action="append",
         required=True,
-        help=(
-            "Интервалы (первый — базовый для загрузки, остальные будут агрегированы)"
-        ),
+        help=("Интервалы (первый — базовый для загрузки, остальные будут агрегированы)"),
     )
     parser.add_argument("--start", required=True, help="Начало периода (YYYY-MM-DD)")
     parser.add_argument("--end", required=True, help="Конец периода (YYYY-MM-DD)")

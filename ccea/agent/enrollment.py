@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 class EnrollmentState(str, Enum):
     """Agent enrollment state."""
+
     NOT_ENROLLED = "NOT_ENROLLED"
     ENROLLING = "ENROLLING"
     ENROLLED = "ENROLLED"
@@ -60,6 +61,7 @@ class AgentCredentials:
     Contains keypair and enrollment info.
     Private key NEVER leaves local storage.
     """
+
     agent_id: str
     workspace_id: str
     private_key_pem: str  # Encrypted on disk
@@ -213,7 +215,7 @@ class AgentEnrollment:
                     extra={
                         "error_code": response.error_code,
                         "error_message": response.error_message,
-                    }
+                    },
                 )
                 return response
 
@@ -241,7 +243,7 @@ class AgentEnrollment:
                 extra={
                     "agent_id": response.agent_id,
                     "workspace_id": response.workspace_id,
-                }
+                },
             )
 
             return response

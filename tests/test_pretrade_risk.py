@@ -8,13 +8,16 @@ import pandas as pd
 import pytest
 
 from service_pretrade_risk import (
-    FactorExposureMonitor, PreTradeRiskAnalyzer, RiskLimits,
+    FactorExposureMonitor,
+    PreTradeRiskAnalyzer,
+    RiskLimits,
 )
 
 
 def _cov(symbols, vols, rho):
     n = len(symbols)
-    C = np.full((n, n), rho); np.fill_diagonal(C, 1.0)
+    C = np.full((n, n), rho)
+    np.fill_diagonal(C, 1.0)
     D = np.diag(vols)
     S = D @ C @ D
     return pd.DataFrame(S, index=symbols, columns=symbols)
@@ -22,19 +25,20 @@ def _cov(symbols, vols, rho):
 
 def test_portfolio_vol_and_var_cvar():
     syms = ["A", "B"]
-    cov = _cov(syms, [0.2, 0.2], 0.0)   # независимые, σ=0.2
+    cov = _cov(syms, [0.2, 0.2], 0.0)  # независимые, σ=0.2
     w = pd.Series([0.5, 0.5], index=syms)
     an = PreTradeRiskAnalyzer(cov)
     vol = an.portfolio_vol(w)
-    assert vol == pytest.approx(math_sqrt(0.5**2*0.04 + 0.5**2*0.04))
+    assert vol == pytest.approx(math_sqrt(0.5**2 * 0.04 + 0.5**2 * 0.04))
     var = an.parametric_var(w, 0.05)
     cvar = an.parametric_cvar(w, 0.05)
-    assert var > 0 and cvar > var           # CVaR(ES) ≥ VaR для Gaussian
+    assert var > 0 and cvar > var  # CVaR(ES) ≥ VaR для Gaussian
     assert var == pytest.approx(1.6448536 * vol, rel=1e-3)
 
 
 def math_sqrt(x):
     import math
+
     return math.sqrt(x)
 
 
@@ -46,17 +50,17 @@ def test_historical_var_cvar():
     w = pd.Series([1.0], index=syms)
     var, cvar = an.historical_var_cvar(w, rets, 0.05)
     assert var > 0 and cvar >= var
-    assert var == pytest.approx(0.02 * 1.645, rel=0.15)   # ~Gaussian
+    assert var == pytest.approx(0.02 * 1.645, rel=0.15)  # ~Gaussian
 
 
 def test_factor_exposures():
     syms = ["A", "B", "C"]
     B = pd.DataFrame({"market": [1.0, 1.0, 1.0], "size": [0.5, -0.5, 0.0]}, index=syms)
-    an = PreTradeRiskAnalyzer(_cov(syms, [0.2]*3, 0.1), exposures=B)
+    an = PreTradeRiskAnalyzer(_cov(syms, [0.2] * 3, 0.1), exposures=B)
     w = pd.Series([0.4, -0.4, 0.2], index=syms)
     fexp = an.factor_exposures(w)
-    assert fexp["market"] == pytest.approx(0.2)         # 0.4-0.4+0.2
-    assert fexp["size"] == pytest.approx(0.4)           # 0.4*0.5 + (-0.4)*(-0.5)
+    assert fexp["market"] == pytest.approx(0.2)  # 0.4-0.4+0.2
+    assert fexp["size"] == pytest.approx(0.4)  # 0.4*0.5 + (-0.4)*(-0.5)
 
 
 def test_scenario_grid():
@@ -64,7 +68,7 @@ def test_scenario_grid():
     cov = _cov(syms, [0.2, 0.2], 0.3)
     B = pd.DataFrame({"market": [1.0, 1.0]}, index=syms)
     an = PreTradeRiskAnalyzer(cov, exposures=B)
-    w = pd.Series([0.5, 0.5], index=syms)               # net-long
+    w = pd.Series([0.5, 0.5], index=syms)  # net-long
     scens = an.scenario_grid(w, market_shock=-0.10, vol_mult=1.5, corr_shift=0.2)
     names = {s.name: s for s in scens}
     # рыночный шок −10% для net-long beta=1 → P&L ≈ -10% * 1.0 = -0.10
@@ -97,7 +101,7 @@ def test_factor_exposure_monitor():
     syms = ["A", "B"]
     B = pd.DataFrame({"market": [1.0, 1.0], "size": [1.0, -1.0]}, index=syms)
     mon = FactorExposureMonitor(B, {"market": 0.3, "size": 1.0})
-    rec = mon.update(pd.Series([0.4, 0.4], index=syms), ts_ms=1)   # market=0.8 > 0.3
+    rec = mon.update(pd.Series([0.4, 0.4], index=syms), ts_ms=1)  # market=0.8 > 0.3
     assert rec["within_limits"] is False
     assert any("market" in b for b in rec["breaches"])
     rec2 = mon.update(pd.Series([0.1, -0.1], index=syms), ts_ms=2)  # market=0, size=0.2

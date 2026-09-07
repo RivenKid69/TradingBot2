@@ -62,6 +62,7 @@ def get_compiler_version() -> str:
         # Try to detect MSVC version
         try:
             import setuptools.msvc
+
             vc_env = setuptools.msvc.msvc14_get_vc_env(platform.machine())
             return vc_env.get("VCToolsVersion", "unknown")
         except Exception:
@@ -69,6 +70,7 @@ def get_compiler_version() -> str:
     else:
         # Try to get gcc/clang version
         import subprocess
+
         try:
             result = subprocess.run(
                 ["gcc", "--version"],

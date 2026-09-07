@@ -31,6 +31,7 @@ sys.path.insert(0, str(PACKAGE_ROOT))
 # TenantContext Tests
 # ============================================================================
 
+
 class TestTenantContext:
     """Tests for TenantContext class."""
 
@@ -93,6 +94,7 @@ class TestTenantContext:
 # Session Factory Tests
 # ============================================================================
 
+
 class TestGetSessionWithTenant:
     """Tests for get_session with tenant context."""
 
@@ -142,6 +144,7 @@ class TestGetSessionDependency:
 # RLS Policy Tests (Structure)
 # ============================================================================
 
+
 class TestRLSPolicyStructure:
     """Tests for RLS policy structure in migrations."""
 
@@ -171,8 +174,9 @@ class TestRLSPolicyStructure:
         ]
 
         for table in critical_tables:
-            assert f'"{table}"' in content or f"'{table}'" in content, \
-                f"Table {table} should have RLS enabled"
+            assert (
+                f'"{table}"' in content or f"'{table}'" in content
+            ), f"Table {table} should have RLS enabled"
 
     def test_rls_migration_creates_isolation_policies(self):
         """Test that isolation policies are created."""
@@ -204,6 +208,7 @@ class TestRLSPolicyStructure:
 # ============================================================================
 # Tenant Isolation Logic Tests
 # ============================================================================
+
 
 class TestTenantIsolationLogic:
     """Tests for tenant isolation enforcement logic."""
@@ -241,6 +246,7 @@ class TestTenantIsolationLogic:
 # Org-Scoped Tables Tests
 # ============================================================================
 
+
 class TestOrgScopedTables:
     """Tests for org-scoped tables (roles)."""
 
@@ -259,6 +265,7 @@ class TestOrgScopedTables:
 # ============================================================================
 # Downgrade Tests
 # ============================================================================
+
 
 class TestRLSDowngrade:
     """Tests for RLS migration downgrade."""
@@ -292,6 +299,7 @@ class TestRLSDowngrade:
 # ============================================================================
 # Pending Commands View Tests
 # ============================================================================
+
 
 class TestPendingCommandsView:
     """Tests for pending_commands_view in RLS migration."""
@@ -330,6 +338,7 @@ class TestPendingCommandsView:
 # Index Tests
 # ============================================================================
 
+
 class TestRLSIndexes:
     """Tests for indexes created in RLS migration."""
 
@@ -340,13 +349,13 @@ class TestRLSIndexes:
         content = migration_file.read_text()
 
         # Should create index for efficient polling
-        assert "ix_commands_agent_pending" in content or \
-               "CREATE INDEX" in content
+        assert "ix_commands_agent_pending" in content or "CREATE INDEX" in content
 
 
 # ============================================================================
 # Security Tests
 # ============================================================================
+
 
 class TestRLSSecurity:
     """Security tests for RLS implementation."""

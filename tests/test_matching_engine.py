@@ -17,6 +17,7 @@ Target: 40+ tests with <10us per match operation
 import time
 import math
 import pytest
+
 pytest.importorskip("sortedcontainers")
 from typing import List, Optional
 
@@ -98,14 +99,16 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add asks
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         result = engine.match_market_order(Side.BUY, 50.0, book)
 
@@ -121,14 +124,16 @@ class TestMatchingEngine:
 
         # Add asks at different prices
         for i, price in enumerate([101.0, 102.0, 103.0]):
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.SELL,
+                )
+            )
 
         result = engine.match_market_order(Side.BUY, 250.0, book)
 
@@ -144,14 +149,16 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add bids
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=99.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=99.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         result = engine.match_market_order(Side.SELL, 50.0, book)
 
@@ -163,14 +170,16 @@ class TestMatchingEngine:
         engine = MatchingEngine()
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=50.0,
-            remaining_qty=50.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=50.0,
+                remaining_qty=50.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         result = engine.match_market_order(Side.BUY, 100.0, book)
 
@@ -183,14 +192,16 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add ask
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         # Submit bid below ask - passive
         bid = LimitOrder(
@@ -214,14 +225,16 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add ask
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         # Submit bid at/above ask - aggressive
         bid = LimitOrder(
@@ -245,14 +258,16 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add small ask
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=50.0,
-            remaining_qty=50.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=50.0,
+                remaining_qty=50.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         # Submit larger bid
         bid = LimitOrder(
@@ -278,14 +293,16 @@ class TestMatchingEngine:
 
         # Add multiple orders at same price
         for i in range(5):
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=100.0,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000 + i,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=100.0,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000 + i,
+                    side=Side.SELL,
+                )
+            )
 
         result = engine.match_market_order(Side.BUY, 150.0, book)
 
@@ -305,19 +322,23 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add resting order from participant "FIRM_A"
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-            participant_id="FIRM_A",
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+                participant_id="FIRM_A",
+            )
+        )
 
         # Same participant tries to buy - should trigger STP
         result = engine.match_market_order(
-            Side.BUY, 100.0, book,
+            Side.BUY,
+            100.0,
+            book,
             taker_order_id="buy_1",
             taker_participant_id="FIRM_A",
         )
@@ -335,27 +356,33 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add resting orders from same participant
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-            participant_id="FIRM_A",
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_2",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1001,
-            side=Side.SELL,
-            participant_id="FIRM_B",  # Different participant
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+                participant_id="FIRM_A",
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_2",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1001,
+                side=Side.SELL,
+                participant_id="FIRM_B",  # Different participant
+            )
+        )
 
         result = engine.match_market_order(
-            Side.BUY, 200.0, book,
+            Side.BUY,
+            200.0,
+            book,
             taker_order_id="buy_1",
             taker_participant_id="FIRM_A",
         )
@@ -372,18 +399,22 @@ class TestMatchingEngine:
         )
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-            participant_id="FIRM_A",
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+                participant_id="FIRM_A",
+            )
+        )
 
         result = engine.match_market_order(
-            Side.BUY, 100.0, book,
+            Side.BUY,
+            100.0,
+            book,
             taker_order_id="buy_1",
             taker_participant_id="FIRM_B",  # Different
         )
@@ -401,14 +432,16 @@ class TestMatchingEngine:
         engine = MatchingEngine(on_trade=on_trade)
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         engine.match_market_order(Side.BUY, 50.0, book)
 
@@ -421,19 +454,19 @@ class TestMatchingEngine:
         book = OrderBook()
 
         for i, price in enumerate([100.0, 101.0, 102.0]):
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=price,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=price,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.SELL,
+                )
+            )
 
         # Simulate without executing
-        avg_price, total_filled, fills = engine.simulate_market_order(
-            Side.BUY, 200.0, book
-        )
+        avg_price, total_filled, fills = engine.simulate_market_order(Side.BUY, 200.0, book)
 
         assert total_filled == 200.0
         # Book should still have all orders
@@ -445,22 +478,26 @@ class TestMatchingEngine:
         book = OrderBook()
 
         # Add symmetric book
-        book.add_limit_order(LimitOrder(
-            order_id="bid_1",
-            price=99.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=101.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=99.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=101.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         impact = engine.estimate_market_impact(Side.BUY, 100.0, book)
 
@@ -474,14 +511,16 @@ class TestMatchingEngine:
         engine = MatchingEngine()
         book = OrderBook()
 
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
         engine.match_market_order(Side.BUY, 100.0, book)
 
@@ -512,22 +551,26 @@ class TestProRataMatchingEngine:
         book = OrderBook()
 
         # Add two orders at same price
-        book.add_limit_order(LimitOrder(
-            order_id="ask_1",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
-        book.add_limit_order(LimitOrder(
-            order_id="ask_2",
-            price=100.0,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=1001,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
+        book.add_limit_order(
+            LimitOrder(
+                order_id="ask_2",
+                price=100.0,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=1001,
+                side=Side.SELL,
+            )
+        )
 
         result = engine.match_market_order(Side.BUY, 100.0, book)
 
@@ -1170,14 +1213,16 @@ class TestPerformanceBenchmarks:
 
         # Pre-populate with 100 price levels
         for i in range(100):
-            book.add_limit_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=100.0 + i * 0.01,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=1000,
-                side=Side.SELL,
-            ))
+            book.add_limit_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=100.0 + i * 0.01,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=1000,
+                    side=Side.SELL,
+                )
+            )
 
         n_orders = 1000
 
@@ -1206,14 +1251,16 @@ class TestPerformanceBenchmarks:
 
             # Add some asks
             for j in range(10):
-                book.add_limit_order(LimitOrder(
-                    order_id=f"ask_{j}",
-                    price=100.0 + j * 0.01,
-                    qty=100.0,
-                    remaining_qty=100.0,
-                    timestamp_ns=1000,
-                    side=Side.SELL,
-                ))
+                book.add_limit_order(
+                    LimitOrder(
+                        order_id=f"ask_{j}",
+                        price=100.0 + j * 0.01,
+                        qty=100.0,
+                        remaining_qty=100.0,
+                        timestamp_ns=1000,
+                        side=Side.SELL,
+                    )
+                )
 
             bid = LimitOrder(
                 order_id=f"bid_{i}",
@@ -1576,7 +1623,7 @@ class TestIcebergAndHiddenOrders:
         # Display should replenish from hidden
         # Original display was 100, so replenish up to 100
         assert iceberg.display_qty == 100.0  # Replenished
-        assert iceberg.hidden_qty == 300.0   # Reduced
+        assert iceberg.hidden_qty == 300.0  # Reduced
 
     def test_iceberg_order_matching(self):
         """Test matching engine handles iceberg orders correctly."""

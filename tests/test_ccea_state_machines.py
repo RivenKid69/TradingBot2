@@ -46,6 +46,7 @@ from ccea.models.protocol import DeploymentState, RunState, ChangeClass
 # Exception Tests
 # ============================================================================
 
+
 class TestStateMachineError:
     """Tests for StateMachineError base exception."""
 
@@ -124,6 +125,7 @@ class TestGuardConditionFailedError:
 # Data Type Tests
 # ============================================================================
 
+
 class TestStateTransition:
     """Tests for StateTransition dataclass."""
 
@@ -156,6 +158,7 @@ class TestStateTransition:
 
     def test_with_guard_function(self):
         """Test transition with guard function."""
+
         def my_guard(**kwargs):
             return True
 
@@ -259,6 +262,7 @@ class TestTransitionRecord:
 # ============================================================================
 # DeploymentStateMachine Tests
 # ============================================================================
+
 
 class TestDeploymentStateMachineBasics:
     """Basic tests for DeploymentStateMachine."""
@@ -480,6 +484,7 @@ class TestDeploymentStateMachineTransitions:
 # RunStateMachine Tests
 # ============================================================================
 
+
 class TestRunStateMachineBasics:
     """Basic tests for RunStateMachine."""
 
@@ -621,6 +626,7 @@ class TestRunStateMachineTransitions:
 # Common State Machine Behavior Tests
 # ============================================================================
 
+
 class TestIdempotency:
     """Test idempotency/deduplication."""
 
@@ -727,6 +733,7 @@ class TestGuardConditions:
 
     def test_guard_passes(self):
         """Test transition proceeds when guard passes."""
+
         def always_true(**kwargs):
             return True
 
@@ -746,6 +753,7 @@ class TestGuardConditions:
 
     def test_guard_fails(self):
         """Test transition blocked when guard fails."""
+
         def always_false(**kwargs):
             return False
 
@@ -783,6 +791,7 @@ class TestGuardConditions:
 
     def test_guard_exception_wrapped(self):
         """Test guard exceptions are wrapped in GuardConditionFailedError."""
+
         def raise_error(**kwargs):
             raise ValueError("Something went wrong")
 
@@ -825,6 +834,7 @@ class TestActions:
 
     def test_action_failure_logged_not_reverted(self):
         """Test action failure is logged but transition proceeds."""
+
         def failing_action(**kwargs):
             raise RuntimeError("Action failed")
 
@@ -847,7 +857,9 @@ class TestSerialization:
 
     def test_to_dict(self):
         """Test to_dict serialization."""
-        sm = DeploymentStateMachine(deployment_id="deploy_123", initial_state=DeploymentState.RUNNING)
+        sm = DeploymentStateMachine(
+            deployment_id="deploy_123", initial_state=DeploymentState.RUNNING
+        )
         data = sm.to_dict()
         assert data["entity_id"] == "deploy_123"
         assert data["current_state"] == "RUNNING"
@@ -859,6 +871,7 @@ class TestSerialization:
 # ============================================================================
 # StateMachineManager Tests
 # ============================================================================
+
 
 class TestStateMachineManager:
     """Tests for StateMachineManager."""
@@ -1039,6 +1052,7 @@ class TestStateMachineManager:
 # Factory Function Tests
 # ============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -1084,6 +1098,7 @@ class TestFactoryFunctions:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestIntegration:
     """Integration tests for complete workflows."""
@@ -1202,6 +1217,7 @@ class TestIntegration:
 # ============================================================================
 # Edge Cases and Error Handling Tests
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

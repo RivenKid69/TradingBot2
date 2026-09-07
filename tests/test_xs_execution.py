@@ -42,7 +42,7 @@ def test_more_slices_lower_impact_cost():
     sch9 = RebalanceScheduler(algo="TWAP", n_slices=9, impact_coef=0.2)
     c1 = sch1.build_plan(wt, w0, px, 1_000_000, adv=adv).total_est_cost
     c9 = sch9.build_plan(wt, w0, px, 1_000_000, adv=adv).total_est_cost
-    assert c9 < c1            # нарезка снижает импакт (~1/√N)
+    assert c9 < c1  # нарезка снижает импакт (~1/√N)
 
 
 def test_pov_more_slices_for_bigger_participation():
@@ -75,7 +75,7 @@ def test_total_cost_aggregation_and_bps():
     plan = sch.build_plan(wt, w0, px, 1_000_000, adv=adv)
     # total cost = сумма по символам; bps = cost/notional*1e4 ≥ half-spread floor
     assert plan.total_est_cost == pytest.approx(sum(t.est_cost for t in plan.trades))
-    assert plan.total_est_cost_bps >= 1.0   # ≥ half-spread (1 bps)
+    assert plan.total_est_cost_bps >= 1.0  # ≥ half-spread (1 bps)
     assert plan.total_notional == pytest.approx(400_000 + 300_000 + 100_000)
 
 

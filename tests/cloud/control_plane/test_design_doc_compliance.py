@@ -49,6 +49,7 @@ from packages.cloud.control_plane.models import TelemetryLevel
 # 1. Command Payload Whitelist Tests (Design Doc 12.2, 10.4)
 # =============================================================================
 
+
 class TestCommandPayloadWhitelist:
     """Tests for command payload whitelist with blob validation."""
 
@@ -64,12 +65,26 @@ class TestCommandPayloadWhitelist:
         valid_types = {"command_payload", "strategy", "execution", "risk", "environment", "custom"}
         # These types should be usable as command payloads
         for t in valid_types:
-            assert t in {"command_payload", "strategy", "execution", "risk", "environment", "custom", "feature_flags", "model", "data", "alert", "monitoring", "sbom"}
+            assert t in {
+                "command_payload",
+                "strategy",
+                "execution",
+                "risk",
+                "environment",
+                "custom",
+                "feature_flags",
+                "model",
+                "data",
+                "alert",
+                "monitoring",
+                "sbom",
+            }
 
 
 # =============================================================================
 # 2. Agent Enrollment + Cloud Public Key Tests (Design Doc 10.2, 15.2)
 # =============================================================================
+
 
 class TestAgentEnrollmentCloudKey:
     """Tests for agent enrollment with cloud public key provisioning."""
@@ -121,6 +136,7 @@ class TestAgentEnrollmentCloudKey:
 # 3. Agent Signature Verification Tests (Design Doc 10.2)
 # =============================================================================
 
+
 class TestAgentSignatureVerification:
     """Tests for agent signature verification middleware."""
 
@@ -164,6 +180,7 @@ class TestAgentSignatureVerification:
 # =============================================================================
 # 4. Structured Approval Evidence Tests (Design Doc 6.2, 12.2)
 # =============================================================================
+
 
 class TestStructuredApprovalEvidence:
     """Tests for structured approval evidence with immutable blob references."""
@@ -226,6 +243,7 @@ class TestStructuredApprovalEvidence:
 # 5. SBOM Storage and Retrieval Tests (Design Doc 8.4, 16.1)
 # =============================================================================
 
+
 class TestSBOMStorageRetrieval:
     """Tests for SBOM storage and retrieval path."""
 
@@ -275,6 +293,7 @@ class TestSBOMStorageRetrieval:
 # =============================================================================
 # 6. Telemetry RAW_ORDER_EVENTS Enterprise Mode Tests
 # =============================================================================
+
 
 class TestTelemetryEnterpriseMode:
     """Tests for enterprise RAW_ORDER_EVENTS telemetry mode."""
@@ -413,6 +432,7 @@ class TestTelemetryEnterpriseMode:
 # OCI Pipeline Tests (Design Doc 8.1)
 # =============================================================================
 
+
 class TestOCIPipeline:
     """Tests for OCI-first artifact pipeline."""
 
@@ -477,6 +497,7 @@ class TestOCIPipeline:
 # Integration Tests
 # =============================================================================
 
+
 class TestDesignDocComplianceIntegration:
     """Integration tests for Design Doc compliance."""
 
@@ -528,7 +549,9 @@ class TestDesignDocComplianceIntegration:
         assert "side" not in aggregated_allowed  # Order field not in aggregated
 
         # DETAILED - includes event details
-        detailed_allowed = validator._get_allowed_fields(TelemetryLevel.DETAILED_NON_SENSITIVE.value)
+        detailed_allowed = validator._get_allowed_fields(
+            TelemetryLevel.DETAILED_NON_SENSITIVE.value
+        )
         assert "event_type" in detailed_allowed
         assert "side" not in detailed_allowed  # Order field not in detailed
 

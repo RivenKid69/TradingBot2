@@ -25,6 +25,7 @@ DEFENSIVE EXCEPTION HANDLING PATTERN:
 
     Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#ops-monitoring-exceptions
 """
+
 from __future__ import annotations
 
 import json
@@ -44,6 +45,7 @@ from core_config import KillSwitchConfig, MonitoringConfig
 try:  # pragma: no cover - optional dependency
     from prometheus_client import Gauge
 except Exception:  # pragma: no cover - fallback when prometheus_client is missing
+
     class _DummyGauge:
         def __init__(self, *args, **kwargs) -> None:
             pass
@@ -222,9 +224,7 @@ def record_http_success(status: Union[int, str], *, timed_out: bool = False) -> 
         pass
 
 
-def record_http_error(
-    code: Union[int, str], *, timed_out: bool = False
-) -> None:
+def record_http_error(code: Union[int, str], *, timed_out: bool = False) -> None:
     """Record HTTP error with classification ``code``."""
     agg = get_runtime_aggregator()
     if agg is not None:
@@ -261,6 +261,7 @@ def alert_zero_signals(symbol: str) -> None:
         zero_signals_alert_count.labels(symbol).inc()
     except Exception:
         pass
+
 
 # Pipeline stage drops
 pipeline_stage_drop_count = Counter(
@@ -335,6 +336,7 @@ age_at_publish_ms = Histogram(
     ["symbol"],
 )
 
+
 def _label(value: Enum | str) -> str:
     """Return the name of an Enum member or cast value to string."""
     try:
@@ -357,6 +359,7 @@ def inc_reason(reason: Enum | str) -> None:
         pipeline_reason_count.labels(_label(reason)).inc()
     except Exception:
         pass
+
 
 _last_sync_ts_ms: float = 0.0
 _feed_lag_max: Dict[str, float] = {}
@@ -582,9 +585,7 @@ class MonitoringAggregator:
             }
             for key in self._window_ms
         }
-        self._http_attempts: Dict[str, deque[int]] = {
-            key: deque() for key in self._window_ms
-        }
+        self._http_attempts: Dict[str, deque[int]] = {key: deque() for key in self._window_ms}
         self._signal_events: Dict[str, deque[tuple[int, str, int, int]]] = {
             key: deque() for key in self._window_ms
         }
@@ -682,9 +683,7 @@ class MonitoringAggregator:
             except Exception:
                 return None
 
-    def register_feed_intervals(
-        self, symbols: Iterable[str], interval_ms: int
-    ) -> None:
+    def register_feed_intervals(self, symbols: Iterable[str], interval_ms: int) -> None:
         """Register the base bar interval for ``symbols`` in milliseconds."""
 
         if not self.enabled:
@@ -924,9 +923,7 @@ class MonitoringAggregator:
         if not self.enabled:
             return
         active = {
-            sym: int(streak)
-            for sym, streak in self._zero_signal_streaks.items()
-            if int(streak) > 0
+            sym: int(streak) for sym, streak in self._zero_signal_streaks.items() if int(streak) > 0
         }
         self.zero_signal_streaks = active
         global _zero_signal_streaks_snapshot
@@ -1040,7 +1037,9 @@ class MonitoringAggregator:
         realized_avg = float(realized_sum / realized_weight) if realized_weight > 0 else None
         modeled_avg = float(modeled_sum / modeled_weight) if modeled_weight > 0 else None
         bias_avg = (
-            float(bias_sum / bias_weight) if bias_weight > 0 else (
+            float(bias_sum / bias_weight)
+            if bias_weight > 0
+            else (
                 (realized_avg - modeled_avg)
                 if realized_avg is not None and modeled_avg is not None
                 else None
@@ -1074,14 +1073,10 @@ class MonitoringAggregator:
         cumulative_turnover = float(self._bar_totals.get("turnover_usd", 0.0))
         cumulative_cap = float(sum(self._bar_caps_by_symbol.values()))
         cumulative_rate = (
-            float(cumulative_act / cumulative_decisions)
-            if cumulative_decisions > 0
-            else None
+            float(cumulative_act / cumulative_decisions) if cumulative_decisions > 0 else None
         )
         cumulative_ratio = (
-            float(cumulative_turnover / cumulative_cap)
-            if cumulative_cap > 0
-            else None
+            float(cumulative_turnover / cumulative_cap) if cumulative_cap > 0 else None
         )
         realized_weight = float(self._bar_totals.get("realized_cost_weight", 0.0))
         modeled_weight = float(self._bar_totals.get("modeled_cost_weight", 0.0))
@@ -1100,12 +1095,14 @@ class MonitoringAggregator:
             if realized_avg is not None and modeled_avg is not None
             else None
         )
+
         def _maybe(value: float | None) -> float | None:
             if value is None:
                 return None
             if not math.isfinite(value):
                 return None
             return float(value)
+
         return {
             "window_1m": self._bar_window_snapshot("1m"),
             "window_5m": self._bar_window_snapshot("5m"),
@@ -1117,9 +1114,7 @@ class MonitoringAggregator:
                 "cap_usd": cumulative_cap if cumulative_cap > 0 else None,
                 "turnover_vs_cap": cumulative_ratio,
                 "impact_mode_counts": {
-                    mode: int(count)
-                    for mode, count in self._bar_mode_totals.items()
-                    if count > 0
+                    mode: int(count) for mode, count in self._bar_mode_totals.items() if count > 0
                 },
                 "realized_slippage_bps": _maybe(realized_avg),
                 "modeled_cost_bps": _maybe(modeled_avg),
@@ -1206,9 +1201,7 @@ class MonitoringAggregator:
         realized_value: Optional[float]
         try:
             realized_value = (
-                float(realized_slippage_bps)
-                if realized_slippage_bps is not None
-                else None
+                float(realized_slippage_bps) if realized_slippage_bps is not None else None
             )
         except (TypeError, ValueError):
             realized_value = None
@@ -1216,9 +1209,7 @@ class MonitoringAggregator:
             if realized_value is not None and not math.isfinite(realized_value):
                 realized_value = None
         try:
-            bias_value = (
-                float(cost_bias_bps) if cost_bias_bps is not None else None
-            )
+            bias_value = float(cost_bias_bps) if cost_bias_bps is not None else None
         except (TypeError, ValueError):
             bias_value = None
         else:
@@ -1272,7 +1263,9 @@ class MonitoringAggregator:
                 self._bar_totals["realized_cost_weight"] += weight_value
                 self._bar_totals["realized_cost_wsum"] += realized_value * weight_value
 
-    def _build_metrics(self, now_ms: int, feed_lags: Dict[str, int], stale: list[str]) -> Dict[str, Any]:
+    def _build_metrics(
+        self, now_ms: int, feed_lags: Dict[str, int], stale: list[str]
+    ) -> Dict[str, Any]:
         worst_feed = max(feed_lags.items(), key=lambda item: item[1], default=(None, 0))
         ws_snapshot = {
             "failures_1m": int(self._ws_counts["1m"].get("failure", 0)),
@@ -1306,7 +1299,9 @@ class MonitoringAggregator:
             "fill_ratio": self.fill_ratio,
             "pnl": self.daily_pnl,
             "execution_mode": self._execution_mode,
-            "bar_execution": self._bar_execution_snapshot() if self._execution_mode == "bar" else {},
+            "bar_execution": (
+                self._bar_execution_snapshot() if self._execution_mode == "bar" else {}
+            ),
             "ws": ws_snapshot,
             "http": http_snapshot,
             "signals": signal_snapshot,
@@ -1518,8 +1513,7 @@ class MonitoringAggregator:
         th = self.thresholds
 
         feed_lags: Dict[str, int] = {
-            sym: max(0, now_ms - close)
-            for sym, close in self._last_bar_close_ms.items()
+            sym: max(0, now_ms - close) for sym, close in self._last_bar_close_ms.items()
         }
         feed_threshold = float(getattr(th, "feed_lag_ms", 0.0) or 0.0)
         stale_symbols = sorted(
@@ -1778,9 +1772,7 @@ def snapshot_metrics(json_path: str, csv_path: str) -> Tuple[Dict[str, Any], str
     csv_lines.append(f"queue_size,,{queue_depth.get('size', 0)}")
     csv_lines.append(f"queue_max,,{queue_depth.get('max', 0)}")
     csv_lines.append(f"cooldowns_total,,{cooldowns.get('count', 0)}")
-    csv_lines.append(
-        f"cooldowns_global,,{1 if cooldowns.get('global') else 0}"
-    )
+    csv_lines.append(f"cooldowns_global,,{1 if cooldowns.get('global') else 0}")
     csv_lines.append(f"last_ws_failure_ms,,{_last_ws_failure_ts_ms}")
     csv_lines.append(f"last_ws_reconnect_ms,,{_last_ws_reconnect_ts_ms}")
     csv_str = "\n".join(csv_lines)

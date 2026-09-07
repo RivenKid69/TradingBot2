@@ -45,7 +45,7 @@ class RetryPolicy:
     base_delay: float = 0.5
     max_delay: float = 30.0
     multiplier: float = 2.0
-    jitter: float = 0.0            # доля (0.1 = ±10%); детерминированный по умолчанию
+    jitter: float = 0.0  # доля (0.1 = ±10%); детерминированный по умолчанию
 
     def delay(self, attempt: int, *, rand: float = 0.0) -> float:
         """Задержка перед попыткой ``attempt`` (1-based). ``rand`` ∈ [0,1) для jitter (DI)."""
@@ -162,8 +162,9 @@ class ResilientExecutor:
             except self.retryable as exc:
                 last_exc = exc
                 self.breaker.record_failure()
-                logger.warning("broker call failed (attempt %d/%d): %s",
-                               attempt, self.retry.max_attempts, exc)
+                logger.warning(
+                    "broker call failed (attempt %d/%d): %s", attempt, self.retry.max_attempts, exc
+                )
                 if attempt < self.retry.max_attempts:
                     d = self.retry.delay(attempt, rand=self._rand())
                     self.sleeps.append(d)
@@ -228,14 +229,16 @@ class OrderStatusPoller:
 # ---------------------------------------------------------------------------
 @dataclass
 class ReconcileReport:
-    untracked_broker_orders: List[str] = field(default_factory=list)   # есть у брокера, нет локально
-    missing_at_broker: List[str] = field(default_factory=list)         # локально pending, нет у брокера
+    untracked_broker_orders: List[str] = field(default_factory=list)  # есть у брокера, нет локально
+    missing_at_broker: List[str] = field(default_factory=list)  # локально pending, нет у брокера
     position_mismatches: List[Dict[str, Any]] = field(default_factory=list)
     actions: List[str] = field(default_factory=list)
 
     @property
     def clean(self) -> bool:
-        return not (self.untracked_broker_orders or self.missing_at_broker or self.position_mismatches)
+        return not (
+            self.untracked_broker_orders or self.missing_at_broker or self.position_mismatches
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -276,13 +279,22 @@ class StartupReconciler:
             lq = float(local_positions.get(s, 0.0))
             bq = float(broker_positions.get(s, 0.0))
             if abs(lq - bq) > self.qty_tolerance:
-                rep.position_mismatches.append({"symbol": s, "local": lq, "broker": bq, "delta": bq - lq})
+                rep.position_mismatches.append(
+                    {"symbol": s, "local": lq, "broker": bq, "delta": bq - lq}
+                )
                 rep.actions.append(f"reconcile position {s}: local={lq} broker={bq} (trust broker)")
         return rep
 
 
 __all__ = [
-    "CircuitOpenError", "MaxRetriesExceeded",
-    "RetryPolicy", "CircuitState", "CircuitBreaker", "ResilientExecutor",
-    "OrderStatus", "OrderStatusPoller", "ReconcileReport", "StartupReconciler",
+    "CircuitOpenError",
+    "MaxRetriesExceeded",
+    "RetryPolicy",
+    "CircuitState",
+    "CircuitBreaker",
+    "ResilientExecutor",
+    "OrderStatus",
+    "OrderStatusPoller",
+    "ReconcileReport",
+    "StartupReconciler",
 ]

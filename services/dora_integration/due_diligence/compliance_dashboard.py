@@ -18,6 +18,7 @@ from uuid import uuid4
 
 class IssueSeverity(Enum):
     """Issue severity classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -26,6 +27,7 @@ class IssueSeverity(Enum):
 
 class IssueStatus(Enum):
     """Issue lifecycle."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
@@ -34,6 +36,7 @@ class IssueStatus(Enum):
 
 class DeadlineStatus(Enum):
     """Deadline tracking state."""
+
     UPCOMING = "upcoming"
     DUE_SOON = "due_soon"
     OVERDUE = "overdue"
@@ -43,6 +46,7 @@ class DeadlineStatus(Enum):
 @dataclass
 class ComplianceIssue:
     """Compliance gap or risk item."""
+
     description: str
     severity: IssueSeverity
     owner: str
@@ -57,12 +61,16 @@ class ComplianceIssue:
 
     @property
     def is_overdue(self) -> bool:
-        return self.status not in {IssueStatus.RESOLVED, IssueStatus.CLOSED} and datetime.now(timezone.utc) > self.due_date
+        return (
+            self.status not in {IssueStatus.RESOLVED, IssueStatus.CLOSED}
+            and datetime.now(timezone.utc) > self.due_date
+        )
 
 
 @dataclass
 class Deadline:
     """Regulatory or internal milestone deadline."""
+
     name: str
     due_date: datetime
     regulation: str
@@ -77,6 +85,7 @@ class Deadline:
 @dataclass
 class ComplianceStatus:
     """Aggregate compliance posture."""
+
     current_phase: int
     target_phase: int
     completed_phases: List[int]
@@ -92,6 +101,7 @@ class ComplianceStatus:
 @dataclass
 class DORAComplianceReport:
     """Report snapshot."""
+
     period: str
     generated_at: datetime
     status: ComplianceStatus
@@ -143,7 +153,9 @@ class DORAComplianceDashboard:
         total = len(self.issues)
         if total == 0:
             return 100.0
-        resolved = sum(1 for issue in self.issues if issue.status in {IssueStatus.RESOLVED, IssueStatus.CLOSED})
+        resolved = sum(
+            1 for issue in self.issues if issue.status in {IssueStatus.RESOLVED, IssueStatus.CLOSED}
+        )
         return (resolved / total) * 100.0
 
     def _test_score(self) -> float:
@@ -160,11 +172,7 @@ class DORAComplianceDashboard:
 
     def get_compliance_status(self) -> ComplianceStatus:
         coverage = round(
-            (
-                0.6 * self._phase_progress()
-                + 0.2 * self._issue_score()
-                + 0.2 * self._test_score()
-            ),
+            (0.6 * self._phase_progress() + 0.2 * self._issue_score() + 0.2 * self._test_score()),
             2,
         )
         return ComplianceStatus(
@@ -172,7 +180,11 @@ class DORAComplianceDashboard:
             target_phase=self.target_phase,
             completed_phases=list(self.completed_phases),
             coverage_pct=min(100.0, coverage),
-            open_issues=sum(1 for issue in self.issues if issue.status in {IssueStatus.OPEN, IssueStatus.IN_PROGRESS}),
+            open_issues=sum(
+                1
+                for issue in self.issues
+                if issue.status in {IssueStatus.OPEN, IssueStatus.IN_PROGRESS}
+            ),
             deadline_risks=self._deadline_risk_count(),
         )
 
@@ -180,11 +192,17 @@ class DORAComplianceDashboard:
     # Reporting
     # ------------------------------------------------------------------ #
     def get_upcoming_deadlines(self) -> List[Deadline]:
-        active = [deadline for deadline in self.deadlines if deadline.status != DeadlineStatus.COMPLETE]
+        active = [
+            deadline for deadline in self.deadlines if deadline.status != DeadlineStatus.COMPLETE
+        ]
         return sorted(active, key=lambda deadline: deadline.due_date)
 
     def get_open_issues(self) -> List[ComplianceIssue]:
-        return [issue for issue in self.issues if issue.status in {IssueStatus.OPEN, IssueStatus.IN_PROGRESS}]
+        return [
+            issue
+            for issue in self.issues
+            if issue.status in {IssueStatus.OPEN, IssueStatus.IN_PROGRESS}
+        ]
 
     def generate_compliance_report(self, period: str) -> DORAComplianceReport:
         status = self.get_compliance_status()
@@ -196,4 +214,3 @@ class DORAComplianceDashboard:
             issues=list(self.issues),
             test_results=dict(self.test_results),
         )
-

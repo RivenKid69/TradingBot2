@@ -24,9 +24,11 @@ from typing import Any, Optional
 from unittest.mock import Mock, MagicMock
 
 import pytest
+
 gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 from pydantic import BaseModel
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
@@ -86,6 +88,7 @@ class TestMakeClipRangeCallable:
         """Test that created function is picklable (Bug #8 fix)."""
         try:
             import cloudpickle
+
             clip_fn = _make_clip_range_callable(0.3)
             pickled = cloudpickle.dumps(clip_fn)
             unpickled = cloudpickle.loads(pickled)
@@ -115,16 +118,16 @@ class TestMakeClipRangeCallable:
 
     def test_nan_value(self):
         """Test factory with NaN value."""
-        clip_fn = _make_clip_range_callable(float('nan'))
+        clip_fn = _make_clip_range_callable(float("nan"))
         result = clip_fn()
         assert np.isnan(result)
 
     def test_inf_value(self):
         """Test factory with infinity."""
-        clip_fn_pos = _make_clip_range_callable(float('inf'))
-        clip_fn_neg = _make_clip_range_callable(float('-inf'))
-        assert clip_fn_pos() == float('inf')
-        assert clip_fn_neg() == float('-inf')
+        clip_fn_pos = _make_clip_range_callable(float("inf"))
+        clip_fn_neg = _make_clip_range_callable(float("-inf"))
+        assert clip_fn_pos() == float("inf")
+        assert clip_fn_neg() == float("-inf")
 
 
 class TestCfgGet:
@@ -152,6 +155,7 @@ class TestCfgGet:
 
     def test_object_with_attributes(self):
         """Test with object having attributes."""
+
         class Config:
             key1 = "value1"
             key2 = 42
@@ -163,6 +167,7 @@ class TestCfgGet:
 
     def test_object_with_get_method(self):
         """Test with object having get() method."""
+
         class ConfigWithGet:
             def get(self, key, default=None):
                 return {"key1": "value1"}.get(key, default)
@@ -174,6 +179,7 @@ class TestCfgGet:
 
     def test_pydantic_model(self):
         """Test with Pydantic V2 model."""
+
         class PydanticConfig(BaseModel):
             key1: str = "value1"
             key2: int = 42
@@ -185,6 +191,7 @@ class TestCfgGet:
 
     def test_dataclass(self):
         """Test with dataclass."""
+
         @dataclass
         class DataclassConfig:
             key1: str = "value1"
@@ -229,6 +236,7 @@ class TestCfgGet:
 
     def test_exception_handling_get_method(self):
         """Test exception handling when get() method fails."""
+
         class BadConfig:
             def get(self, key):
                 raise ValueError("Bad get")
@@ -239,6 +247,7 @@ class TestCfgGet:
 
     def test_exception_handling_model_dump(self):
         """Test exception handling when model_dump() fails."""
+
         class BadConfig:
             def model_dump(self):
                 raise ValueError("Bad dump")
@@ -249,6 +258,7 @@ class TestCfgGet:
 
     def test_priority_order(self):
         """Test that attribute access has priority over get() method."""
+
         class ConfigBoth:
             key1 = "attribute_value"
 
@@ -296,7 +306,7 @@ class TestPopArtValueToSerializable:
         result = _popart_value_to_serializable(arr)
         # numpy arrays are converted to string representation
         assert isinstance(result, str)
-        assert '[1 2 3]' in result or '1' in result
+        assert "[1 2 3]" in result or "1" in result
 
     def test_numpy_multidim_array(self):
         """Test with multi-dimensional numpy arrays."""
@@ -311,7 +321,7 @@ class TestPopArtValueToSerializable:
         result = _popart_value_to_serializable(tensor)
         # torch tensors are converted to string representation
         assert isinstance(result, str)
-        assert 'tensor' in result.lower() or '1' in result
+        assert "tensor" in result.lower() or "1" in result
 
     def test_torch_scalar_tensor(self):
         """Test with scalar torch tensor."""
@@ -319,7 +329,7 @@ class TestPopArtValueToSerializable:
         result = _popart_value_to_serializable(tensor)
         # scalar torch tensor is converted to string
         assert isinstance(result, str)
-        assert '42' in result
+        assert "42" in result
 
     def test_nested_list(self):
         """Test with nested lists."""
@@ -345,18 +355,18 @@ class TestPopArtValueToSerializable:
     def test_nan_and_inf(self):
         """Test with NaN and infinity values."""
         # Note: NaN != NaN, so check with isnan
-        result_nan = _popart_value_to_serializable(float('nan'))
+        result_nan = _popart_value_to_serializable(float("nan"))
         assert np.isnan(result_nan)
 
-        assert _popart_value_to_serializable(float('inf')) == float('inf')
-        assert _popart_value_to_serializable(float('-inf')) == float('-inf')
+        assert _popart_value_to_serializable(float("inf")) == float("inf")
+        assert _popart_value_to_serializable(float("-inf")) == float("-inf")
 
     def test_numpy_nan_inf(self):
         """Test with numpy NaN and infinity."""
         result_nan = _popart_value_to_serializable(np.nan)
         assert np.isnan(result_nan)
 
-        assert _popart_value_to_serializable(np.inf) == float('inf')
+        assert _popart_value_to_serializable(np.inf) == float("inf")
 
 
 class TestSerializePopArtConfig:
@@ -399,7 +409,7 @@ class TestSerializePopArtConfig:
                 "inner": np.float32(1.5),
                 "deep": {
                     "value": np.int32(42),
-                }
+                },
             }
         }
         result = _serialize_popart_config(cfg)
@@ -443,6 +453,7 @@ class TestUnwrapVecNormalize:
 
     def test_unwrap_vec_normalize_direct(self):
         """Test unwrapping direct VecNormalize."""
+
         # Create a simple dummy environment
         def make_env():
             return gym.make("CartPole-v1")
@@ -454,6 +465,7 @@ class TestUnwrapVecNormalize:
 
     def test_unwrap_vec_normalize_nested(self):
         """Test unwrapping nested VecNormalize."""
+
         def make_env():
             return gym.make("CartPole-v1")
 
@@ -464,6 +476,7 @@ class TestUnwrapVecNormalize:
 
     def test_unwrap_no_vec_normalize(self):
         """Test when no VecNormalize is present."""
+
         def make_env():
             return gym.make("CartPole-v1")
 
@@ -585,7 +598,7 @@ class TestPadFunctions:
         # Note: pad and pad_and_flatten are nested in create_sequencers
         # We'll test the logic that would be expected
         arr = np.array([[1, 2], [3, 4]])
-        padded = np.pad(arr, ((0, 1), (0, 0)), mode='constant')
+        padded = np.pad(arr, ((0, 1), (0, 0)), mode="constant")
         assert padded.shape == (3, 2)
         np.testing.assert_array_equal(padded[-1], [0, 0])
 
@@ -593,9 +606,7 @@ class TestPadFunctions:
         """Test pad with torch tensor."""
         tensor = torch.tensor([[1, 2], [3, 4]])
         # Convert to numpy, pad, convert back
-        padded = torch.from_numpy(
-            np.pad(tensor.numpy(), ((0, 1), (0, 0)), mode='constant')
-        )
+        padded = torch.from_numpy(np.pad(tensor.numpy(), ((0, 1), (0, 0)), mode="constant"))
         assert padded.shape == (3, 2)
         torch.testing.assert_close(padded[-1], torch.tensor([0, 0]))
 

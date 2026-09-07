@@ -133,7 +133,9 @@ def test_throttle_drop_logs_and_counts(monkeypatch) -> None:
 
     monkeypatch.setattr(service_signal_runner.monitoring, "inc_stage", lambda *a, **k: None)
     monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", drop_metric)
-    monkeypatch.setattr(service_signal_runner.monitoring, "throttle_dropped_count", throttle_dropped)
+    monkeypatch.setattr(
+        service_signal_runner.monitoring, "throttle_dropped_count", throttle_dropped
+    )
     monkeypatch.setattr(service_signal_runner, "log_drop", drop_recorder)
 
     worker._acquire_tokens = lambda symbol: (False, "GLOBAL_LIMIT")  # type: ignore[method-assign]
@@ -172,7 +174,9 @@ def test_queue_expiry_logs_and_counts(monkeypatch) -> None:
     enqueued_metric = DummyMetric()
 
     monkeypatch.setattr(service_signal_runner.monitoring, "inc_stage", lambda *a, **k: None)
-    monkeypatch.setattr(service_signal_runner.monitoring, "throttle_enqueued_count", enqueued_metric)
+    monkeypatch.setattr(
+        service_signal_runner.monitoring, "throttle_enqueued_count", enqueued_metric
+    )
     monkeypatch.setattr(
         service_signal_runner.monitoring, "throttle_queue_expired_count", queue_expired_metric
     )
@@ -182,9 +186,7 @@ def test_queue_expiry_logs_and_counts(monkeypatch) -> None:
     monkeypatch.setattr(service_signal_runner, "log_drop", drop_recorder)
 
     monotonic_time = {"value": 0.0}
-    monkeypatch.setattr(
-        service_signal_runner.time, "monotonic", lambda: monotonic_time["value"]
-    )
+    monkeypatch.setattr(service_signal_runner.time, "monotonic", lambda: monotonic_time["value"])
 
     worker._acquire_tokens = lambda symbol: (False, "GLOBAL_LIMIT")  # type: ignore[method-assign]
 
@@ -213,9 +215,7 @@ def test_dynamic_guard_not_created_when_features_disabled(monkeypatch) -> None:
     structured_cfg = SimpleNamespace(enabled=True, guard=dyn_cfg)
     no_trade_cfg = SimpleNamespace(dynamic=structured_cfg, dynamic_guard=dyn_cfg)
 
-    monkeypatch.setattr(
-        service_signal_runner, "NO_TRADE_FEATURES_DISABLED", True, raising=False
-    )
+    monkeypatch.setattr(service_signal_runner, "NO_TRADE_FEATURES_DISABLED", True, raising=False)
 
     worker = _make_worker(monkeypatch, execution_mode="bar", no_trade_cfg=no_trade_cfg)
 
@@ -227,9 +227,7 @@ def test_dynamic_guard_created_when_features_enabled(monkeypatch) -> None:
     structured_cfg = SimpleNamespace(enabled=True, guard=dyn_cfg)
     no_trade_cfg = SimpleNamespace(dynamic=structured_cfg, dynamic_guard=dyn_cfg)
 
-    monkeypatch.setattr(
-        service_signal_runner, "NO_TRADE_FEATURES_DISABLED", False, raising=False
-    )
+    monkeypatch.setattr(service_signal_runner, "NO_TRADE_FEATURES_DISABLED", False, raising=False)
 
     worker = _make_worker(monkeypatch, execution_mode="bar", no_trade_cfg=no_trade_cfg)
 

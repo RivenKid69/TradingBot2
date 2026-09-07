@@ -49,6 +49,7 @@ from execution_providers import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def equity_config() -> Dict[str, Any]:
     """Equity slippage configuration."""
@@ -108,6 +109,7 @@ def equity_fee_config() -> Dict[str, Any]:
 # Test StatisticalSlippageProvider.from_config()
 # =============================================================================
 
+
 class TestStatisticalSlippageProviderFromConfig:
     """Tests for StatisticalSlippageProvider.from_config()."""
 
@@ -158,16 +160,12 @@ class TestStatisticalSlippageProviderFromConfig:
         }
 
         # Equity profile
-        equity_provider = StatisticalSlippageProvider.from_config(
-            config, AssetClass.EQUITY
-        )
+        equity_provider = StatisticalSlippageProvider.from_config(config, AssetClass.EQUITY)
         assert equity_provider.spread_bps == pytest.approx(1.5)
         assert equity_provider.impact_coef == pytest.approx(0.04)
 
         # Crypto profile
-        crypto_provider = StatisticalSlippageProvider.from_config(
-            config, AssetClass.CRYPTO
-        )
+        crypto_provider = StatisticalSlippageProvider.from_config(config, AssetClass.CRYPTO)
         assert crypto_provider.spread_bps == pytest.approx(6.0)
         assert crypto_provider.impact_coef == pytest.approx(0.12)
 
@@ -175,6 +173,7 @@ class TestStatisticalSlippageProviderFromConfig:
 # =============================================================================
 # Test StatisticalSlippageProvider.from_profile()
 # =============================================================================
+
 
 class TestStatisticalSlippageProviderFromProfile:
     """Tests for StatisticalSlippageProvider.from_profile()."""
@@ -240,6 +239,7 @@ class TestStatisticalSlippageProviderFromProfile:
 # Test CryptoFeeProvider.from_config()
 # =============================================================================
 
+
 class TestCryptoFeeProviderFromConfig:
     """Tests for CryptoFeeProvider.from_config()."""
 
@@ -302,6 +302,7 @@ class TestCryptoFeeProviderFromConfig:
 # =============================================================================
 # Test EquityFeeProvider.from_config()
 # =============================================================================
+
 
 class TestEquityFeeProviderFromConfig:
     """Tests for EquityFeeProvider.from_config()."""
@@ -373,6 +374,7 @@ class TestEquityFeeProviderFromConfig:
 # Test create_providers_from_asset_class()
 # =============================================================================
 
+
 class TestCreateProvidersFromAssetClass:
     """Tests for create_providers_from_asset_class()."""
 
@@ -424,9 +426,7 @@ class TestCreateProvidersFromAssetClass:
             "taker_bps": 2.0,
         }
 
-        slippage, fees = create_providers_from_asset_class(
-            AssetClass.CRYPTO, fee_config=custom_fee
-        )
+        slippage, fees = create_providers_from_asset_class(AssetClass.CRYPTO, fee_config=custom_fee)
 
         assert fees.maker_bps == pytest.approx(1.0)
         assert fees.taker_bps == pytest.approx(2.0)
@@ -435,6 +435,7 @@ class TestCreateProvidersFromAssetClass:
 # =============================================================================
 # Test load_slippage_profile()
 # =============================================================================
+
 
 class TestLoadSlippageProfile:
     """Tests for load_slippage_profile()."""
@@ -470,6 +471,7 @@ class TestLoadSlippageProfile:
 # =============================================================================
 # Test Slippage Computation
 # =============================================================================
+
 
 class TestSlippageComputation:
     """Tests for slippage computation with different profiles."""
@@ -530,6 +532,7 @@ class TestSlippageComputation:
 # Test Backward Compatibility
 # =============================================================================
 
+
 class TestBackwardCompatibility:
     """Tests for backward compatibility with legacy configs."""
 
@@ -573,6 +576,7 @@ class TestBackwardCompatibility:
 # =============================================================================
 # Test L2ExecutionProvider Integration
 # =============================================================================
+
 
 class TestL2ExecutionProviderIntegration:
     """Tests for L2ExecutionProvider with different asset classes."""
@@ -639,6 +643,7 @@ class TestL2ExecutionProviderIntegration:
 # Test create_execution_provider Factory
 # =============================================================================
 
+
 class TestCreateExecutionProviderFactory:
     """Tests for create_execution_provider factory function."""
 
@@ -672,6 +677,7 @@ class TestCreateExecutionProviderFactory:
 # Test ExecutionSimulator Integration (if available)
 # =============================================================================
 
+
 class TestExecutionSimulatorIntegration:
     """Tests for ExecutionSimulator provider integration."""
 
@@ -680,6 +686,7 @@ class TestExecutionSimulatorIntegration:
         """Skip if ExecutionSimulator not available."""
         try:
             from execution_sim import ExecutionSimulator
+
             return ExecutionSimulator
         except ImportError:
             pytest.skip("ExecutionSimulator not available")
@@ -766,6 +773,7 @@ class TestExecutionSimulatorIntegration:
 # Test Asset Class Differences
 # =============================================================================
 
+
 class TestAssetClassDifferences:
     """Tests verifying correct asset class specific behavior."""
 
@@ -835,6 +843,7 @@ class TestAssetClassDifferences:
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""

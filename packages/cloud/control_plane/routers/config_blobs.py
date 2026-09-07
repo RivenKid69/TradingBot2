@@ -44,20 +44,22 @@ router = APIRouter()
 # ============================================================================
 
 # Valid config types (Design Doc 12.2: command_payload added for command whitelist)
-VALID_CONFIG_TYPES = frozenset([
-    "strategy",
-    "risk",
-    "execution",
-    "environment",
-    "feature_flags",
-    "model",
-    "data",
-    "alert",
-    "monitoring",
-    "custom",
-    "command_payload",  # Design Doc 12.2: Payload blobs for commands
-    "sbom",             # Design Doc 8.4: SBOM storage
-])
+VALID_CONFIG_TYPES = frozenset(
+    [
+        "strategy",
+        "risk",
+        "execution",
+        "environment",
+        "feature_flags",
+        "model",
+        "data",
+        "alert",
+        "monitoring",
+        "custom",
+        "command_payload",  # Design Doc 12.2: Payload blobs for commands
+        "sbom",  # Design Doc 8.4: SBOM storage
+    ]
+)
 
 # Maximum content size (10 MB)
 MAX_CONTENT_SIZE_BYTES = 10 * 1024 * 1024
@@ -66,6 +68,7 @@ MAX_CONTENT_SIZE_BYTES = 10 * 1024 * 1024
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def _compute_digest(content: Dict[str, Any]) -> str:
     """Compute SHA256 digest of content."""
@@ -140,6 +143,7 @@ def _config_blob_to_response(blob: ConfigBlob) -> "ConfigBlobResponse":
 # Request/Response Models
 # ============================================================================
 
+
 class ConfigBlobCreate(BaseModel):
     """Create config blob request."""
 
@@ -204,6 +208,7 @@ class DigestLookupRequest(BaseModel):
 # ============================================================================
 # Endpoints
 # ============================================================================
+
 
 @router.get(
     "",
@@ -333,8 +338,8 @@ async def create_config_blob(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Config blob rejected: secrets detected. Cloud NEVER stores secrets. "
-                   f"Findings: {'; '.join(findings[:3])}"
-                   + (f" and {len(findings) - 3} more..." if len(findings) > 3 else ""),
+            f"Findings: {'; '.join(findings[:3])}"
+            + (f" and {len(findings) - 3} more..." if len(findings) > 3 else ""),
         )
 
     # WI-CLOUD-05: Boundary validation for order-like payloads
@@ -421,9 +426,7 @@ async def get_config_blob(
     Requires config:read permission or superuser.
     """
     async with get_session() as session:
-        result = await session.execute(
-            select(ConfigBlob).where(ConfigBlob.id == config_blob_id)
-        )
+        result = await session.execute(select(ConfigBlob).where(ConfigBlob.id == config_blob_id))
         blob = result.scalar_one_or_none()
 
         if blob is None:
@@ -549,10 +552,12 @@ async def get_config_blob_by_digest(
                 )
 
             result = await session.execute(
-                select(ConfigBlob).where(
+                select(ConfigBlob)
+                .where(
                     ConfigBlob.workspace_id.in_(workspace_ids),
                     ConfigBlob.digest == digest,
-                ).limit(1)
+                )
+                .limit(1)
             )
 
         blob = result.scalar_one_or_none()
@@ -616,12 +621,14 @@ async def list_config_types(
 # SBOM Storage and Retrieval (Design Doc 8.4, 16.1)
 # ============================================================================
 
+
 class SBOMCreateRequest(BaseModel):
     """
     SBOM create request.
 
     Design Doc 8.4: SBOM mandatory and accessible.
     """
+
     workspace_id: UUID
     artifact_digest: str = Field(..., description="Associated artifact digest")
     sbom_format: str = Field(default="cyclonedx-json", description="SBOM format")
@@ -634,6 +641,7 @@ class SBOMResponse(BaseModel):
 
     Design Doc 8.4, 16.1: SBOM storage + retrieval.
     """
+
     id: UUID
     workspace_id: UUID
     digest: str
@@ -797,10 +805,12 @@ async def get_sbom_by_artifact(
                     detail="SBOM not found for artifact",
                 )
             result = await session.execute(
-                select(ConfigBlob).where(
+                select(ConfigBlob)
+                .where(
                     ConfigBlob.workspace_id.in_(workspace_ids),
                     ConfigBlob.config_type == "sbom",
-                ).limit(100)
+                )
+                .limit(100)
             )
 
         blobs = result.scalars().all()

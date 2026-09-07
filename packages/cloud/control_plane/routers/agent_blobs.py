@@ -66,8 +66,10 @@ ENV_PRESIGN_SECRET = "CCEA_PRESIGN_SECRET"
 # Request/Response Models
 # ============================================================================
 
+
 class ConfigBlobLookupResponse(BaseModel):
     """Response from config blob lookup."""
+
     id: UUID
     digest: str
     content: Dict[str, Any]
@@ -83,6 +85,7 @@ class ArtifactDownloadResponse(BaseModel):
 
     Design Doc 22.2: Contains presigned URL for artifact download.
     """
+
     artifact_id: UUID
     artifact_name: str
     digest: str
@@ -100,6 +103,7 @@ class PayloadRefResolution(BaseModel):
     - Config blob (config:sha256:xxx)
     - Artifact (artifact:sha256:xxx)
     """
+
     payload_ref: str
     ref_type: str  # "config" or "artifact"
     resolved: bool
@@ -112,17 +116,20 @@ class PayloadRefResolution(BaseModel):
 
 class BatchPayloadRefRequest(BaseModel):
     """Request to resolve multiple payload refs."""
+
     refs: List[str] = Field(..., max_length=10)
 
 
 class BatchPayloadRefResponse(BaseModel):
     """Response with resolved payload refs."""
+
     resolutions: List[PayloadRefResolution]
 
 
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 async def verify_agent_enrolled(
     session,
@@ -191,6 +198,7 @@ def generate_presigned_url(
 # Config Blob Endpoints
 # ============================================================================
 
+
 @router.get(
     "/config-blobs/by-digest/{digest}",
     response_model=ConfigBlobLookupResponse,
@@ -251,6 +259,7 @@ async def get_config_blob_by_digest(
 # ============================================================================
 # Artifact Endpoints
 # ============================================================================
+
 
 @router.get(
     "/artifacts/by-digest/{digest}",
@@ -336,6 +345,7 @@ async def get_artifact_download_url(
 # ============================================================================
 # Payload Reference Resolution
 # ============================================================================
+
 
 @router.get(
     "/payload-refs/resolve",

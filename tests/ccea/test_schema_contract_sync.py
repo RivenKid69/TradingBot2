@@ -37,7 +37,12 @@ class TestSchemaContractSync:
     @pytest.fixture
     def schema_path(self) -> Path:
         """Get path to protocol messages schema."""
-        return Path(__file__).parent.parent.parent / "docs" / "schemas" / "protocol_messages.schema.json"
+        return (
+            Path(__file__).parent.parent.parent
+            / "docs"
+            / "schemas"
+            / "protocol_messages.schema.json"
+        )
 
     @pytest.fixture
     def schema(self, schema_path: Path) -> Dict[str, Any]:
@@ -230,7 +235,12 @@ class TestSchemaVersionSync:
     @pytest.fixture
     def schema_path(self) -> Path:
         """Get path to protocol messages schema."""
-        return Path(__file__).parent.parent.parent / "docs" / "schemas" / "protocol_messages.schema.json"
+        return (
+            Path(__file__).parent.parent.parent
+            / "docs"
+            / "schemas"
+            / "protocol_messages.schema.json"
+        )
 
     @pytest.fixture
     def schema(self, schema_path: Path) -> Dict[str, Any]:
@@ -247,15 +257,15 @@ class TestSchemaVersionSync:
         min_version = schema.get("x-min-supported-version")
         max_version = schema.get("x-max-supported-version")
 
-        assert SCHEMA_VERSION == schema_version, (
-            f"SCHEMA_VERSION mismatch: code={SCHEMA_VERSION}, schema={schema_version}"
-        )
-        assert MIN_SUPPORTED_SCHEMA_VERSION == min_version, (
-            f"MIN_SUPPORTED_SCHEMA_VERSION mismatch: code={MIN_SUPPORTED_SCHEMA_VERSION}, schema={min_version}"
-        )
-        assert MAX_SUPPORTED_SCHEMA_VERSION == max_version, (
-            f"MAX_SUPPORTED_SCHEMA_VERSION mismatch: code={MAX_SUPPORTED_SCHEMA_VERSION}, schema={max_version}"
-        )
+        assert (
+            SCHEMA_VERSION == schema_version
+        ), f"SCHEMA_VERSION mismatch: code={SCHEMA_VERSION}, schema={schema_version}"
+        assert (
+            MIN_SUPPORTED_SCHEMA_VERSION == min_version
+        ), f"MIN_SUPPORTED_SCHEMA_VERSION mismatch: code={MIN_SUPPORTED_SCHEMA_VERSION}, schema={min_version}"
+        assert (
+            MAX_SUPPORTED_SCHEMA_VERSION == max_version
+        ), f"MAX_SUPPORTED_SCHEMA_VERSION mismatch: code={MAX_SUPPORTED_SCHEMA_VERSION}, schema={max_version}"
 
 
 class TestEnumCompleteness:
@@ -265,7 +275,9 @@ class TestEnumCompleteness:
         """All protocol enums should be frozensets for immutability."""
         enums = get_all_protocol_enums()
         for name, enum_set in enums.items():
-            assert isinstance(enum_set, frozenset), f"{name} should be a frozenset, got {type(enum_set)}"
+            assert isinstance(
+                enum_set, frozenset
+            ), f"{name} should be a frozenset, got {type(enum_set)}"
 
     def test_all_protocol_enums_are_uppercase(self):
         """All protocol enum values should be UPPERCASE (except technical identifiers)."""
@@ -279,9 +291,9 @@ class TestEnumCompleteness:
                 continue
             for value in enum_set:
                 if isinstance(value, str):
-                    assert value == value.upper(), (
-                        f"Protocol enum {name} value '{value}' should be uppercase"
-                    )
+                    assert (
+                        value == value.upper()
+                    ), f"Protocol enum {name} value '{value}' should be uppercase"
 
     def test_no_duplicate_values_across_unrelated_enums(self):
         """Ensure no accidental value collisions between unrelated enum sets."""
@@ -299,9 +311,9 @@ class TestEnumCompleteness:
             set1 = enums[name1]
             set2 = enums[name2]
             intersection = set1 & set2
-            assert not intersection, (
-                f"Unexpected overlap between {name1} and {name2}: {intersection}"
-            )
+            assert (
+                not intersection
+            ), f"Unexpected overlap between {name1} and {name2}: {intersection}"
 
     def test_expected_overlap_deployment_run_state(self):
         """deployment_state and run_state intentionally share RUNNING/PAUSED/STOPPED."""
@@ -313,9 +325,9 @@ class TestEnumCompleteness:
         expected_overlap = {"RUNNING", "PAUSED", "STOPPED"}
         actual_overlap = deployment_state & run_state
 
-        assert expected_overlap <= actual_overlap, (
-            f"Expected {expected_overlap} to be shared between deployment_state and run_state"
-        )
+        assert (
+            expected_overlap <= actual_overlap
+        ), f"Expected {expected_overlap} to be shared between deployment_state and run_state"
 
     def test_expected_overlap_command_approval_status(self):
         """command_status and approval_status intentionally share APPROVED/REJECTED."""
@@ -327,9 +339,9 @@ class TestEnumCompleteness:
         expected_overlap = {"APPROVED", "REJECTED"}
         actual_overlap = command_status & approval_status
 
-        assert expected_overlap <= actual_overlap, (
-            f"Expected {expected_overlap} to be shared between command_status and approval_status"
-        )
+        assert (
+            expected_overlap <= actual_overlap
+        ), f"Expected {expected_overlap} to be shared between command_status and approval_status"
 
 
 class TestProhibitedFields:
@@ -338,7 +350,12 @@ class TestProhibitedFields:
     @pytest.fixture
     def schema_path(self) -> Path:
         """Get path to protocol messages schema."""
-        return Path(__file__).parent.parent.parent / "docs" / "schemas" / "protocol_messages.schema.json"
+        return (
+            Path(__file__).parent.parent.parent
+            / "docs"
+            / "schemas"
+            / "protocol_messages.schema.json"
+        )
 
     @pytest.fixture
     def schema(self, schema_path: Path) -> Dict[str, Any]:
@@ -362,10 +379,7 @@ class TestProhibitedFields:
         any_of = not_constraint.get("anyOf", [])
 
         # Check that side is in the prohibited list
-        side_prohibited = any(
-            "side" in item.get("required", [])
-            for item in any_of
-        )
+        side_prohibited = any("side" in item.get("required", []) for item in any_of)
         assert side_prohibited, "'side' field must be prohibited in schema"
 
     def test_quantity_field_prohibited_in_schema(self, schema: Dict[str, Any]):
@@ -374,14 +388,8 @@ class TestProhibitedFields:
         not_constraint = prohibited_def.get("not", {})
         any_of = not_constraint.get("anyOf", [])
 
-        quantity_prohibited = any(
-            "quantity" in item.get("required", [])
-            for item in any_of
-        )
-        qty_prohibited = any(
-            "qty" in item.get("required", [])
-            for item in any_of
-        )
+        quantity_prohibited = any("quantity" in item.get("required", []) for item in any_of)
+        qty_prohibited = any("qty" in item.get("required", []) for item in any_of)
 
         assert quantity_prohibited, "'quantity' field must be prohibited in schema"
         assert qty_prohibited, "'qty' field must be prohibited in schema"
@@ -392,10 +400,7 @@ class TestProhibitedFields:
         not_constraint = prohibited_def.get("not", {})
         any_of = not_constraint.get("anyOf", [])
 
-        price_prohibited = any(
-            "price" in item.get("required", [])
-            for item in any_of
-        )
+        price_prohibited = any("price" in item.get("required", []) for item in any_of)
         assert price_prohibited, "'price' field must be prohibited in schema"
 
     def test_intent_signal_prohibited_in_schema(self, schema: Dict[str, Any]):
@@ -404,14 +409,8 @@ class TestProhibitedFields:
         not_constraint = prohibited_def.get("not", {})
         any_of = not_constraint.get("anyOf", [])
 
-        intent_prohibited = any(
-            "intent" in item.get("required", [])
-            for item in any_of
-        )
-        signal_prohibited = any(
-            "signal" in item.get("required", [])
-            for item in any_of
-        )
+        intent_prohibited = any("intent" in item.get("required", []) for item in any_of)
+        signal_prohibited = any("signal" in item.get("required", []) for item in any_of)
 
         assert intent_prohibited, "'intent' field must be prohibited in schema"
         assert signal_prohibited, "'signal' field must be prohibited in schema"

@@ -17,15 +17,12 @@ features = [
     (0, "price"),
     (1, "log_volume_norm"),
     (2, "rel_volume"),
-
     # Block 2: MA5 (3-4)
     (3, "ma5"),
     (4, "ma5_valid"),
-
     # Block 3: MA20 (5-6)
     (5, "ma20"),
     (6, "ma20_valid"),
-
     # Block 4: Technical indicators with validity flags (7-20)
     (7, "rsi14"),
     (8, "rsi_valid"),
@@ -41,12 +38,10 @@ features = [
     (18, "cci_valid"),
     (19, "obv"),
     (20, "obv_valid"),
-
     # Block 5: Derived price/volatility signals (21-22)
     # NOTE: This comes AFTER indicators, not before!
-    (21, "ret_bar"),      # tanh((price - prev_price) / prev_price)
-    (22, "vol_proxy"),    # Uses atr_valid flag to prevent NaN
-
+    (21, "ret_bar"),  # tanh((price - prev_price) / prev_price)
+    (22, "vol_proxy"),  # Uses atr_valid flag to prevent NaN
     # Block 6: Agent state (23-28)
     (23, "cash_ratio"),
     (24, "position_ratio"),
@@ -54,31 +49,25 @@ features = [
     (26, "trade_intensity"),
     (27, "realized_spread"),
     (28, "agent_fill_ratio"),
-
     # Block 7: Microstructure proxies (29-31)
-    (29, "price_momentum"),   # tanh(momentum / (price * 0.01))
-    (30, "bb_squeeze"),       # tanh((bb_upper - bb_lower) / price)
-    (31, "trend_strength"),   # tanh((macd - macd_signal) / (price * 0.01))
-
+    (29, "price_momentum"),  # tanh(momentum / (price * 0.01))
+    (30, "bb_squeeze"),  # tanh((bb_upper - bb_lower) / price)
+    (31, "trend_strength"),  # tanh((macd - macd_signal) / (price * 0.01))
     # Block 8: Bollinger Bands context (32-33)
     # NOTE: This was MISSING in previous versions!
-    (32, "bb_position"),      # (price - bb_lower) / bb_width, clipped to [-1, 2]
-    (33, "bb_width_norm"),    # (bb_upper - bb_lower) / price
-
+    (32, "bb_position"),  # (price - bb_lower) / bb_width, clipped to [-1, 2]
+    (33, "bb_width_norm"),  # (bb_upper - bb_lower) / price
     # Block 9: Event metadata (34-38)
     (34, "is_high_importance"),
     (35, "time_since_event"),
     (36, "risk_off_flag"),
     (37, "fear_greed_value"),
     (38, "fear_greed_indicator"),
-
     # Block 10: External normalized columns (39-59) - 21 features
     *[(39 + i, f"norm_cols[{i}]") for i in range(21)],
-
     # Block 11: Token metadata (60-61)
     (60, "num_tokens_norm"),
     (61, "token_id_norm"),
-
     # Block 12: Token one-hot (62)
     (62, "token_one_hot[0]"),
 ]
@@ -117,7 +106,9 @@ for name, start, end, expected_size in blocks:
         status = "✅"
     else:
         status = "❌"
-    print(f"{status} {name:15s}: indices {start:2d}-{end:2d} (size {actual_size:2d}, expected {expected_size:2d})")
+    print(
+        f"{status} {name:15s}: indices {start:2d}-{end:2d} (size {actual_size:2d}, expected {expected_size:2d})"
+    )
     total += actual_size
 
 print(f"\nTotal: {total} features")

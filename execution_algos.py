@@ -10,9 +10,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 class MarketChild:
     ts_offset_ms: int
     qty: float
-    liquidity_hint: Optional[float] = (
-        None  # если хотим переопределить ликвидность на шаге
-    )
+    liquidity_hint: Optional[float] = None  # если хотим переопределить ликвидность на шаге
 
 
 class BaseExecutor:
@@ -133,9 +131,7 @@ class TWAPExecutor(_BarWindowAware, BaseExecutor):
         if q_total <= 0.0:
             return []
         per = q_total / float(self.parts)
-        timeframe_ms, bar_start, bar_end = self._resolve_bar_window(
-            now_ts_ms, snapshot
-        )
+        timeframe_ms, bar_start, bar_end = self._resolve_bar_window(now_ts_ms, snapshot)
         plan: List[MarketChild] = []
         if timeframe_ms is not None and timeframe_ms > 0:
             denominator = max(1, self.parts - 1)
@@ -216,9 +212,7 @@ class POVExecutor(_BarWindowAware, BaseExecutor):
 
         plan: List[MarketChild] = []
         produced = 0.0
-        timeframe_ms, bar_start, bar_end = self._resolve_bar_window(
-            now_ts_ms, snapshot
-        )
+        timeframe_ms, bar_start, bar_end = self._resolve_bar_window(now_ts_ms, snapshot)
         if timeframe_ms is not None and timeframe_ms > 0:
             total_children = int(math.ceil(q_total / per_child_qty))
             total_children = max(1, min(total_children, 10000))
@@ -239,11 +233,7 @@ class POVExecutor(_BarWindowAware, BaseExecutor):
                     break
                 left = q_total - produced
                 q = min(per_child_qty, left)
-                plan.append(
-                    MarketChild(
-                        ts_offset_ms=offset, qty=q, liquidity_hint=liq
-                    )
-                )
+                plan.append(MarketChild(ts_offset_ms=offset, qty=q, liquidity_hint=liq))
                 produced += q
         else:
             i = 0
@@ -306,10 +296,7 @@ class VWAPExecutor(BaseExecutor):
         if isinstance(entry, Mapping):
             data = dict(entry)
             ts_raw = (
-                data.get("ts")
-                or data.get("timestamp")
-                or data.get("ts_ms")
-                or data.get("time")
+                data.get("ts") or data.get("timestamp") or data.get("ts_ms") or data.get("time")
             )
             if ts_raw is None and bar_start is not None:
                 offset_raw = data.get("offset_ms")
@@ -326,10 +313,7 @@ class VWAPExecutor(BaseExecutor):
                     except (TypeError, ValueError):
                         ts_raw = None
             vol_raw = (
-                data.get("volume")
-                or data.get("qty")
-                or data.get("quantity")
-                or data.get("vol")
+                data.get("volume") or data.get("qty") or data.get("quantity") or data.get("vol")
             )
         elif isinstance(entry, Sequence) and not isinstance(entry, (str, bytes)):
             seq = list(entry)
@@ -541,9 +525,7 @@ class MidOffsetLimitExecutor(BaseExecutor):
         Time-in-force policy: ``"GTC"``, ``"IOC"`` or ``"FOK"``.
     """
 
-    def __init__(
-        self, *, offset_bps: float = 0.0, ttl_steps: int = 0, tif: str = "GTC"
-    ):
+    def __init__(self, *, offset_bps: float = 0.0, ttl_steps: int = 0, tif: str = "GTC"):
         self.offset_bps = float(offset_bps)
         self.ttl_steps = int(ttl_steps)
         self.tif = str(tif)

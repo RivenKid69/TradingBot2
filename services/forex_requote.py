@@ -82,38 +82,38 @@ logger = logging.getLogger(__name__)
 
 # Base requote probability by client tier
 BASE_REQUOTE_PROBS: Dict[str, float] = {
-    "retail": 0.08,        # 8% base for retail clients
+    "retail": 0.08,  # 8% base for retail clients
     "professional": 0.04,  # 4% for professional
-    "institutional": 0.02, # 2% for institutional
-    "prime": 0.01,        # 1% for prime brokerage
+    "institutional": 0.02,  # 2% for institutional
+    "prime": 0.01,  # 1% for prime brokerage
 }
 
 # Requote probability multipliers by session
 SESSION_REQUOTE_FACTORS: Dict[str, float] = {
     "sydney": 1.3,
     "tokyo": 1.2,
-    "london": 0.9,          # Best liquidity
+    "london": 0.9,  # Best liquidity
     "new_york": 0.95,
     "london_ny_overlap": 0.8,  # Best execution
     "tokyo_london_overlap": 1.0,
     "off_hours": 1.8,
-    "weekend": 10.0,        # Very high if trading allowed
+    "weekend": 10.0,  # Very high if trading allowed
 }
 
 # Size thresholds for requote probability (USD notional)
 SIZE_THRESHOLDS = {
-    "small": 50_000,        # < 50k: low impact
-    "medium": 500_000,      # 50k - 500k: moderate impact
-    "large": 2_000_000,     # 500k - 2M: significant impact
+    "small": 50_000,  # < 50k: low impact
+    "medium": 500_000,  # 50k - 500k: moderate impact
+    "large": 2_000_000,  # 500k - 2M: significant impact
     "institutional": 10_000_000,  # > 10M: very high impact
 }
 
 # Requote price widening factors
 REQUOTE_WIDENING: Dict[str, float] = {
-    "mild": 0.3,      # 0.3 pips widening
+    "mild": 0.3,  # 0.3 pips widening
     "moderate": 0.8,  # 0.8 pips widening
-    "severe": 2.0,    # 2.0 pips widening
-    "extreme": 5.0,   # 5.0 pips widening during events
+    "severe": 2.0,  # 2.0 pips widening
+    "extreme": 5.0,  # 5.0 pips widening during events
 }
 
 # Maximum requotes before rejection
@@ -129,8 +129,10 @@ MAX_REQUOTES_BY_TIER: Dict[str, int] = {
 # Enums
 # =============================================================================
 
+
 class RequoteReason(str, Enum):
     """Reason for requote."""
+
     PRICE_MOVED = "price_moved"
     VOLATILITY = "volatility"
     SIZE_EXCEEDED = "size_exceeded"
@@ -143,6 +145,7 @@ class RequoteReason(str, Enum):
 
 class RequoteOutcome(str, Enum):
     """Outcome of requote flow."""
+
     FILLED_AT_ORIGINAL = "filled_at_original"
     FILLED_AT_REQUOTE = "filled_at_requote"
     CLIENT_REJECTED = "client_rejected"
@@ -153,15 +156,17 @@ class RequoteOutcome(str, Enum):
 
 class ClientBehavior(str, Enum):
     """Client behavior profile for requote acceptance."""
-    AGGRESSIVE = "aggressive"    # Low acceptance, seeks best price
-    NEUTRAL = "neutral"         # Moderate acceptance
-    PASSIVE = "passive"         # High acceptance, prioritizes fill
-    ALGORITHMIC = "algorithmic" # Rule-based acceptance
+
+    AGGRESSIVE = "aggressive"  # Low acceptance, seeks best price
+    NEUTRAL = "neutral"  # Moderate acceptance
+    PASSIVE = "passive"  # High acceptance, prioritizes fill
+    ALGORITHMIC = "algorithmic"  # Rule-based acceptance
 
 
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class RequoteEvent:
@@ -179,6 +184,7 @@ class RequoteEvent:
         accepted: Whether client accepted
         sequence_num: Requote number in sequence (1, 2, 3...)
     """
+
     timestamp_ns: int
     original_price: float
     requote_price: float
@@ -225,6 +231,7 @@ class RequoteFlowResult:
         original_price: Original requested price
         was_requoted: Whether any requotes occurred
     """
+
     outcome: RequoteOutcome
     fill_price: Optional[float] = None
     fill_timestamp_ns: int = 0
@@ -280,6 +287,7 @@ class RequoteConfig:
         acceptance_threshold_pips: Max price diff to auto-accept
         seed: Random seed
     """
+
     client_tier: str = "retail"
     client_behavior: ClientBehavior = ClientBehavior.NEUTRAL
     base_requote_prob: Optional[float] = None
@@ -294,13 +302,9 @@ class RequoteConfig:
     def __post_init__(self) -> None:
         """Set defaults based on tier."""
         if self.base_requote_prob is None:
-            self.base_requote_prob = BASE_REQUOTE_PROBS.get(
-                self.client_tier, 0.05
-            )
+            self.base_requote_prob = BASE_REQUOTE_PROBS.get(self.client_tier, 0.05)
         if self.max_requotes is None:
-            self.max_requotes = MAX_REQUOTES_BY_TIER.get(
-                self.client_tier, 3
-            )
+            self.max_requotes = MAX_REQUOTES_BY_TIER.get(self.client_tier, 3)
 
 
 @dataclass
@@ -318,6 +322,7 @@ class MarketSnapshot:
         is_news_event: Whether news event is active
         tick_rate: Recent tick arrival rate
     """
+
     timestamp_ns: int
     bid: float
     ask: float
@@ -336,6 +341,7 @@ class MarketSnapshot:
 # =============================================================================
 # Requote Probability Model
 # =============================================================================
+
 
 class RequoteProbabilityModel:
     """
@@ -472,6 +478,7 @@ class RequoteProbabilityModel:
 # Client Acceptance Model
 # =============================================================================
 
+
 class ClientAcceptanceModel:
     """
     Models client behavior for requote acceptance.
@@ -542,7 +549,7 @@ class ClientAcceptanceModel:
             price_factor = 1.0  # Acceptable
 
         # Adjust for requote count (fatigue)
-        fatigue_factor = 0.9 ** requote_count
+        fatigue_factor = 0.9**requote_count
 
         # Adjust for urgency
         urgency_factor = 0.7 + urgency * 0.6  # 0.7 to 1.3
@@ -557,6 +564,7 @@ class ClientAcceptanceModel:
 # =============================================================================
 # Requote Flow Simulator
 # =============================================================================
+
 
 class RequoteFlowSimulator:
     """
@@ -670,9 +678,7 @@ class RequoteFlowSimulator:
         total_latency_ns = latency_ns
 
         # Simulate current market price (may have moved)
-        market_price = self._simulate_price_movement(
-            market, latency_ns, is_buy, pip_value
-        )
+        market_price = self._simulate_price_movement(market, latency_ns, is_buy, pip_value)
 
         # Calculate price movement
         if is_buy:
@@ -859,7 +865,7 @@ class RequoteFlowSimulator:
             widening_pips = REQUOTE_WIDENING["mild"]
 
         # Add some randomness
-        widening_pips *= (0.8 + self._rng.random() * 0.4)
+        widening_pips *= 0.8 + self._rng.random() * 0.4
 
         # Apply widening in direction unfavorable to client
         if is_buy:
@@ -916,12 +922,10 @@ class RequoteFlowSimulator:
             "requote_rate": self._stats["orders_requoted"] / total * 100,
             "fill_rate": filled / total * 100,
             "requote_acceptance_rate": (
-                self._stats["requotes_accepted"] /
-                max(1, self._stats["total_requotes"]) * 100
+                self._stats["requotes_accepted"] / max(1, self._stats["total_requotes"]) * 100
             ),
             "avg_slippage_pips": (
-                self._stats["total_slippage_pips"] /
-                max(1, self._stats["filled_at_requote"])
+                self._stats["total_slippage_pips"] / max(1, self._stats["filled_at_requote"])
             ),
         }
 
@@ -944,6 +948,7 @@ class RequoteFlowSimulator:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_requote_simulator(
     client_tier: str = "retail",

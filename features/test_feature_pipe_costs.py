@@ -31,9 +31,7 @@ def test_select_numeric_series_falls_back_to_first_numeric_candidate(
         }
     )
 
-    selected = base_pipe._select_numeric_series(
-        df, ("bad_turnover", "turnover", "turnover_usd")
-    )
+    selected = base_pipe._select_numeric_series(df, ("bad_turnover", "turnover", "turnover_usd"))
 
     assert selected is not None
     assert selected.dtype == float
@@ -139,12 +137,8 @@ def test_compute_bar_mode_costs_various_inputs(
             np.array(
                 [
                     0.0,
-                    10.0 * np.sqrt(0.25)
-                    + 20.0 * 0.25
-                    + 5.0 * np.power(0.25, 2.0),
-                    10.0 * np.sqrt(2.0)
-                    + 20.0 * 2.0
-                    + 5.0 * np.power(2.0, 2.0),
+                    10.0 * np.sqrt(0.25) + 20.0 * 0.25 + 5.0 * np.power(0.25, 2.0),
+                    10.0 * np.sqrt(2.0) + 20.0 * 2.0 + 5.0 * np.power(2.0, 2.0),
                 ]
             ),
         ),

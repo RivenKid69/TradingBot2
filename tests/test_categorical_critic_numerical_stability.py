@@ -9,6 +9,7 @@ Date: 2025-11-22
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import MagicMock, patch
@@ -117,7 +118,9 @@ class TestCategoricalCriticNumericalStability:
             )
 
             # Verify all losses are finite (no NaN or Inf)
-            assert torch.isfinite(clipped_loss_avg), f"clipped_loss_avg is not finite: {clipped_loss_avg}"
+            assert torch.isfinite(
+                clipped_loss_avg
+            ), f"clipped_loss_avg is not finite: {clipped_loss_avg}"
             assert torch.isfinite(loss_c1), f"loss_c1 is not finite: {loss_c1}"
             assert torch.isfinite(loss_c2), f"loss_c2 is not finite: {loss_c2}"
             assert torch.isfinite(loss_unclipped), f"loss_unclipped is not finite: {loss_unclipped}"
@@ -256,24 +259,30 @@ class TestCategoricalCriticNumericalStability:
         edge_cases = [
             # Case 1: All probabilities equal (uniform)
             torch.ones((batch_size, num_atoms)) / num_atoms,
-
             # Case 2: One probability very close to 1.0
-            torch.cat([
-                torch.ones((batch_size, 1)) * 0.9999,
-                torch.ones((batch_size, num_atoms - 1)) * (0.0001 / (num_atoms - 1))
-            ], dim=1),
-
+            torch.cat(
+                [
+                    torch.ones((batch_size, 1)) * 0.9999,
+                    torch.ones((batch_size, num_atoms - 1)) * (0.0001 / (num_atoms - 1)),
+                ],
+                dim=1,
+            ),
             # Case 3: Many very small probabilities
-            torch.cat([
-                torch.ones((batch_size, 1)) * 0.99,
-                torch.ones((batch_size, num_atoms - 1)) * (1e-10)
-            ], dim=1),
-
+            torch.cat(
+                [
+                    torch.ones((batch_size, 1)) * 0.99,
+                    torch.ones((batch_size, num_atoms - 1)) * (1e-10),
+                ],
+                dim=1,
+            ),
             # Case 4: Extreme small values (would cause NaN with probs + eps)
-            torch.cat([
-                torch.ones((batch_size, 1)) * 0.999999,
-                torch.ones((batch_size, num_atoms - 1)) * (1e-15)
-            ], dim=1),
+            torch.cat(
+                [
+                    torch.ones((batch_size, 1)) * 0.999999,
+                    torch.ones((batch_size, num_atoms - 1)) * (1e-15),
+                ],
+                dim=1,
+            ),
         ]
 
         for i, target_dist in enumerate(edge_cases):
@@ -307,7 +316,9 @@ class TestCategoricalCriticNumericalStability:
             # Test backward pass
             latent_vf.grad = None
             clipped_loss_avg.backward()
-            assert torch.all(torch.isfinite(latent_vf.grad)), f"Case {i+1}: Gradients contain NaN or Inf"
+            assert torch.all(
+                torch.isfinite(latent_vf.grad)
+            ), f"Case {i+1}: Gradients contain NaN or Inf"
 
     def test_torch_clamp_vs_addition_equivalence(self):
         """Test that torch.clamp approach gives similar results to addition for normal cases."""
@@ -356,8 +367,9 @@ class TestCategoricalCriticNumericalStability:
         mask_already_safe = probs_small > epsilon
         if torch.any(mask_already_safe):
             # These values got modified even though they were already safe
-            assert torch.any(probs_old[mask_already_safe] != probs_small[mask_already_safe]), \
-                "Old approach modifies safe probabilities unnecessarily"
+            assert torch.any(
+                probs_old[mask_already_safe] != probs_small[mask_already_safe]
+            ), "Old approach modifies safe probabilities unnecessarily"
 
         # New approach: torch.clamp
         # This PRESERVES values that are already >= epsilon
@@ -369,7 +381,7 @@ class TestCategoricalCriticNumericalStability:
                 probs_small[mask_already_safe],
                 rtol=1e-9,
                 atol=1e-12,
-                msg="New approach should preserve safe probabilities"
+                msg="New approach should preserve safe probabilities",
             )
 
         # Edge case 2: Ensure both approaches protect against very small values

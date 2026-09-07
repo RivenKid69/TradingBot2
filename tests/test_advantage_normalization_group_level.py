@@ -11,6 +11,7 @@ magnitudes. This is mathematically incorrect for gradient accumulation.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional, NamedTuple
@@ -18,13 +19,13 @@ from typing import Optional, NamedTuple
 
 class MockRolloutData(NamedTuple):
     """Mock rollout data for testing."""
+
     advantages: torch.Tensor
     mask: Optional[torch.Tensor] = None
 
 
 def normalize_advantages_group_level(
-    advantages_list: list[torch.Tensor],
-    masks_list: list[Optional[torch.Tensor]]
+    advantages_list: list[torch.Tensor], masks_list: list[Optional[torch.Tensor]]
 ) -> tuple[list[torch.Tensor], float, float]:
     """
     Normalize advantages at group level (mimics the production code logic).
@@ -76,9 +77,7 @@ def normalize_advantages_group_level(
             valid_mask = mask_float > 0
 
             normalized_flat = adv_flat.new_zeros(adv_flat.shape)
-            normalized_flat[valid_mask] = (
-                (adv_flat[valid_mask] - group_mean) / group_std_clamped
-            )
+            normalized_flat[valid_mask] = (adv_flat[valid_mask] - group_mean) / group_std_clamped
             normalized_list.append(normalized_flat.view_as(adv))
         else:
             normalized = (adv - group_mean) / group_std_clamped
@@ -153,7 +152,7 @@ def test_group_level_normalization_with_masks():
     """
     # Create microbatches where some values are masked
     microbatch_1 = torch.tensor([100.0, 999.0, 110.0])  # 999.0 will be masked
-    microbatch_2 = torch.tensor([10.0, 12.0, 888.0])    # 888.0 will be masked
+    microbatch_2 = torch.tensor([10.0, 12.0, 888.0])  # 888.0 will be masked
 
     # Masks: 1.0 = valid, 0.0 = masked
     mask_1 = torch.tensor([1.0, 0.0, 1.0])  # Mask out middle value

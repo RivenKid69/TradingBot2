@@ -38,6 +38,7 @@ try:
         RejectionReason,
     )
     from ccea.artifact.signer import SignatureInfo
+
     VERIFIER_AVAILABLE = True
 except ImportError:
     VERIFIER_AVAILABLE = False
@@ -48,6 +49,7 @@ except ImportError:
 
 class PreflightCheckType(Enum):
     """Types of pre-flight checks."""
+
     SIGNATURE_VERIFICATION = auto()
     DIGEST_VERIFICATION = auto()
     SCHEMA_VERSION = auto()
@@ -70,6 +72,7 @@ class PreflightCheckType(Enum):
 
 class PreflightCheckResult(Enum):
     """Result of a pre-flight check."""
+
     PASSED = "passed"
     FAILED = "failed"
     WARNING = "warning"
@@ -81,6 +84,7 @@ class PreflightCheck:
     """
     Single pre-flight check result.
     """
+
     check_type: PreflightCheckType
     result: PreflightCheckResult
     message: str
@@ -105,6 +109,7 @@ class PreflightResult:
     """
     Overall pre-flight result.
     """
+
     preflight_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=datetime.utcnow)
     checks: List[PreflightCheck] = field(default_factory=list)
@@ -163,6 +168,7 @@ class PreflightConfig:
     """
     Pre-flight checker configuration.
     """
+
     # Time sync
     max_time_drift_seconds: float = 5.0
 
@@ -288,6 +294,7 @@ class PreflightChecker:
             PreflightResult with all check results
         """
         import time as time_module
+
         start_time = time_module.time()
 
         result = PreflightResult(run_id=run_id, artifact_digest=artifact_digest)
@@ -296,19 +303,34 @@ class PreflightChecker:
         # Design Doc 9.2, 2.1: Manifest permission checks are REQUIRED and FAIL-CLOSED
         checks = [
             (PreflightCheckType.VAULT_UNLOCKED, self._check_vault_unlocked),
-            (PreflightCheckType.CREDENTIALS_AVAILABLE, lambda: self._check_credentials(broker_name)),
+            (
+                PreflightCheckType.CREDENTIALS_AVAILABLE,
+                lambda: self._check_credentials(broker_name),
+            ),
             (PreflightCheckType.TIME_SYNC, self._check_time_sync),
             (PreflightCheckType.SCHEMA_VERSION, lambda: self._check_schema_version(manifest)),
             (PreflightCheckType.MANIFEST_VALID, lambda: self._check_manifest(manifest)),
-            (PreflightCheckType.DIGEST_VERIFICATION, lambda: self._check_digest(artifact_path, artifact_digest)),
-            (PreflightCheckType.SIGNATURE_VERIFICATION, lambda: self._check_signature(artifact_path, manifest, signature)),
+            (
+                PreflightCheckType.DIGEST_VERIFICATION,
+                lambda: self._check_digest(artifact_path, artifact_digest),
+            ),
+            (
+                PreflightCheckType.SIGNATURE_VERIFICATION,
+                lambda: self._check_signature(artifact_path, manifest, signature),
+            ),
             # Design Doc 9.2, 2.1: Manifest permissions MUST be validated (fail-closed)
-            (PreflightCheckType.MANIFEST_PERMISSIONS, lambda: self._check_manifest_permissions(manifest)),
+            (
+                PreflightCheckType.MANIFEST_PERMISSIONS,
+                lambda: self._check_manifest_permissions(manifest),
+            ),
             (PreflightCheckType.EGRESS_POLICY, lambda: self._check_egress_policy(manifest)),
             (PreflightCheckType.FILESYSTEM_POLICY, lambda: self._check_filesystem_policy(manifest)),
             (PreflightCheckType.POLICY_FIREWALL, lambda: self._check_policy_firewall(manifest)),
             (PreflightCheckType.HARD_CAPS, lambda: self._check_hard_caps(manifest)),
-            (PreflightCheckType.BROKER_CONNECTIVITY, lambda: self._check_broker_connectivity(broker_name)),
+            (
+                PreflightCheckType.BROKER_CONNECTIVITY,
+                lambda: self._check_broker_connectivity(broker_name),
+            ),
             (PreflightCheckType.RESOURCES_AVAILABLE, self._check_resources),
             (PreflightCheckType.NETWORK_CONNECTIVITY, self._check_network),
         ]
@@ -444,6 +466,7 @@ class PreflightChecker:
             # Try to create one
             try:
                 from packages.agent.daemon.time_sync import TimeSyncChecker, TimeSyncConfig
+
                 self._time_checker = TimeSyncChecker(
                     TimeSyncConfig(max_drift_seconds=self.config.max_time_drift_seconds)
                 )
@@ -515,6 +538,7 @@ class PreflightChecker:
         # Compare versions
         try:
             from packaging.version import Version
+
             version = Version(schema_version)
             min_version = Version(self.config.min_schema_version)
             max_version = Version(self.config.max_schema_version)
@@ -717,6 +741,7 @@ class PreflightChecker:
         # If raw signature bytes provided, convert to SignatureInfo
         if signature is not None and sig_info is None:
             import base64
+
             try:
                 sig_info = SignatureInfo(
                     algorithm="ed25519",  # Default algorithm per Design Doc
@@ -782,7 +807,9 @@ class PreflightChecker:
                     result=PreflightCheckResult.FAILED,
                     message=f"REJECTED: {report.rejection_reason.value if report.rejection_reason else 'verification_failed'} - {report.rejection_details or 'Cryptographic verification failed'}",
                     details={
-                        "rejection_reason": report.rejection_reason.value if report.rejection_reason else None,
+                        "rejection_reason": (
+                            report.rejection_reason.value if report.rejection_reason else None
+                        ),
                         "rejection_details": report.rejection_details,
                     },
                     required=True,
@@ -1031,14 +1058,15 @@ class PreflightChecker:
         egress_allowlist = permissions.get("egress_allowlist", manifest.get("egress_allowlist", []))
 
         if network_allowed and not egress_allowlist:
-            violations.append("network_allowed=true but no egress_allowlist specified (unbounded network access denied)")
+            violations.append(
+                "network_allowed=true but no egress_allowlist specified (unbounded network access denied)"
+            )
 
         # Check resource limits
         max_memory_mb = permissions.get("max_memory_mb", manifest.get("max_memory_mb", 512))
         max_cpu_percent = permissions.get("max_cpu_percent", manifest.get("max_cpu_percent", 100.0))
         max_execution_time_seconds = permissions.get(
-            "max_execution_time_seconds",
-            manifest.get("max_execution_time_seconds", 3600)
+            "max_execution_time_seconds", manifest.get("max_execution_time_seconds", 3600)
         )
 
         # Enforce reasonable limits (Design Doc: hard caps)
@@ -1049,14 +1077,20 @@ class PreflightChecker:
             violations.append(f"max_cpu_percent ({max_cpu_percent}) exceeds limit (400)")
 
         if max_execution_time_seconds > 86400:  # 24 hours max
-            violations.append(f"max_execution_time_seconds ({max_execution_time_seconds}) exceeds limit (86400)")
+            violations.append(
+                f"max_execution_time_seconds ({max_execution_time_seconds}) exceeds limit (86400)"
+            )
 
         # Check filesystem permissions
-        filesystem_readonly = permissions.get("filesystem_readonly", manifest.get("filesystem_readonly", True))
+        filesystem_readonly = permissions.get(
+            "filesystem_readonly", manifest.get("filesystem_readonly", True)
+        )
         allowed_paths = permissions.get("allowed_paths", manifest.get("allowed_paths", []))
 
         if not filesystem_readonly and not allowed_paths:
-            violations.append("filesystem_readonly=false but no allowed_paths specified (unbounded write access denied)")
+            violations.append(
+                "filesystem_readonly=false but no allowed_paths specified (unbounded write access denied)"
+            )
 
         # Check for dangerous paths in allowed_paths
         dangerous_paths = ["/etc", "/var", "/usr", "/bin", "/sbin", "/root", "/home"]
@@ -1173,7 +1207,9 @@ class PreflightChecker:
             )
 
         permissions = manifest.get("permissions", {})
-        filesystem_readonly = permissions.get("filesystem_readonly", manifest.get("filesystem_readonly", True))
+        filesystem_readonly = permissions.get(
+            "filesystem_readonly", manifest.get("filesystem_readonly", True)
+        )
 
         if filesystem_readonly:
             return PreflightCheck(
@@ -1194,9 +1230,18 @@ class PreflightChecker:
 
         # Validate paths
         dangerous_patterns = [
-            "/etc/", "/var/", "/usr/", "/bin/", "/sbin/",
-            "/root/", "/home/", "/proc/", "/sys/", "/dev/",
-            "../", "~/"
+            "/etc/",
+            "/var/",
+            "/usr/",
+            "/bin/",
+            "/sbin/",
+            "/root/",
+            "/home/",
+            "/proc/",
+            "/sys/",
+            "/dev/",
+            "../",
+            "~/",
         ]
 
         dangerous_found = []

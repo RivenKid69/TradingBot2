@@ -103,11 +103,10 @@ class YahooMarketDataAdapter(MarketDataAdapter):
         if self._yf is None:
             try:
                 import yfinance as yf
+
                 self._yf = yf
             except ImportError:
-                raise ImportError(
-                    "yfinance not installed. Install with: pip install yfinance"
-                )
+                raise ImportError("yfinance not installed. Install with: pip install yfinance")
         return self._yf
 
     def _do_connect(self) -> None:
@@ -236,6 +235,7 @@ class YahooMarketDataAdapter(MarketDataAdapter):
                 return None
 
             import time
+
             return Tick(
                 ts=int(time.time() * 1000),
                 symbol=symbol,
@@ -314,8 +314,8 @@ class YahooMarketDataAdapter(MarketDataAdapter):
             "1h": 7,
             "4h": 2,
             "1d": 1,
-            "1wk": 1/5,
-            "1mo": 1/21,
+            "1wk": 1 / 5,
+            "1mo": 1 / 21,
         }
 
         bpd = bars_per_day.get(timeframe.lower(), 1)
@@ -331,8 +331,4 @@ class YahooMarketDataAdapter(MarketDataAdapter):
     def is_yahoo_symbol(symbol: str) -> bool:
         """Check if symbol should use Yahoo Finance (indices, futures)."""
         # Yahoo symbols typically start with ^ or contain = or .
-        return (
-            symbol.startswith("^") or
-            "=" in symbol or
-            symbol in YAHOO_INDICES
-        )
+        return symbol.startswith("^") or "=" in symbol or symbol in YAHOO_INDICES

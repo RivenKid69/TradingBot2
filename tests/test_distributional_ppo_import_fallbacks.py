@@ -3,6 +3,7 @@ Tests for import fallback paths in distributional_ppo.py.
 These tests manipulate sys.modules to trigger fallback import paths.
 Run in isolation to avoid side effects.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -20,16 +21,19 @@ class TestImportFallbacks:
         """Verify module loads without fallbacks in normal case."""
         # Just verify the module can be imported
         import distributional_ppo
+
         assert distributional_ppo.DistributionalPPO is not None
 
     def test_recurrent_backend_is_set(self):
         """Verify _RECURRENT_BACKEND is set."""
         import distributional_ppo
+
         assert distributional_ppo._RECURRENT_BACKEND in ("sb3_contrib", "stable_baselines3")
 
     def test_distributional_policy_alias_exists(self):
         """Verify DistributionalPolicy alias is registered."""
         import distributional_ppo
+
         aliases = distributional_ppo._DISTRIBUTIONAL_POLICY_ALIASES
         # Should have the alias if custom_policy_patch1 was imported
         # or be empty dict if not
@@ -39,6 +43,7 @@ class TestImportFallbacks:
         """Verify _patch_rand_for_tests was called during import."""
         import distributional_ppo
         import torch
+
         # In test environment, patch should be applied
         assert hasattr(torch, "_distributional_rand_patch")
 
@@ -65,12 +70,14 @@ class TestModuleLevelConstants:
     def test_default_clip_range_vf(self):
         """Verify DEFAULT_CLIP_RANGE_VF is set."""
         import distributional_ppo
+
         assert hasattr(distributional_ppo, "DEFAULT_CLIP_RANGE_VF")
         assert isinstance(distributional_ppo.DEFAULT_CLIP_RANGE_VF, (int, float))
 
     def test_popart_classes_exist(self):
         """Verify PopArt classes are defined."""
         import distributional_ppo
+
         assert hasattr(distributional_ppo, "PopArtController")
         assert hasattr(distributional_ppo, "PopArtHoldoutBatch")
         assert hasattr(distributional_ppo, "PopArtHoldoutEvaluation")
@@ -79,6 +86,7 @@ class TestModuleLevelConstants:
     def test_helper_functions_exist(self):
         """Verify helper functions are defined."""
         import distributional_ppo
+
         assert hasattr(distributional_ppo, "safe_explained_variance")
         assert hasattr(distributional_ppo, "compute_grouped_explained_variance")
 

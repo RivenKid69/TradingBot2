@@ -591,13 +591,15 @@ class ISO27001FrameworkService:
         if not audit:
             return False
 
-        audit.findings.append({
-            "type": finding_type,
-            "description": description,
-            "control_reference": control_reference,
-            "severity": severity,
-            "identified_at": datetime.utcnow().isoformat(),
-        })
+        audit.findings.append(
+            {
+                "type": finding_type,
+                "description": description,
+                "control_reference": control_reference,
+                "severity": severity,
+                "identified_at": datetime.utcnow().isoformat(),
+            }
+        )
 
         if finding_type == "nonconformity":
             audit.nonconformities += 1
@@ -627,7 +629,9 @@ class ISO27001FrameworkService:
             by_domain[domain.value] = {
                 "total": len(domain_controls),
                 "implemented": implemented,
-                "compliance_percent": (implemented / len(domain_controls) * 100) if domain_controls else 0,
+                "compliance_percent": (
+                    (implemented / len(domain_controls) * 100) if domain_controls else 0
+                ),
             }
 
         implemented_controls = sum(1 for c in controls if c.is_implemented)

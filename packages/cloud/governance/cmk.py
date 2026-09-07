@@ -47,16 +47,19 @@ DEFAULT_KEY_ROTATION_DAYS: Final[int] = 90
 # Maximum key age before mandatory rotation
 MAX_KEY_AGE_DAYS: Final[int] = 365
 
+
 # Key types
 class KeyType(Enum):
     """Types of encryption keys."""
-    SYMMETRIC = auto()   # AES-256
+
+    SYMMETRIC = auto()  # AES-256
     ASYMMETRIC = auto()  # RSA-4096
-    DERIVED = auto()     # PBKDF2-derived
+    DERIVED = auto()  # PBKDF2-derived
 
 
 class KeyStatus(Enum):
     """Key lifecycle status."""
+
     ACTIVE = "active"
     PENDING_ROTATION = "pending_rotation"
     ROTATING = "rotating"
@@ -66,6 +69,7 @@ class KeyStatus(Enum):
 
 class KeyPurpose(Enum):
     """Purpose of the key."""
+
     DATA_ENCRYPTION = "data_encryption"
     TELEMETRY_ENCRYPTION = "telemetry_encryption"
     BACKUP_ENCRYPTION = "backup_encryption"
@@ -88,6 +92,7 @@ class KeyInfo:
         rotated_at: Last rotation time
         expires_at: Expiration time
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     name: str = ""
@@ -176,6 +181,7 @@ class KeyInfo:
 @dataclass
 class CMKConfig:
     """CMK service configuration."""
+
     enabled: bool = True
     default_rotation_days: int = DEFAULT_KEY_ROTATION_DAYS
     max_key_age_days: int = MAX_KEY_AGE_DAYS
@@ -187,6 +193,7 @@ class CMKConfig:
 @dataclass
 class EncryptionResult:
     """Result of encryption operation."""
+
     success: bool = True
     ciphertext: Optional[bytes] = None
     encrypted_dek: Optional[bytes] = None  # Encrypted Data Encryption Key
@@ -199,7 +206,9 @@ class EncryptionResult:
         """Convert to envelope format for storage."""
         return {
             "ciphertext": base64.b64encode(self.ciphertext).decode() if self.ciphertext else None,
-            "encrypted_dek": base64.b64encode(self.encrypted_dek).decode() if self.encrypted_dek else None,
+            "encrypted_dek": (
+                base64.b64encode(self.encrypted_dek).decode() if self.encrypted_dek else None
+            ),
             "key_id": self.key_id,
             "key_version": self.key_version,
             "algorithm": self.algorithm,
@@ -209,6 +218,7 @@ class EncryptionResult:
 @dataclass
 class DecryptionResult:
     """Result of decryption operation."""
+
     success: bool = True
     plaintext: Optional[bytes] = None
     key_id: str = ""
@@ -373,9 +383,11 @@ class CustomerManagedKeysService:
         with self._lock:
             workspace_keys = self._keys.get(workspace_id, {})
             for key_info in workspace_keys.values():
-                if (key_info.purpose == purpose and
-                    key_info.status == KeyStatus.ACTIVE and
-                    not key_info.is_expired):
+                if (
+                    key_info.purpose == purpose
+                    and key_info.status == KeyStatus.ACTIVE
+                    and not key_info.is_expired
+                ):
                     return key_info
             return None
 
@@ -620,10 +632,15 @@ class CustomerManagedKeysService:
             if key_id in self._dek_cache:
                 del self._dek_cache[key_id]
 
-            self._log_audit("key_revoked", workspace_id, key_info, {
-                "revoked_by": revoked_by,
-                "reason": reason,
-            })
+            self._log_audit(
+                "key_revoked",
+                workspace_id,
+                key_info,
+                {
+                    "revoked_by": revoked_by,
+                    "reason": reason,
+                },
+            )
 
         if self._on_key_operation:
             self._on_key_operation("revoke", workspace_id, key_info)
@@ -636,8 +653,7 @@ class CustomerManagedKeysService:
         with self._lock:
             for workspace_keys in self._keys.values():
                 for key_info in workspace_keys.values():
-                    if (key_info.status == KeyStatus.ACTIVE and
-                        key_info.needs_rotation):
+                    if key_info.status == KeyStatus.ACTIVE and key_info.needs_rotation:
                         result.append(key_info)
         return result
 

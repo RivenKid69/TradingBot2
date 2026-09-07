@@ -16,6 +16,7 @@ Reference:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn.functional as F
 import numpy as np
@@ -30,10 +31,10 @@ class TestCategoricalVFClippingFix:
         """Setup common parameters for categorical distribution tests."""
         torch.manual_seed(42)
         return {
-            'batch_size': 8,
-            'num_atoms': 51,
-            'v_min': -10.0,
-            'v_max': 10.0,
+            "batch_size": 8,
+            "num_atoms": 51,
+            "v_min": -10.0,
+            "v_max": 10.0,
         }
 
     def create_categorical_atoms(self, num_atoms: int, v_min: float, v_max: float) -> torch.Tensor:
@@ -61,10 +62,10 @@ class TestCategoricalVFClippingFix:
                    = mean(max(L_unclipped, L_clipped1, L_clipped2))
         """
         params = setup_categorical_params
-        batch_size = params['batch_size']
-        num_atoms = params['num_atoms']
-        v_min = params['v_min']
-        v_max = params['v_max']
+        batch_size = params["batch_size"]
+        num_atoms = params["num_atoms"]
+        v_min = params["v_min"]
+        v_max = params["v_max"]
 
         atoms = self.create_categorical_atoms(num_atoms, v_min, v_max)
 
@@ -101,9 +102,9 @@ class TestCategoricalVFClippingFix:
         loss_triple_max = torch.mean(torch.max(loss_first_max, loss_clipped2_per_sample))
 
         # Verify that triple max >= double max (always true mathematically)
-        assert loss_triple_max.item() >= loss_double_max.item(), (
-            "Triple max should always be >= double max"
-        )
+        assert (
+            loss_triple_max.item() >= loss_double_max.item()
+        ), "Triple max should always be >= double max"
 
         # The fix ensures we use double max, not triple max
         print(f"Double max loss: {loss_double_max.item():.4f}")
@@ -118,10 +119,10 @@ class TestCategoricalVFClippingFix:
         from the loss back to the prediction probabilities.
         """
         params = setup_categorical_params
-        batch_size = params['batch_size']
-        num_atoms = params['num_atoms']
-        v_min = params['v_min']
-        v_max = params['v_max']
+        batch_size = params["batch_size"]
+        num_atoms = params["num_atoms"]
+        v_min = params["v_min"]
+        v_max = params["v_max"]
 
         atoms = self.create_categorical_atoms(num_atoms, v_min, v_max)
 
@@ -155,10 +156,10 @@ class TestCategoricalVFClippingFix:
         predicted values to stay within the allowed range.
         """
         params = setup_categorical_params
-        batch_size = params['batch_size']
-        num_atoms = params['num_atoms']
-        v_min = params['v_min']
-        v_max = params['v_max']
+        batch_size = params["batch_size"]
+        num_atoms = params["num_atoms"]
+        v_min = params["v_min"]
+        v_max = params["v_max"]
 
         atoms = self.create_categorical_atoms(num_atoms, v_min, v_max)
 
@@ -174,18 +175,16 @@ class TestCategoricalVFClippingFix:
         # Apply clipping
         clip_delta = 0.2
         mean_clipped = torch.clamp(
-            mean_pred,
-            min=old_values - clip_delta,
-            max=old_values + clip_delta
+            mean_pred, min=old_values - clip_delta, max=old_values + clip_delta
         )
 
         # Verify clipping constraints
-        assert torch.all(mean_clipped >= old_values - clip_delta - 1e-5), (
-            "Clipped values should be >= lower bound"
-        )
-        assert torch.all(mean_clipped <= old_values + clip_delta + 1e-5), (
-            "Clipped values should be <= upper bound"
-        )
+        assert torch.all(
+            mean_clipped >= old_values - clip_delta - 1e-5
+        ), "Clipped values should be >= lower bound"
+        assert torch.all(
+            mean_clipped <= old_values + clip_delta + 1e-5
+        ), "Clipped values should be <= upper bound"
 
         # Verify that some values were actually clipped
         was_clipped = torch.any(torch.abs(mean_pred - mean_clipped) > 1e-5)
@@ -198,8 +197,8 @@ class TestCategoricalVFClippingFix:
         The loss should be: -sum(target * log(pred))
         """
         params = setup_categorical_params
-        batch_size = params['batch_size']
-        num_atoms = params['num_atoms']
+        batch_size = params["batch_size"]
+        num_atoms = params["num_atoms"]
 
         # Create distributions
         pred_probs = self.create_random_distribution(batch_size, num_atoms)
@@ -214,14 +213,14 @@ class TestCategoricalVFClippingFix:
         #                    = sum(target * log(target)) - sum(target * log(pred))
         #                    = H(target, pred) - H(target)
         # So: H(target, pred) = KL(target || pred) + H(target)
-        kl_div = F.kl_div(log_pred, target_probs, reduction='none').sum(dim=1)
+        kl_div = F.kl_div(log_pred, target_probs, reduction="none").sum(dim=1)
         entropy_target = -(target_probs * torch.log(target_probs.clamp(min=1e-8))).sum(dim=1)
         ce_from_kl = kl_div + entropy_target
 
         # They should be approximately equal
-        assert torch.allclose(ce_manual, ce_from_kl, rtol=1e-4, atol=1e-6), (
-            "Manual CE should match CE from KL divergence"
-        )
+        assert torch.allclose(
+            ce_manual, ce_from_kl, rtol=1e-4, atol=1e-6
+        ), "Manual CE should match CE from KL divergence"
 
         print(f"Cross-entropy loss (mean): {ce_manual.mean().item():.4f}")
 
@@ -233,7 +232,7 @@ class TestCategoricalVFClippingFix:
         WRONG: max(mean(L_unclipped), mean(L_clipped))
         """
         params = setup_categorical_params
-        batch_size = params['batch_size']
+        batch_size = params["batch_size"]
 
         # Create per-sample losses
         loss_unclipped = torch.tensor([1.0, 2.0, 3.0, 4.0])
@@ -252,9 +251,9 @@ class TestCategoricalVFClippingFix:
         # In this case: correct = mean([1.5, 2.0, 3.2, 4.0]) = 2.675
         #               wrong = max(2.5, 2.575) = 2.575
         expected_correct = torch.tensor([1.5, 2.0, 3.2, 4.0]).mean()
-        assert torch.isclose(correct, expected_correct, rtol=1e-4), (
-            "Element-wise max then mean should give correct result"
-        )
+        assert torch.isclose(
+            correct, expected_correct, rtol=1e-4
+        ), "Element-wise max then mean should give correct result"
 
     def test_no_triple_max_in_implementation(self):
         """
@@ -314,9 +313,7 @@ class TestProjectionVsPointDistribution:
         # Projection method would shift atoms but preserve shape
         # (actual implementation would use _project_categorical_distribution)
         # Here we just verify that the original distribution has non-zero variance
-        assert variance_before > 0.01, (
-            "Distribution should have significant variance (uncertainty)"
-        )
+        assert variance_before > 0.01, "Distribution should have significant variance (uncertainty)"
 
         # Point distribution method would collapse to single point
         # (this is what _build_support_distribution does)
@@ -385,10 +382,10 @@ if __name__ == "__main__":
 
     test_cls = TestCategoricalVFClippingFix()
     setup = {
-        'batch_size': 8,
-        'num_atoms': 51,
-        'v_min': -10.0,
-        'v_max': 10.0,
+        "batch_size": 8,
+        "num_atoms": 51,
+        "v_min": -10.0,
+        "v_max": 10.0,
     }
 
     print("\n" + "=" * 70)

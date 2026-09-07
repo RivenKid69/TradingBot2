@@ -38,7 +38,7 @@ import warnings as _warnings
 _warnings.warn(
     "ccea.agent.daemon is deprecated. Use packages.agent.daemon.agentd instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 import json
@@ -80,6 +80,7 @@ logger = logging.getLogger(__name__)
 
 class AgentState(str, Enum):
     """Agent daemon state."""
+
     STOPPED = "STOPPED"
     STARTING = "STARTING"
     RUNNING = "RUNNING"
@@ -94,6 +95,7 @@ class AgentConfig:
 
     All sensitive settings are local-only.
     """
+
     # Directories
     data_dir: Path = field(default_factory=lambda: Path("./agent_data"))
     artifacts_dir: Optional[Path] = None
@@ -467,7 +469,8 @@ class AgentDaemon:
             command_type=record.command_type,
             deployment_id=record.payload.get("deployment_id"),
             artifact_digest=record.payload.get("artifact_digest"),
-            config_digest=record.payload.get("config_digest") or record.payload.get("new_config_digest"),
+            config_digest=record.payload.get("config_digest")
+            or record.payload.get("new_config_digest"),
             change_class=record.payload.get("change_class"),
         )
 
@@ -491,7 +494,11 @@ class AgentDaemon:
                 idempotency_key=record.idempotency_key,
                 status=CommandStatus.COMPLETED if "error" not in result else CommandStatus.FAILED,
                 result=result if "error" not in result else None,
-                error={"code": "EXEC_ERROR", "message": result.get("error")} if "error" in result else None,
+                error=(
+                    {"code": "EXEC_ERROR", "message": result.get("error")}
+                    if "error" in result
+                    else None
+                ),
             )
 
             data = result_msg.model_dump(mode="json")
@@ -499,7 +506,9 @@ class AgentDaemon:
                 data = self._signer.sign(data)
 
             try:
-                endpoint = self.enrollment.credentials.commands_endpoint.replace("/commands", "/result")
+                endpoint = self.enrollment.credentials.commands_endpoint.replace(
+                    "/commands", "/result"
+                )
                 requests.post(
                     endpoint,
                     json=data,

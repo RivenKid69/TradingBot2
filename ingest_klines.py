@@ -28,14 +28,31 @@ KLINE_COLS = [
 ]
 
 
-def _fetch_all_klines(client: BinancePublicClient, *, market: str, symbol: str, interval: str, start_ms: int, end_ms: int, limit: int = 1500, sleep_ms: int = 350) -> List[List[Any]]:
+def _fetch_all_klines(
+    client: BinancePublicClient,
+    *,
+    market: str,
+    symbol: str,
+    interval: str,
+    start_ms: int,
+    end_ms: int,
+    limit: int = 1500,
+    sleep_ms: int = 350,
+) -> List[List[Any]]:
     """
     Идём по временной оси слева направо, пока не дойдём до end_ms.
     """
     out: List[List[Any]] = []
     cur = int(start_ms)
     while cur < end_ms:
-        batch = client.get_klines(market=market, symbol=symbol, interval=interval, start_ms=cur, end_ms=end_ms, limit=limit)
+        batch = client.get_klines(
+            market=market,
+            symbol=symbol,
+            interval=interval,
+            start_ms=cur,
+            end_ms=end_ms,
+            limit=limit,
+        )
         if not batch:
             # двигаем окно на один интервал (эвристика), чтобы избежать вечного цикла
             # Fallback: используем 4h = 14_400_000 ms (changed from 60_000 = 1m)
@@ -52,26 +69,69 @@ def _fetch_all_klines(client: BinancePublicClient, *, market: str, symbol: str, 
 
 def _to_df(raw: List[List[Any]], symbol: str) -> pd.DataFrame:
     if not raw:
-        return pd.DataFrame(columns=["ts_ms", "symbol", "open", "high", "low", "close", "volume", "number_of_trades", "taker_buy_base", "taker_buy_quote"])
+        return pd.DataFrame(
+            columns=[
+                "ts_ms",
+                "symbol",
+                "open",
+                "high",
+                "low",
+                "close",
+                "volume",
+                "number_of_trades",
+                "taker_buy_base",
+                "taker_buy_quote",
+            ]
+        )
     df = pd.DataFrame(raw, columns=KLINE_COLS)
     df["ts_ms"] = df["open_time"].astype("int64")
     df["symbol"] = str(symbol).upper()
-    out = df[["ts_ms", "symbol", "open", "high", "low", "close", "volume", "number_of_trades", "taker_buy_base", "taker_buy_quote"]].copy()
+    out = df[
+        [
+            "ts_ms",
+            "symbol",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "number_of_trades",
+            "taker_buy_base",
+            "taker_buy_quote",
+        ]
+    ].copy()
     # типы
     for c in ["open", "high", "low", "close", "volume", "taker_buy_base", "taker_buy_quote"]:
         out[c] = pd.to_numeric(out[c], errors="coerce")
-    out["number_of_trades"] = pd.to_numeric(out["number_of_trades"], errors="coerce").astype("Int64")
+    out["number_of_trades"] = pd.to_numeric(out["number_of_trades"], errors="coerce").astype(
+        "Int64"
+    )
     return out.sort_values(["symbol", "ts_ms"]).reset_index(drop=True)
 
 
 def main():
     p = argparse.ArgumentParser(description="Ingest Binance klines (public, no keys).")
-    p.add_argument("--market", choices=["spot", "futures"], default="spot", help="Рынок: spot или futures (USDT-M)")
-    p.add_argument("--symbols", required=True, help="Символы через запятую, например BTCUSDT,ETHUSDT")
-    p.add_argument("--interval", default="4h", help="Интервал kline: 1m/3m/5m/15m/1h/4h/1d и т.п. (изменено с 1m на 4h)")
+    p.add_argument(
+        "--market",
+        choices=["spot", "futures"],
+        default="spot",
+        help="Рынок: spot или futures (USDT-M)",
+    )
+    p.add_argument(
+        "--symbols", required=True, help="Символы через запятую, например BTCUSDT,ETHUSDT"
+    )
+    p.add_argument(
+        "--interval",
+        default="4h",
+        help="Интервал kline: 1m/3m/5m/15m/1h/4h/1d и т.п. (изменено с 1m на 4h)",
+    )
     p.add_argument("--start", required=True, help="Начало периода (YYYY-MM-DD, ISO или unix ms)")
     p.add_argument("--end", required=True, help="Конец периода (YYYY-MM-DD, ISO или unix ms)")
-    p.add_argument("--out-dir", default="data/klines_4h", help="Куда писать parquet по символам (для 4h таймфрейма)")
+    p.add_argument(
+        "--out-dir",
+        default="data/klines_4h",
+        help="Куда писать parquet по символам (для 4h таймфрейма)",
+    )
     p.add_argument("--limit", type=int, default=1500, help="Лимит на запрос API")
     p.add_argument("--sleep-ms", type=int, default=350, help="Пауза между запросами (ms)")
     args = p.parse_args()
@@ -87,7 +147,16 @@ def main():
 
     symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
     for sym in symbols:
-        raw = _fetch_all_klines(client, market=args.market, symbol=sym, interval=args.interval, start_ms=start_ms, end_ms=end_ms, limit=args.limit, sleep_ms=args.sleep_ms)
+        raw = _fetch_all_klines(
+            client,
+            market=args.market,
+            symbol=sym,
+            interval=args.interval,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            limit=args.limit,
+            sleep_ms=args.sleep_ms,
+        )
         df = _to_df(raw, sym)
         out_path = os.path.join(args.out_dir, f"{sym}_{args.interval}.parquet")
         df.to_parquet(out_path, index=False)

@@ -29,6 +29,7 @@ from services.ai_act.explainability import (
 # Test ExplanationType Enum
 # =============================================================================
 
+
 class TestExplanationType:
     """Tests for ExplanationType enum."""
 
@@ -42,8 +43,13 @@ class TestExplanationType:
 
     def test_explanation_type_membership(self):
         """Test all expected types are in the enum."""
-        expected_types = ["feature_attribution", "counterfactual", "rule_based",
-                         "confidence_based", "comparative"]
+        expected_types = [
+            "feature_attribution",
+            "counterfactual",
+            "rule_based",
+            "confidence_based",
+            "comparative",
+        ]
         actual_types = [t.value for t in ExplanationType]
         for expected in expected_types:
             assert expected in actual_types
@@ -57,16 +63,13 @@ class TestExplanationType:
 # Test FeatureContribution Dataclass
 # =============================================================================
 
+
 class TestFeatureContribution:
     """Tests for FeatureContribution dataclass."""
 
     def test_create_positive_contribution(self):
         """Test creating a feature contribution with positive value."""
-        fc = FeatureContribution(
-            feature_name="momentum",
-            feature_value=0.8,
-            contribution=0.35
-        )
+        fc = FeatureContribution(feature_name="momentum", feature_value=0.8, contribution=0.35)
         assert fc.feature_name == "momentum"
         assert fc.feature_value == 0.8
         assert fc.contribution == 0.35
@@ -74,11 +77,7 @@ class TestFeatureContribution:
 
     def test_create_negative_contribution(self):
         """Test creating a feature contribution with negative value."""
-        fc = FeatureContribution(
-            feature_name="volatility",
-            feature_value=0.9,
-            contribution=-0.25
-        )
+        fc = FeatureContribution(feature_name="volatility", feature_value=0.9, contribution=-0.25)
         assert fc.feature_name == "volatility"
         assert fc.contribution == -0.25
         assert fc.direction == "negative"
@@ -86,9 +85,7 @@ class TestFeatureContribution:
     def test_create_neutral_contribution(self):
         """Test creating a feature contribution with neutral value."""
         fc = FeatureContribution(
-            feature_name="volume",
-            feature_value=0.5,
-            contribution=0.02  # Below 0.05 threshold
+            feature_name="volume", feature_value=0.5, contribution=0.02  # Below 0.05 threshold
         )
         assert fc.direction == "neutral"
 
@@ -145,7 +142,7 @@ class TestFeatureContribution:
             feature_name="rsi",
             feature_value=70.0,
             contribution=0.3,
-            human_readable="RSI is overbought"
+            human_readable="RSI is overbought",
         )
         assert fc.human_readable == "RSI is overbought"
 
@@ -176,6 +173,7 @@ class TestFeatureContribution:
 # Test CounterfactualExplanation Dataclass
 # =============================================================================
 
+
 class TestCounterfactualExplanation:
     """Tests for CounterfactualExplanation dataclass."""
 
@@ -184,7 +182,7 @@ class TestCounterfactualExplanation:
         cf = CounterfactualExplanation(
             original_decision="BUY",
             alternative_decision="HOLD",
-            feature_changes={"momentum": (0.8, 0.5)}
+            feature_changes={"momentum": (0.8, 0.5)},
         )
         assert cf.original_decision == "BUY"
         assert cf.alternative_decision == "HOLD"
@@ -202,7 +200,7 @@ class TestCounterfactualExplanation:
                 "volume": (0.4, 0.6),
             },
             distance=0.35,
-            feasibility_score=0.65
+            feasibility_score=0.65,
         )
         assert cf.original_decision == "SELL"
         assert len(cf.feature_changes) == 2
@@ -215,7 +213,7 @@ class TestCounterfactualExplanation:
             original_decision="BUY",
             alternative_decision="SELL",
             feature_changes={"x": (0.0, 1.0)},
-            feasibility_score=0.0
+            feasibility_score=0.0,
         )
         assert cf_zero.feasibility_score == 0.0
 
@@ -223,7 +221,7 @@ class TestCounterfactualExplanation:
             original_decision="HOLD",
             alternative_decision="BUY",
             feature_changes={"x": (0.5, 0.51)},
-            feasibility_score=1.0
+            feasibility_score=1.0,
         )
         assert cf_one.feasibility_score == 1.0
 
@@ -232,7 +230,7 @@ class TestCounterfactualExplanation:
         cf = CounterfactualExplanation(
             original_decision="BUY",
             alternative_decision="HOLD",
-            feature_changes={"momentum": (0.3, 0.6)}
+            feature_changes={"momentum": (0.3, 0.6)},
         )
         summary = cf.summary
         assert "BUY" in summary
@@ -245,7 +243,7 @@ class TestCounterfactualExplanation:
         cf = CounterfactualExplanation(
             original_decision="SELL",
             alternative_decision="HOLD",
-            feature_changes={"volatility": (0.8, 0.5)}
+            feature_changes={"volatility": (0.8, 0.5)},
         )
         summary = cf.summary
         assert "decrease" in summary
@@ -257,7 +255,7 @@ class TestCounterfactualExplanation:
             alternative_decision="HOLD",
             feature_changes={"momentum": (0.8, 0.5)},
             distance=0.3,
-            feasibility_score=0.7
+            feasibility_score=0.7,
         )
         d = cf.to_dict()
 
@@ -273,6 +271,7 @@ class TestCounterfactualExplanation:
 # Test DecisionExplanation Dataclass
 # =============================================================================
 
+
 class TestDecisionExplanation:
     """Tests for DecisionExplanation dataclass."""
 
@@ -284,7 +283,7 @@ class TestDecisionExplanation:
             action="BUY",
             symbol="BTCUSDT",
             position_size=0.5,
-            confidence=0.85
+            confidence=0.85,
         )
         assert exp.decision_id == "dec_001"
         assert exp.action == "BUY"
@@ -311,7 +310,7 @@ class TestDecisionExplanation:
             symbol="ETHUSDT",
             position_size=0.3,
             confidence=0.75,
-            feature_contributions=features
+            feature_contributions=features,
         )
         assert len(exp.feature_contributions) == 2
         assert exp.feature_contributions[0].feature_name == "momentum"
@@ -321,7 +320,7 @@ class TestDecisionExplanation:
         cf = CounterfactualExplanation(
             original_decision="BUY",
             alternative_decision="HOLD",
-            feature_changes={"momentum": (0.8, 0.4)}
+            feature_changes={"momentum": (0.8, 0.4)},
         )
         exp = DecisionExplanation(
             decision_id="dec_003",
@@ -330,7 +329,7 @@ class TestDecisionExplanation:
             symbol="BTCUSDT",
             position_size=0.5,
             confidence=0.8,
-            counterfactuals=[cf]
+            counterfactuals=[cf],
         )
         assert len(exp.counterfactuals) == 1
 
@@ -343,7 +342,7 @@ class TestDecisionExplanation:
             symbol="ETHUSDT",
             position_size=0.2,
             confidence=0.7,
-            risk_factors={"volatility_status": "HIGH", "risk_budget_status": "NEAR_LIMIT"}
+            risk_factors={"volatility_status": "HIGH", "risk_budget_status": "NEAR_LIMIT"},
         )
         assert exp.risk_factors["volatility_status"] == "HIGH"
 
@@ -355,7 +354,7 @@ class TestDecisionExplanation:
             action="HOLD",
             symbol="BTCUSDT",
             position_size=0.0,
-            confidence=0.6
+            confidence=0.6,
         )
         assert "HOLD" in exp.summary
         assert "BTCUSDT" in exp.summary
@@ -374,7 +373,7 @@ class TestDecisionExplanation:
             symbol="ETHUSDT",
             position_size=0.5,
             confidence=0.85,
-            feature_contributions=features
+            feature_contributions=features,
         )
         assert "Supporting factors" in exp.summary or "momentum" in exp.summary
         assert "Opposing factors" in exp.summary or "volatility" in exp.summary
@@ -388,9 +387,7 @@ class TestDecisionExplanation:
             symbol="BTCUSDT",
             position_size=0.5,
             confidence=0.85,
-            feature_contributions=[
-                FeatureContribution("momentum", 0.8, 0.4)
-            ]
+            feature_contributions=[FeatureContribution("momentum", 0.8, 0.4)],
         )
         text = exp.regulatory_text
 
@@ -410,7 +407,7 @@ class TestDecisionExplanation:
             symbol="ETHUSDT",
             position_size=0.3,
             confidence=0.7,
-            risk_factors={"volatility_status": "HIGH"}
+            risk_factors={"volatility_status": "HIGH"},
         )
         assert "RISK ASSESSMENT" in exp.regulatory_text
         assert "volatility_status" in exp.regulatory_text
@@ -420,7 +417,7 @@ class TestDecisionExplanation:
         cf = CounterfactualExplanation(
             original_decision="BUY",
             alternative_decision="HOLD",
-            feature_changes={"momentum": (0.8, 0.4)}
+            feature_changes={"momentum": (0.8, 0.4)},
         )
         exp = DecisionExplanation(
             decision_id="dec_009",
@@ -429,7 +426,7 @@ class TestDecisionExplanation:
             symbol="BTCUSDT",
             position_size=0.5,
             confidence=0.8,
-            counterfactuals=[cf]
+            counterfactuals=[cf],
         )
         assert "ALTERNATIVE SCENARIOS" in exp.regulatory_text
 
@@ -441,7 +438,7 @@ class TestDecisionExplanation:
             action="BUY",
             symbol="BTCUSDT",
             position_size=0.5,
-            confidence=0.8
+            confidence=0.8,
         )
         d = exp.to_dict()
 
@@ -464,7 +461,7 @@ class TestDecisionExplanation:
             symbol="BTCUSDT",
             position_size=0.5,
             confidence=0.8,
-            top_factors=["momentum", "volume", "rsi"]
+            top_factors=["momentum", "volume", "rsi"],
         )
         assert exp.top_factors == ["momentum", "volume", "rsi"]
 
@@ -472,6 +469,7 @@ class TestDecisionExplanation:
 # =============================================================================
 # Test DecisionExplainer Class
 # =============================================================================
+
 
 class TestDecisionExplainerCreation:
     """Tests for DecisionExplainer instantiation."""
@@ -487,10 +485,7 @@ class TestDecisionExplainerCreation:
         """Test creating an explainer with custom weights."""
         with tempfile.TemporaryDirectory() as tmpdir:
             custom_weights = {"custom_feature": 0.5, "another_feature": 0.3}
-            explainer = DecisionExplainer(
-                storage_path=Path(tmpdir),
-                feature_weights=custom_weights
-            )
+            explainer = DecisionExplainer(storage_path=Path(tmpdir), feature_weights=custom_weights)
             assert "custom_feature" in explainer._feature_weights
             assert explainer._feature_weights["custom_feature"] == 0.5
 
@@ -498,8 +493,7 @@ class TestDecisionExplainerCreation:
         """Test the create_decision_explainer factory function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             explainer = create_decision_explainer(
-                storage_path=Path(tmpdir),
-                feature_weights={"test": 0.1}
+                storage_path=Path(tmpdir), feature_weights={"test": 0.1}
             )
             assert isinstance(explainer, DecisionExplainer)
 
@@ -534,7 +528,7 @@ class TestDecisionExplainerExplainDecision:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.8, "volume": 0.6},
-                confidence=0.85
+                confidence=0.85,
             )
 
             assert explanation.decision_id == "DEC-001"
@@ -553,12 +547,8 @@ class TestDecisionExplainerExplainDecision:
                 action="BUY",
                 symbol="ETHUSDT",
                 position_size=0.3,
-                features={
-                    "price_momentum": 0.8,
-                    "volume_ratio": 0.6,
-                    "rsi": 0.5
-                },
-                confidence=0.75
+                features={"price_momentum": 0.8, "volume_ratio": 0.6, "rsi": 0.5},
+                confidence=0.75,
             )
 
             assert len(explanation.feature_contributions) > 0
@@ -576,7 +566,7 @@ class TestDecisionExplainerExplainDecision:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"price_momentum": 0.8},
-                confidence=0.85
+                confidence=0.85,
             )
 
             # BUY should generate counterfactual to HOLD
@@ -594,7 +584,7 @@ class TestDecisionExplainerExplainDecision:
                 symbol="BTCUSDT",
                 position_size=0.0,
                 features={"price_momentum": 0.5},
-                confidence=0.6
+                confidence=0.6,
             )
 
             assert len(explanation.counterfactuals) == 0
@@ -611,14 +601,13 @@ class TestDecisionExplainerExplainDecision:
                 position_size=0.2,
                 features={"volatility_regime": 0.8, "risk_utilization": 0.9},
                 confidence=0.7,
-                risk_state={
-                    "utilization": 0.85,
-                    "drawdown": 0.05,
-                    "position_count": 3
-                }
+                risk_state={"utilization": 0.85, "drawdown": 0.05, "position_count": 3},
             )
 
-            assert "risk_utilization" in explanation.risk_factors or "volatility_status" in explanation.risk_factors
+            assert (
+                "risk_utilization" in explanation.risk_factors
+                or "volatility_status" in explanation.risk_factors
+            )
 
     def test_explain_decision_with_model_outputs(self):
         """Test explanation with model outputs (attributions)."""
@@ -632,9 +621,7 @@ class TestDecisionExplainerExplainDecision:
                 position_size=0.5,
                 features={"momentum": 0.8, "volume": 0.6},
                 confidence=0.85,
-                model_outputs={
-                    "feature_attributions": {"momentum": 0.5, "volume": 0.2}
-                }
+                model_outputs={"feature_attributions": {"momentum": 0.5, "volume": 0.2}},
             )
 
             # Should use provided attributions
@@ -651,7 +638,7 @@ class TestDecisionExplainerExplainDecision:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.7},
-                confidence=0.8
+                confidence=0.8,
             )
 
             history = explainer.get_recent_explanations()
@@ -670,7 +657,7 @@ class TestDecisionExplainerExplainDecision:
                 symbol="ETHUSDT",
                 position_size=0.3,
                 features={"momentum": -0.5},
-                confidence=0.75
+                confidence=0.75,
             )
 
             # Check file was created
@@ -690,7 +677,7 @@ class TestDecisionExplainerExplainDecision:
                 position_size=0.0,
                 features={"momentum": 0.5},
                 confidence=0.6,
-                uncertainty=0.15
+                uncertainty=0.15,
             )
 
             assert explanation.uncertainty == 0.15
@@ -721,7 +708,7 @@ class TestDecisionExplainerHelperMethods:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.7},
-                confidence=0.8
+                confidence=0.8,
             )
 
             found = explainer.get_explanation("DEC-FIND")
@@ -757,7 +744,7 @@ class TestDecisionExplainerHelperMethods:
                     symbol="BTCUSDT",
                     position_size=0.5,
                     features={"momentum": 0.5 + i * 0.05},
-                    confidence=0.7
+                    confidence=0.7,
                 )
 
             # Get last 3
@@ -793,7 +780,7 @@ class TestDecisionExplainerStatistics:
                     symbol="BTCUSDT",
                     position_size=0.5,
                     features={"price_momentum": 0.5 + i * 0.1},
-                    confidence=0.7 + i * 0.05
+                    confidence=0.7 + i * 0.05,
                 )
 
             stats = explainer.get_explanation_statistics()
@@ -820,7 +807,7 @@ class TestDecisionExplainerExport:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.7},
-                confidence=0.8
+                confidence=0.8,
             )
 
             output_path = explainer.export_explanations()
@@ -843,7 +830,7 @@ class TestDecisionExplainerExport:
                 symbol="ETHUSDT",
                 position_size=0.3,
                 features={"momentum": -0.5},
-                confidence=0.75
+                confidence=0.75,
             )
 
             custom_path = storage_path / "custom_export.json"
@@ -865,7 +852,7 @@ class TestDecisionExplainerExport:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.7},
-                confidence=0.8
+                confidence=0.8,
             )
 
             # Export with time filter
@@ -887,7 +874,7 @@ class TestDecisionExplainerExport:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.7},
-                confidence=0.8
+                confidence=0.8,
             )
 
             output_path = explainer.export_explanations()
@@ -907,6 +894,7 @@ class TestDecisionExplainerExport:
 # Test Thread Safety
 # =============================================================================
 
+
 class TestThreadSafety:
     """Tests for thread-safe operation of DecisionExplainer."""
 
@@ -925,7 +913,7 @@ class TestThreadSafety:
                         symbol="BTCUSDT",
                         position_size=0.5,
                         features={"feature": float(idx) / 10},
-                        confidence=0.5 + (idx % 5) * 0.1
+                        confidence=0.5 + (idx % 5) * 0.1,
                     )
                     results.append(exp)
                 except Exception as e:
@@ -955,7 +943,7 @@ class TestThreadSafety:
                         symbol="BTCUSDT",
                         position_size=0.5,
                         features={"x": float(idx)},
-                        confidence=0.7
+                        confidence=0.7,
                     )
                     _ = explainer.get_recent_explanations()
                     _ = explainer.get_explanation_statistics()
@@ -997,6 +985,7 @@ class TestThreadSafety:
 # Test Risk Factor Extraction
 # =============================================================================
 
+
 class TestRiskFactorExtraction:
     """Tests for risk factor extraction."""
 
@@ -1011,7 +1000,7 @@ class TestRiskFactorExtraction:
                 symbol="BTCUSDT",
                 position_size=0.3,
                 features={"volatility_regime": 0.8},
-                confidence=0.7
+                confidence=0.7,
             )
 
             assert explanation.risk_factors.get("volatility_status") == "HIGH"
@@ -1027,7 +1016,7 @@ class TestRiskFactorExtraction:
                 symbol="BTCUSDT",
                 position_size=0.0,
                 features={"volatility_regime": 0.5},
-                confidence=0.6
+                confidence=0.6,
             )
 
             assert explanation.risk_factors.get("volatility_status") == "MODERATE"
@@ -1043,7 +1032,7 @@ class TestRiskFactorExtraction:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"volatility_regime": 0.3},
-                confidence=0.8
+                confidence=0.8,
             )
 
             assert explanation.risk_factors.get("volatility_status") == "LOW"
@@ -1059,7 +1048,7 @@ class TestRiskFactorExtraction:
                 symbol="BTCUSDT",
                 position_size=0.0,
                 features={"risk_utilization": 0.85},
-                confidence=0.6
+                confidence=0.6,
             )
 
             assert explanation.risk_factors.get("risk_budget_status") == "NEAR_LIMIT"
@@ -1075,7 +1064,7 @@ class TestRiskFactorExtraction:
                 symbol="BTCUSDT",
                 position_size=0.3,
                 features={"risk_utilization": 0.6},
-                confidence=0.75
+                confidence=0.75,
             )
 
             assert explanation.risk_factors.get("risk_budget_status") == "MODERATE"
@@ -1091,7 +1080,7 @@ class TestRiskFactorExtraction:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"risk_utilization": 0.3},
-                confidence=0.85
+                confidence=0.85,
             )
 
             assert explanation.risk_factors.get("risk_budget_status") == "COMFORTABLE"
@@ -1100,6 +1089,7 @@ class TestRiskFactorExtraction:
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
@@ -1115,7 +1105,7 @@ class TestEdgeCases:
                 symbol="BTCUSDT",
                 position_size=0.0,
                 features={},
-                confidence=0.5
+                confidence=0.5,
             )
 
             assert explanation.action == "HOLD"
@@ -1134,7 +1124,7 @@ class TestEdgeCases:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features=features,
-                confidence=0.8
+                confidence=0.8,
             )
 
             assert len(explanation.feature_contributions) == 100
@@ -1150,7 +1140,7 @@ class TestEdgeCases:
                 symbol="BTCUSDT",
                 position_size=0.1,
                 features={"x": 0.5},
-                confidence=0.0
+                confidence=0.0,
             )
             assert exp_low.confidence == 0.0
 
@@ -1160,7 +1150,7 @@ class TestEdgeCases:
                 symbol="ETHUSDT",
                 position_size=0.9,
                 features={"x": 0.5},
-                confidence=1.0
+                confidence=1.0,
             )
             assert exp_high.confidence == 1.0
 
@@ -1175,7 +1165,7 @@ class TestEdgeCases:
                 symbol="BTC/USDT",  # With slash
                 position_size=0.5,
                 features={"momentum": 0.7},
-                confidence=0.8
+                confidence=0.8,
             )
 
             assert explanation.symbol == "BTC/USDT"
@@ -1184,6 +1174,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Compliance Integration
 # =============================================================================
+
 
 class TestComplianceIntegration:
     """Tests for EU AI Act compliance integration."""
@@ -1199,7 +1190,7 @@ class TestComplianceIntegration:
                 symbol="BTCUSDT",
                 position_size=0.5,
                 features={"momentum": 0.7, "volume": 0.6},
-                confidence=0.85
+                confidence=0.85,
             )
 
             # Article 13 requires transparency - explanation should provide:
@@ -1221,7 +1212,7 @@ class TestComplianceIntegration:
                 symbol="ETHUSDT",
                 position_size=0.3,
                 features={"momentum": -0.5, "trend": -0.3},
-                confidence=0.75
+                confidence=0.75,
             )
 
             # Human-readable explanations for oversight
@@ -1243,7 +1234,7 @@ class TestComplianceIntegration:
                     symbol="BTCUSDT",
                     position_size=0.5 if i % 2 == 0 else 0.0,
                     features={"signal": float(i) / 10},
-                    confidence=0.6 + i * 0.05
+                    confidence=0.6 + i * 0.05,
                 )
 
             # Should be able to export complete audit trail
@@ -1263,7 +1254,7 @@ class TestComplianceIntegration:
             cf = CounterfactualExplanation(
                 original_decision="BUY",
                 alternative_decision="HOLD",
-                feature_changes={"momentum": (0.8, 0.4)}
+                feature_changes={"momentum": (0.8, 0.4)},
             )
 
             explanation = explainer.explain_decision(
@@ -1273,7 +1264,7 @@ class TestComplianceIntegration:
                 position_size=0.5,
                 features={"volatility_regime": 0.8, "risk_utilization": 0.7},
                 confidence=0.85,
-                risk_state={"utilization": 0.7, "drawdown": 0.03}
+                risk_state={"utilization": 0.7, "drawdown": 0.03},
             )
 
             text = explanation.regulatory_text

@@ -16,6 +16,7 @@ These tests verify:
 import math
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.us_market_structure import (
@@ -382,9 +383,7 @@ class TestUSMarketStructureValidator:
         validator = USMarketStructureValidator()
         nbbo = NBBO(bid=100.00, bid_size=100, ask=100.05, ask_size=100)
 
-        price, qty, warnings = validator.create_compliant_order(
-            "BUY", 100.003, 100, nbbo
-        )
+        price, qty, warnings = validator.create_compliant_order("BUY", 100.003, 100, nbbo)
 
         assert price == 100.00  # Adjusted to tick
         assert qty == 100

@@ -49,8 +49,10 @@ get_current_user = UserDep  # Use UserDep for current user
 # Request/Response Models
 # ============================================================================
 
+
 class JobSubmitRequest(BaseModel):
     """Request to submit a new research job."""
+
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=2000)
     tags: Optional[List[str]] = Field(default_factory=list)
@@ -96,6 +98,7 @@ class JobSubmitRequest(BaseModel):
 
 class JobResponse(BaseModel):
     """Response for job operations."""
+
     job_id: UUID
     name: str
     state: str
@@ -125,6 +128,7 @@ class JobResponse(BaseModel):
 
 class JobDetailResponse(JobResponse):
     """Detailed job response with output."""
+
     description: Optional[str] = None
     tags: List[str] = []
     docker_image: str
@@ -137,6 +141,7 @@ class JobDetailResponse(JobResponse):
 
 class JobListResponse(BaseModel):
     """Response for job listing."""
+
     jobs: List[JobResponse]
     total: int
     page: int
@@ -145,6 +150,7 @@ class JobListResponse(BaseModel):
 
 class JobLogsResponse(BaseModel):
     """Response for job logs."""
+
     job_id: UUID
     stdout: str
     stderr: str
@@ -153,6 +159,7 @@ class JobLogsResponse(BaseModel):
 
 class QuotaResponse(BaseModel):
     """Response for quota information."""
+
     tier: str
     cpu_hours_daily: float
     memory_gb_hours_daily: float
@@ -166,6 +173,7 @@ class QuotaResponse(BaseModel):
 
 class QuotaUsageResponse(BaseModel):
     """Response for quota usage."""
+
     period_start: datetime
     cpu_hours_used: float
     cpu_hours_remaining: float
@@ -180,6 +188,7 @@ class QuotaUsageResponse(BaseModel):
 
 class EgressPolicyResponse(BaseModel):
     """Response for egress policy."""
+
     name: str
     allowed_destinations: List[str]
     allowed_ports: List[int]
@@ -190,6 +199,7 @@ class EgressPolicyResponse(BaseModel):
 
 class EgressPolicyUpdateRequest(BaseModel):
     """Request to update egress policy."""
+
     add_destinations: Optional[List[str]] = None
     remove_destinations: Optional[List[str]] = None
     add_ports: Optional[List[int]] = None
@@ -198,6 +208,7 @@ class EgressPolicyUpdateRequest(BaseModel):
 
 class AbuseAlertResponse(BaseModel):
     """Response for abuse alert."""
+
     alert_id: UUID
     job_id: UUID
     abuse_type: str
@@ -212,6 +223,7 @@ class AbuseAlertResponse(BaseModel):
 
 class EgressViolationResponse(BaseModel):
     """Response for egress violation."""
+
     violation_id: UUID
     job_id: UUID
     destination: str
@@ -403,6 +415,7 @@ async def get_job_violations(
 # Quota Endpoints
 # ============================================================================
 
+
 @router.get("/quota", response_model=QuotaResponse)
 async def get_quota(
     current_user: UserDep,
@@ -453,6 +466,7 @@ async def get_quota_usage(
 # Egress Policy Endpoints
 # ============================================================================
 
+
 @router.get("/egress/policy", response_model=EgressPolicyResponse)
 async def get_egress_policy(
     current_user: UserDep,
@@ -493,7 +507,8 @@ async def update_egress_policy(
             "api.binance.com",
             "api.github.com",
             "pypi.org",
-        ] + (request.add_destinations or []),
+        ]
+        + (request.add_destinations or []),
         allowed_ports=[443] + (request.add_ports or []),
         allowlist_only=True,
         max_requests_per_minute=request.max_requests_per_minute or 60,
@@ -504,6 +519,7 @@ async def update_egress_policy(
 # ============================================================================
 # Statistics Endpoints
 # ============================================================================
+
 
 @router.get("/stats")
 async def get_research_stats(

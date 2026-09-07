@@ -9,26 +9,29 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv, CloudpickleWra
 from collections import OrderedDict
 from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space, unflatten
-import atexit, signal
+import atexit
+import signal
 from typing import Any
 import copy  # FIX: нужен для сохранения terminal_observation при TimeLimit
+
 try:
     from multiprocessing.context import BrokenBarrierError
 except Exception:  # Python 3.12: no BrokenBarrierError in multiprocessing
     from threading import BrokenBarrierError
 
 DTYPE_TO_CSTYLE = {
-    np.float32: 'f',
-    np.float64: 'd',
-    np.bool_: 'b',
-    np.int8: 'b',
-    np.int32: 'i',
-    np.int64: 'l',
-    np.uint8: 'B',
-    np.int16: 'h',
-    'uint8': 'B',
-    'int16': 'h',
+    np.float32: "f",
+    np.float64: "d",
+    np.bool_: "b",
+    np.int8: "b",
+    np.int32: "i",
+    np.int64: "l",
+    np.uint8: "B",
+    np.int16: "h",
+    "uint8": "B",
+    "int16": "h",
 }
+
 
 def _safe_close_unlink(handle: Any) -> None:
     """Attempt to close/unlink shared memory handles without crashing."""
@@ -56,7 +59,26 @@ def _safe_close_unlink(handle: Any) -> None:
             # unlink() мог быть вызван ранее — это нормально.
             pass
 
-def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, dones_shm, info_queue, barrier, reset_signal, close_signal, obs_dtype, action_dtype, action_shape, obs_shape, action_is_structured, base_seed: int = 0):
+
+def worker(
+    rank,
+    num_envs,
+    env_fn_wrapper,
+    actions_shm,
+    obs_shm,
+    rewards_shm,
+    dones_shm,
+    info_queue,
+    barrier,
+    reset_signal,
+    close_signal,
+    obs_dtype,
+    action_dtype,
+    action_shape,
+    obs_shape,
+    action_is_structured,
+    base_seed: int = 0,
+):
     try:
         # 1. Создаем среду и получаем numpy-представления
         env = env_fn_wrapper.var()
@@ -70,7 +92,9 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
         # собственный генератор среды (если используется)
         env._rng = np.random.default_rng(seed)
         # НЕ трогаем env.observation_space до reset(); используем форму, переданную из родителя
-        actions_np = np.frombuffer(actions_shm.get_obj(), dtype=action_dtype).reshape((num_envs,) + action_shape)
+        actions_np = np.frombuffer(actions_shm.get_obj(), dtype=action_dtype).reshape(
+            (num_envs,) + action_shape
+        )
         obs_np = np.frombuffer(obs_shm.get_obj(), dtype=obs_dtype).reshape((num_envs,) + obs_shape)
         rewards_np = np.frombuffer(rewards_shm.get_obj(), dtype=np.float32)
         dones_np = np.frombuffer(dones_shm.get_obj(), dtype=np.bool_)
@@ -93,16 +117,16 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
         # 3. Основной цикл работы
         while True:
             if close_signal.value:
-                break    # graceful‑shutdown (PATCH‑ID:P12_P7_closecheck)
+                break  # graceful‑shutdown (PATCH‑ID:P12_P7_closecheck)
             barrier.wait()
 
             if close_signal.value:
-                break # graceful-shutdown
+                break  # graceful-shutdown
             if reset_signal.value:
                 # === ЛОГИКА СБРОСА ===
                 obs, info = env.reset()
                 obs_np[rank] = obs
-                dones_np[rank] = False # Явно сбрасываем флаг завершения
+                dones_np[rank] = False  # Явно сбрасываем флаг завершения
                 info_queue.put((rank, info))
             else:
                 # === ЛОГИКА ШАГА (осталась прежней) ===
@@ -124,7 +148,11 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
                         term_obs = obs.copy()
                     elif isinstance(obs, dict):
                         term_obs = {
-                            key: (value.copy() if isinstance(value, np.ndarray) else copy.deepcopy(value))
+                            key: (
+                                value.copy()
+                                if isinstance(value, np.ndarray)
+                                else copy.deepcopy(value)
+                            )
                             for key, value in obs.items()
                         }
                     else:
@@ -167,7 +195,6 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
         return
 
 
-
 class SharedMemoryVecEnv(VecEnv):
     def __init__(self, env_fns, worker_timeout: float = 300.0, base_seed: int = 0):
         self.num_envs = len(env_fns)
@@ -175,15 +202,15 @@ class SharedMemoryVecEnv(VecEnv):
         self.waiting = False
         self.closed = False
         self._base_seed = base_seed
-        
+
         # Создаем временную среду, чтобы получить размерности пространств
         temp_env = env_fns[0]()
 
         # ЛЕНИВЫЙ ИНИТ: если спейсы ещё не выставлены в __init__, дергаем reset()
         needs_reset = (
-            getattr(temp_env, "action_space", None) is None or
-            getattr(temp_env, "observation_space", None) is None or
-            getattr(getattr(temp_env, "action_space", None), "dtype", None) is None
+            getattr(temp_env, "action_space", None) is None
+            or getattr(temp_env, "observation_space", None) is None
+            or getattr(getattr(temp_env, "action_space", None), "dtype", None) is None
         )
         if needs_reset:
             try:
@@ -218,9 +245,10 @@ class SharedMemoryVecEnv(VecEnv):
 
         # 2) Если что-то не определено, используем sample() пространства
         action_sample_np = None
-        if action_dtype_raw is None or action_shape is None or (
-            isinstance(action_shape, tuple)
-            and any(dim is None for dim in action_shape)
+        if (
+            action_dtype_raw is None
+            or action_shape is None
+            or (isinstance(action_shape, tuple) and any(dim is None for dim in action_shape))
         ):
             # sample() может вернуть python-скаляры – приводим к numpy-массиву
             action_sample = self._flat_action_space.sample()
@@ -231,13 +259,16 @@ class SharedMemoryVecEnv(VecEnv):
             if action_dtype_raw is None:
                 action_dtype_raw = action_sample_np.dtype
             if action_shape is None or (
-                isinstance(action_shape, tuple)
-                and any(dim is None for dim in action_shape)
+                isinstance(action_shape, tuple) and any(dim is None for dim in action_shape)
             ):
                 action_shape = action_sample_np.shape
 
         # 3) Нормализуем dtype к numpy-классу (np.float32, np.int64, ...)
-        if self._action_is_structured and action_dtype_raw is not None and _np.dtype(action_dtype_raw).type is np.float64:
+        if (
+            self._action_is_structured
+            and action_dtype_raw is not None
+            and _np.dtype(action_dtype_raw).type is np.float64
+        ):
             action_dtype_raw = np.float32
         act_type = _np.dtype(action_dtype_raw).type
         if act_type not in DTYPE_TO_CSTYLE:
@@ -279,23 +310,31 @@ class SharedMemoryVecEnv(VecEnv):
             )
 
         self.obs_shm = mp.Array(obs_type_code, self.num_envs * int(np.prod(obs_shape)))
-        self.actions_shm = mp.Array(action_type_code, self.num_envs * int(np.prod(self._flat_action_shape)))
-        self.rewards_shm = mp.Array('f', self.num_envs) # Награды почти всегда float32
-        self.dones_shm = mp.Array('B', self.num_envs) # 'B' = unsigned char, более безопасный тип для bool
+        self.actions_shm = mp.Array(
+            action_type_code, self.num_envs * int(np.prod(self._flat_action_shape))
+        )
+        self.rewards_shm = mp.Array("f", self.num_envs)  # Награды почти всегда float32
+        self.dones_shm = mp.Array(
+            "B", self.num_envs
+        )  # 'B' = unsigned char, более безопасный тип для bool
 
         # 2. Создаем numpy-представления для удобной работы в главном процессе
-        self.obs_np = np.frombuffer(self.obs_shm.get_obj(), dtype=obs_dtype).reshape((self.num_envs,) + obs_shape)
-        self.actions_np = np.frombuffer(self.actions_shm.get_obj(), dtype=self._flat_action_dtype).reshape((self.num_envs,) + self._flat_action_shape)
+        self.obs_np = np.frombuffer(self.obs_shm.get_obj(), dtype=obs_dtype).reshape(
+            (self.num_envs,) + obs_shape
+        )
+        self.actions_np = np.frombuffer(
+            self.actions_shm.get_obj(), dtype=self._flat_action_dtype
+        ).reshape((self.num_envs,) + self._flat_action_shape)
         self.rewards_np = np.frombuffer(self.rewards_shm.get_obj(), dtype=np.float32)
         self.dones_np = np.frombuffer(self.dones_shm.get_obj(), dtype=np.bool_)
-        
-        # 3. Создаем барьер для синхронизации. 
+
+        # 3. Создаем барьер для синхронизации.
         #    Количество участников = количество работников + 1 (главный процесс)
         self.info_queue = mp.Queue()
         self.barrier = mp.Barrier(self.num_envs + 1)
-        self.reset_signal = mp.Value('b', False)
-        self.close_signal = mp.Value('b', False)
-        
+        self.reset_signal = mp.Value("b", False)
+        self.close_signal = mp.Value("b", False)
+
         # 4. Запускаем дочерние процессы
         self.processes = []
         for i, env_fn in enumerate(env_fns):
@@ -319,7 +358,7 @@ class SharedMemoryVecEnv(VecEnv):
                     obs_shape,
                     self._action_is_structured,
                     self._base_seed,
-                )
+                ),
             )
             process.daemon = True
             process.start()
@@ -336,7 +375,7 @@ class SharedMemoryVecEnv(VecEnv):
             rank, info = self.info_queue.get()
             initial_infos[rank] = info
         self.reset_infos = initial_infos
-        
+
         # --- leak-guard: регистрируем все shm-сегменты и аварийное закрытие ---
         self._shm_arrays = [self.obs_shm, self.actions_shm, self.rewards_shm, self.dones_shm]
 
@@ -347,6 +386,7 @@ class SharedMemoryVecEnv(VecEnv):
         for _sig in (signal.SIGINT, signal.SIGTERM):
             try:
                 _prev = signal.getsignal(_sig)
+
                 def _handler(signum, frame, _prev=_prev):
                     try:
                         if not getattr(self, "closed", False):
@@ -354,6 +394,7 @@ class SharedMemoryVecEnv(VecEnv):
                     finally:
                         if callable(_prev):
                             _prev(signum, frame)
+
                 signal.signal(_sig, _handler)
             except Exception:
                 pass
@@ -416,7 +457,7 @@ class SharedMemoryVecEnv(VecEnv):
         flattened_actions = self._flatten_action_batch(actions)
         self.actions_np[...] = flattened_actions
         self.waiting = True
-        self._last_step_t0 = time.perf_counter()     # ← отметка старта шага
+        self._last_step_t0 = time.perf_counter()  # ← отметка старта шага
         # Сигнализируем работникам, что можно начинать шаг (снимаем барьер)
         self.barrier.wait()
 
@@ -448,6 +489,7 @@ class SharedMemoryVecEnv(VecEnv):
         # Возвращаем копии данных, чтобы исключить передачу указателей на
         # разделяемую память вызывающему коду.
         return self.obs_np.copy(), self.rewards_np.copy(), self.dones_np.copy(), infos
+
     def _force_kill(self):
         """Жёсткое завершение воркеров + попытка освободить ресурсы."""
         try:
@@ -549,7 +591,7 @@ class SharedMemoryVecEnv(VecEnv):
         self.info_queue.join_thread()
 
         # 6) освобождаем и безопасно unlink-уем все shm-сегменты
-        for _arr in (getattr(self, "_shm_arrays", []) or []):
+        for _arr in getattr(self, "_shm_arrays", []) or []:
             _safe_close_unlink(_arr)
 
         # останавливаем watchdog

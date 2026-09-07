@@ -6,7 +6,9 @@ from __future__ import annotations
 import pytest
 
 from services.automation.drift_retrain import (
-    DriftRetrainScheduler, RetrainDecision, psi_from_report,
+    DriftRetrainScheduler,
+    RetrainDecision,
+    psi_from_report,
 )
 from services.automation.tca_reporter import TCAReporter
 
@@ -28,7 +30,7 @@ def test_retrain_triggered_above_threshold():
     sch = DriftRetrainScheduler(psi_threshold=0.25)
     d = sch.check({"f1": 0.1, "f2": 0.4, "f3": 0.3})
     assert d.should_retrain is True
-    assert d.triggering_features == ["f2", "f3"]   # отсортированы по PSI убыв.
+    assert d.triggering_features == ["f2", "f3"]  # отсортированы по PSI убыв.
     assert d.max_psi == pytest.approx(0.4)
 
 
@@ -41,7 +43,7 @@ def test_cooldown_blocks_repeat():
     clock["t"] = 50.0
     d2 = sch.run({"f": 0.6}, retrain_fn=lambda dec: calls.append(dec))
     assert d2.should_retrain is False and d2.on_cooldown is True and len(calls) == 1
-    clock["t"] = 150.0           # cooldown прошёл
+    clock["t"] = 150.0  # cooldown прошёл
     d3 = sch.run({"f": 0.6}, retrain_fn=lambda dec: calls.append(dec))
     assert d3.should_retrain and len(calls) == 2
 
@@ -50,13 +52,34 @@ def test_cooldown_blocks_repeat():
 def _trades():
     return [
         # BUY filled выше arrival → положительный implementation shortfall (хуже)
-        {"symbol": "AAPL", "side": "BUY", "qty": 100, "arrival_price": 100.0,
-         "fill_price": 100.10, "benchmark_price": 100.05, "venue": "NYSE"},
+        {
+            "symbol": "AAPL",
+            "side": "BUY",
+            "qty": 100,
+            "arrival_price": 100.0,
+            "fill_price": 100.10,
+            "benchmark_price": 100.05,
+            "venue": "NYSE",
+        },
         # SELL filled ниже arrival → тоже положительный IS (хуже для продажи)
-        {"symbol": "AAPL", "side": "SELL", "qty": 100, "arrival_price": 100.0,
-         "fill_price": 99.90, "benchmark_price": 99.95, "venue": "NASDAQ"},
-        {"symbol": "MSFT", "side": "BUY", "qty": 50, "arrival_price": 200.0,
-         "fill_price": 200.0, "benchmark_price": 200.0, "venue": "NYSE"},
+        {
+            "symbol": "AAPL",
+            "side": "SELL",
+            "qty": 100,
+            "arrival_price": 100.0,
+            "fill_price": 99.90,
+            "benchmark_price": 99.95,
+            "venue": "NASDAQ",
+        },
+        {
+            "symbol": "MSFT",
+            "side": "BUY",
+            "qty": 50,
+            "arrival_price": 200.0,
+            "fill_price": 200.0,
+            "benchmark_price": 200.0,
+            "venue": "NYSE",
+        },
     ]
 
 

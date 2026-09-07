@@ -33,7 +33,9 @@ try:
 
     def _ppf(p: float) -> float:
         return float(_norm.ppf(p))
+
 except Exception:  # pragma: no cover - scipy есть в окружении
+
     def _cdf(z: float) -> float:
         return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 
@@ -65,7 +67,7 @@ def _moments(x: np.ndarray) -> Tuple[float, float, float, float]:
     if sd == 0:
         return mu, 0.0, 0.0, 3.0
     z = (x - mu) / sd
-    return mu, sd, float(np.mean(z ** 3)), float(np.mean(z ** 4))
+    return mu, sd, float(np.mean(z**3)), float(np.mean(z**4))
 
 
 def sharpe_per_obs(returns: Sequence[float]) -> float:
@@ -74,7 +76,7 @@ def sharpe_per_obs(returns: Sequence[float]) -> float:
 
 
 def _psr_denom(sr: float, skew: float, kurt: float) -> float:
-    return math.sqrt(max(1e-12, 1.0 - skew * sr + ((kurt - 1.0) / 4.0) * sr ** 2))
+    return math.sqrt(max(1e-12, 1.0 - skew * sr + ((kurt - 1.0) / 4.0) * sr**2))
 
 
 def probabilistic_sharpe_ratio(returns: Sequence[float], sr_benchmark: float = 0.0) -> float:
@@ -97,8 +99,7 @@ def expected_max_sharpe(n_trials: int, sr_std: float) -> float:
         return 0.0
     e = math.e
     return sr_std * (
-        (1.0 - _EULER) * _ppf(1.0 - 1.0 / n_trials)
-        + _EULER * _ppf(1.0 - 1.0 / (n_trials * e))
+        (1.0 - _EULER) * _ppf(1.0 - 1.0 / n_trials) + _EULER * _ppf(1.0 - 1.0 / (n_trials * e))
     )
 
 
@@ -216,8 +217,16 @@ def is_oos_degradation(
 ) -> Dict[str, float]:
     is_sr = sharpe_per_obs(is_returns) * math.sqrt(periods_per_year)
     oos_sr = sharpe_per_obs(oos_returns) * math.sqrt(periods_per_year)
-    ratio = (oos_sr / is_sr) if (is_sr not in (0.0,) and np.isfinite(is_sr) and is_sr != 0) else float("nan")
-    return {"is_sharpe": float(is_sr), "oos_sharpe": float(oos_sr), "degradation_ratio": float(ratio)}
+    ratio = (
+        (oos_sr / is_sr)
+        if (is_sr not in (0.0,) and np.isfinite(is_sr) and is_sr != 0)
+        else float("nan")
+    )
+    return {
+        "is_sharpe": float(is_sr),
+        "oos_sharpe": float(oos_sr),
+        "degradation_ratio": float(ratio),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +248,7 @@ def trust_report(
     returns: Sequence[float],
     *,
     n_trials: int = 1,
-    trial_performance: Any = None,   # (T × N) матрица для PBO
+    trial_performance: Any = None,  # (T × N) матрица для PBO
     trial_sharpes: Optional[Sequence[float]] = None,
     periods_per_year: float = 252.0,
     capacity: Optional[Dict[str, Any]] = None,
@@ -275,8 +284,10 @@ def trust_report(
     if bootstrap:
         try:
             from research.bootstrap import bootstrap_report as _bsr
-            report["bootstrap"] = _bsr(returns, periods_per_year=periods_per_year,
-                                       n_boot=int(bootstrap_n))
+
+            report["bootstrap"] = _bsr(
+                returns, periods_per_year=periods_per_year, n_boot=int(bootstrap_n)
+            )
             sh = report["bootstrap"].get("sharpe", {})
             # the edge is "bootstrap-significant" if the 95% CI for Sharpe excludes 0
             report["sharpe_ci_excludes_zero"] = bool(sh.get("ci_low", 0.0) > 0.0)

@@ -60,9 +60,7 @@ from adapters.models import ExchangeVendor, AccountInfo, MarketType
 logger = logging.getLogger(__name__)
 
 # Quote assets that are themselves cash, not tradable "positions" to flatten.
-_DEFAULT_QUOTE_ASSETS = frozenset(
-    {"USDT", "USDC", "BUSD", "FDUSD", "TUSD", "DAI", "USD"}
-)
+_DEFAULT_QUOTE_ASSETS = frozenset({"USDT", "USDC", "BUSD", "FDUSD", "TUSD", "DAI", "USD"})
 # Tiny balances (dust) below this base-asset quantity are ignored when building
 # synthetic positions — selling dust just errors on the exchange (min-notional).
 _DUST_EPS = Decimal("0")
@@ -128,9 +126,12 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
         """Lazy initialization of REST session (shared budget transport)."""
         if self._session is None:
             from services.rest_budget import RestBudgetSession
-            self._session = RestBudgetSession({
-                "timeout": int(self._config.get("timeout", 30)),
-            })
+
+            self._session = RestBudgetSession(
+                {
+                    "timeout": int(self._config.get("timeout", 30)),
+                }
+            )
         return self._session
 
     def _do_connect(self) -> None:
@@ -178,14 +179,32 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
         try:
             method_u = method.upper()
             if method_u == "GET":
-                return session.get(url, params=params, headers=headers,
-                                   timeout=timeout, budget="spot_api", tokens=1.0)
+                return session.get(
+                    url,
+                    params=params,
+                    headers=headers,
+                    timeout=timeout,
+                    budget="spot_api",
+                    tokens=1.0,
+                )
             if method_u == "POST":
-                return session.post(url, data=params, headers=headers,
-                                    timeout=timeout, budget="spot_api", tokens=1.0)
+                return session.post(
+                    url,
+                    data=params,
+                    headers=headers,
+                    timeout=timeout,
+                    budget="spot_api",
+                    tokens=1.0,
+                )
             if method_u == "DELETE":
-                return session.delete(url, params=params, headers=headers,
-                                      timeout=timeout, budget="spot_api", tokens=1.0)
+                return session.delete(
+                    url,
+                    params=params,
+                    headers=headers,
+                    timeout=timeout,
+                    budget="spot_api",
+                    tokens=1.0,
+                )
             raise ValueError(f"Unsupported method: {method}")
         except Exception as e:
             logger.error(f"Spot API request failed: {e}")
@@ -217,8 +236,7 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
             return self._parse_order_response(response)
 
         except Exception as e:
-            return OrderResult(success=False, error_code="SUBMISSION_FAILED",
-                               error_message=str(e))
+            return OrderResult(success=False, error_code="SUBMISSION_FAILED", error_message=str(e))
 
     def submit_spot_order(
         self,
@@ -269,8 +287,7 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
             response = self._request("POST", "/api/v3/order", params)
             return self._parse_order_response(response)
         except Exception as e:
-            return OrderResult(success=False, error_code="SUBMISSION_FAILED",
-                               error_message=str(e))
+            return OrderResult(success=False, error_code="SUBMISSION_FAILED", error_message=str(e))
 
     def cancel_order(
         self,
@@ -300,7 +317,8 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
                 if response.get("code"):
                     return False
                 return status in ("CANCELED", "CANCELLED", "PENDING_CANCEL") or bool(
-                    response.get("orderId"))
+                    response.get("orderId")
+                )
             return False
         except Exception as e:
             logger.error(f"Spot order cancellation failed: {e}")
@@ -385,7 +403,7 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
                 positions[symbol] = Position(
                     symbol=symbol,
                     qty=total,
-                    avg_entry_price=Decimal("0"),   # spot: cost basis not provided
+                    avg_entry_price=Decimal("0"),  # spot: cost basis not provided
                     realized_pnl=Decimal("0"),
                     fee_paid=Decimal("0"),
                     ts=now_ms,
@@ -481,8 +499,9 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
     def get_last_price(self, symbol: str) -> Optional[Decimal]:
         """Get last traded price (public endpoint, unsigned)."""
         try:
-            response = self._request("GET", "/api/v3/ticker/price",
-                                     {"symbol": symbol}, signed=False)
+            response = self._request(
+                "GET", "/api/v3/ticker/price", {"symbol": symbol}, signed=False
+            )
             if isinstance(response, dict) and response.get("price"):
                 return Decimal(str(response["price"]))
             return None
@@ -549,7 +568,11 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
             run_id="binance_spot",
             symbol=str(response.get("symbol", "")),
             side=side,
-            order_type=OrderType.MARKET if str(response.get("type", "")).upper() == "MARKET" else OrderType.LIMIT,
+            order_type=(
+                OrderType.MARKET
+                if str(response.get("type", "")).upper() == "MARKET"
+                else OrderType.LIMIT
+            ),
             price=price,
             quantity=executed_qty,
             fee=Decimal("0"),
@@ -564,7 +587,11 @@ class BinanceOrderExecutionAdapter(OrderExecutionAdapter):
         if not isinstance(response, dict):
             return None
         side = Side.BUY if str(response.get("side", "")).upper() == "BUY" else Side.SELL
-        otype = OrderType.MARKET if str(response.get("type", "")).upper() == "MARKET" else OrderType.LIMIT
+        otype = (
+            OrderType.MARKET
+            if str(response.get("type", "")).upper() == "MARKET"
+            else OrderType.LIMIT
+        )
         try:
             tif = TimeInForce(response.get("timeInForce", "GTC"))
         except ValueError:

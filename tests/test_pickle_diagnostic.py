@@ -1,6 +1,7 @@
 """Diagnostic test to find what exactly cannot be pickled."""
 
 import pytest
+
 pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 import cloudpickle

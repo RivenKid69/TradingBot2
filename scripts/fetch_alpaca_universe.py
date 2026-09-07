@@ -166,6 +166,7 @@ def save_universe(
     elif format_type == "csv":
         # CSV format
         import csv
+
         with open(output_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=assets[0].keys() if assets else [])
             writer.writeheader()
@@ -187,27 +188,96 @@ def create_popular_universe(
     # Popular stocks to include (S&P 500 top components + popular retail stocks)
     popular_symbols = {
         # Tech giants
-        "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "NVDA", "TSLA", "AMD", "INTC",
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "GOOG",
+        "AMZN",
+        "META",
+        "NVDA",
+        "TSLA",
+        "AMD",
+        "INTC",
         # Finance
-        "JPM", "BAC", "WFC", "GS", "MS", "C", "BRK.B", "V", "MA", "AXP",
+        "JPM",
+        "BAC",
+        "WFC",
+        "GS",
+        "MS",
+        "C",
+        "BRK.B",
+        "V",
+        "MA",
+        "AXP",
         # Healthcare
-        "JNJ", "UNH", "PFE", "ABBV", "MRK", "LLY", "TMO", "ABT", "BMY", "AMGN",
+        "JNJ",
+        "UNH",
+        "PFE",
+        "ABBV",
+        "MRK",
+        "LLY",
+        "TMO",
+        "ABT",
+        "BMY",
+        "AMGN",
         # Consumer
-        "WMT", "COST", "HD", "MCD", "NKE", "SBUX", "TGT", "LOW", "DIS", "NFLX",
+        "WMT",
+        "COST",
+        "HD",
+        "MCD",
+        "NKE",
+        "SBUX",
+        "TGT",
+        "LOW",
+        "DIS",
+        "NFLX",
         # Energy
-        "XOM", "CVX", "COP", "SLB", "EOG", "OXY", "MPC", "VLO", "PSX", "KMI",
+        "XOM",
+        "CVX",
+        "COP",
+        "SLB",
+        "EOG",
+        "OXY",
+        "MPC",
+        "VLO",
+        "PSX",
+        "KMI",
         # Industrial
-        "CAT", "DE", "HON", "UNP", "UPS", "FDX", "BA", "LMT", "RTX", "GE",
+        "CAT",
+        "DE",
+        "HON",
+        "UNP",
+        "UPS",
+        "FDX",
+        "BA",
+        "LMT",
+        "RTX",
+        "GE",
         # Retail favorites
-        "GME", "AMC", "PLTR", "SOFI", "RIVN", "LCID", "NIO", "BB", "NOK", "SNAP",
+        "GME",
+        "AMC",
+        "PLTR",
+        "SOFI",
+        "RIVN",
+        "LCID",
+        "NIO",
+        "BB",
+        "NOK",
+        "SNAP",
         # ETFs (major)
-        "SPY", "QQQ", "IWM", "DIA", "VTI", "VOO", "VXX", "ARKK", "XLF", "XLE",
+        "SPY",
+        "QQQ",
+        "IWM",
+        "DIA",
+        "VTI",
+        "VOO",
+        "VXX",
+        "ARKK",
+        "XLF",
+        "XLE",
     }
 
-    popular_assets = [
-        a for a in assets
-        if a["symbol"] in popular_symbols
-    ]
+    popular_assets = [a for a in assets if a["symbol"] in popular_symbols]
 
     # Sort by symbol
     popular_assets.sort(key=lambda x: x["symbol"])
@@ -236,13 +306,15 @@ def main() -> int:
     )
 
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=str,
         default="data/universe/alpaca_symbols.json",
         help="Output file path",
     )
     parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         type=str,
         choices=["json", "symbols", "csv"],
         default="json",

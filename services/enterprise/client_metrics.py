@@ -134,7 +134,9 @@ class ClientMetric:
     retention_days: int = 365
     created_at: datetime = field(default_factory=datetime.utcnow)
 
-    def add_data_point(self, value: float, timestamp: datetime | None = None, tags: dict[str, str] | None = None) -> None:
+    def add_data_point(
+        self, value: float, timestamp: datetime | None = None, tags: dict[str, str] | None = None
+    ) -> None:
         """Add a data point to the metric."""
         self.data_points.append(
             MetricDataPoint(
@@ -733,20 +735,30 @@ class ClientMetricsService:
 
         avg_uptime = None
         if uptime_metrics:
-            uptimes = [m.get_average(period) for m in uptime_metrics if m.get_average(period) is not None]
+            uptimes = [
+                m.get_average(period) for m in uptime_metrics if m.get_average(period) is not None
+            ]
             avg_uptime = sum(uptimes) / len(uptimes) if uptimes else None
 
         avg_latency = None
         p95_latency = None
         if latency_metrics:
-            latencies = [m.get_average(period) for m in latency_metrics if m.get_average(period) is not None]
+            latencies = [
+                m.get_average(period) for m in latency_metrics if m.get_average(period) is not None
+            ]
             avg_latency = sum(latencies) / len(latencies) if latencies else None
-            p95_values = [m.get_percentile(95, period) for m in latency_metrics if m.get_percentile(95, period) is not None]
+            p95_values = [
+                m.get_percentile(95, period)
+                for m in latency_metrics
+                if m.get_percentile(95, period) is not None
+            ]
             p95_latency = max(p95_values) if p95_values else None
 
         avg_error_rate = None
         if error_metrics:
-            errors = [m.get_average(period) for m in error_metrics if m.get_average(period) is not None]
+            errors = [
+                m.get_average(period) for m in error_metrics if m.get_average(period) is not None
+            ]
             avg_error_rate = sum(errors) / len(errors) if errors else None
 
         # Determine overall compliance

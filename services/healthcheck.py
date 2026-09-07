@@ -54,8 +54,10 @@ logger = logging.getLogger(__name__)
 # Enums and Types
 # =============================================================================
 
+
 class ComponentStatus(Enum):
     """Status of a monitored component."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -64,6 +66,7 @@ class ComponentStatus(Enum):
 
 class ComponentType(Enum):
     """Type of monitored component."""
+
     EXCHANGE = "exchange"
     DATA_FEED = "data_feed"
     EXECUTOR = "executor"
@@ -75,6 +78,7 @@ class ComponentType(Enum):
 # =============================================================================
 # Protocols for Monitorable Components
 # =============================================================================
+
 
 class ExchangeClient(Protocol):
     """Protocol for exchange clients that can be health-checked."""
@@ -104,9 +108,11 @@ class DataFeed(Protocol):
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class ComponentHealth:
     """Health status of a single component."""
+
     name: str
     component_type: ComponentType
     status: ComponentStatus
@@ -130,6 +136,7 @@ class ComponentHealth:
 @dataclass
 class HealthStatus:
     """Overall health status of the system."""
+
     status: ComponentStatus
     components: List[ComponentHealth] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)
@@ -164,6 +171,7 @@ class HealthStatus:
 @dataclass
 class HealthcheckConfig:
     """Configuration for healthcheck service."""
+
     # Data feed freshness
     stale_data_threshold_sec: float = 60.0
     stale_data_warning_sec: float = 30.0
@@ -195,6 +203,7 @@ class HealthcheckConfig:
 # =============================================================================
 # Healthcheck Service
 # =============================================================================
+
 
 class HealthcheckService:
     """
@@ -409,7 +418,7 @@ class HealthcheckService:
 
             details = {
                 "memory_percent": memory.percent,
-                "memory_available_gb": round(memory.available / (1024 ** 3), 2),
+                "memory_available_gb": round(memory.available / (1024**3), 2),
                 "cpu_percent": cpu_percent,
             }
 
@@ -434,8 +443,10 @@ class HealthcheckService:
                 )
 
             # Check warnings
-            if (memory.percent > self.config.warning_memory_percent or
-                    cpu_percent > self.config.warning_cpu_percent):
+            if (
+                memory.percent > self.config.warning_memory_percent
+                or cpu_percent > self.config.warning_cpu_percent
+            ):
                 return ComponentHealth(
                     name="system_resources",
                     component_type=ComponentType.SYSTEM,
@@ -492,12 +503,14 @@ class HealthcheckService:
             try:
                 components.append(check_fn())
             except Exception as e:
-                components.append(ComponentHealth(
-                    name=name,
-                    component_type=ComponentType.SYSTEM,
-                    status=ComponentStatus.UNHEALTHY,
-                    message=f"Check failed: {str(e)[:100]}",
-                ))
+                components.append(
+                    ComponentHealth(
+                        name=name,
+                        component_type=ComponentType.SYSTEM,
+                        status=ComponentStatus.UNHEALTHY,
+                        message=f"Check failed: {str(e)[:100]}",
+                    )
+                )
 
         # Determine overall status
         unhealthy_count = sum(1 for c in components if c.status == ComponentStatus.UNHEALTHY)
@@ -522,6 +535,7 @@ class HealthcheckService:
     def _get_system_info(self) -> Dict[str, Any]:
         """Get basic system information."""
         import platform
+
         return {
             "platform": platform.system(),
             "python_version": platform.python_version(),
@@ -547,9 +561,7 @@ class HealthcheckService:
             return
 
         interval = interval_sec or self.config.background_check_interval_sec
-        self._background_task = asyncio.create_task(
-            self._background_check_loop(interval)
-        )
+        self._background_task = asyncio.create_task(self._background_check_loop(interval))
         self._logger.info(f"Started background health checks (interval: {interval}s)")
 
     async def stop_background_checks(self) -> None:
@@ -612,6 +624,7 @@ class HealthcheckService:
 # Factory Functions
 # =============================================================================
 
+
 def create_healthcheck(config: Optional[Dict[str, Any]] = None) -> HealthcheckService:
     """
     Create a healthcheck service with configuration.
@@ -654,6 +667,7 @@ def create_healthcheck_from_yaml(yaml_path: str) -> HealthcheckService:
 # HTTP Endpoint Handler (for external monitoring)
 # =============================================================================
 
+
 def create_health_endpoint_handler(
     healthcheck: HealthcheckService,
 ) -> Callable[[], Dict[str, Any]]:
@@ -674,6 +688,7 @@ def create_health_endpoint_handler(
     Returns:
         Handler function that returns health status dict.
     """
+
     def handler() -> Dict[str, Any]:
         status = healthcheck.check_health()
         return status.to_dict()
@@ -690,6 +705,7 @@ def create_readiness_endpoint_handler(
     Returns:
         Handler function that returns readiness status.
     """
+
     def handler() -> Dict[str, Any]:
         status = healthcheck.check_health()
         return {
@@ -709,6 +725,7 @@ def create_liveness_endpoint_handler() -> Callable[[], Dict[str, Any]]:
     Returns:
         Handler function that returns liveness status.
     """
+
     def handler() -> Dict[str, Any]:
         return {
             "alive": True,

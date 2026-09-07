@@ -86,14 +86,16 @@ logger = logging.getLogger(__name__)
 # Constants and Configuration
 # =============================================================================
 
+
 class ProductGroup(str, Enum):
     """CME product group classification for SPAN."""
-    EQUITY_INDEX = "EQUITY_INDEX"      # ES, NQ, YM, RTY
-    METALS = "METALS"                  # GC, SI, HG
-    ENERGY = "ENERGY"                  # CL, NG, RB, HO
-    CURRENCIES = "CURRENCIES"          # 6E, 6J, 6B, 6A
-    BONDS = "BONDS"                    # ZB, ZN, ZT, ZF
-    AGRICULTURAL = "AGRICULTURAL"      # ZC, ZS, ZW
+
+    EQUITY_INDEX = "EQUITY_INDEX"  # ES, NQ, YM, RTY
+    METALS = "METALS"  # GC, SI, HG
+    ENERGY = "ENERGY"  # CL, NG, RB, HO
+    CURRENCIES = "CURRENCIES"  # 6E, 6J, 6B, 6A
+    BONDS = "BONDS"  # ZB, ZN, ZT, ZF
+    AGRICULTURAL = "AGRICULTURAL"  # ZC, ZS, ZW
 
 
 # Product to group mapping
@@ -145,6 +147,7 @@ PRODUCT_GROUPS: Dict[str, ProductGroup] = {
 # SPAN Scanning Ranges
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class ScanningRangeConfig:
     """
@@ -160,6 +163,7 @@ class ScanningRangeConfig:
         short_option_minimum: Minimum margin for short options
         extreme_move_multiplier: Multiplier for extreme move scenarios
     """
+
     price_scan_range_pct: Decimal
     volatility_scan_range_pct: Decimal = Decimal("0.33")  # ±33%
     short_option_minimum: Decimal = Decimal("0")
@@ -171,39 +175,39 @@ class ScanningRangeConfig:
 # Actual SPAN parameter files are updated daily
 SCANNING_RANGES: Dict[str, ScanningRangeConfig] = {
     # Equity Index (moderate volatility)
-    "ES": ScanningRangeConfig(Decimal("0.06")),    # ±6%
-    "NQ": ScanningRangeConfig(Decimal("0.08")),    # ±8% (more volatile)
-    "YM": ScanningRangeConfig(Decimal("0.06")),    # ±6%
-    "RTY": ScanningRangeConfig(Decimal("0.09")),   # ±9% (small cap)
-    "MES": ScanningRangeConfig(Decimal("0.06")),   # Same as ES
-    "MNQ": ScanningRangeConfig(Decimal("0.08")),   # Same as NQ
+    "ES": ScanningRangeConfig(Decimal("0.06")),  # ±6%
+    "NQ": ScanningRangeConfig(Decimal("0.08")),  # ±8% (more volatile)
+    "YM": ScanningRangeConfig(Decimal("0.06")),  # ±6%
+    "RTY": ScanningRangeConfig(Decimal("0.09")),  # ±9% (small cap)
+    "MES": ScanningRangeConfig(Decimal("0.06")),  # Same as ES
+    "MNQ": ScanningRangeConfig(Decimal("0.08")),  # Same as NQ
     # Metals
-    "GC": ScanningRangeConfig(Decimal("0.05")),    # ±5%
-    "SI": ScanningRangeConfig(Decimal("0.08")),    # ±8% (more volatile)
-    "HG": ScanningRangeConfig(Decimal("0.07")),    # ±7%
-    "MGC": ScanningRangeConfig(Decimal("0.05")),   # Same as GC
+    "GC": ScanningRangeConfig(Decimal("0.05")),  # ±5%
+    "SI": ScanningRangeConfig(Decimal("0.08")),  # ±8% (more volatile)
+    "HG": ScanningRangeConfig(Decimal("0.07")),  # ±7%
+    "MGC": ScanningRangeConfig(Decimal("0.05")),  # Same as GC
     # Energy (high volatility)
-    "CL": ScanningRangeConfig(Decimal("0.10")),    # ±10%
-    "NG": ScanningRangeConfig(Decimal("0.15")),    # ±15% (very volatile)
-    "MCL": ScanningRangeConfig(Decimal("0.10")),   # Same as CL
-    "RB": ScanningRangeConfig(Decimal("0.10")),    # ±10%
-    "HO": ScanningRangeConfig(Decimal("0.10")),    # ±10%
+    "CL": ScanningRangeConfig(Decimal("0.10")),  # ±10%
+    "NG": ScanningRangeConfig(Decimal("0.15")),  # ±15% (very volatile)
+    "MCL": ScanningRangeConfig(Decimal("0.10")),  # Same as CL
+    "RB": ScanningRangeConfig(Decimal("0.10")),  # ±10%
+    "HO": ScanningRangeConfig(Decimal("0.10")),  # ±10%
     # Currencies (low volatility)
-    "6E": ScanningRangeConfig(Decimal("0.03")),    # ±3%
-    "6J": ScanningRangeConfig(Decimal("0.04")),    # ±4%
-    "6B": ScanningRangeConfig(Decimal("0.04")),    # ±4%
-    "6A": ScanningRangeConfig(Decimal("0.04")),    # ±4%
-    "6C": ScanningRangeConfig(Decimal("0.03")),    # ±3%
-    "6S": ScanningRangeConfig(Decimal("0.03")),    # ±3%
+    "6E": ScanningRangeConfig(Decimal("0.03")),  # ±3%
+    "6J": ScanningRangeConfig(Decimal("0.04")),  # ±4%
+    "6B": ScanningRangeConfig(Decimal("0.04")),  # ±4%
+    "6A": ScanningRangeConfig(Decimal("0.04")),  # ±4%
+    "6C": ScanningRangeConfig(Decimal("0.03")),  # ±3%
+    "6S": ScanningRangeConfig(Decimal("0.03")),  # ±3%
     # Bonds (low volatility)
-    "ZB": ScanningRangeConfig(Decimal("0.025")),   # ±2.5%
-    "ZN": ScanningRangeConfig(Decimal("0.020")),   # ±2.0%
-    "ZT": ScanningRangeConfig(Decimal("0.015")),   # ±1.5%
-    "ZF": ScanningRangeConfig(Decimal("0.018")),   # ±1.8%
+    "ZB": ScanningRangeConfig(Decimal("0.025")),  # ±2.5%
+    "ZN": ScanningRangeConfig(Decimal("0.020")),  # ±2.0%
+    "ZT": ScanningRangeConfig(Decimal("0.015")),  # ±1.5%
+    "ZF": ScanningRangeConfig(Decimal("0.018")),  # ±1.8%
     # Agricultural
-    "ZC": ScanningRangeConfig(Decimal("0.06")),    # ±6%
-    "ZS": ScanningRangeConfig(Decimal("0.06")),    # ±6%
-    "ZW": ScanningRangeConfig(Decimal("0.07")),    # ±7%
+    "ZC": ScanningRangeConfig(Decimal("0.06")),  # ±6%
+    "ZS": ScanningRangeConfig(Decimal("0.06")),  # ±6%
+    "ZW": ScanningRangeConfig(Decimal("0.07")),  # ±7%
 }
 
 # Default scanning range for unknown products
@@ -213,6 +217,7 @@ DEFAULT_SCANNING_RANGE = ScanningRangeConfig(Decimal("0.08"))
 # =============================================================================
 # Spread Credit Configuration
 # =============================================================================
+
 
 @dataclass(frozen=True)
 class InterCommoditySpreadCredit:
@@ -229,6 +234,7 @@ class InterCommoditySpreadCredit:
         ratio: Spread ratio (contracts of product1 per contract of product2)
         min_legs: Minimum matched legs to apply credit
     """
+
     product1: str
     product2: str
     credit_rate: Decimal
@@ -240,30 +246,30 @@ class InterCommoditySpreadCredit:
 # These represent correlation-based margin offsets
 INTER_COMMODITY_CREDITS: List[InterCommoditySpreadCredit] = [
     # Equity Index spreads
-    InterCommoditySpreadCredit("ES", "NQ", Decimal("0.50")),   # 50% credit
-    InterCommoditySpreadCredit("ES", "YM", Decimal("0.55")),   # 55% credit
+    InterCommoditySpreadCredit("ES", "NQ", Decimal("0.50")),  # 50% credit
+    InterCommoditySpreadCredit("ES", "YM", Decimal("0.55")),  # 55% credit
     InterCommoditySpreadCredit("ES", "RTY", Decimal("0.40")),  # 40% credit
     InterCommoditySpreadCredit("NQ", "RTY", Decimal("0.35")),  # 35% credit
     # Micro vs Standard
     InterCommoditySpreadCredit("ES", "MES", Decimal("0.90")),  # 90% credit
     InterCommoditySpreadCredit("NQ", "MNQ", Decimal("0.90")),
     # Metals
-    InterCommoditySpreadCredit("GC", "SI", Decimal("0.35")),   # 35% gold/silver
-    InterCommoditySpreadCredit("GC", "HG", Decimal("0.20")),   # 20% gold/copper
+    InterCommoditySpreadCredit("GC", "SI", Decimal("0.35")),  # 35% gold/silver
+    InterCommoditySpreadCredit("GC", "HG", Decimal("0.20")),  # 20% gold/copper
     InterCommoditySpreadCredit("GC", "MGC", Decimal("0.90")),  # 90% micro
     # Energy
-    InterCommoditySpreadCredit("CL", "NG", Decimal("0.15")),   # 15% oil/gas
-    InterCommoditySpreadCredit("CL", "RB", Decimal("0.60")),   # 60% crack spread
-    InterCommoditySpreadCredit("CL", "HO", Decimal("0.60")),   # 60% crack spread
+    InterCommoditySpreadCredit("CL", "NG", Decimal("0.15")),  # 15% oil/gas
+    InterCommoditySpreadCredit("CL", "RB", Decimal("0.60")),  # 60% crack spread
+    InterCommoditySpreadCredit("CL", "HO", Decimal("0.60")),  # 60% crack spread
     InterCommoditySpreadCredit("CL", "MCL", Decimal("0.90")),  # 90% micro
     # Currencies
-    InterCommoditySpreadCredit("6E", "6B", Decimal("0.45")),   # 45% EUR/GBP
-    InterCommoditySpreadCredit("6E", "6S", Decimal("0.50")),   # 50% EUR/CHF
-    InterCommoditySpreadCredit("6J", "6A", Decimal("0.25")),   # 25% JPY/AUD
+    InterCommoditySpreadCredit("6E", "6B", Decimal("0.45")),  # 45% EUR/GBP
+    InterCommoditySpreadCredit("6E", "6S", Decimal("0.50")),  # 50% EUR/CHF
+    InterCommoditySpreadCredit("6J", "6A", Decimal("0.25")),  # 25% JPY/AUD
     # Bonds (yield curve)
-    InterCommoditySpreadCredit("ZB", "ZN", Decimal("0.70")),   # 70% 30Y/10Y
-    InterCommoditySpreadCredit("ZN", "ZF", Decimal("0.75")),   # 75% 10Y/5Y
-    InterCommoditySpreadCredit("ZF", "ZT", Decimal("0.80")),   # 80% 5Y/2Y
+    InterCommoditySpreadCredit("ZB", "ZN", Decimal("0.70")),  # 70% 30Y/10Y
+    InterCommoditySpreadCredit("ZN", "ZF", Decimal("0.75")),  # 75% 10Y/5Y
+    InterCommoditySpreadCredit("ZF", "ZT", Decimal("0.80")),  # 80% 5Y/2Y
 ]
 
 
@@ -303,6 +309,7 @@ DEFAULT_CALENDAR_SPREAD_CREDIT = Decimal("0.70")
 # SPAN Margin Data Classes
 # =============================================================================
 
+
 @dataclass
 class SPANScenarioResult:
     """
@@ -315,6 +322,7 @@ class SPANScenarioResult:
         portfolio_value_change: Change in portfolio value
         is_extreme: Whether this is an extreme move scenario
     """
+
     scenario_id: int
     price_move_pct: Decimal
     volatility_move_pct: Decimal
@@ -337,6 +345,7 @@ class PositionMarginDetail:
         net_option_value: Mark-to-market of options (0 for futures)
         gross_margin: scanning_risk + delivery_charge - option_value
     """
+
     symbol: str
     position_qty: Decimal
     position_side: PositionSide
@@ -363,6 +372,7 @@ class SpreadCreditDetail:
         credit_amount: Margin credit amount
         credit_rate: Credit rate applied
     """
+
     credit_type: str  # "INTER" or "INTRA"
     products: Tuple[str, ...]
     legs_matched: int
@@ -387,6 +397,7 @@ class SPANMarginResult:
         spread_credits: Applied spread credits
         worst_scenario: Scenario producing max loss
     """
+
     initial_margin: Decimal
     maintenance_margin: Decimal
     scanning_risk: Decimal
@@ -407,7 +418,7 @@ class SPANMarginResult:
             + self.delivery_month_charge
             - self.net_option_value
             - self.inter_commodity_credit
-            - self.intra_commodity_credit
+            - self.intra_commodity_credit,
         )
 
     @property
@@ -426,6 +437,7 @@ class SPANMarginResult:
 # =============================================================================
 # SPAN Margin Calculator
 # =============================================================================
+
 
 class SPANMarginCalculator:
     """
@@ -463,10 +475,10 @@ class SPANMarginCalculator:
 
     # Margin multipliers
     DEFAULT_INITIAL_MULTIPLIER = Decimal("1.10")  # Initial = scanning × 1.10
-    DEFAULT_MAINT_RATIO = Decimal("0.80")         # Maint = initial × 0.80
+    DEFAULT_MAINT_RATIO = Decimal("0.80")  # Maint = initial × 0.80
 
     # Delivery month charge parameters
-    DELIVERY_MONTH_DAYS = 10       # Days before expiry for charge
+    DELIVERY_MONTH_DAYS = 10  # Days before expiry for charge
     DELIVERY_CHARGE_RATE = Decimal("0.05")  # 5% extra charge
 
     def __init__(
@@ -734,10 +746,7 @@ class SPANMarginCalculator:
         )
 
         # Step 4: Calculate net margin
-        net_scanning = max(
-            Decimal("0"),
-            total_scanning - inter_credits - intra_credits
-        )
+        net_scanning = max(Decimal("0"), total_scanning - inter_credits - intra_credits)
 
         net_margin = net_scanning + total_delivery
         initial_margin = (net_margin * self._initial_mult).quantize(
@@ -786,14 +795,8 @@ class SPANMarginCalculator:
                 continue
 
             # Get position sides
-            side1 = next(
-                (p.side for p in positions if p.symbol.upper() == sym1),
-                None
-            )
-            side2 = next(
-                (p.side for p in positions if p.symbol.upper() == sym2),
-                None
-            )
+            side1 = next((p.side for p in positions if p.symbol.upper() == sym1), None)
+            side2 = next((p.side for p in positions if p.symbol.upper() == sym2), None)
 
             if side1 is None or side2 is None:
                 continue
@@ -810,13 +813,15 @@ class SPANMarginCalculator:
             credit = smaller_margin * credit_def.credit_rate
             total_credit += credit
 
-            details.append(SpreadCreditDetail(
-                credit_type="INTER",
-                products=(sym1, sym2),
-                legs_matched=1,
-                credit_amount=credit,
-                credit_rate=credit_def.credit_rate,
-            ))
+            details.append(
+                SpreadCreditDetail(
+                    credit_type="INTER",
+                    products=(sym1, sym2),
+                    legs_matched=1,
+                    credit_amount=credit,
+                    credit_rate=credit_def.credit_rate,
+                )
+            )
 
             used_symbols.add(sym1)
             used_symbols.add(sym2)
@@ -937,6 +942,7 @@ class SPANMarginCalculator:
 # Factory Functions
 # =============================================================================
 
+
 def create_span_calculator(
     include_default_specs: bool = True,
 ) -> SPANMarginCalculator:
@@ -1002,29 +1008,29 @@ def calculate_simple_margin(
 APPROXIMATE_MARGINS_PER_CONTRACT: Dict[str, Tuple[Decimal, Decimal]] = {
     # (Initial, Maintenance) in USD
     # Equity Index
-    "ES": (Decimal("12000"), Decimal("11000")),    # E-mini S&P 500
-    "NQ": (Decimal("17000"), Decimal("15500")),    # E-mini NASDAQ
-    "YM": (Decimal("9500"), Decimal("8600")),      # E-mini Dow
-    "RTY": (Decimal("7500"), Decimal("6800")),     # E-mini Russell 2000
-    "MES": (Decimal("1200"), Decimal("1100")),     # Micro E-mini S&P
-    "MNQ": (Decimal("1700"), Decimal("1550")),     # Micro E-mini NASDAQ
+    "ES": (Decimal("12000"), Decimal("11000")),  # E-mini S&P 500
+    "NQ": (Decimal("17000"), Decimal("15500")),  # E-mini NASDAQ
+    "YM": (Decimal("9500"), Decimal("8600")),  # E-mini Dow
+    "RTY": (Decimal("7500"), Decimal("6800")),  # E-mini Russell 2000
+    "MES": (Decimal("1200"), Decimal("1100")),  # Micro E-mini S&P
+    "MNQ": (Decimal("1700"), Decimal("1550")),  # Micro E-mini NASDAQ
     # Metals
-    "GC": (Decimal("9500"), Decimal("8600")),      # Gold
-    "SI": (Decimal("12000"), Decimal("11000")),    # Silver
-    "MGC": (Decimal("950"), Decimal("860")),       # Micro Gold
+    "GC": (Decimal("9500"), Decimal("8600")),  # Gold
+    "SI": (Decimal("12000"), Decimal("11000")),  # Silver
+    "MGC": (Decimal("950"), Decimal("860")),  # Micro Gold
     # Energy
-    "CL": (Decimal("6500"), Decimal("5900")),      # Crude Oil
-    "NG": (Decimal("2500"), Decimal("2300")),      # Natural Gas
-    "MCL": (Decimal("650"), Decimal("590")),       # Micro Crude
+    "CL": (Decimal("6500"), Decimal("5900")),  # Crude Oil
+    "NG": (Decimal("2500"), Decimal("2300")),  # Natural Gas
+    "MCL": (Decimal("650"), Decimal("590")),  # Micro Crude
     # Currencies
-    "6E": (Decimal("2500"), Decimal("2300")),      # Euro FX
-    "6J": (Decimal("3000"), Decimal("2700")),      # Japanese Yen
-    "6B": (Decimal("2800"), Decimal("2500")),      # British Pound
+    "6E": (Decimal("2500"), Decimal("2300")),  # Euro FX
+    "6J": (Decimal("3000"), Decimal("2700")),  # Japanese Yen
+    "6B": (Decimal("2800"), Decimal("2500")),  # British Pound
     # Bonds
-    "ZB": (Decimal("3500"), Decimal("3200")),      # 30-Year T-Bond
-    "ZN": (Decimal("2000"), Decimal("1800")),      # 10-Year T-Note
-    "ZF": (Decimal("1200"), Decimal("1100")),      # 5-Year T-Note
-    "ZT": (Decimal("600"), Decimal("550")),        # 2-Year T-Note
+    "ZB": (Decimal("3500"), Decimal("3200")),  # 30-Year T-Bond
+    "ZN": (Decimal("2000"), Decimal("1800")),  # 10-Year T-Note
+    "ZF": (Decimal("1200"), Decimal("1100")),  # 5-Year T-Note
+    "ZT": (Decimal("600"), Decimal("550")),  # 2-Year T-Note
 }
 
 

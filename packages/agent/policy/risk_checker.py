@@ -219,19 +219,13 @@ class RiskChecker:
         result.add_check(self._check_order_size(quantity, notional))
 
         # 2. Position limit check
-        result.add_check(
-            self._check_position_limit(intent, portfolio, quantity)
-        )
+        result.add_check(self._check_position_limit(intent, portfolio, quantity))
 
         # 3. Concentration check
-        result.add_check(
-            self._check_concentration(intent.symbol, portfolio, notional)
-        )
+        result.add_check(self._check_concentration(intent.symbol, portfolio, notional))
 
         # 4. Buying power check
-        result.add_check(
-            self._check_buying_power(intent, portfolio, notional)
-        )
+        result.add_check(self._check_buying_power(intent, portfolio, notional))
 
         # 5. Daily loss check
         result.add_check(self._check_daily_loss(portfolio))
@@ -383,7 +377,10 @@ class RiskChecker:
         )
 
     def _check_leverage(
-        self, intent: OrderIntent, portfolio: PortfolioState, notional: Decimal,
+        self,
+        intent: OrderIntent,
+        portfolio: PortfolioState,
+        notional: Decimal,
     ) -> PreTradeCheck:
         """Post-order leverage cap: (gross_exposure + added_notional) / equity.
 
@@ -394,26 +391,35 @@ class RiskChecker:
         equity = portfolio.equity
         if equity <= 0:
             return PreTradeCheck(
-                check_type=RiskCheckType.LEVERAGE, passed=False,
-                message="equity <= 0 — leverage undefined", current_value=None,
+                check_type=RiskCheckType.LEVERAGE,
+                passed=False,
+                message="equity <= 0 — leverage undefined",
+                current_value=None,
                 limit_value=self.max_leverage,
             )
         projected = (portfolio.gross_exposure + abs(notional)) / equity
         if projected > self.max_leverage:
             return PreTradeCheck(
-                check_type=RiskCheckType.LEVERAGE, passed=False,
+                check_type=RiskCheckType.LEVERAGE,
+                passed=False,
                 message=f"Leverage would reach {projected:.2f}x > cap {self.max_leverage}x",
-                current_value=projected, limit_value=self.max_leverage,
+                current_value=projected,
+                limit_value=self.max_leverage,
             )
         if projected > self.max_leverage * Decimal("0.9"):
             return PreTradeCheck(
-                check_type=RiskCheckType.LEVERAGE, passed=False,
+                check_type=RiskCheckType.LEVERAGE,
+                passed=False,
                 message=f"Leverage approaching cap: {projected:.2f}x / {self.max_leverage}x",
-                current_value=projected, limit_value=self.max_leverage, is_warning=True,
+                current_value=projected,
+                limit_value=self.max_leverage,
+                is_warning=True,
             )
         return PreTradeCheck(
-            check_type=RiskCheckType.LEVERAGE, passed=True,
-            current_value=projected, limit_value=self.max_leverage,
+            check_type=RiskCheckType.LEVERAGE,
+            passed=True,
+            current_value=projected,
+            limit_value=self.max_leverage,
         )
 
     def _check_drawdown(self, intent: OrderIntent, portfolio: PortfolioState) -> PreTradeCheck:
@@ -428,14 +434,18 @@ class RiskChecker:
         dd = (peak - portfolio.equity) / peak
         if dd > self.max_drawdown_pct:
             return PreTradeCheck(
-                check_type=RiskCheckType.MAX_DRAWDOWN, passed=False,
+                check_type=RiskCheckType.MAX_DRAWDOWN,
+                passed=False,
                 message=f"Drawdown {dd:.1%} exceeds limit {self.max_drawdown_pct:.1%} — "
-                        "new risk-increasing orders blocked",
-                current_value=dd, limit_value=self.max_drawdown_pct,
+                "new risk-increasing orders blocked",
+                current_value=dd,
+                limit_value=self.max_drawdown_pct,
             )
         return PreTradeCheck(
-            check_type=RiskCheckType.MAX_DRAWDOWN, passed=True,
-            current_value=dd, limit_value=self.max_drawdown_pct,
+            check_type=RiskCheckType.MAX_DRAWDOWN,
+            passed=True,
+            current_value=dd,
+            limit_value=self.max_drawdown_pct,
         )
 
     def _check_daily_loss(self, portfolio: PortfolioState) -> PreTradeCheck:

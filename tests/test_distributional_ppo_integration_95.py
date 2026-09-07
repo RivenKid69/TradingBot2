@@ -46,6 +46,7 @@ class DummyCallback(BaseCallback):
         self.n_calls += 1
         return True
 
+
 import distributional_ppo as dppo
 from distributional_ppo import (
     DistributionalPPO,
@@ -68,6 +69,7 @@ from distributional_ppo import (
 # Minimal Deterministic Environment
 # =============================================================================
 
+
 class MinimalDeterministicEnv(gymnasium.Env):
     """Minimal environment for testing DistributionalPPO."""
 
@@ -75,13 +77,9 @@ class MinimalDeterministicEnv(gymnasium.Env):
 
     def __init__(self, seed: int = 42):
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(4,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(4,), dtype=np.float32)
         # DistributionalPPO requires action space with shape (1,)
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
         self._max_steps = 10
@@ -97,14 +95,13 @@ class MinimalDeterministicEnv(gymnasium.Env):
     def step(self, action):
         self._step_count += 1
         # Simple dynamics - action is shape (1,)
-        action_scalar = float(action[0]) if hasattr(action, '__len__') else float(action)
+        action_scalar = float(action[0]) if hasattr(action, "__len__") else float(action)
         self._state = np.clip(
-            self._state + 0.1 * action_scalar + 0.01 * self._rng.standard_normal(4),
-            -10.0, 10.0
+            self._state + 0.1 * action_scalar + 0.01 * self._rng.standard_normal(4), -10.0, 10.0
         ).astype(np.float32)
 
         # Reward based on staying near origin
-        reward = float(-np.sum(self._state ** 2) * 0.01 + 0.1)
+        reward = float(-np.sum(self._state**2) * 0.01 + 0.1)
 
         terminated = self._step_count >= self._max_steps
         truncated = False
@@ -126,9 +123,7 @@ class MinimalDiscreteEnv(gymnasium.Env):
 
     def __init__(self, seed: int = 42):
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(4,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(4,), dtype=np.float32)
         self.action_space = spaces.Discrete(3)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
@@ -150,10 +145,13 @@ class MinimalDiscreteEnv(gymnasium.Env):
 
 def make_vec_env(env_cls=MinimalDeterministicEnv, n_envs=1, seed=42):
     """Create vectorized environment."""
+
     def make_env():
         env = env_cls(seed=seed)
         return env
+
     return DummyVecEnv([make_env for _ in range(n_envs)])
+
 
 def make_model(env, **overrides):
     """Create a minimal DistributionalPPO model for integration tests."""
@@ -193,6 +191,7 @@ def setup_and_collect_rollouts(model, env, n_rollout_steps):
 # Mock Components
 # =============================================================================
 
+
 class MockLogger:
     """Mock logger for testing."""
 
@@ -219,6 +218,7 @@ class MockLogger:
 # =============================================================================
 # Test DistributionalPPO Initialization
 # =============================================================================
+
 
 class TestDistributionalPPOInit:
     """Tests for DistributionalPPO.__init__."""
@@ -407,6 +407,7 @@ class TestDistributionalPPOInit:
 
     def test_init_with_none_env(self):
         """Test lightweight initialization with None env."""
+
         class MockPolicy:
             device = torch.device("cpu")
 
@@ -473,6 +474,7 @@ class TestDistributionalPPOInit:
 # =============================================================================
 # Test collect_rollouts and train
 # =============================================================================
+
 
 class TestDistributionalPPOCollectRollouts:
     """Tests for DistributionalPPO.collect_rollouts."""
@@ -610,6 +612,7 @@ class TestDistributionalPPOLearn:
 # =============================================================================
 # Test Helper Methods
 # =============================================================================
+
 
 class TestDistributionalPPOHelperMethods:
     """Tests for DistributionalPPO helper methods."""
@@ -758,6 +761,7 @@ class TestDistributionalPPOHelperMethods:
 # Test Twin Critics Methods
 # =============================================================================
 
+
 class TestTwinCriticsLoss:
     """Tests for twin critics loss computation."""
 
@@ -770,6 +774,7 @@ class TestTwinCriticsLoss:
 # =============================================================================
 # Test _compute_returns_with_time_limits edge cases
 # =============================================================================
+
 
 class TestComputeReturnsWithTimeLimitsEdges:
     """Test edge cases for _compute_returns_with_time_limits."""
@@ -887,6 +892,7 @@ class TestComputeReturnsWithTimeLimitsEdges:
 # Test PopArtController Integration
 # =============================================================================
 
+
 class TestPopArtControllerIntegration:
     """Integration tests for PopArtController with DistributionalPPO."""
 
@@ -932,6 +938,7 @@ class TestPopArtControllerIntegration:
 # =============================================================================
 # Test Serialization/Deserialization
 # =============================================================================
+
 
 class TestDistributionalPPOSerialization:
     """Tests for model serialization."""
@@ -979,6 +986,7 @@ class TestDistributionalPPOSerialization:
 # Test Edge Cases in safe_explained_variance
 # =============================================================================
 
+
 class TestSafeExplainedVarianceIntegration:
     """Integration tests for safe_explained_variance."""
 
@@ -1006,6 +1014,7 @@ class TestSafeExplainedVarianceIntegration:
 # Test _weighted_variance_np edge cases
 # =============================================================================
 
+
 class TestWeightedVarianceNpIntegration:
     """Integration tests for _weighted_variance_np."""
 
@@ -1030,6 +1039,7 @@ class TestWeightedVarianceNpIntegration:
 # =============================================================================
 # Test _compute_empirical_cvar
 # =============================================================================
+
 
 class TestComputeEmpiricalCvar:
     """Tests for DistributionalPPO._compute_empirical_cvar."""
@@ -1089,10 +1099,30 @@ class TestComputeEmpiricalCvar:
         )
 
         # Create rewards with outliers
-        rewards = torch.tensor([
-            -100.0, -10.0, -1.0, 0.0, 1.0, 10.0, 100.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        ])
+        rewards = torch.tensor(
+            [
+                -100.0,
+                -10.0,
+                -1.0,
+                0.0,
+                1.0,
+                10.0,
+                100.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        )
 
         winsor, cvar = model._compute_empirical_cvar(rewards)
 
@@ -1103,6 +1133,7 @@ class TestComputeEmpiricalCvar:
 # =============================================================================
 # Test _compute_cvar_statistics
 # =============================================================================
+
 
 class TestComputeCvarStatistics:
     """Tests for DistributionalPPO._compute_cvar_statistics."""
@@ -1155,6 +1186,7 @@ class TestComputeCvarStatistics:
 # Test RawRecurrentRolloutBuffer
 # =============================================================================
 
+
 class TestRawRecurrentRolloutBuffer:
     """Tests for RawRecurrentRolloutBuffer."""
 
@@ -1184,6 +1216,7 @@ class TestRawRecurrentRolloutBuffer:
 # Test quantile loss helper
 # =============================================================================
 
+
 class TestQuantileHuberLossEdges:
     """Edge case tests for _quantile_huber_loss."""
 
@@ -1200,18 +1233,21 @@ class TestQuantileHuberLossEdges:
 # Test _project_categorical_distribution
 # =============================================================================
 
+
 class TestProjectCategoricalDistributionEdges:
     """Edge case tests for _project_categorical_distribution."""
 
     def test_function_exists(self):
         """Test function exists."""
         from distributional_ppo import DistributionalPPO
+
         assert hasattr(DistributionalPPO, "_project_categorical_distribution")
 
 
 # =============================================================================
 # Test Additional Init Parameters
 # =============================================================================
+
 
 class TestDistributionalPPOInitExtended:
     """Extended tests for DistributionalPPO.__init__."""
@@ -1376,6 +1412,7 @@ class TestDistributionalPPOInitExtended:
 # Test Static Concat Methods
 # =============================================================================
 
+
 class TestConcatMethods:
     """Tests for static concat methods."""
 
@@ -1416,6 +1453,7 @@ class TestConcatMethods:
 # Test Value Scale Methods
 # =============================================================================
 
+
 class TestValueScaleMethods:
     """Tests for value scale related methods."""
 
@@ -1445,6 +1483,7 @@ class TestValueScaleMethods:
 # =============================================================================
 # Test KL Property Methods
 # =============================================================================
+
 
 class TestKLPropertyMethods:
     """Tests for KL-related property methods."""
@@ -1498,6 +1537,7 @@ class TestKLPropertyMethods:
 # Test cvar_winsor_pct property
 # =============================================================================
 
+
 class TestCvarWinsorPctProperty:
     """Tests for cvar_winsor_pct property."""
 
@@ -1543,6 +1583,7 @@ class TestCvarWinsorPctProperty:
 # Test _has_nonempty_batches
 # =============================================================================
 
+
 class TestHasNonemptyBatches:
     """Tests for _has_nonempty_batches static method."""
 
@@ -1567,6 +1608,7 @@ class TestHasNonemptyBatches:
 # =============================================================================
 # Additional PopArt Tests
 # =============================================================================
+
 
 class TestPopArtControllerAdvanced:
     """Advanced tests for PopArtController."""
@@ -1607,6 +1649,7 @@ class TestPopArtControllerAdvanced:
 # =============================================================================
 # Test _expand_logger_key_length
 # =============================================================================
+
 
 class TestExpandLoggerKeyLength:
     """Tests for _expand_logger_key_length static method."""

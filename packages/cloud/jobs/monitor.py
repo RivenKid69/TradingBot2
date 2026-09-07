@@ -40,6 +40,7 @@ METRICS_WINDOW: Final[int] = 3600  # 1 hour for rate calculations
 
 class JobStatus(str, Enum):
     """Overall job system status."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -47,6 +48,7 @@ class JobStatus(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -61,6 +63,7 @@ class AlertSeverity(str, Enum):
 @dataclass
 class JobMetrics:
     """Metrics for job monitoring."""
+
     # Counts
     total_jobs: int = 0
     pending_jobs: int = 0
@@ -116,6 +119,7 @@ class JobMetrics:
 @dataclass
 class JobAlert:
     """Alert for job system issues."""
+
     alert_id: str
     severity: AlertSeverity
     title: str
@@ -142,6 +146,7 @@ class JobAlert:
 @dataclass
 class HealthStatus:
     """Health status of job system."""
+
     status: JobStatus
     checks: Dict[str, bool]
     metrics: JobMetrics
@@ -307,42 +312,50 @@ class JobMonitor:
         if self._scheduler and self._scheduler._running:
             checks["scheduler_running"] = True
         else:
-            alerts.append(self._create_alert(
-                AlertSeverity.ERROR,
-                "Scheduler Not Running",
-                "Job scheduler is not running",
-            ))
+            alerts.append(
+                self._create_alert(
+                    AlertSeverity.ERROR,
+                    "Scheduler Not Running",
+                    "Job scheduler is not running",
+                )
+            )
 
         # Check queue health
         if metrics.pending_jobs < 1000:  # Arbitrary threshold
             checks["queue_healthy"] = True
         else:
-            alerts.append(self._create_alert(
-                AlertSeverity.WARNING,
-                "Queue Backlog",
-                f"Large queue backlog: {metrics.pending_jobs} pending jobs",
-            ))
+            alerts.append(
+                self._create_alert(
+                    AlertSeverity.WARNING,
+                    "Queue Backlog",
+                    f"Large queue backlog: {metrics.pending_jobs} pending jobs",
+                )
+            )
 
         # Check for stale jobs
         stale_count = await self._count_stale_jobs()
         if stale_count == 0:
             checks["no_stale_jobs"] = True
         else:
-            alerts.append(self._create_alert(
-                AlertSeverity.WARNING,
-                "Stale Jobs Detected",
-                f"{stale_count} jobs appear stale (running > {STALE_JOB_THRESHOLD}s)",
-            ))
+            alerts.append(
+                self._create_alert(
+                    AlertSeverity.WARNING,
+                    "Stale Jobs Detected",
+                    f"{stale_count} jobs appear stale (running > {STALE_JOB_THRESHOLD}s)",
+                )
+            )
 
         # Check failure rate
         if metrics.failure_rate < 10:  # Less than 10 failures/hour
             checks["failure_rate_ok"] = True
         else:
-            alerts.append(self._create_alert(
-                AlertSeverity.WARNING,
-                "High Failure Rate",
-                f"Job failure rate: {metrics.failure_rate:.1f}/hour",
-            ))
+            alerts.append(
+                self._create_alert(
+                    AlertSeverity.WARNING,
+                    "High Failure Rate",
+                    f"Job failure rate: {metrics.failure_rate:.1f}/hour",
+                )
+            )
 
         # Determine overall status
         failed_checks = [k for k, v in checks.items() if not v]

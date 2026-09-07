@@ -23,9 +23,7 @@ def _max_abs_diff(a: Sequence[float], b: Sequence[float]) -> float:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Compare archived seasonality JSON files"
-    )
+    parser = argparse.ArgumentParser(description="Compare archived seasonality JSON files")
     parser.add_argument(
         "--archive-dir",
         default="configs/seasonality/archive",
@@ -56,4 +54,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

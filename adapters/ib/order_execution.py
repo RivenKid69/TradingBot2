@@ -59,6 +59,7 @@ try:
         BracketOrder,
         Trade,
     )
+
     IB_INSYNC_AVAILABLE = True
 except ImportError:
     IB_INSYNC_AVAILABLE = False
@@ -73,8 +74,10 @@ except ImportError:
 # Order Type Mapping
 # =========================
 
+
 class IBOrderAction(str, Enum):
     """IB order action (direction)."""
+
     BUY = "BUY"
     SELL = "SELL"
 
@@ -109,9 +112,11 @@ CONTRACT_MAP: Dict[str, Dict[str, str]] = {
 # Bracket Order Config
 # =========================
 
+
 @dataclass
 class IBBracketOrderConfig:
     """Configuration for IB bracket order."""
+
     symbol: str
     side: str  # BUY or SELL
     qty: int
@@ -124,6 +129,7 @@ class IBBracketOrderConfig:
 # =========================
 # IB Order Execution Adapter
 # =========================
+
 
 class IBOrderExecutionAdapter(OrderExecutionAdapter):
     """
@@ -179,8 +185,7 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
         """Connect to TWS/Gateway."""
         if not IB_INSYNC_AVAILABLE:
             raise ImportError(
-                "ib_insync is required for IB adapters. "
-                "Install with: pip install ib_insync"
+                "ib_insync is required for IB adapters. " "Install with: pip install ib_insync"
             )
 
         self._ib = IB()
@@ -212,8 +217,7 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
             raise ImportError("ib_insync is required for IB adapters")
 
         details = CONTRACT_MAP.get(
-            symbol.upper(),
-            {"exchange": exchange or self._default_exchange, "currency": "USD"}
+            symbol.upper(), {"exchange": exchange or self._default_exchange, "currency": "USD"}
         )
         actual_exchange = exchange or details.get("exchange", self._default_exchange)
 
@@ -239,7 +243,7 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
         positions = []
         for pos in self._ib.positions():
             contract = pos.contract
-            if hasattr(contract, 'secType') and contract.secType == 'FUT':
+            if hasattr(contract, "secType") and contract.secType == "FUT":
                 qty = Decimal(str(pos.position))
                 if qty == 0:
                     continue
@@ -248,16 +252,18 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
                 multiplier = Decimal(str(contract.multiplier or 1))
                 entry_price = Decimal(str(pos.avgCost)) / multiplier
 
-                positions.append(FuturesPosition(
-                    symbol=contract.symbol,
-                    side=PositionSide.LONG if qty > 0 else PositionSide.SHORT,
-                    entry_price=entry_price,
-                    qty=abs(qty),
-                    leverage=1,  # IB doesn't expose effective leverage
-                    margin_mode=MarginMode.CROSS,  # IB uses portfolio margin
-                    unrealized_pnl=Decimal("0"),  # Would need market data for this
-                    realized_pnl=Decimal("0"),
-                ))
+                positions.append(
+                    FuturesPosition(
+                        symbol=contract.symbol,
+                        side=PositionSide.LONG if qty > 0 else PositionSide.SHORT,
+                        entry_price=entry_price,
+                        qty=abs(qty),
+                        leverage=1,  # IB doesn't expose effective leverage
+                        margin_mode=MarginMode.CROSS,  # IB uses portfolio margin
+                        unrealized_pnl=Decimal("0"),  # Would need market data for this
+                        realized_pnl=Decimal("0"),
+                    )
+                )
 
         return positions
 
@@ -511,11 +517,7 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
         # Take profit (limit order)
         tp_order = None
         if config.take_profit_price:
-            tp_order = LimitOrder(
-                reverse_action,
-                config.qty,
-                float(config.take_profit_price)
-            )
+            tp_order = LimitOrder(reverse_action, config.qty, float(config.take_profit_price))
             tp_order.parentId = entry_order.orderId
             tp_order.tif = config.time_in_force.upper()
             tp_order.transmit = False
@@ -523,11 +525,7 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
         # Stop loss (stop order)
         sl_order = None
         if config.stop_loss_price:
-            sl_order = StopOrder(
-                reverse_action,
-                config.qty,
-                float(config.stop_loss_price)
-            )
+            sl_order = StopOrder(reverse_action, config.qty, float(config.stop_loss_price))
             sl_order.parentId = entry_order.orderId
             sl_order.tif = config.time_in_force.upper()
             sl_order.transmit = True  # Transmit all orders
@@ -566,13 +564,13 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
             if order.order_type.upper() == "MARKET":
                 futures_order = self.submit_market_order(
                     order.symbol,
-                    order.side.value if hasattr(order.side, 'value') else order.side,
+                    order.side.value if hasattr(order.side, "value") else order.side,
                     int(order.qty),
                 )
             elif order.order_type.upper() == "LIMIT":
                 futures_order = self.submit_limit_order(
                     order.symbol,
-                    order.side.value if hasattr(order.side, 'value') else order.side,
+                    order.side.value if hasattr(order.side, "value") else order.side,
                     int(order.qty),
                     order.price,
                 )
@@ -615,8 +613,9 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
 
         # Find the trade
         for trade in self._ib.openTrades():
-            if (order_id and str(trade.order.orderId) == order_id) or \
-               (client_order_id and trade.order.orderRef == client_order_id):
+            if (order_id and str(trade.order.orderId) == order_id) or (
+                client_order_id and trade.order.orderRef == client_order_id
+            ):
                 self._ib.cancelOrder(trade.order)
                 return True
 
@@ -641,8 +640,9 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
             raise ConnectionError("Not connected to IB")
 
         for trade in self._ib.trades():
-            if (order_id and str(trade.order.orderId) == order_id) or \
-               (client_order_id and trade.order.orderRef == client_order_id):
+            if (order_id and str(trade.order.orderId) == order_id) or (
+                client_order_id and trade.order.orderRef == client_order_id
+            ):
                 return ExecReport(
                     order_id=str(trade.order.orderId),
                     symbol=trade.contract.symbol,
@@ -651,7 +651,11 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
                     filled_qty=Decimal(str(trade.orderStatus.filled)),
                     status=trade.orderStatus.status,
                     price=Decimal(str(trade.order.lmtPrice)) if trade.order.lmtPrice else None,
-                    avg_price=Decimal(str(trade.orderStatus.avgFillPrice)) if trade.orderStatus.avgFillPrice else None,
+                    avg_price=(
+                        Decimal(str(trade.orderStatus.avgFillPrice))
+                        if trade.orderStatus.avgFillPrice
+                        else None
+                    ),
                 )
 
         return None
@@ -677,14 +681,16 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
             if symbol and trade.contract.symbol != symbol:
                 continue
 
-            orders.append(Order(
-                symbol=trade.contract.symbol,
-                side=Side.BUY if trade.order.action == "BUY" else Side.SELL,
-                qty=Decimal(str(trade.order.totalQuantity)),
-                order_type=self._ib_order_type_to_str(trade.order),
-                price=Decimal(str(trade.order.lmtPrice)) if trade.order.lmtPrice else None,
-                client_order_id=trade.order.orderRef or str(trade.order.orderId),
-            ))
+            orders.append(
+                Order(
+                    symbol=trade.contract.symbol,
+                    side=Side.BUY if trade.order.action == "BUY" else Side.SELL,
+                    qty=Decimal(str(trade.order.totalQuantity)),
+                    order_type=self._ib_order_type_to_str(trade.order),
+                    price=Decimal(str(trade.order.lmtPrice)) if trade.order.lmtPrice else None,
+                    client_order_id=trade.order.orderRef or str(trade.order.orderId),
+                )
+            )
 
         return orders
 
@@ -708,7 +714,7 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
 
         for pos in self._ib.positions():
             contract = pos.contract
-            if hasattr(contract, 'secType') and contract.secType == 'FUT':
+            if hasattr(contract, "secType") and contract.secType == "FUT":
                 if symbols and contract.symbol not in symbols:
                     continue
 
@@ -770,7 +776,11 @@ class IBOrderExecutionAdapter(OrderExecutionAdapter):
             price=Decimal(str(order.lmtPrice)) if order.lmtPrice else None,
             avg_fill_price=Decimal(str(status.avgFillPrice)) if status.avgFillPrice else None,
             status=self._ib_status_to_order_status(status.status),
-            time_in_force=TimeInForce(order.tif) if order.tif in [e.value for e in TimeInForce] else TimeInForce.GTC,
+            time_in_force=(
+                TimeInForce(order.tif)
+                if order.tif in [e.value for e in TimeInForce]
+                else TimeInForce.GTC
+            ),
             created_at=int(time.time() * 1000),
         )
 

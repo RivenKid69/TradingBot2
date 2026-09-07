@@ -6,6 +6,7 @@ from app import api
 
 client = TestClient(api)
 
+
 def test_compliance_clock_status():
     response = client.get("/api/compliance/clock/status")
     assert response.status_code == 200
@@ -14,6 +15,7 @@ def test_compliance_clock_status():
     assert "drift_microseconds" in data
     assert "severity" in data
     assert "rts25_compliant" in data
+
 
 def test_compliance_conformance_run():
     response = client.post("/api/compliance/conformance/run", json={"algo_id": "test_strategy"})
@@ -24,6 +26,7 @@ def test_compliance_conformance_run():
     assert "tests" in data
     assert len(data["tests"]) > 0
 
+
 def test_compliance_best_execution_report():
     response = client.get("/api/compliance/best-execution/report")
     assert response.status_code == 200
@@ -33,6 +36,7 @@ def test_compliance_best_execution_report():
     assert "policy_hash" in data
     assert len(data["venues"]) > 0
 
+
 def test_dora_incident_report():
     payload = {
         "title": "Database Outage Test",
@@ -40,7 +44,7 @@ def test_dora_incident_report():
         "financial_impact_eur": 50000.0,
         "duration_minutes": 25.0,
         "clients_affected": 300,
-        "data_loss_type": "trading"
+        "data_loss_type": "trading",
     }
     response = client.post("/api/dora/incidents/report", json=payload)
     assert response.status_code == 200
@@ -48,6 +52,7 @@ def test_dora_incident_report():
     assert "assessment" in data
     assert "is_major" in data
     assert "report" in data
+
 
 def test_dora_concentration_risk():
     response = client.get("/api/dora/concentration-risk")
@@ -57,6 +62,7 @@ def test_dora_concentration_risk():
     assert "metrics" in data
     assert "risks" in data
 
+
 def test_dora_roi_generate():
     response = client.post("/api/dora/roi/generate")
     assert response.status_code == 200
@@ -64,6 +70,7 @@ def test_dora_roi_generate():
     assert data["status"] == "success"
     assert "xml_report_path" in data
     assert "json_report_path" in data
+
 
 def test_dora_bcp_simulate():
     payload = {"scenario": "Primary DB Corruption"}
@@ -74,12 +81,14 @@ def test_dora_bcp_simulate():
     assert data["scenario"] == "Primary DB Corruption"
     assert "steps" in data
 
+
 def test_ai_act_explain_recent():
     response = client.get("/api/ai-act/explain/recent")
     assert response.status_code == 200
     data = response.json()
     assert "explanations" in data
     assert "stats" in data
+
 
 def test_ai_act_explain_tx():
     response = client.get("/api/ai-act/explain/TX-1002")
@@ -88,6 +97,7 @@ def test_ai_act_explain_tx():
     assert "decision_id" in data
     assert "feature_importance" in data
     assert "rational_explanation" in data
+
 
 def test_ai_act_veto_override():
     response = client.post("/api/ai-act/oversight/veto", json={"veto_active": True})
@@ -101,12 +111,14 @@ def test_ai_act_veto_override():
     assert response_reset.status_code == 200
     assert response_reset.json()["veto_active"] is False
 
+
 def test_ai_act_conformity_status():
     response = client.get("/api/ai-act/conformity/status")
     assert response.status_code == 200
     data = response.json()
     assert data["risk_management_system"] == "implemented"
     assert data["conformity_declaration_issued"] is True
+
 
 def test_gdpr_export():
     response = client.post("/api/gdpr/export", json={"client_id": "test_client"})
@@ -115,12 +127,14 @@ def test_gdpr_export():
     assert data["status"] == "completed"
     assert "download_url" in data
 
+
 def test_gdpr_delete():
     response = client.post("/api/gdpr/delete", json={"client_id": "test_client"})
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "completed"
     assert "anonymized" in data["message"].lower()
+
 
 def test_retention_hold_and_ledger():
     # Toggle Legal Hold
@@ -142,6 +156,7 @@ def test_retention_hold_and_ledger():
     assert response_release.status_code == 200
     assert response_release.json()["legal_hold_active"] is False
 
+
 def test_surveillance_otr():
     response = client.get("/api/compliance/surveillance/otr")
     assert response.status_code == 200
@@ -150,12 +165,13 @@ def test_surveillance_otr():
     assert "venue" in data[0]
     assert "otr_volume_ratio" in data[0]
 
+
 def test_pre_trade_limits():
     payload = {
         "max_order_value": 2000000.0,
         "max_order_volume": 20000.0,
         "price_collar_pct": 3.5,
-        "daily_loss_limit": 40000.0
+        "daily_loss_limit": 40000.0,
     }
     response = client.post("/api/compliance/risk/pre-trade/update", json=payload)
     assert response.status_code == 200
@@ -170,11 +186,9 @@ def test_pre_trade_limits():
     limits_data = limits_resp.json()
     assert "max_order_value" in limits_data
 
+
 def test_killswitch_trigger():
-    payload = {
-        "scope": "XLON",
-        "reason": "Test surveillance breach"
-    }
+    payload = {"scope": "XLON", "reason": "Test surveillance breach"}
     response = client.post("/api/compliance/killswitch/trigger", json=payload)
     assert response.status_code == 200
     data = response.json()

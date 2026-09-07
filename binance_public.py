@@ -228,7 +228,16 @@ class BinancePublicClient:
 
     # -------- KLINES --------
 
-    def get_klines(self, *, market: str, symbol: str, interval: str, start_ms: Optional[int] = None, end_ms: Optional[int] = None, limit: int = 1500) -> List[List[Any]]:
+    def get_klines(
+        self,
+        *,
+        market: str,
+        symbol: str,
+        interval: str,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+        limit: int = 1500,
+    ) -> List[List[Any]]:
         """
         Возвращает «сырые» klines: список списков, как в Binance API.
         market: "spot" | "futures"
@@ -287,16 +296,22 @@ class BinancePublicClient:
         if end_ms is not None:
             params["endTime"] = int(end_ms)
         tokens = _agg_trades_tokens(limit)
-        data = self._session_get(
-            url, params=params, budget="aggTrades", tokens=tokens
-        )
+        data = self._session_get(url, params=params, budget="aggTrades", tokens=tokens)
         if isinstance(data, list):
             return data  # type: ignore[return-value]
         raise RuntimeError(f"Unexpected aggTrades response: {data}")
 
     # -------- MARK PRICE KLINES (futures only) --------
 
-    def get_mark_klines(self, *, symbol: str, interval: str, start_ms: Optional[int] = None, end_ms: Optional[int] = None, limit: int = 1500) -> List[List[Any]]:
+    def get_mark_klines(
+        self,
+        *,
+        symbol: str,
+        interval: str,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+        limit: int = 1500,
+    ) -> List[List[Any]]:
         base = self.e.futures_base
         path = "/fapi/v1/markPriceKlines"
         url = f"{base}{path}"
@@ -312,16 +327,21 @@ class BinancePublicClient:
         # Budget ``markPriceKlines`` mirrors futures mark price klines with the
         # same weight profile as standard klines.
         tokens = _kline_tokens(limit)
-        data = self._session_get(
-            url, params=params, budget="markPriceKlines", tokens=tokens
-        )
+        data = self._session_get(url, params=params, budget="markPriceKlines", tokens=tokens)
         if isinstance(data, list):
             return data  # type: ignore
         raise RuntimeError(f"Unexpected markPriceKlines response: {data}")
 
     # -------- FUNDING (futures only) --------
 
-    def get_funding(self, *, symbol: str, start_ms: Optional[int] = None, end_ms: Optional[int] = None, limit: int = 1000) -> List[Dict[str, Any]]:
+    def get_funding(
+        self,
+        *,
+        symbol: str,
+        start_ms: Optional[int] = None,
+        end_ms: Optional[int] = None,
+        limit: int = 1000,
+    ) -> List[Dict[str, Any]]:
         base = self.e.futures_base
         path = "/fapi/v1/fundingRate"
         url = f"{base}{path}"
@@ -342,7 +362,9 @@ class BinancePublicClient:
 
     # -------- EXCHANGE FILTERS --------
 
-    def get_exchange_filters(self, *, market: str = "spot", symbols: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
+    def get_exchange_filters(
+        self, *, market: str = "spot", symbols: Optional[List[str]] = None
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Возвращает фильтры торговли для указанных символов Binance.
         Поддерживаются типы фильтров: PRICE_FILTER, LOT_SIZE, MIN_NOTIONAL,
@@ -359,9 +381,7 @@ class BinancePublicClient:
         params: Dict[str, Any] = {}
         if symbols:
             params["symbols"] = json.dumps([s.upper() for s in symbols])
-        data = self._session_get(
-            url, params=params, budget="exchangeInfo", tokens=10.0
-        )
+        data = self._session_get(url, params=params, budget="exchangeInfo", tokens=10.0)
         out: Dict[str, Dict[str, Any]] = {}
         if isinstance(data, dict):
             recognized_filters = {
@@ -401,9 +421,7 @@ class BinancePublicClient:
             except Exception:
                 return None
 
-    def get_book_ticker(
-        self, symbols: List[str] | str
-    ) -> Union[
+    def get_book_ticker(self, symbols: List[str] | str) -> Union[
         Tuple[Optional[Union[Decimal, float]], Optional[Union[Decimal, float]]],
         Dict[str, Tuple[Optional[Union[Decimal, float]], Optional[Union[Decimal, float]]]],
     ]:
@@ -431,7 +449,9 @@ class BinancePublicClient:
             raise ValueError("symbols must be non-empty")
 
         now = time.monotonic()
-        results: Dict[str, Tuple[Optional[Union[Decimal, float]], Optional[Union[Decimal, float]]]] = {}
+        results: Dict[
+            str, Tuple[Optional[Union[Decimal, float]], Optional[Union[Decimal, float]]]
+        ] = {}
         missing: List[str] = []
         for sym in symbol_list:
             cache_entry = self._book_ticker_cache.get(sym)
@@ -558,9 +578,7 @@ class BinancePublicClient:
 
         if prefer_book_ticker:
             try:
-                raw_quotes = self.get_book_ticker(
-                    symbol_list if not single else symbol_list[0]
-                )
+                raw_quotes = self.get_book_ticker(symbol_list if not single else symbol_list[0])
                 if single:
                     quote_map = {symbol_list[0]: raw_quotes}
                 else:
@@ -589,13 +607,14 @@ class BinancePublicClient:
 
     # -------- Helpers --------
 
-    def _fetch_24h_stats(
-        self, *, market: str, symbols: List[str]
-    ) -> Dict[str, Tuple[
-        Optional[Union[Decimal, float]],
-        Optional[Union[Decimal, float]],
-        Optional[Union[Decimal, float]],
-    ]]:
+    def _fetch_24h_stats(self, *, market: str, symbols: List[str]) -> Dict[
+        str,
+        Tuple[
+            Optional[Union[Decimal, float]],
+            Optional[Union[Decimal, float]],
+            Optional[Union[Decimal, float]],
+        ],
+    ]:
         if not symbols:
             return {}
         if market not in ("spot", "futures"):

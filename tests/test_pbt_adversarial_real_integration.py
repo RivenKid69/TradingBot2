@@ -19,6 +19,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import torch.nn.functional as F
@@ -109,7 +110,9 @@ class SimplePPOModel:
         dist = self.policy.get_distribution(states)
         log_probs = dist.log_prob(actions)
         ratio = torch.exp(log_probs - old_log_probs)
-        policy_loss = -torch.min(ratio * advantages, torch.clamp(ratio, 0.8, 1.2) * advantages).mean()
+        policy_loss = -torch.min(
+            ratio * advantages, torch.clamp(ratio, 0.8, 1.2) * advantages
+        ).mean()
 
         # Value loss
         values = self.policy.predict_values(states)
@@ -205,7 +208,9 @@ class TestRealPerturbations:
 
         # Adversarial perturbation should increase loss (or at least not decrease it significantly)
         # Note: Due to gradient approximations, it might not always increase
-        assert perturbed_loss >= original_loss - 0.1, "Perturbation should not significantly decrease loss"
+        assert (
+            perturbed_loss >= original_loss - 0.1
+        ), "Perturbation should not significantly decrease loss"
 
     def test_value_perturbation_real(self):
         """Test value function perturbation with real network."""
@@ -299,10 +304,7 @@ class TestRealPBT:
 
         # Save checkpoint
         scheduler.update_performance(
-            population[0],
-            performance=0.8,
-            step=5,
-            model_state_dict=model.state_dict()
+            population[0], performance=0.8, step=5, model_state_dict=model.state_dict()
         )
 
         # Load checkpoint
@@ -346,10 +348,7 @@ class TestRealPBT:
             # Save checkpoints with different performances
             performance = 0.5 + i * 0.2  # 0.5, 0.7, 0.9
             scheduler.update_performance(
-                member,
-                performance=performance,
-                step=5,
-                model_state_dict=model.state_dict()
+                member, performance=performance, step=5, model_state_dict=model.state_dict()
             )
 
         # Worst performer should exploit from better performer
@@ -399,6 +398,7 @@ class TestRealCoordinator:
         # Create real models
         models = []
         for member in population:
+
             def model_factory(**kwargs):
                 lr = kwargs.get("learning_rate", 3e-4)
                 return SimplePPOModel(learning_rate=lr)
@@ -427,10 +427,7 @@ class TestRealCoordinator:
                 performance = 1.0 / (1.0 + loss)  # Convert loss to performance
 
                 new_state, new_hp, _ = coordinator.on_member_update_end(
-                    member,
-                    performance=performance,
-                    step=step,
-                    model_state_dict=model.state_dict()
+                    member, performance=performance, step=step, model_state_dict=model.state_dict()
                 )
 
                 # Apply PBT updates (FIX 2025-11-22: use apply_exploited_parameters for LSTM reset)
@@ -604,7 +601,7 @@ class TestNumericalPrecision:
         state = torch.randn(4, 10, dtype=torch.float32)
 
         def loss_fn(s):
-            return (s ** 2).sum()
+            return (s**2).sum()
 
         delta = perturb.generate_perturbation(state, loss_fn)
 
@@ -616,12 +613,7 @@ class TestNumericalPrecision:
         config = PBTConfig(
             population_size=5,
             hyperparams=[
-                HyperparamConfig(
-                    name="lr",
-                    min_value=1e-10,
-                    max_value=1e-8,
-                    is_log_scale=True
-                ),
+                HyperparamConfig(name="lr", min_value=1e-10, max_value=1e-8, is_log_scale=True),
             ],
         )
 

@@ -30,9 +30,9 @@ from pathlib import Path
 
 def check_config_files():
     """Check all config files for value_clip_limit setting."""
-    print("="*80)
+    print("=" * 80)
     print("Checking Config Files for value_clip_limit")
-    print("="*80)
+    print("=" * 80)
     print()
 
     configs_dir = Path("configs")
@@ -42,7 +42,7 @@ def check_config_files():
 
     for config_file in config_files:
         try:
-            with open(config_file, 'r') as f:
+            with open(config_file, "r") as f:
                 config = yaml.safe_load(f)
 
             # Check for value_clip_limit in various locations
@@ -50,20 +50,20 @@ def check_config_files():
 
             # Check in arch_params.critic
             if isinstance(config, dict):
-                arch_params = config.get('arch_params', {})
+                arch_params = config.get("arch_params", {})
                 if isinstance(arch_params, dict):
-                    critic = arch_params.get('critic', {})
+                    critic = arch_params.get("critic", {})
                     if isinstance(critic, dict):
-                        clip_limit = critic.get('value_clip_limit')
+                        clip_limit = critic.get("value_clip_limit")
 
                 # Also check model.params (if exists)
-                model = config.get('model', {})
+                model = config.get("model", {})
                 if isinstance(model, dict):
-                    params = model.get('params', {})
+                    params = model.get("params", {})
                     if isinstance(params, dict):
                         # value_clip_limit might be here too
-                        if 'value_clip_limit' in params:
-                            clip_limit = params['value_clip_limit']
+                        if "value_clip_limit" in params:
+                            clip_limit = params["value_clip_limit"]
 
             results.append((config_file.name, clip_limit))
 
@@ -90,9 +90,9 @@ def check_config_files():
 
 def analyze_code():
     """Analyze how value_clip_limit is used in code."""
-    print("="*80)
+    print("=" * 80)
     print("Code Analysis")
-    print("="*80)
+    print("=" * 80)
     print()
 
     print("HOW value_clip_limit IS SET:")
@@ -131,9 +131,9 @@ def analyze_code():
 
 def check_current_configs():
     """Check if the bug is currently active in any configs."""
-    print("="*80)
+    print("=" * 80)
     print("Is The Bug Currently Active?")
-    print("="*80)
+    print("=" * 80)
     print()
 
     results = check_config_files()
@@ -164,17 +164,17 @@ def check_current_configs():
 
 def main():
     print("\n")
-    print("="*80)
+    print("=" * 80)
     print("Target Returns Clipping Verification")
-    print("="*80)
+    print("=" * 80)
     print("\n")
 
     analyze_code()
     is_active = check_current_configs()
 
-    print("="*80)
+    print("=" * 80)
     print("CONCLUSION")
-    print("="*80)
+    print("=" * 80)
     print()
 
     if is_active:

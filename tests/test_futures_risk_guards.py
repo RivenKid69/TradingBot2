@@ -91,6 +91,7 @@ from risk_guard import (
 @dataclass
 class MockPosition:
     """Mock futures position for testing."""
+
     symbol: str
     qty: Decimal
     entry_price: Decimal
@@ -1237,8 +1238,10 @@ class TestConcentrationGuard:
             correlation_groups={},  # Explicitly no correlations
         )
         positions = [
-            MockPosition(symbol="BTCUSDT", qty=Decimal("0.1"), entry_price=Decimal("50000")),  # 5000
-            MockPosition(symbol="ETHUSDT", qty=Decimal("2.5"), entry_price=Decimal("2000")),   # 5000
+            MockPosition(
+                symbol="BTCUSDT", qty=Decimal("0.1"), entry_price=Decimal("50000")
+            ),  # 5000
+            MockPosition(symbol="ETHUSDT", qty=Decimal("2.5"), entry_price=Decimal("2000")),  # 5000
         ]
         result = guard.check_concentration(positions)
         assert result.is_valid
@@ -1248,8 +1251,10 @@ class TestConcentrationGuard:
         """Test single symbol limit exceeded."""
         guard = ConcentrationGuard(single_symbol_limit=0.3)
         positions = [
-            MockPosition(symbol="BTCUSDT", qty=Decimal("0.8"), entry_price=Decimal("50000")),  # 40000
-            MockPosition(symbol="ETHUSDT", qty=Decimal("5"), entry_price=Decimal("2000")),     # 10000
+            MockPosition(
+                symbol="BTCUSDT", qty=Decimal("0.8"), entry_price=Decimal("50000")
+            ),  # 40000
+            MockPosition(symbol="ETHUSDT", qty=Decimal("5"), entry_price=Decimal("2000")),  # 10000
         ]
         # Total = 50000, BTC = 40000/50000 = 80% > 30%
         result = guard.check_concentration(positions)
@@ -1266,9 +1271,11 @@ class TestConcentrationGuard:
             correlation_groups={"BTCUSDT": ["ETHUSDT"]},
         )
         positions = [
-            MockPosition(symbol="BTCUSDT", qty=Decimal("0.4"), entry_price=Decimal("50000")),  # 20000
-            MockPosition(symbol="ETHUSDT", qty=Decimal("10"), entry_price=Decimal("2000")),    # 20000
-            MockPosition(symbol="SOLUSDT", qty=Decimal("100"), entry_price=Decimal("100")),    # 10000
+            MockPosition(
+                symbol="BTCUSDT", qty=Decimal("0.4"), entry_price=Decimal("50000")
+            ),  # 20000
+            MockPosition(symbol="ETHUSDT", qty=Decimal("10"), entry_price=Decimal("2000")),  # 20000
+            MockPosition(symbol="SOLUSDT", qty=Decimal("100"), entry_price=Decimal("100")),  # 10000
         ]
         # Total = 50000
         # BTC+ETH = 40000/50000 = 80% > 60%
@@ -1280,9 +1287,11 @@ class TestConcentrationGuard:
         """Test largest positions are returned."""
         guard = ConcentrationGuard()
         positions = [
-            MockPosition(symbol="BTCUSDT", qty=Decimal("0.2"), entry_price=Decimal("50000")),  # 10000
-            MockPosition(symbol="ETHUSDT", qty=Decimal("2.5"), entry_price=Decimal("2000")),   # 5000
-            MockPosition(symbol="SOLUSDT", qty=Decimal("30"), entry_price=Decimal("100")),     # 3000
+            MockPosition(
+                symbol="BTCUSDT", qty=Decimal("0.2"), entry_price=Decimal("50000")
+            ),  # 10000
+            MockPosition(symbol="ETHUSDT", qty=Decimal("2.5"), entry_price=Decimal("2000")),  # 5000
+            MockPosition(symbol="SOLUSDT", qty=Decimal("30"), entry_price=Decimal("100")),  # 3000
         ]
         result = guard.check_concentration(positions)
         assert len(result.largest_positions) >= 3
@@ -1819,10 +1828,12 @@ class TestIntegrationScenarios:
         )
 
         positions = [
-            MockPosition(symbol="BTCUSDT", qty=Decimal("0.3"), entry_price=Decimal("50000")),  # 15000
-            MockPosition(symbol="ETHUSDT", qty=Decimal("5"), entry_price=Decimal("2000")),     # 10000
-            MockPosition(symbol="SOLUSDT", qty=Decimal("50"), entry_price=Decimal("100")),     # 5000
-            MockPosition(symbol="DOTUSDT", qty=Decimal("500"), entry_price=Decimal("10")),     # 5000
+            MockPosition(
+                symbol="BTCUSDT", qty=Decimal("0.3"), entry_price=Decimal("50000")
+            ),  # 15000
+            MockPosition(symbol="ETHUSDT", qty=Decimal("5"), entry_price=Decimal("2000")),  # 10000
+            MockPosition(symbol="SOLUSDT", qty=Decimal("50"), entry_price=Decimal("100")),  # 5000
+            MockPosition(symbol="DOTUSDT", qty=Decimal("500"), entry_price=Decimal("10")),  # 5000
         ]
         # Total = 35000
         # BTC = 15000/35000 = 42.8% > 40% single limit

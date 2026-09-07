@@ -39,18 +39,21 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class DRTestType(Enum):
     """DR test types."""
-    TABLETOP = "tabletop"              # Discussion-based
-    WALKTHROUGH = "walkthrough"         # Step-by-step review
-    SIMULATION = "simulation"           # Simulated scenario
-    PARALLEL = "parallel"               # Parallel systems test
-    FULL_FAILOVER = "full_failover"     # Complete failover test
-    COMPONENT = "component"             # Single component test
+
+    TABLETOP = "tabletop"  # Discussion-based
+    WALKTHROUGH = "walkthrough"  # Step-by-step review
+    SIMULATION = "simulation"  # Simulated scenario
+    PARALLEL = "parallel"  # Parallel systems test
+    FULL_FAILOVER = "full_failover"  # Complete failover test
+    COMPONENT = "component"  # Single component test
 
 
 class DRTestStatus(Enum):
     """DR test status."""
+
     SCHEDULED = "scheduled"
     PREPARING = "preparing"
     IN_PROGRESS = "in_progress"
@@ -62,6 +65,7 @@ class DRTestStatus(Enum):
 
 class DRTestResult(Enum):
     """DR test result."""
+
     PASSED = "passed"
     PASSED_WITH_ISSUES = "passed_with_issues"
     FAILED = "failed"
@@ -70,6 +74,7 @@ class DRTestResult(Enum):
 
 class RecoveryPhase(Enum):
     """Recovery phases."""
+
     DETECTION = "detection"
     ACTIVATION = "activation"
     EXECUTION = "execution"
@@ -81,9 +86,11 @@ class RecoveryPhase(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class DRTestScenario:
     """DR test scenario definition."""
+
     scenario_id: str = ""
     name: str = ""
     description: str = ""
@@ -99,7 +106,7 @@ class DRTestScenario:
 
     # Objectives
     rto_target_minutes: int = 240  # 4 hours default
-    rpo_target_minutes: int = 60   # 1 hour default
+    rpo_target_minutes: int = 60  # 1 hour default
     objectives: List[str] = field(default_factory=list)
 
     # Steps
@@ -128,6 +135,7 @@ class DRTestScenario:
 @dataclass
 class DRTestExecution:
     """DR test execution record."""
+
     execution_id: str = ""
     scenario_id: str = ""
     name: str = ""
@@ -188,6 +196,7 @@ class DRTestExecution:
 @dataclass
 class DRTestReport:
     """DR test report."""
+
     report_id: str = ""
     execution_id: str = ""
     title: str = ""
@@ -232,6 +241,7 @@ class DRTestReport:
 @dataclass
 class RecoveryMetrics:
     """Recovery metrics from a DR test."""
+
     test_id: str = ""
 
     # Time metrics
@@ -263,6 +273,7 @@ class RecoveryMetrics:
 @dataclass
 class DRTestingConfig:
     """Configuration for DRTestingFramework."""
+
     # Schedule
     quarterly_test_enabled: bool = True
     test_frequency_days: int = 90  # Quarterly
@@ -290,6 +301,7 @@ class DRTestingConfig:
 # =============================================================================
 # Main Class
 # =============================================================================
+
 
 class DRTestingFramework:
     """
@@ -406,11 +418,14 @@ class DRTestingFramework:
         with self._lock:
             self._scenarios[scenario.scenario_id] = scenario
 
-        self._log_event("scenario_created", {
-            "scenario_id": scenario.scenario_id,
-            "name": name,
-            "type": test_type.value,
-        })
+        self._log_event(
+            "scenario_created",
+            {
+                "scenario_id": scenario.scenario_id,
+                "name": name,
+                "type": test_type.value,
+            },
+        )
 
         return scenario
 
@@ -457,11 +472,14 @@ class DRTestingFramework:
         with self._lock:
             self._executions[execution.execution_id] = execution
 
-        self._log_event("test_scheduled", {
-            "execution_id": execution.execution_id,
-            "scenario_id": scenario_id,
-            "scheduled_date": scheduled_date,
-        })
+        self._log_event(
+            "test_scheduled",
+            {
+                "execution_id": execution.execution_id,
+                "scenario_id": scenario_id,
+                "scheduled_date": scheduled_date,
+            },
+        )
 
         return execution
 
@@ -490,12 +508,14 @@ class DRTestingFramework:
             if execution_id not in self._executions:
                 return
 
-            self._executions[execution_id].steps_completed.append({
-                "step_id": step_id,
-                "completed_at": datetime.now(timezone.utc).isoformat(),
-                "actual_duration": actual_duration_minutes,
-                "notes": notes,
-            })
+            self._executions[execution_id].steps_completed.append(
+                {
+                    "step_id": step_id,
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                    "actual_duration": actual_duration_minutes,
+                    "notes": notes,
+                }
+            )
 
     def record_issue(
         self,
@@ -509,13 +529,15 @@ class DRTestingFramework:
             if execution_id not in self._executions:
                 return
 
-            self._executions[execution_id].issues_found.append({
-                "id": f"ISS-{uuid.uuid4().hex[:8].upper()}",
-                "description": description,
-                "severity": severity,
-                "remediation": remediation,
-                "found_at": datetime.now(timezone.utc).isoformat(),
-            })
+            self._executions[execution_id].issues_found.append(
+                {
+                    "id": f"ISS-{uuid.uuid4().hex[:8].upper()}",
+                    "description": description,
+                    "severity": severity,
+                    "remediation": remediation,
+                    "found_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
     def complete_test(
         self,
@@ -558,12 +580,15 @@ class DRTestingFramework:
             if execution.scenario_id in self._scenarios:
                 self._scenarios[execution.scenario_id].last_executed = execution.completed_at
 
-        self._log_event("test_completed", {
-            "execution_id": execution_id,
-            "result": result.value,
-            "rto_met": execution.rto_met,
-            "rpo_met": execution.rpo_met,
-        })
+        self._log_event(
+            "test_completed",
+            {
+                "execution_id": execution_id,
+                "result": result.value,
+                "rto_met": execution.rto_met,
+                "rpo_met": execution.rpo_met,
+            },
+        )
 
         return execution
 
@@ -621,12 +646,16 @@ class DRTestingFramework:
         if execution.rto_met:
             summary_parts.append(f"RTO target of {execution.rto_target_minutes} minutes was met.")
         else:
-            summary_parts.append(f"RTO target was NOT met (achieved: {execution.rto_achieved_minutes} min).")
+            summary_parts.append(
+                f"RTO target was NOT met (achieved: {execution.rto_achieved_minutes} min)."
+            )
 
         if execution.rpo_met:
             summary_parts.append(f"RPO target of {execution.rpo_target_minutes} minutes was met.")
         else:
-            summary_parts.append(f"RPO target was NOT met (achieved: {execution.rpo_achieved_minutes} min).")
+            summary_parts.append(
+                f"RPO target was NOT met (achieved: {execution.rpo_achieved_minutes} min)."
+            )
 
         report = DRTestReport(
             execution_id=execution_id,
@@ -647,11 +676,21 @@ class DRTestingFramework:
             objectives_performance={
                 "total": execution.objectives_total,
                 "met": execution.objectives_met,
-                "percentage": (execution.objectives_met / execution.objectives_total * 100) if execution.objectives_total > 0 else 0,
+                "percentage": (
+                    (execution.objectives_met / execution.objectives_total * 100)
+                    if execution.objectives_total > 0
+                    else 0
+                ),
             },
-            critical_findings=[i for i in execution.issues_found if i.get("severity") in ("critical", "high")],
+            critical_findings=[
+                i for i in execution.issues_found if i.get("severity") in ("critical", "high")
+            ],
             improvements_needed=execution.recommendations,
-            dora_compliance_status="compliant" if execution.result in (DRTestResult.PASSED, DRTestResult.PASSED_WITH_ISSUES) else "non_compliant",
+            dora_compliance_status=(
+                "compliant"
+                if execution.result in (DRTestResult.PASSED, DRTestResult.PASSED_WITH_ISSUES)
+                else "non_compliant"
+            ),
             article_references=["Article 11", "Article 12", "Article 15"],
             prepared_by=prepared_by,
         )
@@ -663,10 +702,13 @@ class DRTestingFramework:
         with self._lock:
             self._reports[report.report_id] = report
 
-        self._log_event("report_generated", {
-            "report_id": report.report_id,
-            "execution_id": execution_id,
-        })
+        self._log_event(
+            "report_generated",
+            {
+                "report_id": report.report_id,
+                "execution_id": execution_id,
+            },
+        )
 
         return report
 
@@ -686,14 +728,16 @@ class DRTestingFramework:
 
         with self._lock:
             recent_tests = [
-                e for e in self._executions.values()
-                if e.status == DRTestStatus.COMPLETED and
-                e.completed_at and
-                e.completed_at > quarter_start.isoformat()
+                e
+                for e in self._executions.values()
+                if e.status == DRTestStatus.COMPLETED
+                and e.completed_at
+                and e.completed_at > quarter_start.isoformat()
             ]
 
         passed_tests = [
-            t for t in recent_tests
+            t
+            for t in recent_tests
             if t.result in (DRTestResult.PASSED, DRTestResult.PASSED_WITH_ISSUES)
         ]
 
@@ -706,7 +750,9 @@ class DRTestingFramework:
             "tests_completed": len(recent_tests),
             "tests_passed": len(passed_tests),
             "last_test_date": max((t.completed_at for t in recent_tests), default=None),
-            "next_required_by": (quarter_start + timedelta(days=self.config.test_frequency_days)).isoformat(),
+            "next_required_by": (
+                quarter_start + timedelta(days=self.config.test_frequency_days)
+            ).isoformat(),
             "dora_article": "Article 12, 15",
         }
 
@@ -728,16 +774,26 @@ class DRTestingFramework:
                 "total": len(all_executions),
                 "completed": len(completed),
                 "passed": sum(1 for e in completed if e.result == DRTestResult.PASSED),
-                "passed_with_issues": sum(1 for e in completed if e.result == DRTestResult.PASSED_WITH_ISSUES),
+                "passed_with_issues": sum(
+                    1 for e in completed if e.result == DRTestResult.PASSED_WITH_ISSUES
+                ),
                 "failed": sum(1 for e in completed if e.result == DRTestResult.FAILED),
             },
             "rto_compliance": {
                 "tests_meeting_rto": sum(1 for e in completed if e.rto_met),
-                "percentage": round(sum(1 for e in completed if e.rto_met) / len(completed) * 100, 1) if completed else 0,
+                "percentage": (
+                    round(sum(1 for e in completed if e.rto_met) / len(completed) * 100, 1)
+                    if completed
+                    else 0
+                ),
             },
             "rpo_compliance": {
                 "tests_meeting_rpo": sum(1 for e in completed if e.rpo_met),
-                "percentage": round(sum(1 for e in completed if e.rpo_met) / len(completed) * 100, 1) if completed else 0,
+                "percentage": (
+                    round(sum(1 for e in completed if e.rpo_met) / len(completed) * 100, 1)
+                    if completed
+                    else 0
+                ),
             },
             "quarterly_compliance": compliance,
         }
@@ -764,6 +820,7 @@ class DRTestingFramework:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_dr_testing_framework(
     config: Optional[DRTestingConfig] = None,

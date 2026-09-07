@@ -92,6 +92,7 @@ SESSION_LIQUIDITY = {
 # DATA LOADING FUNCTIONS
 # =============================================================================
 
+
 def load_forex_data(
     paths: Union[str, List[str]],
     timeframe: str = "4h",
@@ -239,15 +240,15 @@ def _load_single_forex_file(
 
     # Filter date range
     if start_date:
-        start_ts = int(datetime.strptime(start_date, "%Y-%m-%d").replace(
-            tzinfo=timezone.utc
-        ).timestamp())
+        start_ts = int(
+            datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp()
+        )
         df = df[df["timestamp"] >= start_ts]
 
     if end_date:
-        end_ts = int(datetime.strptime(end_date, "%Y-%m-%d").replace(
-            tzinfo=timezone.utc
-        ).timestamp())
+        end_ts = int(
+            datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp()
+        )
         df = df[df["timestamp"] <= end_ts]
 
     # Filter weekends
@@ -293,6 +294,7 @@ def _filter_forex_weekends(df: pd.DataFrame) -> pd.DataFrame:
 # =============================================================================
 # SESSION FEATURES
 # =============================================================================
+
 
 def _add_session_features(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -358,6 +360,7 @@ def _get_active_session(dt: datetime) -> str:
 # SWAP RATE INTEGRATION
 # =============================================================================
 
+
 def _merge_swap_rates(
     df: pd.DataFrame,
     pair: str,
@@ -396,7 +399,11 @@ def _merge_swap_rates(
         df["bar_date"] = pd.to_datetime(df["timestamp"], unit="s").dt.date
 
         # Merge on date
-        swaps_subset = swaps[["swap_date", "long_swap", "short_swap"]].copy() if "swap_date" in swaps.columns else swaps[["date", "long_swap", "short_swap"]].copy()
+        swaps_subset = (
+            swaps[["swap_date", "long_swap", "short_swap"]].copy()
+            if "swap_date" in swaps.columns
+            else swaps[["date", "long_swap", "short_swap"]].copy()
+        )
 
         if "swap_date" in swaps_subset.columns:
             df = df.merge(
@@ -433,6 +440,7 @@ def _merge_swap_rates(
 # =============================================================================
 # INTEREST RATE INTEGRATION
 # =============================================================================
+
 
 def _merge_interest_rates(
     df: pd.DataFrame,
@@ -538,6 +546,7 @@ def _load_rate_series(currency: str, rate_dir: str) -> Optional[pd.Series]:
 # ECONOMIC CALENDAR INTEGRATION
 # =============================================================================
 
+
 def _merge_calendar_proximity(
     df: pd.DataFrame,
     pair: str,
@@ -587,9 +596,9 @@ def _merge_calendar_proximity(
         if "datetime" in calendar.columns:
             calendar["event_ts"] = pd.to_datetime(calendar["datetime"]).astype("int64") // 10**9
         elif "date" in calendar.columns and "time" in calendar.columns:
-            calendar["event_ts"] = pd.to_datetime(
-                calendar["date"] + " " + calendar["time"]
-            ).astype("int64") // 10**9
+            calendar["event_ts"] = (
+                pd.to_datetime(calendar["date"] + " " + calendar["time"]).astype("int64") // 10**9
+            )
 
         event_timestamps = calendar["event_ts"].sort_values().values
 
@@ -636,6 +645,7 @@ def _merge_calendar_proximity(
 # =============================================================================
 # OANDA ADAPTER INTEGRATION
 # =============================================================================
+
 
 def load_from_oanda(
     pairs: List[str],
@@ -725,17 +735,23 @@ def load_from_oanda(
             # Convert to DataFrame
             records = []
             for bar in bars:
-                records.append({
-                    "timestamp": bar.ts // 1000,
-                    "open": float(bar.open),
-                    "high": float(bar.high),
-                    "low": float(bar.low),
-                    "close": float(bar.close),
-                    "volume": float(bar.volume_base),
-                })
+                records.append(
+                    {
+                        "timestamp": bar.ts // 1000,
+                        "open": float(bar.open),
+                        "high": float(bar.high),
+                        "low": float(bar.low),
+                        "close": float(bar.close),
+                        "volume": float(bar.volume_base),
+                    }
+                )
 
             df = pd.DataFrame(records)
-            df = df.sort_values("timestamp").drop_duplicates(subset=["timestamp"]).reset_index(drop=True)
+            df = (
+                df.sort_values("timestamp")
+                .drop_duplicates(subset=["timestamp"])
+                .reset_index(drop=True)
+            )
 
             # Add session features
             df = _add_session_features(df)
@@ -764,6 +780,7 @@ def load_from_oanda(
 # =============================================================================
 # CONVENIENCE FUNCTIONS
 # =============================================================================
+
 
 def list_available_pairs(data_dir: str = DEFAULT_FOREX_DIR) -> List[str]:
     """List available forex pairs in data directory."""
@@ -813,6 +830,7 @@ def get_pair_info(pair: str, data_dir: str = DEFAULT_FOREX_DIR) -> Optional[Dict
 # =============================================================================
 # CLI INTEGRATION
 # =============================================================================
+
 
 def main():
     """CLI for testing data loader."""

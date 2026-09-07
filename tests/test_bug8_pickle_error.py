@@ -11,6 +11,7 @@ like sys.stdout/stderr (EncodedFile instances on Windows).
 """
 
 import pytest
+
 gym = pytest.importorskip("gymnasium")
 import tempfile
 from pathlib import Path
@@ -52,11 +53,11 @@ def test_bug8_pickle_error_on_save():
         vgs_warmup_steps=50,
         # Twin Critics via policy_kwargs
         policy_kwargs={
-            'arch_params': {
-                'critic': {
-                    'distributional': True,
-                    'num_quantiles': 32,
-                    'use_twin_critics': True,
+            "arch_params": {
+                "critic": {
+                    "distributional": True,
+                    "num_quantiles": 32,
+                    "use_twin_critics": True,
                 }
             }
         },

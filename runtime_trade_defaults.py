@@ -1,4 +1,5 @@
 """Helpers for loading runtime trade defaults shared across tools."""
+
 from __future__ import annotations
 
 from copy import deepcopy

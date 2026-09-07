@@ -44,13 +44,16 @@ class TestDataResidencyManagerBasic:
 class TestCountryBasedPolicies:
     """Country-based policy tests."""
 
-    @pytest.mark.parametrize("country,expected_region", [
-        ("DE", DataRegion.EU_CENTRAL),
-        ("FR", DataRegion.EU_WEST),
-        ("GB", DataRegion.UK),
-        ("US", DataRegion.US_EAST),
-        ("JP", DataRegion.AP_NORTHEAST),
-    ])
+    @pytest.mark.parametrize(
+        "country,expected_region",
+        [
+            ("DE", DataRegion.EU_CENTRAL),
+            ("FR", DataRegion.EU_WEST),
+            ("GB", DataRegion.UK),
+            ("US", DataRegion.US_EAST),
+            ("JP", DataRegion.AP_NORTHEAST),
+        ],
+    )
     def test_country_to_region_mapping(self, country, expected_region):
         """Test country to region mapping."""
         manager = DataResidencyManager()

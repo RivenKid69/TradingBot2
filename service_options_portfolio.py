@@ -45,13 +45,13 @@ class OptionLeg:
     symbol: str
     spot: float
     strike: float
-    time_to_expiry: float           # годы
-    iv: float                       # implied vol (доля, напр. 0.25)
+    time_to_expiry: float  # годы
+    iv: float  # implied vol (доля, напр. 0.25)
     is_call: bool = True
     rate: float = 0.0
     dividend_yield: float = 0.0
-    alpha: float = 0.0              # привлекательность (из options-сигналов)
-    multiplier: float = 100.0       # контрактный мультипликатор
+    alpha: float = 0.0  # привлекательность (из options-сигналов)
+    multiplier: float = 100.0  # контрактный мультипликатор
 
 
 @dataclass
@@ -59,9 +59,9 @@ class GreeksNeutralConstraints:
     """Ограничения greeks-space оптимизации."""
 
     neutralize: List[str] = field(default_factory=lambda: ["delta", "vega"])
-    gross_max: float = 1.0          # суммарный |вес| (в контрактах, нормированный)
+    gross_max: float = 1.0  # суммарный |вес| (в контрактах, нормированный)
     max_position: Optional[float] = None  # клип на ногу
-    tol: float = 1e-6               # порог «нейтрально» для отчёта
+    tol: float = 1e-6  # порог «нейтрально» для отчёта
 
     def normalized(self) -> List[str]:
         bad = [g for g in self.neutralize if g not in ALL_GREEKS]
@@ -74,10 +74,10 @@ class GreeksNeutralConstraints:
 class OptionsPortfolio:
     """Результат: веса по ногам + остаточные греки + метрики."""
 
-    weights: pd.Series              # index=symbol, value=контракты (signed)
-    net_greeks: Dict[str, float]    # остаточные портфельные греки (нейтрализуемые ≈0)
+    weights: pd.Series  # index=symbol, value=контракты (signed)
+    net_greeks: Dict[str, float]  # остаточные портфельные греки (нейтрализуемые ≈0)
     gross: float
-    objective: float                # альфа·w (захваченный edge)
+    objective: float  # альфа·w (захваченный edge)
     neutralized: List[str]
     is_neutral: bool
 
@@ -85,8 +85,10 @@ class OptionsPortfolio:
         return {
             "weights": {str(k): float(v) for k, v in self.weights.items()},
             "net_greeks": {k: float(v) for k, v in self.net_greeks.items()},
-            "gross": float(self.gross), "objective": float(self.objective),
-            "neutralized": list(self.neutralized), "is_neutral": bool(self.is_neutral),
+            "gross": float(self.gross),
+            "objective": float(self.objective),
+            "neutralized": list(self.neutralized),
+            "is_neutral": bool(self.is_neutral),
         }
 
 
@@ -116,14 +118,21 @@ class OptionsPortfolioConstructor:
             "rho": np.asarray(g.rho) * mult,
         }
 
-    def construct(self, legs: Sequence[OptionLeg],
-                  alpha: Optional[Sequence[float]] = None) -> OptionsPortfolio:
+    def construct(
+        self, legs: Sequence[OptionLeg], alpha: Optional[Sequence[float]] = None
+    ) -> OptionsPortfolio:
         legs = list(legs)
         symbols = [l.symbol for l in legs]
         n = len(legs)
         if n == 0:
-            return OptionsPortfolio(pd.Series(dtype="float64"), {g: 0.0 for g in ALL_GREEKS},
-                                    0.0, 0.0, self.constraints.normalized(), True)
+            return OptionsPortfolio(
+                pd.Series(dtype="float64"),
+                {g: 0.0 for g in ALL_GREEKS},
+                0.0,
+                0.0,
+                self.constraints.normalized(),
+                True,
+            )
 
         greeks = self._greeks_matrix(legs)
         neutralize = self.constraints.normalized()
@@ -139,17 +148,22 @@ class OptionsPortfolioConstructor:
         w = self._scale_gross(w)
         if self.constraints.max_position is not None:
             w = np.clip(w, -self.constraints.max_position, self.constraints.max_position)
-            w = self._project_null(G, w)         # восстановить нейтральность после клипа
+            w = self._project_null(G, w)  # восстановить нейтральность после клипа
             w = self._scale_gross(w)
 
         net = {g: float(greeks[g] @ w) for g in ALL_GREEKS}
-        is_neutral = all(abs(net[g]) <= max(self.constraints.tol, 1e-6) * (1.0 + abs(self.constraints.gross_max))
-                         for g in neutralize)
+        is_neutral = all(
+            abs(net[g]) <= max(self.constraints.tol, 1e-6) * (1.0 + abs(self.constraints.gross_max))
+            for g in neutralize
+        )
         obj = float(a @ w)
         return OptionsPortfolio(
             weights=pd.Series(w, index=symbols, name="contracts"),
-            net_greeks=net, gross=float(np.abs(w).sum()), objective=obj,
-            neutralized=neutralize, is_neutral=is_neutral,
+            net_greeks=net,
+            gross=float(np.abs(w).sum()),
+            objective=obj,
+            neutralized=neutralize,
+            is_neutral=is_neutral,
         )
 
     @staticmethod
@@ -179,7 +193,8 @@ def construct_options_portfolio(
 ) -> OptionsPortfolio:
     cons = GreeksNeutralConstraints(
         neutralize=list(neutralize) if neutralize is not None else ["delta", "vega"],
-        gross_max=gross_max, max_position=max_position,
+        gross_max=gross_max,
+        max_position=max_position,
     )
     return OptionsPortfolioConstructor(cons).construct(legs)
 
@@ -210,13 +225,26 @@ def synthetic_option_book(
                 # альфа-прокси: VRP богаче для OTM (выше |moneyness|) + лёгкий шум
                 alpha = abs(moneyness) * 0.5 + 0.02 * rng.standard_normal()
                 sym = f"{underlying}_{int(round(T*365))}d_{K:.0f}{'C' if is_call else 'P'}"
-                legs.append(OptionLeg(symbol=sym, spot=spot, strike=float(K),
-                                      time_to_expiry=float(T), iv=iv, is_call=is_call,
-                                      alpha=float(alpha)))
+                legs.append(
+                    OptionLeg(
+                        symbol=sym,
+                        spot=spot,
+                        strike=float(K),
+                        time_to_expiry=float(T),
+                        iv=iv,
+                        is_call=is_call,
+                        alpha=float(alpha),
+                    )
+                )
     return legs
 
 
 __all__ = [
-    "ALL_GREEKS", "OptionLeg", "GreeksNeutralConstraints", "OptionsPortfolio",
-    "OptionsPortfolioConstructor", "construct_options_portfolio", "synthetic_option_book",
+    "ALL_GREEKS",
+    "OptionLeg",
+    "GreeksNeutralConstraints",
+    "OptionsPortfolio",
+    "OptionsPortfolioConstructor",
+    "construct_options_portfolio",
+    "synthetic_option_book",
 ]

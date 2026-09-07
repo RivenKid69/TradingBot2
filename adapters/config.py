@@ -59,7 +59,12 @@ try:
     from pydantic import BaseModel, Field, field_validator, model_validator
 except ImportError:
     # Fallback for older pydantic
-    from pydantic import BaseModel, Field, validator as field_validator, root_validator as model_validator
+    from pydantic import (
+        BaseModel,
+        Field,
+        validator as field_validator,
+        root_validator as model_validator,
+    )
 
 from .models import ExchangeVendor, MarketType
 
@@ -71,9 +76,11 @@ try:
         mask_dict,
         get_secure_logger,
     )
+
     _HAS_SECURE_LOGGING = True
 except ImportError:
     _HAS_SECURE_LOGGING = False
+
     def validate_api_credentials(api_key, api_secret, **kwargs) -> Tuple[bool, Optional[str]]:
         """Fallback validation."""
         if not api_key or not api_secret:
@@ -95,12 +102,14 @@ except ImportError:
         """Fallback to standard logger."""
         return logging.getLogger(name)
 
+
 logger = get_secure_logger(__name__)
 
 
 # =============================================================================
 # Validation Result
 # =============================================================================
+
 
 @dataclass
 class ConfigValidationResult:
@@ -414,16 +423,19 @@ class ExchangeConfig(BaseModel):
     def create_market_data_adapter(self):
         """Create market data adapter for configured vendor."""
         from .registry import create_market_data_adapter
+
         return create_market_data_adapter(self.vendor, self.get_adapter_config())
 
     def create_fee_adapter(self):
         """Create fee adapter for configured vendor."""
         from .registry import create_fee_adapter
+
         return create_fee_adapter(self.vendor, self.get_adapter_config())
 
     def create_trading_hours_adapter(self):
         """Create trading hours adapter for configured vendor."""
         from .registry import create_trading_hours_adapter
+
         config = self.get_adapter_config()
         config["allow_extended_hours"] = self.trading_hours.allow_extended
         config["use_alpaca_calendar"] = self.trading_hours.use_exchange_calendar
@@ -432,6 +444,7 @@ class ExchangeConfig(BaseModel):
     def create_exchange_info_adapter(self):
         """Create exchange info adapter for configured vendor."""
         from .registry import create_exchange_info_adapter
+
         return create_exchange_info_adapter(self.vendor, self.get_adapter_config())
 
     @classmethod
@@ -503,6 +516,7 @@ def load_exchange_config(
 # =============================================================================
 # Validation Helper Functions
 # =============================================================================
+
 
 def _validate_url(
     url: str,
@@ -587,6 +601,7 @@ def _validate_alpaca_feed(feed: str) -> Tuple[bool, Optional[str]]:
 # =============================================================================
 # Config Validation Functions
 # =============================================================================
+
 
 def validate_binance_config(config: BinanceConfig) -> ConfigValidationResult:
     """
@@ -702,9 +717,13 @@ def validate_alpaca_config(config: AlpacaConfig) -> ConfigValidationResult:
 
     # Check options fee
     if config.options_per_contract_fee < 0:
-        result.add_error(f"options_per_contract_fee cannot be negative: {config.options_per_contract_fee}")
+        result.add_error(
+            f"options_per_contract_fee cannot be negative: {config.options_per_contract_fee}"
+        )
     elif config.options_per_contract_fee > 5.0:
-        result.add_warning(f"options_per_contract_fee seems high: ${config.options_per_contract_fee}")
+        result.add_warning(
+            f"options_per_contract_fee seems high: ${config.options_per_contract_fee}"
+        )
 
     return result
 
@@ -783,7 +802,7 @@ def validate_config(config: ExchangeConfig) -> ConfigValidationResult:
             "is_valid": result.is_valid,
             "errors": len(result.errors),
             "warnings": len(result.warnings),
-        }
+        },
     )
 
     return result

@@ -97,6 +97,7 @@ def make_spec(
 # CMESettlementEngine Tests (25 tests)
 # =============================================================================
 
+
 class TestCMESettlementEngine:
     """Test CME settlement engine functionality."""
 
@@ -349,6 +350,7 @@ class TestCMESettlementEngine:
         # Create timestamp in UTC (implementation uses utcfromtimestamp)
         # Note: datetime.timestamp() converts to local time, but we need to create UTC
         from datetime import timezone as tz
+
         utc_dt = datetime(2024, 6, 15, 20, 32, tzinfo=tz.utc)
         ts_ms = int(utc_dt.timestamp() * 1000)
 
@@ -362,6 +364,7 @@ class TestCMESettlementEngine:
         # ES settles at 15:30 ET = 20:30 UTC
         # Simulate timestamp at 16:00 ET = 21:00 UTC (30 min after)
         from datetime import timezone as tz
+
         utc_dt = datetime(2024, 6, 15, 21, 0, tzinfo=tz.utc)
         ts_ms = int(utc_dt.timestamp() * 1000)
 
@@ -374,6 +377,7 @@ class TestCMESettlementEngine:
 
         # Current time: 10:00 UTC on Tuesday
         from datetime import timezone as tz
+
         current = datetime(2024, 6, 18, 10, 0, tzinfo=tz.utc)
         current_ms = int(current.timestamp() * 1000)
 
@@ -394,6 +398,7 @@ class TestCMESettlementEngine:
 
         # Current time: 22:00 UTC on Tuesday (after settlement for most timezones)
         from datetime import timezone as tz
+
         current = datetime(2024, 6, 18, 22, 0, tzinfo=tz.utc)
         current_ms = int(current.timestamp() * 1000)
 
@@ -494,6 +499,7 @@ class TestVariationMarginSimple:
 # ContractRolloverManager Tests (20 tests)
 # =============================================================================
 
+
 class TestContractRolloverManager:
     """Test contract rollover manager functionality."""
 
@@ -512,10 +518,10 @@ class TestContractRolloverManager:
 
     def test_month_code_values(self):
         """Test month codes have correct values."""
-        assert MONTH_CODES[1] == "F"   # January
-        assert MONTH_CODES[3] == "H"   # March
-        assert MONTH_CODES[6] == "M"   # June
-        assert MONTH_CODES[9] == "U"   # September
+        assert MONTH_CODES[1] == "F"  # January
+        assert MONTH_CODES[3] == "H"  # March
+        assert MONTH_CODES[6] == "M"  # June
+        assert MONTH_CODES[9] == "U"  # September
         assert MONTH_CODES[12] == "Z"  # December
 
     def test_month_code_to_num_reverse_mapping(self):
@@ -708,12 +714,18 @@ class TestContractRolloverManager:
 
         # Record a roll with spread
         from_contract = ContractInfo(
-            symbol="ESM24", base_symbol="ES", month_code="M",
-            year=2024, expiry_date=date(2024, 6, 21),
+            symbol="ESM24",
+            base_symbol="ES",
+            month_code="M",
+            year=2024,
+            expiry_date=date(2024, 6, 21),
         )
         to_contract = ContractInfo(
-            symbol="ESU24", base_symbol="ES", month_code="U",
-            year=2024, expiry_date=date(2024, 9, 20),
+            symbol="ESU24",
+            base_symbol="ES",
+            month_code="U",
+            year=2024,
+            expiry_date=date(2024, 9, 20),
         )
         roll_info = RolloverInfo(
             from_contract=from_contract,

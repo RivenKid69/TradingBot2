@@ -20,6 +20,7 @@ import sys
 import os
 import types
 import warnings
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -73,6 +74,7 @@ _install_sb3_stub()
 import numpy as np
 import pandas as pd
 import pytest
+
 pytest.importorskip("torch")
 from train_model_multi_patch import sharpe_ratio, sortino_ratio  # noqa: E402
 from features_pipeline import FeaturePipeline  # noqa: E402
@@ -81,6 +83,7 @@ from features_pipeline import FeaturePipeline  # noqa: E402
 # ==============================================================================
 # FIX 1: sharpe_ratio and sortino_ratio with small samples
 # ==============================================================================
+
 
 class TestSharpeRatioSmallSamples:
     """Test sharpe_ratio with edge cases and small samples."""
@@ -197,19 +200,22 @@ class TestSortinoRatioSmallSamples:
 # FIX 2: Repeated transform_df() application causes double shift
 # ==============================================================================
 
+
 class TestTransformDFDoubleShift:
     """Test FeaturePipeline.transform_df() repeated application protection."""
 
     def setup_method(self):
         """Create simple test data and fitted pipelines."""
-        self.df = pd.DataFrame({
-            'timestamp': [1000, 2000, 3000, 4000, 5000],
-            'close': [100.0, 101.0, 102.0, 103.0, 104.0],
-            'volume': [1000, 1100, 1200, 1300, 1400]
-        })
+        self.df = pd.DataFrame(
+            {
+                "timestamp": [1000, 2000, 3000, 4000, 5000],
+                "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+                "volume": [1000, 1100, 1200, 1300, 1400],
+            }
+        )
         # Pipeline with strict_idempotency=True (default) - raises ValueError
         self.pipe_strict = FeaturePipeline(strict_idempotency=True)
-        dfs_dict = {'BTCUSDT': self.df.copy()}
+        dfs_dict = {"BTCUSDT": self.df.copy()}
         self.pipe_strict.fit(dfs_dict)
 
         # Pipeline with strict_idempotency=False - issues warning but returns original
@@ -224,17 +230,20 @@ class TestTransformDFDoubleShift:
         df_transformed = self.pipe.transform_df(self.df.copy())
 
         # Check: close[0] should be NaN (shifted)
-        assert pd.isna(df_transformed['close'].iloc[0]), \
-            "First element of 'close' should be NaN after shift"
+        assert pd.isna(
+            df_transformed["close"].iloc[0]
+        ), "First element of 'close' should be NaN after shift"
 
         # Check: close[1] should be original close[0]=100
-        assert df_transformed['close'].iloc[1] == 100.0, \
-            f"Expected close[1]=100.0, got {df_transformed['close'].iloc[1]}"
+        assert (
+            df_transformed["close"].iloc[1] == 100.0
+        ), f"Expected close[1]=100.0, got {df_transformed['close'].iloc[1]}"
 
         # Check: marker is set
-        assert hasattr(df_transformed, 'attrs'), "DataFrame should have attrs"
-        assert df_transformed.attrs.get('_feature_pipeline_transformed') == True, \
-            "Transform marker should be set"
+        assert hasattr(df_transformed, "attrs"), "DataFrame should have attrs"
+        assert (
+            df_transformed.attrs.get("_feature_pipeline_transformed") == True
+        ), "Transform marker should be set"
 
     def test_second_transform_raises_error_in_strict_mode(self):
         """Second transform_df() should raise ValueError in strict mode (default)."""
@@ -255,10 +264,12 @@ class TestTransformDFDoubleShift:
 
             # Check: warning was raised
             assert len(w) == 1, f"Expected 1 warning, got {len(w)}"
-            assert issubclass(w[0].category, RuntimeWarning), \
-                f"Expected RuntimeWarning, got {w[0].category}"
-            assert "already-transformed" in str(w[0].message).lower(), \
-                f"Warning should mention 'already-transformed', got: {w[0].message}"
+            assert issubclass(
+                w[0].category, RuntimeWarning
+            ), f"Expected RuntimeWarning, got {w[0].category}"
+            assert (
+                "already-transformed" in str(w[0].message).lower()
+            ), f"Warning should mention 'already-transformed', got: {w[0].message}"
 
         # In lenient mode, the original (already transformed) DataFrame is returned unchanged
         pd.testing.assert_frame_equal(df_transformed_2, df_transformed_1)
@@ -282,8 +293,9 @@ class TestTransformDFDoubleShift:
 
         # In lenient mode, return unchanged (no double shift) - IDEMPOTENT behavior
         # close[1] should still be 100.0 (not NaN from double shift)
-        assert df_transformed_2['close'].iloc[1] == 100.0, \
-            f"Expected close[1]=100.0 (no double shift), got {df_transformed_2['close'].iloc[1]}"
+        assert (
+            df_transformed_2["close"].iloc[1] == 100.0
+        ), f"Expected close[1]=100.0 (no double shift), got {df_transformed_2['close'].iloc[1]}"
         pd.testing.assert_frame_equal(df_transformed_2, df_transformed_1)
 
     def test_transform_with_close_orig_no_double_shift(self):
@@ -294,7 +306,7 @@ class TestTransformDFDoubleShift:
         """
         # Add close_orig to prevent shift
         df_with_orig = self.df.copy()
-        df_with_orig['close_orig'] = df_with_orig['close'].copy()
+        df_with_orig["close_orig"] = df_with_orig["close"].copy()
 
         # First transform (using lenient mode)
         df_transformed_1 = self.pipe_lenient.transform_df(df_with_orig.copy())
@@ -306,9 +318,7 @@ class TestTransformDFDoubleShift:
 
         # Check: close should be same as after first transform (no double shift)
         pd.testing.assert_series_equal(
-            df_transformed_2['close'],
-            df_transformed_1['close'],
-            check_names=False
+            df_transformed_2["close"], df_transformed_1["close"], check_names=False
         )
 
     def test_transform_fresh_copy_no_warning(self):
@@ -329,6 +339,7 @@ class TestTransformDFDoubleShift:
 # Integration tests: Optuna-like scenarios
 # ==============================================================================
 
+
 class TestOptunaIntegration:
     """Test that fixes prevent Optuna trial failures."""
 
@@ -338,20 +349,16 @@ class TestOptunaIntegration:
         episode_returns = np.array([0.05])
         sharpe = sharpe_ratio(episode_returns)
 
-        assert np.isfinite(sharpe), \
-            "Sharpe should be finite (Optuna requires finite metrics)"
-        assert sharpe == 0.0, \
-            f"Expected 0.0 for single episode, got {sharpe}"
+        assert np.isfinite(sharpe), "Sharpe should be finite (Optuna requires finite metrics)"
+        assert sharpe == 0.0, f"Expected 0.0 for single episode, got {sharpe}"
 
     def test_sortino_with_two_episodes_returns_zero(self):
         """Two episodes (N=2): Should return 0.0, not NaN (prevents Optuna crash)."""
         episode_returns = np.array([0.05, -0.03])
         sortino = sortino_ratio(episode_returns)
 
-        assert np.isfinite(sortino), \
-            "Sortino should be finite (Optuna requires finite metrics)"
-        assert sortino == 0.0, \
-            f"Expected 0.0 for two episodes, got {sortino}"
+        assert np.isfinite(sortino), "Sortino should be finite (Optuna requires finite metrics)"
+        assert sortino == 0.0, f"Expected 0.0 for two episodes, got {sortino}"
 
     def test_normal_training_returns_valid_metrics(self):
         """Normal training (N=100): Should return valid Sharpe/Sortino."""
@@ -370,6 +377,7 @@ class TestOptunaIntegration:
 # ==============================================================================
 # Regression tests: Ensure existing behavior preserved
 # ==============================================================================
+
 
 class TestBackwardCompatibility:
     """Ensure fixes don't break existing valid use cases."""
@@ -392,24 +400,26 @@ class TestBackwardCompatibility:
 
     def test_transform_df_single_use_unchanged(self):
         """Single transform_df() use unchanged (existing behavior preserved)."""
-        df = pd.DataFrame({
-            'timestamp': [1000, 2000, 3000],
-            'close': [100.0, 101.0, 102.0],
-            'volume': [1000, 1100, 1200]
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": [1000, 2000, 3000],
+                "close": [100.0, 101.0, 102.0],
+                "volume": [1000, 1100, 1200],
+            }
+        )
         pipe = FeaturePipeline()
-        pipe.fit({'SYM': df.copy()})
+        pipe.fit({"SYM": df.copy()})
 
         # Single transform (normal use case)
         df_transformed = pipe.transform_df(df.copy())
 
         # Check: first element shifted
-        assert pd.isna(df_transformed['close'].iloc[0])
-        assert df_transformed['close'].iloc[1] == 100.0
+        assert pd.isna(df_transformed["close"].iloc[0])
+        assert df_transformed["close"].iloc[1] == 100.0
 
         # Check: normalized columns present
-        assert 'close_z' in df_transformed.columns
-        assert 'volume_z' in df_transformed.columns
+        assert "close_z" in df_transformed.columns
+        assert "volume_z" in df_transformed.columns
 
 
 if __name__ == "__main__":

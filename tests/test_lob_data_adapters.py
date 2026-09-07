@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.data_adapters import (
@@ -744,7 +745,9 @@ class TestAlpacaL2AdapterHistorical:
 
         # Manually populate cache
         cache_key = "AAPL_2025-01-01_2025-01-02"
-        cached_quotes = [{"t": "2025-01-01T10:00:00Z", "bp": 150.0, "bs": 100, "ap": 150.05, "as": 200}]
+        cached_quotes = [
+            {"t": "2025-01-01T10:00:00Z", "bp": 150.0, "bs": 100, "ap": 150.05, "as": 200}
+        ]
         adapter._quotes_cache[cache_key] = cached_quotes
 
         # Should return cached value

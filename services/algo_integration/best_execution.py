@@ -202,7 +202,9 @@ class ExecutionVenue:
             "avg_price_improvement_bps": str(self.avg_price_improvement_bps),
             "market_share_pct": self.market_share_pct,
             "is_active": self.is_active,
-            "last_review_date": self.last_review_date.isoformat() if self.last_review_date else None,
+            "last_review_date": (
+                self.last_review_date.isoformat() if self.last_review_date else None
+            ),
             "notes": self.notes,
         }
 
@@ -223,7 +225,11 @@ class ExecutionVenue:
             avg_price_improvement_bps=Decimal(data.get("avg_price_improvement_bps", "0")),
             market_share_pct=float(data.get("market_share_pct", 0)),
             is_active=data.get("is_active", True),
-            last_review_date=date.fromisoformat(data["last_review_date"]) if data.get("last_review_date") else None,
+            last_review_date=(
+                date.fromisoformat(data["last_review_date"])
+                if data.get("last_review_date")
+                else None
+            ),
             notes=data.get("notes", ""),
         )
 
@@ -258,14 +264,30 @@ class FactorWeights:
 
     def _validate(self) -> None:
         """Validate that weights sum to 1.0."""
-        total = self.price + self.cost + self.speed + self.likelihood + self.settlement + self.size + self.nature
+        total = (
+            self.price
+            + self.cost
+            + self.speed
+            + self.likelihood
+            + self.settlement
+            + self.size
+            + self.nature
+        )
         if abs(total - 1.0) > 0.001:
             raise ValueError(f"Factor weights must sum to 1.0, got {total}")
 
     def validate(self) -> List[str]:
         """Validate and return list of errors."""
         errors = []
-        total = self.price + self.cost + self.speed + self.likelihood + self.settlement + self.size + self.nature
+        total = (
+            self.price
+            + self.cost
+            + self.speed
+            + self.likelihood
+            + self.settlement
+            + self.size
+            + self.nature
+        )
         if abs(total - 1.0) > 0.001:
             errors.append(f"Factor weights sum to {total}, must be 1.0")
 
@@ -578,12 +600,10 @@ class BestExecutionPolicyConfig:
             "firm_name": self.firm_name,
             "default_factor_weights": asdict(self.default_factor_weights),
             "asset_class_weights": {
-                ac.value: asdict(weights)
-                for ac, weights in self.asset_class_weights.items()
+                ac.value: asdict(weights) for ac, weights in self.asset_class_weights.items()
             },
             "order_category_weights": {
-                oc.value: asdict(weights)
-                for oc, weights in self.order_category_weights.items()
+                oc.value: asdict(weights) for oc, weights in self.order_category_weights.items()
             },
             "venue_rankings": {
                 ac.value: [v.to_dict() for v in venues]
@@ -731,7 +751,9 @@ class BestExecutionPolicy:
     def mark_reviewed(self, reviewer: str) -> None:
         """Mark policy as reviewed."""
         with self._lock:
-            self.config.review_date = date.today() + timedelta(days=self.config.review_frequency_days)
+            self.config.review_date = date.today() + timedelta(
+                days=self.config.review_frequency_days
+            )
             self.config.approved_by = reviewer
             self._update_hash()
             logger.info(f"Policy reviewed by {reviewer}, next review: {self.config.review_date}")
@@ -1054,13 +1076,13 @@ class BestExecutionAnalyzer:
 
         # === Weighted Score ===
         analysis.weighted_score = (
-            analysis.price_score * weights.price +
-            analysis.cost_score * weights.cost +
-            analysis.speed_score * weights.speed +
-            analysis.likelihood_score * weights.likelihood +
-            analysis.settlement_score * weights.settlement +
-            analysis.size_score * weights.size +
-            analysis.nature_score * weights.nature
+            analysis.price_score * weights.price
+            + analysis.cost_score * weights.cost
+            + analysis.speed_score * weights.speed
+            + analysis.likelihood_score * weights.likelihood
+            + analysis.settlement_score * weights.settlement
+            + analysis.size_score * weights.size
+            + analysis.nature_score * weights.nature
         )
 
         # === Quality Level ===
@@ -1077,7 +1099,9 @@ class BestExecutionAnalyzer:
 
         # Add notes
         if analysis.price_improvement_bps < self.policy.config.price_improvement_threshold_bps:
-            analysis.notes.append(f"Price improvement below threshold: {analysis.price_improvement_bps}bps")
+            analysis.notes.append(
+                f"Price improvement below threshold: {analysis.price_improvement_bps}bps"
+            )
         if analysis.total_cost_bps > self.policy.config.cost_threshold_bps:
             analysis.notes.append(f"Cost above threshold: {analysis.total_cost_bps}bps")
         if analysis.latency_ms > self.policy.config.latency_threshold_ms:

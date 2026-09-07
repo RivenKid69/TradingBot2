@@ -78,24 +78,27 @@ SECRET_REGEX_PATTERNS: List[Pattern[str]] = [
     # API keys (alphanumeric, 8+ chars) - more permissive
     re.compile(r'(?i)(api[_-]?key|apikey)\s*[=:]\s*["\']?([a-zA-Z0-9_-]{8,})["\']?'),
     # API secrets (8+ chars)
-    re.compile(r'(?i)(api[_-]?secret|apisecret|secret[_-]?key)\s*[=:]\s*["\']?([a-zA-Z0-9_-]{8,})["\']?'),
+    re.compile(
+        r'(?i)(api[_-]?secret|apisecret|secret[_-]?key)\s*[=:]\s*["\']?([a-zA-Z0-9_-]{8,})["\']?'
+    ),
     # Generic secrets (8+ chars)
     re.compile(r'(?i)(secret|password|passwd|token)\s*[=:]\s*["\']?([^\s"\']{8,})["\']?'),
     # Bearer tokens (20+ chars)
-    re.compile(r'(?i)bearer\s+([a-zA-Z0-9_.-]{20,})'),
+    re.compile(r"(?i)bearer\s+([a-zA-Z0-9_.-]{20,})"),
     # Authorization headers (16+ chars)
     re.compile(r'(?i)authorization\s*[=:]\s*["\']?([^\s"\']{16,})["\']?'),
     # Binance-style keys (64-char hex strings)
-    re.compile(r'\b([a-zA-Z0-9]{64})\b'),
+    re.compile(r"\b([a-zA-Z0-9]{64})\b"),
     # AWS-style keys
-    re.compile(r'\b(AKIA[0-9A-Z]{16})\b'),
-    re.compile(r'\b([a-zA-Z0-9/+=]{40})\b'),  # AWS secret key pattern
+    re.compile(r"\b(AKIA[0-9A-Z]{16})\b"),
+    re.compile(r"\b([a-zA-Z0-9/+=]{40})\b"),  # AWS secret key pattern
 ]
 
 
 # =============================================================================
 # Masking Functions
 # =============================================================================
+
 
 def mask_value(value: str, preview: bool = False) -> str:
     """
@@ -152,6 +155,7 @@ def mask_secrets(
         patterns.extend(additional_patterns)
 
     for pattern in patterns:
+
         def replacer(match: re.Match) -> str:
             groups = match.groups()
             if len(groups) >= 2:
@@ -202,9 +206,7 @@ def mask_dict(
         key_lower = key.lower().replace("-", "_")
 
         # Check if key matches sensitive patterns
-        is_sensitive = any(
-            pattern in key_lower for pattern in keys_to_mask
-        )
+        is_sensitive = any(pattern in key_lower for pattern in keys_to_mask)
 
         if is_sensitive and isinstance(value, str):
             result[key] = mask_value(value, preview)
@@ -212,8 +214,11 @@ def mask_dict(
             result[key] = mask_dict(value, sensitive_keys, preview, recursive)
         elif recursive and isinstance(value, list):
             result[key] = [
-                mask_dict(item, sensitive_keys, preview, recursive)
-                if isinstance(item, dict) else item
+                (
+                    mask_dict(item, sensitive_keys, preview, recursive)
+                    if isinstance(item, dict)
+                    else item
+                )
                 for item in value
             ]
         else:
@@ -245,6 +250,7 @@ def safe_repr(obj: Any, preview: bool = False) -> str:
 # =============================================================================
 # Logging Filter
 # =============================================================================
+
 
 class SecureLogFilter(logging.Filter):
     """
@@ -312,11 +318,11 @@ class SecureLogFilter(logging.Filter):
                 )
             elif isinstance(record.args, tuple):
                 record.args = tuple(
-                    mask_secrets(str(arg), preview=self.preview)
-                    if isinstance(arg, str)
-                    else mask_dict(arg, preview=self.preview)
-                    if isinstance(arg, dict)
-                    else arg
+                    (
+                        mask_secrets(str(arg), preview=self.preview)
+                        if isinstance(arg, str)
+                        else mask_dict(arg, preview=self.preview) if isinstance(arg, dict) else arg
+                    )
                     for arg in record.args
                 )
 
@@ -367,6 +373,7 @@ class SecureFormatter(logging.Formatter):
 # =============================================================================
 # Logger Configuration
 # =============================================================================
+
 
 def configure_secure_logging(
     logger: logging.Logger,
@@ -432,14 +439,14 @@ def get_secure_logger(
     logger.setLevel(level)
 
     # Add secure filter if not already present
-    has_secure_filter = any(
-        isinstance(f, SecureLogFilter) for f in logger.filters
-    )
+    has_secure_filter = any(isinstance(f, SecureLogFilter) for f in logger.filters)
     if not has_secure_filter:
-        logger.addFilter(SecureLogFilter(
-            preview=preview,
-            additional_keys=additional_keys,
-        ))
+        logger.addFilter(
+            SecureLogFilter(
+                preview=preview,
+                additional_keys=additional_keys,
+            )
+        )
 
     return logger
 
@@ -447,6 +454,7 @@ def get_secure_logger(
 # =============================================================================
 # Config Validation Helpers
 # =============================================================================
+
 
 def validate_api_credentials(
     api_key: Optional[str],

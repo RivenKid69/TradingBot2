@@ -32,6 +32,7 @@ import sys
 # Prohibited Phrase Definitions
 # ============================================================================
 
+
 class PhraseCategory(str, Enum):
     """Category of prohibited phrase."""
 
@@ -97,7 +98,6 @@ PROHIBITED_PHRASES: Final[List[ProhibitedPhrase]] = [
         description="Claims encrypted keys in cloud",
         fix_suggestion="Remove cloud storage claim; credentials are local-only under CCEA",
     ),
-
     # --- Order Execution Claims ---
     ProhibitedPhrase(
         pattern=r"we\s+(?:trade|execute|place|submit|send)\s+(?:trades?|orders?)\s+(?:for|on\s+behalf\s+of)",
@@ -127,7 +127,6 @@ PROHIBITED_PHRASES: Final[List[ProhibitedPhrase]] = [
         description="Claims order execution service",
         fix_suggestion="Change to: 'Order execution happens locally in your Agent'",
     ),
-
     # --- Brokerage Claims ---
     ProhibitedPhrase(
         pattern=r"we\s+are\s+(?:a\s+)?(?:registered\s+)?broker",
@@ -150,7 +149,6 @@ PROHIBITED_PHRASES: Final[List[ProhibitedPhrase]] = [
         description="Claims SEC/FINRA broker registration",
         fix_suggestion="Remove - we are not a registered broker",
     ),
-
     # --- Custody Claims ---
     ProhibitedPhrase(
         pattern=r"we\s+(?:hold|custody|store)\s+(?:your\s+)?(?:assets?|funds?)",
@@ -166,7 +164,6 @@ PROHIBITED_PHRASES: Final[List[ProhibitedPhrase]] = [
         description="Claims cloud custody",
         fix_suggestion="Remove custody claims; we are a software provider",
     ),
-
     # --- Auto-Execution Claims ---
     ProhibitedPhrase(
         pattern=r"cloud\s+auto(?:[-\s])?execut(?:es?|ion)",
@@ -215,38 +212,43 @@ DOCS_FILE_PATTERNS: Final[List[str]] = [
 ]
 
 # Directories to exclude from scanning
-EXCLUDED_DIRS: Final[FrozenSet[str]] = frozenset({
-    "docs/archive",
-    "docs/archive/",
-    "docs/plans",      # Planning docs discuss issues to fix, not actual problems
-    "docs/plans/",
-    "docs/design",     # Design documents discuss issues to fix, not actual problems
-    "docs/design/",
-    "docs/contracts",  # Contract templates may have negation context
-    "docs/contracts/",
-    ".git",
-    "__pycache__",
-    "node_modules",
-    ".venv",
-    "venv",
-    ".tox",
-})
+EXCLUDED_DIRS: Final[FrozenSet[str]] = frozenset(
+    {
+        "docs/archive",
+        "docs/archive/",
+        "docs/plans",  # Planning docs discuss issues to fix, not actual problems
+        "docs/plans/",
+        "docs/design",  # Design documents discuss issues to fix, not actual problems
+        "docs/design/",
+        "docs/contracts",  # Contract templates may have negation context
+        "docs/contracts/",
+        ".git",
+        "__pycache__",
+        "node_modules",
+        ".venv",
+        "venv",
+        ".tox",
+    }
+)
 
 # Files to exclude (e.g., this guardrail itself, legitimate usage in code)
-EXCLUDED_FILES: Final[FrozenSet[str]] = frozenset({
-    "phrase_guard.py",  # This file
-    "test_phrase_guard.py",  # Tests
-    "ccea/guardrails/phrase_guard.py",
-    "tests/ccea/phase6/test_phrase_guard.py",
-    "PATENT_CLAIMS_DRAFT.md",  # Patent claims are technical descriptions
-    "CCEA_MASTER_REMEDIATION_PLAN.md",  # Planning doc discusses issues to fix
-    "SOFTWARE_PROVIDER_COMPLIANCE_PLAN.md",  # Planning doc
-})
+EXCLUDED_FILES: Final[FrozenSet[str]] = frozenset(
+    {
+        "phrase_guard.py",  # This file
+        "test_phrase_guard.py",  # Tests
+        "ccea/guardrails/phrase_guard.py",
+        "tests/ccea/phase6/test_phrase_guard.py",
+        "PATENT_CLAIMS_DRAFT.md",  # Patent claims are technical descriptions
+        "CCEA_MASTER_REMEDIATION_PLAN.md",  # Planning doc discusses issues to fix
+        "SOFTWARE_PROVIDER_COMPLIANCE_PLAN.md",  # Planning doc
+    }
+)
 
 
 # ============================================================================
 # Violation Classes
 # ============================================================================
+
 
 @dataclass
 class PhraseViolation:
@@ -302,6 +304,7 @@ class PhraseGuardResult:
 # ============================================================================
 # Main Checker Class
 # ============================================================================
+
 
 class PhraseGuard:
     """Checks documentation for prohibited phrases that contradict CCEA."""
@@ -366,41 +369,43 @@ class PhraseGuard:
     def check_content(self, content: str, file_path: str = "<string>") -> List[PhraseViolation]:
         """Check content string for prohibited phrases."""
         violations = []
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         in_code_block = False
         for line_num, line in enumerate(lines, start=1):
             # Track code block state
             stripped = line.strip()
-            if stripped.startswith('```'):
+            if stripped.startswith("```"):
                 in_code_block = not in_code_block
                 continue
 
             # Skip lines inside code blocks or indented code (4+ spaces)
-            if in_code_block or line.startswith('    '):
+            if in_code_block or line.startswith("    "):
                 continue
 
             # Skip comment lines in code-like contexts
-            if stripped.startswith('#') and '(' not in stripped and ')' not in stripped:
+            if stripped.startswith("#") and "(" not in stripped and ")" not in stripped:
                 continue
 
             for compiled_pattern, phrase in self._compiled_patterns:
                 matches = compiled_pattern.finditer(line)
                 for match in matches:
-                    violations.append(PhraseViolation(
-                        phrase=phrase,
-                        file_path=file_path,
-                        line_number=line_num,
-                        matched_text=match.group(),
-                        line_content=line,
-                    ))
+                    violations.append(
+                        PhraseViolation(
+                            phrase=phrase,
+                            file_path=file_path,
+                            line_number=line_num,
+                            matched_text=match.group(),
+                            line_content=line,
+                        )
+                    )
 
         return violations
 
     def check_file(self, file_path: Path) -> List[PhraseViolation]:
         """Check a single file for prohibited phrases."""
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
             print(f"Warning: Could not read {file_path}: {e}")
             return []
@@ -415,9 +420,9 @@ class PhraseGuard:
 
         for file_path in files:
             try:
-                content = file_path.read_text(encoding='utf-8')
+                content = file_path.read_text(encoding="utf-8")
                 result.files_checked += 1
-                result.total_lines_checked += content.count('\n') + 1
+                result.total_lines_checked += content.count("\n") + 1
 
                 violations = self.check_file(file_path)
                 result.violations.extend(violations)
@@ -431,6 +436,7 @@ class PhraseGuard:
 # CLI Entry Point
 # ============================================================================
 
+
 def main() -> int:
     """Run phrase guard as CLI tool."""
     import argparse
@@ -439,21 +445,11 @@ def main() -> int:
         description="CCEA Phrase Guard - Check documentation for prohibited phrases"
     )
     parser.add_argument(
-        "--root",
-        type=str,
-        default=".",
-        help="Root path to check (default: current directory)"
+        "--root", type=str, default=".", help="Root path to check (default: current directory)"
     )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Verbose output"
-    )
-    parser.add_argument(
-        "--fail-on-warning",
-        action="store_true",
-        help="Fail on warnings (not just critical/high)"
+        "--fail-on-warning", action="store_true", help="Fail on warnings (not just critical/high)"
     )
 
     args = parser.parse_args()
@@ -478,10 +474,16 @@ def main() -> int:
         print()
 
         # Group by severity
-        for severity in [ViolationSeverity.CRITICAL, ViolationSeverity.HIGH,
-                         ViolationSeverity.MEDIUM, ViolationSeverity.WARNING]:
+        for severity in [
+            ViolationSeverity.CRITICAL,
+            ViolationSeverity.HIGH,
+            ViolationSeverity.MEDIUM,
+            ViolationSeverity.WARNING,
+        ]:
             sev_violations = [v for v in result.violations if v.phrase.severity == severity]
-            if sev_violations and (args.verbose or severity in {ViolationSeverity.CRITICAL, ViolationSeverity.HIGH}):
+            if sev_violations and (
+                args.verbose or severity in {ViolationSeverity.CRITICAL, ViolationSeverity.HIGH}
+            ):
                 print(f"\n{severity.value.upper()} Violations:")
                 print("-" * 40)
                 for v in sev_violations:

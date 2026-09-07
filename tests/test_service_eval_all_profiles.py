@@ -9,25 +9,35 @@ if str(base) in sys.path:
     sys.path.remove(str(base))
 sys.path.append(str(base))
 
-from core_config import EvalConfig as RunEvalConfig, EvalInputConfig, ComponentSpec, Components, ExecutionProfile
+from core_config import (
+    EvalConfig as RunEvalConfig,
+    EvalInputConfig,
+    ComponentSpec,
+    Components,
+    ExecutionProfile,
+)
 from service_eval import from_config
 import di_registry
 
 
 def _make_trades_df():
-    return pd.DataFrame({
-        "ts_ms": [1, 2],
-        "pnl": [1.0, -0.5],
-        "side": ["BUY", "SELL"],
-        "qty": [1, 1],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1, 2],
+            "pnl": [1.0, -0.5],
+            "side": ["BUY", "SELL"],
+            "qty": [1, 1],
+        }
+    )
 
 
 def _make_equity_df():
-    return pd.DataFrame({
-        "ts_ms": [1, 2],
-        "equity": [1.0, 0.5],
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": [1, 2],
+            "equity": [1.0, 0.5],
+        }
+    )
 
 
 def _dummy_components() -> Components:

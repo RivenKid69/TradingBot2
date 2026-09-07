@@ -193,7 +193,6 @@ __all__ = [
     "MultiClientIncident",
     "MultiClientIncidentCoordinator",
     "create_incident_coordinator",
-
     # =========================================================================
     # Provider Information Package (Art. 28(3))
     # =========================================================================
@@ -219,7 +218,6 @@ __all__ = [
     "ProviderInfoPackageGenerator",  # Alias
     # Factory functions
     "create_provider_info_package",
-
     # =========================================================================
     # Pooled Audit Support (Art. 30(4))
     # =========================================================================
@@ -243,7 +241,6 @@ __all__ = [
     "create_pooled_audit_support",
     "get_audit_scope_areas",
     "get_report_types",
-
     # =========================================================================
     # Compliance Dashboard
     # =========================================================================

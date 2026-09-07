@@ -72,9 +72,7 @@ class TestComputeGroupedExplainedVariance:
 
     def test_empty_arrays(self):
         """Test with empty arrays."""
-        result, summary = compute_grouped_explained_variance(
-            np.array([]), np.array([]), []
-        )
+        result, summary = compute_grouped_explained_variance(np.array([]), np.array([]), [])
         assert result == {}
 
     def test_single_value_per_group(self):
@@ -397,36 +395,28 @@ class TestDistributionalPPOValueTargetOutlierFractions:
     def test_some_below(self):
         """Test when some values are below support_min."""
         values = torch.tensor([-5.0, -3.0, 0.0, 1.0])
-        below, above = DistributionalPPO._value_target_outlier_fractions(
-            values, -2.0, 5.0
-        )
+        below, above = DistributionalPPO._value_target_outlier_fractions(values, -2.0, 5.0)
         assert below == pytest.approx(0.5)  # 2 out of 4
         assert above == 0.0
 
     def test_some_above(self):
         """Test when some values are above support_max."""
         values = torch.tensor([0.0, 1.0, 10.0, 15.0])
-        below, above = DistributionalPPO._value_target_outlier_fractions(
-            values, -5.0, 5.0
-        )
+        below, above = DistributionalPPO._value_target_outlier_fractions(values, -5.0, 5.0)
         assert below == 0.0
         assert above == pytest.approx(0.5)  # 2 out of 4
 
     def test_mixed_outliers(self):
         """Test with outliers on both ends."""
         values = torch.tensor([-10.0, 0.0, 1.0, 10.0])
-        below, above = DistributionalPPO._value_target_outlier_fractions(
-            values, -5.0, 5.0
-        )
+        below, above = DistributionalPPO._value_target_outlier_fractions(values, -5.0, 5.0)
         assert below == pytest.approx(0.25)  # 1 out of 4
         assert above == pytest.approx(0.25)  # 1 out of 4
 
     def test_empty_tensor(self):
         """Test with empty tensor."""
         values = torch.tensor([])
-        below, above = DistributionalPPO._value_target_outlier_fractions(
-            values, -1.0, 1.0
-        )
+        below, above = DistributionalPPO._value_target_outlier_fractions(values, -1.0, 1.0)
         # With empty tensor, fractions should be 0
         assert below == 0.0
         assert above == 0.0

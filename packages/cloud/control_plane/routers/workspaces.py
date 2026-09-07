@@ -70,9 +70,7 @@ class WorkspaceListResponse(BaseModel):
 
 async def _get_workspace_stats(session, workspace_id: UUID) -> tuple[int, int]:
     """Get agent and deployment counts for a workspace."""
-    agent_count_q = select(func.count(Agent.id)).where(
-        Agent.workspace_id == workspace_id
-    )
+    agent_count_q = select(func.count(Agent.id)).where(Agent.workspace_id == workspace_id)
     agent_result = await session.execute(agent_count_q)
     agent_count = agent_result.scalar() or 0
 
@@ -111,9 +109,7 @@ async def list_workspaces(
         if current_user.is_superuser:
             if organization_id:
                 query = query.where(Workspace.organization_id == organization_id)
-                count_query = count_query.where(
-                    Workspace.organization_id == organization_id
-                )
+                count_query = count_query.where(Workspace.organization_id == organization_id)
         else:
             # Non-superusers can only see their organization's workspaces
             if current_user.org_id is None:
@@ -124,9 +120,7 @@ async def list_workspaces(
                     page_size=pagination.page_size,
                 )
             query = query.where(Workspace.organization_id == current_user.org_id)
-            count_query = count_query.where(
-                Workspace.organization_id == current_user.org_id
-            )
+            count_query = count_query.where(Workspace.organization_id == current_user.org_id)
 
         # Get total count
         total_result = await session.execute(count_query)
@@ -264,9 +258,7 @@ async def get_workspace(
     Users can only view workspaces in their organization.
     """
     async with get_session() as session:
-        result = await session.execute(
-            select(Workspace).where(Workspace.id == workspace_id)
-        )
+        result = await session.execute(select(Workspace).where(Workspace.id == workspace_id))
         workspace = result.scalar_one_or_none()
 
         if workspace is None:
@@ -316,9 +308,7 @@ async def update_workspace(
     Requires workspace:write permission or superuser.
     """
     async with get_session() as session:
-        result = await session.execute(
-            select(Workspace).where(Workspace.id == workspace_id)
-        )
+        result = await session.execute(select(Workspace).where(Workspace.id == workspace_id))
         workspace = result.scalar_one_or_none()
 
         if workspace is None:
@@ -401,9 +391,7 @@ async def delete_workspace(
     Sets is_active=False.
     """
     async with get_session() as session:
-        result = await session.execute(
-            select(Workspace).where(Workspace.id == workspace_id)
-        )
+        result = await session.execute(select(Workspace).where(Workspace.id == workspace_id))
         workspace = result.scalar_one_or_none()
 
         if workspace is None:

@@ -55,6 +55,7 @@ from lob.market_impact import (
 # Data Structures
 # ==============================================================================
 
+
 @dataclass
 class TradeObservation:
     """
@@ -71,6 +72,7 @@ class TradeObservation:
         post_trade_mid: Mid price after trade (for impact measurement)
         time_to_next_trade_ms: Time until next trade (for decay estimation)
     """
+
     timestamp_ms: int
     price: float
     qty: float
@@ -112,6 +114,7 @@ class CalibrationDataset:
         avg_adv: Average ADV over period
         avg_volatility: Average volatility over period
     """
+
     observations: List[TradeObservation] = field(default_factory=list)
     symbol: str = ""
     start_time_ms: int = 0
@@ -158,6 +161,7 @@ class CalibrationResult:
         confidence_intervals: 95% confidence intervals for parameters
         diagnostics: Additional diagnostic information
     """
+
     model_type: ImpactModelType = ImpactModelType.ALMGREN_CHRISS
     parameters: Dict[str, float] = field(default_factory=dict)
     r_squared: float = 0.0
@@ -207,6 +211,7 @@ class CrossValidationResult:
         fold_results: Results for each fold
         best_parameters: Parameters from best fold
     """
+
     model_type: ImpactModelType = ImpactModelType.ALMGREN_CHRISS
     mean_r_squared: float = 0.0
     std_r_squared: float = 0.0
@@ -219,6 +224,7 @@ class CrossValidationResult:
 # ==============================================================================
 # Base Calibrator
 # ==============================================================================
+
 
 class BaseImpactCalibrator:
     """
@@ -295,6 +301,7 @@ class BaseImpactCalibrator:
 # Almgren-Chriss Calibrator
 # ==============================================================================
 
+
 class AlmgrenChrissCalibrator(BaseImpactCalibrator):
     """
     Calibrator for Almgren-Chriss impact model.
@@ -338,10 +345,7 @@ class AlmgrenChrissCalibrator(BaseImpactCalibrator):
             X2 = participation            -> coefficient = γ * 10000
         """
         # Filter observations with valid impacts
-        valid_obs = [
-            obs for obs in dataset.observations
-            if obs.realized_impact_bps is not None
-        ]
+        valid_obs = [obs for obs in dataset.observations if obs.realized_impact_bps is not None]
 
         if len(valid_obs) < self._min_observations:
             return CalibrationResult(
@@ -360,7 +364,7 @@ class AlmgrenChrissCalibrator(BaseImpactCalibrator):
             volatility = obs.volatility
 
             # Features
-            sqrt_part = volatility * (participation ** self._delta)
+            sqrt_part = volatility * (participation**self._delta)
             linear_part = participation
 
             X.append([sqrt_part, linear_part])
@@ -391,7 +395,7 @@ class AlmgrenChrissCalibrator(BaseImpactCalibrator):
             gamma = _DEFAULT_IMPACT_COEF_PERM
 
         # Compute predictions and metrics
-        y_pred = X_arr @ beta if 'beta' in dir() else np.zeros_like(y_arr)
+        y_pred = X_arr @ beta if "beta" in dir() else np.zeros_like(y_arr)
         metrics = self._compute_metrics(y_arr, y_pred)
 
         # Estimate confidence intervals (bootstrap would be better)
@@ -400,7 +404,7 @@ class AlmgrenChrissCalibrator(BaseImpactCalibrator):
         p = 2  # Number of parameters
         if n > p:
             residuals = y_arr - y_pred
-            mse = np.sum(residuals ** 2) / (n - p)
+            mse = np.sum(residuals**2) / (n - p)
             try:
                 var_beta = mse * np.linalg.inv(XtX + reg)
                 se_beta = np.sqrt(np.diag(var_beta))
@@ -442,6 +446,7 @@ class AlmgrenChrissCalibrator(BaseImpactCalibrator):
 # ==============================================================================
 # Gatheral Decay Calibrator
 # ==============================================================================
+
 
 class GatheralDecayCalibrator(BaseImpactCalibrator):
     """
@@ -547,10 +552,9 @@ class GatheralDecayCalibrator(BaseImpactCalibrator):
             n_observations=len(valid_pairs),
             diagnostics={
                 "sse": best_sse,
-                "avg_dt_ms": float(np.mean([
-                    obs2.timestamp_ms - obs1.timestamp_ms
-                    for obs1, obs2 in valid_pairs
-                ])),
+                "avg_dt_ms": float(
+                    np.mean([obs2.timestamp_ms - obs1.timestamp_ms for obs1, obs2 in valid_pairs])
+                ),
             },
         )
 
@@ -581,7 +585,7 @@ class GatheralDecayCalibrator(BaseImpactCalibrator):
                 # Opposite side - impact should have decayed
                 error = abs(impact2) - abs(predicted_remaining)
 
-            sse += error ** 2
+            sse += error**2
 
         return sse
 
@@ -589,6 +593,7 @@ class GatheralDecayCalibrator(BaseImpactCalibrator):
 # ==============================================================================
 # Kyle Lambda Calibrator
 # ==============================================================================
+
 
 class KyleLambdaCalibrator(BaseImpactCalibrator):
     """
@@ -608,10 +613,7 @@ class KyleLambdaCalibrator(BaseImpactCalibrator):
 
     def calibrate(self, dataset: CalibrationDataset) -> CalibrationResult:
         """Calibrate Kyle lambda from trade data."""
-        valid_obs = [
-            obs for obs in dataset.observations
-            if obs.realized_impact_bps is not None
-        ]
+        valid_obs = [obs for obs in dataset.observations if obs.realized_impact_bps is not None]
 
         if len(valid_obs) < self._min_observations:
             return CalibrationResult(
@@ -656,6 +658,7 @@ class KyleLambdaCalibrator(BaseImpactCalibrator):
 # ==============================================================================
 # Composite Calibration Pipeline
 # ==============================================================================
+
 
 class ImpactCalibrationPipeline:
     """
@@ -748,10 +751,7 @@ class ImpactCalibrationPipeline:
                 test_start = fold * fold_size
                 test_end = test_start + fold_size
 
-                train_obs = (
-                    dataset.observations[:test_start] +
-                    dataset.observations[test_end:]
-                )
+                train_obs = dataset.observations[:test_start] + dataset.observations[test_end:]
 
                 if len(train_obs) < calibrator._min_observations:
                     continue
@@ -859,6 +859,7 @@ class ImpactCalibrationPipeline:
 # Rolling Calibration
 # ==============================================================================
 
+
 class RollingImpactCalibrator:
     """
     Rolling window calibration for adaptive impact parameters.
@@ -957,6 +958,7 @@ class RollingImpactCalibrator:
 # ==============================================================================
 # Factory Functions
 # ==============================================================================
+
 
 def create_calibrator(
     model_type: Union[str, ImpactModelType] = "almgren_chriss",

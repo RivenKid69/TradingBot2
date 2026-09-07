@@ -417,9 +417,7 @@ class TestOnPremRequirementsService:
         assert len(spec.network) > 0
         assert len(spec.security) > 0
 
-    def test_get_requirements_not_found(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_requirements_not_found(self, service: OnPremRequirementsService) -> None:
         """Test getting requirements for non-existent size."""
         spec = service.get_requirements("non-existent")
         assert spec is None
@@ -431,69 +429,51 @@ class TestOnPremRequirementsService:
         sizes = {s.deployment_size for s in specs}
         assert sizes == {"small", "medium", "large", "enterprise"}
 
-    def test_get_hardware_requirements(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_hardware_requirements(self, service: OnPremRequirementsService) -> None:
         """Test getting hardware requirements for a size."""
         reqs = service.get_hardware_requirements("medium")
         assert len(reqs) > 0
         assert all(isinstance(r, HardwareRequirement) for r in reqs)
 
-    def test_get_hardware_requirements_not_found(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_hardware_requirements_not_found(self, service: OnPremRequirementsService) -> None:
         """Test getting hardware requirements for non-existent size."""
         reqs = service.get_hardware_requirements("non-existent")
         assert reqs == []
 
-    def test_get_software_requirements(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_software_requirements(self, service: OnPremRequirementsService) -> None:
         """Test getting software requirements for a size."""
         reqs = service.get_software_requirements("medium")
         assert len(reqs) > 0
         assert all(isinstance(r, SoftwareRequirement) for r in reqs)
 
-    def test_get_software_requirements_not_found(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_software_requirements_not_found(self, service: OnPremRequirementsService) -> None:
         """Test getting software requirements for non-existent size."""
         reqs = service.get_software_requirements("non-existent")
         assert reqs == []
 
-    def test_get_network_requirements(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_network_requirements(self, service: OnPremRequirementsService) -> None:
         """Test getting network requirements for a size."""
         reqs = service.get_network_requirements("medium")
         assert len(reqs) > 0
         assert all(isinstance(r, NetworkRequirement) for r in reqs)
 
-    def test_get_network_requirements_not_found(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_network_requirements_not_found(self, service: OnPremRequirementsService) -> None:
         """Test getting network requirements for non-existent size."""
         reqs = service.get_network_requirements("non-existent")
         assert reqs == []
 
-    def test_get_security_requirements(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_security_requirements(self, service: OnPremRequirementsService) -> None:
         """Test getting security requirements for a size."""
         reqs = service.get_security_requirements("medium")
         assert len(reqs) > 0
         assert all(isinstance(r, SecurityRequirement) for r in reqs)
 
-    def test_get_security_requirements_not_found(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_security_requirements_not_found(self, service: OnPremRequirementsService) -> None:
         """Test getting security requirements for non-existent size."""
         reqs = service.get_security_requirements("non-existent")
         assert reqs == []
 
-    def test_get_mandatory_requirements(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_mandatory_requirements(self, service: OnPremRequirementsService) -> None:
         """Test getting mandatory requirements for a size."""
         mandatory = service.get_mandatory_requirements("medium")
         assert "hardware" in mandatory
@@ -506,9 +486,7 @@ class TestOnPremRequirementsService:
             for req in category:
                 assert req.priority == RequirementPriority.MANDATORY
 
-    def test_get_mandatory_requirements_not_found(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_get_mandatory_requirements_not_found(self, service: OnPremRequirementsService) -> None:
         """Test getting mandatory requirements for non-existent size."""
         mandatory = service.get_mandatory_requirements("non-existent")
         assert mandatory == {}
@@ -522,9 +500,7 @@ class TestRequirementsValidation:
         """Create service instance for testing."""
         return OnPremRequirementsService()
 
-    def test_validate_requirements_all_met(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_validate_requirements_all_met(self, service: OnPremRequirementsService) -> None:
         """Test validation when all requirements are met."""
         mandatory = service.get_mandatory_requirements("small")
 
@@ -540,25 +516,19 @@ class TestRequirementsValidation:
         assert result["valid"] is True
         assert result["missing_requirements"] == {}
 
-    def test_validate_requirements_missing(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_validate_requirements_missing(self, service: OnPremRequirementsService) -> None:
         """Test validation when some requirements are missing."""
         result = service.validate_requirements("small", {})
         assert result["valid"] is False
         assert len(result["missing_requirements"]) > 0
 
-    def test_validate_requirements_unknown_size(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_validate_requirements_unknown_size(self, service: OnPremRequirementsService) -> None:
         """Test validation with unknown deployment size."""
         result = service.validate_requirements("non-existent", {})
         assert result["valid"] is False
         assert result["error"] == "Unknown deployment size"
 
-    def test_validate_requirements_partial(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_validate_requirements_partial(self, service: OnPremRequirementsService) -> None:
         """Test validation with partial requirements."""
         mandatory = service.get_mandatory_requirements("small")
 
@@ -582,9 +552,7 @@ class TestRequirementsExport:
         """Create service instance for testing."""
         return OnPremRequirementsService()
 
-    def test_export_requirements_document(
-        self, service: OnPremRequirementsService
-    ) -> None:
+    def test_export_requirements_document(self, service: OnPremRequirementsService) -> None:
         """Test exporting requirements as document."""
         doc = service.export_requirements_document("medium")
         assert doc["title"] == "On-Premises Deployment Requirements - Medium"

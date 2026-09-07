@@ -12,6 +12,7 @@ Target: 100% confidence that PBT + Adversarial is enabled by default
 
 import os
 import pytest
+
 pytest.importorskip("torch")
 import yaml
 
@@ -52,9 +53,7 @@ class TestModuleDefaults:
         """PBTConfig should have valid defaults."""
         # PBTConfig requires hyperparams, so we provide minimal one
         config = PBTConfig(
-            hyperparams=[
-                HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-            ]
+            hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)]
         )
         assert config.population_size == 10
         assert config.perturbation_interval == 5
@@ -170,9 +169,7 @@ class TestSystemDefaults:
             adversarial_enabled=True,
             pbt=PBTConfig(
                 population_size=2,
-                hyperparams=[
-                    HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-                ],
+                hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)],
             ),
             adversarial=SAPPOConfig(),
         )
@@ -190,9 +187,7 @@ class TestSystemDefaults:
             adversarial_enabled=True,
             pbt=PBTConfig(
                 population_size=2,
-                hyperparams=[
-                    HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-                ],
+                hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)],
             ),
             adversarial=SAPPOConfig(),
         )
@@ -211,7 +206,10 @@ class TestSystemDefaults:
         assert model is not None
         assert sa_ppo is not None
         assert isinstance(sa_ppo, StateAdversarialPPO)
-        assert sa_ppo.is_adversarial_enabled is True or sa_ppo._update_count < sa_ppo.config.warmup_updates
+        assert (
+            sa_ppo.is_adversarial_enabled is True
+            or sa_ppo._update_count < sa_ppo.config.warmup_updates
+        )
 
 
 class TestDefaultBehavior:
@@ -242,9 +240,7 @@ class TestDefaultBehavior:
         """PBT scheduler should work with minimal config."""
         config = PBTConfig(
             population_size=2,
-            hyperparams=[
-                HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-            ],
+            hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)],
         )
 
         scheduler = PBTScheduler(config, seed=42)
@@ -268,9 +264,7 @@ class TestDefaultBehavior:
     def test_default_population_size_is_sufficient(self):
         """Default population size should be sufficient for PBT."""
         config = PBTConfig(
-            hyperparams=[
-                HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)
-            ]
+            hyperparams=[HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3)]
         )
         assert config.population_size >= 4, "Population should be at least 4"
 

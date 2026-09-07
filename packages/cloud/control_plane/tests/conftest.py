@@ -90,9 +90,8 @@ async def get_or_create_permission(
 ) -> Permission:
     """Get or create a permission by name to avoid duplicates."""
     from sqlalchemy import select
-    result = await session.execute(
-        select(Permission).where(Permission.name == name)
-    )
+
+    result = await session.execute(select(Permission).where(Permission.name == name))
     existing = result.scalar_one_or_none()
     if existing:
         return existing

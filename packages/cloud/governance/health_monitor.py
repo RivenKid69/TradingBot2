@@ -44,6 +44,7 @@ HEALTH_CHECK_INTERVAL_SECONDS: Final[int] = 30
 
 class HealthStatus(Enum):
     """Health status levels."""
+
     HEALTHY = "healthy"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -52,6 +53,7 @@ class HealthStatus(Enum):
 
 class AgentStatus(Enum):
     """Agent connection status."""
+
     ONLINE = "online"
     OFFLINE = "offline"
     DEGRADED = "degraded"
@@ -60,6 +62,7 @@ class AgentStatus(Enum):
 
 class RunStatus(Enum):
     """Run status."""
+
     RUNNING = "running"
     PAUSED = "paused"
     STOPPED = "stopped"
@@ -83,6 +86,7 @@ class AgentHealth:
         halt_reason: Reason if halted
         metrics: Health metrics
     """
+
     agent_id: str = ""
     workspace_id: str = ""
     status: AgentStatus = AgentStatus.UNKNOWN
@@ -120,7 +124,9 @@ class AgentHealth:
             "error_count": self.error_count,
             "order_count": self.order_count,
             "latency_ms": self.latency_ms,
-            "status_changed_at": self.status_changed_at.isoformat() if self.status_changed_at else None,
+            "status_changed_at": (
+                self.status_changed_at.isoformat() if self.status_changed_at else None
+            ),
             "updated_at": self.updated_at.isoformat(),
         }
 
@@ -139,6 +145,7 @@ class HealthDashboard:
 
     Aggregated health information for display.
     """
+
     workspace_id: str = ""
     generated_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -199,6 +206,7 @@ class HealthDashboard:
 @dataclass
 class HealthEvent:
     """Health-related event."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     agent_id: str = ""
     workspace_id: str = ""
@@ -381,10 +389,7 @@ class HealthMonitorService:
     def get_workspace_agents(self, workspace_id: str) -> List[AgentHealth]:
         """Get all agents for a workspace."""
         with self._lock:
-            return [
-                h for h in self._agents.values()
-                if h.workspace_id == workspace_id
-            ]
+            return [h for h in self._agents.values() if h.workspace_id == workspace_id]
 
     def get_dashboard(self, workspace_id: str) -> HealthDashboard:
         """
@@ -435,11 +440,17 @@ class HealthMonitorService:
                     dashboard.stopped_count += 1
                 elif agent.run_status == RunStatus.HALTED:
                     dashboard.halted_count += 1
-                    dashboard.halted_agents.append({
-                        "agent_id": agent.agent_id,
-                        "reason": agent.halt_reason,
-                        "since": agent.status_changed_at.isoformat() if agent.status_changed_at else None,
-                    })
+                    dashboard.halted_agents.append(
+                        {
+                            "agent_id": agent.agent_id,
+                            "reason": agent.halt_reason,
+                            "since": (
+                                agent.status_changed_at.isoformat()
+                                if agent.status_changed_at
+                                else None
+                            ),
+                        }
+                    )
 
             # Metrics averages
             if agents:
@@ -451,10 +462,7 @@ class HealthMonitorService:
                     dashboard.avg_latency_ms = sum(latencies) / len(latencies)
 
             # Recent events
-            workspace_events = [
-                e for e in self._events
-                if e.workspace_id == workspace_id
-            ]
+            workspace_events = [e for e in self._events if e.workspace_id == workspace_id]
             recent_errors = [
                 {
                     "agent_id": e.agent_id,
@@ -484,52 +492,64 @@ class HealthMonitorService:
         for agent in agents:
             # Offline agents
             if agent.status == AgentStatus.OFFLINE:
-                issues.append({
-                    "type": "agent_offline",
-                    "severity": "critical",
-                    "agent_id": agent.agent_id,
-                    "message": f"Agent {agent.agent_id} is offline",
-                    "since": agent.status_changed_at.isoformat() if agent.status_changed_at else None,
-                })
+                issues.append(
+                    {
+                        "type": "agent_offline",
+                        "severity": "critical",
+                        "agent_id": agent.agent_id,
+                        "message": f"Agent {agent.agent_id} is offline",
+                        "since": (
+                            agent.status_changed_at.isoformat() if agent.status_changed_at else None
+                        ),
+                    }
+                )
 
             # Halted agents
             if agent.run_status == RunStatus.HALTED:
-                issues.append({
-                    "type": "agent_halted",
-                    "severity": "critical",
-                    "agent_id": agent.agent_id,
-                    "message": f"Agent {agent.agent_id} is halted: {agent.halt_reason}",
-                    "reason": agent.halt_reason,
-                })
+                issues.append(
+                    {
+                        "type": "agent_halted",
+                        "severity": "critical",
+                        "agent_id": agent.agent_id,
+                        "message": f"Agent {agent.agent_id} is halted: {agent.halt_reason}",
+                        "reason": agent.halt_reason,
+                    }
+                )
 
             # High resource usage
             if agent.cpu_usage > 90:
-                issues.append({
-                    "type": "high_cpu",
-                    "severity": "warning",
-                    "agent_id": agent.agent_id,
-                    "message": f"Agent {agent.agent_id} CPU usage at {agent.cpu_usage:.1f}%",
-                    "value": agent.cpu_usage,
-                })
+                issues.append(
+                    {
+                        "type": "high_cpu",
+                        "severity": "warning",
+                        "agent_id": agent.agent_id,
+                        "message": f"Agent {agent.agent_id} CPU usage at {agent.cpu_usage:.1f}%",
+                        "value": agent.cpu_usage,
+                    }
+                )
 
             if agent.memory_usage > 90:
-                issues.append({
-                    "type": "high_memory",
-                    "severity": "warning",
-                    "agent_id": agent.agent_id,
-                    "message": f"Agent {agent.agent_id} memory usage at {agent.memory_usage:.1f}%",
-                    "value": agent.memory_usage,
-                })
+                issues.append(
+                    {
+                        "type": "high_memory",
+                        "severity": "warning",
+                        "agent_id": agent.agent_id,
+                        "message": f"Agent {agent.agent_id} memory usage at {agent.memory_usage:.1f}%",
+                        "value": agent.memory_usage,
+                    }
+                )
 
             # High latency
             if agent.latency_ms > 1000:
-                issues.append({
-                    "type": "high_latency",
-                    "severity": "warning",
-                    "agent_id": agent.agent_id,
-                    "message": f"Agent {agent.agent_id} latency at {agent.latency_ms:.0f}ms",
-                    "value": agent.latency_ms,
-                })
+                issues.append(
+                    {
+                        "type": "high_latency",
+                        "severity": "warning",
+                        "agent_id": agent.agent_id,
+                        "message": f"Agent {agent.agent_id} latency at {agent.latency_ms:.0f}ms",
+                        "value": agent.latency_ms,
+                    }
+                )
 
         return issues
 
@@ -584,7 +604,9 @@ class HealthMonitorService:
                 pass
 
         # Generate event
-        severity = HealthStatus.CRITICAL if new_status == AgentStatus.OFFLINE else HealthStatus.WARNING
+        severity = (
+            HealthStatus.CRITICAL if new_status == AgentStatus.OFFLINE else HealthStatus.WARNING
+        )
         event = HealthEvent(
             agent_id=health.agent_id,
             workspace_id=health.workspace_id,

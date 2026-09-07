@@ -162,6 +162,7 @@ from .binance_spot_private import (
 # Module-level convenience
 # =========================
 
+
 def get_supported_vendors() -> list:
     """Get list of supported exchange vendors."""
     return get_registry().get_supported_vendors()

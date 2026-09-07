@@ -11,6 +11,7 @@ Tests both OLD (buggy) and NEW (fixed) implementations to ensure:
 import math
 
 import pytest
+
 pytest.importorskip("torch")
 
 import test_distributional_ppo_raw_outliers  # noqa: F401
@@ -43,8 +44,9 @@ def test_quantile_loss_fix_disabled_by_default():
         getattr(algo.policy, "use_fixed_quantile_loss_asymmetry", True)
     )
 
-    assert algo._use_fixed_quantile_loss_asymmetry is True, \
-        "Fix should be enabled by default (as of 2025-11-20)"
+    assert (
+        algo._use_fixed_quantile_loss_asymmetry is True
+    ), "Fix should be enabled by default (as of 2025-11-20)"
 
 
 def test_quantile_loss_fix_can_be_enabled():
@@ -71,8 +73,9 @@ def test_quantile_loss_fix_can_be_enabled():
         getattr(algo.policy, "use_fixed_quantile_loss_asymmetry", False)
     )
 
-    assert algo._use_fixed_quantile_loss_asymmetry is True, \
-        "Fix should be enabled when policy attribute is True"
+    assert (
+        algo._use_fixed_quantile_loss_asymmetry is True
+    ), "Fix should be enabled when policy attribute is True"
 
 
 def test_quantile_loss_old_behavior_with_flag_disabled():
@@ -117,8 +120,9 @@ def test_quantile_loss_old_behavior_with_flag_disabled():
     ratio = loss_over.item() / loss_under.item()
     expected_ratio_inverted = 0.25 / 0.75  # Inverted
 
-    assert math.isclose(ratio, expected_ratio_inverted, rel_tol=1e-5), \
-        f"OLD behavior should have inverted ratio: expected {expected_ratio_inverted}, got {ratio}"
+    assert math.isclose(
+        ratio, expected_ratio_inverted, rel_tol=1e-5
+    ), f"OLD behavior should have inverted ratio: expected {expected_ratio_inverted}, got {ratio}"
 
 
 def test_quantile_loss_new_behavior_with_flag_enabled():
@@ -163,8 +167,9 @@ def test_quantile_loss_new_behavior_with_flag_enabled():
     ratio = loss_over.item() / loss_under.item()
     expected_ratio_correct = (1 - 0.25) / 0.25  # Correct
 
-    assert math.isclose(ratio, expected_ratio_correct, rel_tol=1e-5), \
-        f"NEW behavior should have correct ratio: expected {expected_ratio_correct}, got {ratio}"
+    assert math.isclose(
+        ratio, expected_ratio_correct, rel_tol=1e-5
+    ), f"NEW behavior should have correct ratio: expected {expected_ratio_correct}, got {ratio}"
 
 
 def test_quantile_loss_comparison_old_vs_new():
@@ -217,12 +222,14 @@ def test_quantile_loss_comparison_old_vs_new():
     )
 
     # Verify that OLD under == NEW over (inverted!)
-    assert math.isclose(loss_under_old.item(), loss_over_new.item(), rel_tol=1e-6), \
-        "OLD underestimation loss should equal NEW overestimation loss (inverted)"
+    assert math.isclose(
+        loss_under_old.item(), loss_over_new.item(), rel_tol=1e-6
+    ), "OLD underestimation loss should equal NEW overestimation loss (inverted)"
 
     # Verify that OLD over == NEW under (inverted!)
-    assert math.isclose(loss_over_old.item(), loss_under_new.item(), rel_tol=1e-6), \
-        "OLD overestimation loss should equal NEW underestimation loss (inverted)"
+    assert math.isclose(
+        loss_over_old.item(), loss_under_new.item(), rel_tol=1e-6
+    ), "OLD overestimation loss should equal NEW underestimation loss (inverted)"
 
 
 def test_quantile_loss_median_unaffected_by_flag():
@@ -273,14 +280,17 @@ def test_quantile_loss_median_unaffected_by_flag():
     )
 
     # For median, OLD and NEW should be identical
-    assert math.isclose(loss_under_old.item(), loss_under_new.item(), rel_tol=1e-6), \
-        "Median underestimation loss should be same for OLD and NEW"
-    assert math.isclose(loss_over_old.item(), loss_over_new.item(), rel_tol=1e-6), \
-        "Median overestimation loss should be same for OLD and NEW"
+    assert math.isclose(
+        loss_under_old.item(), loss_under_new.item(), rel_tol=1e-6
+    ), "Median underestimation loss should be same for OLD and NEW"
+    assert math.isclose(
+        loss_over_old.item(), loss_over_new.item(), rel_tol=1e-6
+    ), "Median overestimation loss should be same for OLD and NEW"
 
     # And they should be symmetric
-    assert math.isclose(loss_under_new.item(), loss_over_new.item(), rel_tol=1e-6), \
-        "Median should be symmetric"
+    assert math.isclose(
+        loss_under_new.item(), loss_over_new.item(), rel_tol=1e-6
+    ), "Median should be symmetric"
 
 
 def test_quantile_loss_edge_cases_with_flag():
@@ -308,13 +318,10 @@ def test_quantile_loss_edge_cases_with_flag():
         target = torch.tensor([0.0], dtype=torch.float32).reshape(-1, 1)
         predicted = torch.tensor([[1.0]], dtype=torch.float32)
 
-        loss = DistributionalPPO._quantile_huber_loss(
-            algo, predicted, target, reduction="none"
-        )
+        loss = DistributionalPPO._quantile_huber_loss(algo, predicted, target, reduction="none")
 
         # Should produce valid finite loss
-        assert torch.isfinite(loss).all(), \
-            f"Loss should be finite for τ=0.0 (fix={use_fix})"
+        assert torch.isfinite(loss).all(), f"Loss should be finite for τ=0.0 (fix={use_fix})"
 
     # Test with τ = 1.0 (extreme aggressive)
     for use_fix in [False, True]:
@@ -331,13 +338,10 @@ def test_quantile_loss_edge_cases_with_flag():
 
         algo.policy = _PolicyStub()
 
-        loss = DistributionalPPO._quantile_huber_loss(
-            algo, predicted, target, reduction="none"
-        )
+        loss = DistributionalPPO._quantile_huber_loss(algo, predicted, target, reduction="none")
 
         # Should produce valid finite loss
-        assert torch.isfinite(loss).all(), \
-            f"Loss should be finite for τ=1.0 (fix={use_fix})"
+        assert torch.isfinite(loss).all(), f"Loss should be finite for τ=1.0 (fix={use_fix})"
 
 
 def test_quantile_loss_gradients_with_flag():
@@ -361,9 +365,7 @@ def test_quantile_loss_gradients_with_flag():
 
         algo.policy = _PolicyStub()
 
-        predicted = torch.tensor(
-            [[0.0, 0.0], [0.0, 0.0]], dtype=torch.float32, requires_grad=True
-        )
+        predicted = torch.tensor([[0.0, 0.0], [0.0, 0.0]], dtype=torch.float32, requires_grad=True)
         targets = torch.tensor([0.0, 1.0], dtype=torch.float32).reshape(-1, 1)
 
         loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)
@@ -371,15 +373,14 @@ def test_quantile_loss_gradients_with_flag():
 
         # Check gradients exist and are finite
         assert predicted.grad is not None, f"Gradients should exist (fix={use_fix})"
-        assert torch.isfinite(predicted.grad).all(), \
-            f"Gradients should be finite (fix={use_fix})"
+        assert torch.isfinite(predicted.grad).all(), f"Gradients should be finite (fix={use_fix})"
 
         # First sample should have near-zero gradients (already at target)
         # Second sample should have non-zero gradients (far from target)
         grad_first = predicted.grad[0].abs().max().item()
         grad_second = predicted.grad[1].abs().max().item()
 
-        assert math.isclose(grad_first, 0.0, abs_tol=1e-6), \
-            f"First sample gradients should be near zero (fix={use_fix})"
-        assert grad_second > 0.1, \
-            f"Second sample gradients should be substantial (fix={use_fix})"
+        assert math.isclose(
+            grad_first, 0.0, abs_tol=1e-6
+        ), f"First sample gradients should be near zero (fix={use_fix})"
+        assert grad_second > 0.1, f"Second sample gradients should be substantial (fix={use_fix})"

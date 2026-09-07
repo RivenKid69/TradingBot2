@@ -40,6 +40,7 @@ from services.algo_integration.otr_monitor import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Default configuration for testing."""
@@ -75,6 +76,7 @@ def mock_kill_switch_callback():
 # =============================================================================
 # Test OTRMetrics
 # =============================================================================
+
 
 class TestOTRMetrics:
     """Tests for OTRMetrics data class."""
@@ -112,6 +114,7 @@ class TestOTRMetrics:
 # =============================================================================
 # Test OTRBreachEvent
 # =============================================================================
+
 
 class TestOTRBreachEvent:
     """Tests for OTRBreachEvent data class."""
@@ -151,6 +154,7 @@ class TestOTRBreachEvent:
 # Test PerVenueOTR
 # =============================================================================
 
+
 class TestPerVenueOTR:
     """Tests for per-venue OTR tracking."""
 
@@ -180,6 +184,7 @@ class TestPerVenueOTR:
 # Test OTRMonitor Initialization
 # =============================================================================
 
+
 class TestMonitorInitialization:
     """Tests for monitor initialization."""
 
@@ -199,6 +204,7 @@ class TestMonitorInitialization:
 # =============================================================================
 # Test Order Recording
 # =============================================================================
+
 
 class TestOrderRecording:
     """Tests for recording order events."""
@@ -251,6 +257,7 @@ class TestOrderRecording:
 # Test OTR Calculation
 # =============================================================================
 
+
 class TestOTRCalculation:
     """Tests for OTR calculation."""
 
@@ -288,6 +295,7 @@ class TestOTRCalculation:
 # =============================================================================
 # Test Per-Venue Tracking
 # =============================================================================
+
 
 class TestPerVenueTracking:
     """Tests for per-venue OTR tracking."""
@@ -332,6 +340,7 @@ class TestPerVenueTracking:
 # Test Per-Algorithm Tracking
 # =============================================================================
 
+
 class TestPerAlgorithmTracking:
     """Tests for per-algorithm OTR tracking."""
 
@@ -362,6 +371,7 @@ class TestPerAlgorithmTracking:
 # =============================================================================
 # Test Threshold Breaches
 # =============================================================================
+
 
 class TestThresholdBreaches:
     """Tests for threshold breach detection."""
@@ -419,6 +429,7 @@ class TestThresholdBreaches:
 # Test Trading Permission Checks
 # =============================================================================
 
+
 class TestTradingPermissions:
     """Tests for trading permission checks."""
 
@@ -463,6 +474,7 @@ class TestTradingPermissions:
 # Test Throttling
 # =============================================================================
 
+
 class TestThrottling:
     """Tests for throttling behavior."""
 
@@ -493,6 +505,7 @@ class TestThrottling:
 # =============================================================================
 # Test Cancellation Rate
 # =============================================================================
+
 
 class TestCancellationRate:
     """Tests for cancellation rate monitoring."""
@@ -528,6 +541,7 @@ class TestCancellationRate:
 # Test Daily Reset
 # =============================================================================
 
+
 class TestDailyReset:
     """Tests for daily counter reset."""
 
@@ -558,6 +572,7 @@ class TestDailyReset:
 # =============================================================================
 # Test Breach Events
 # =============================================================================
+
 
 class TestBreachEvents:
     """Tests for breach event tracking."""
@@ -597,6 +612,7 @@ class TestBreachEvents:
 # Test Statistics and Reporting
 # =============================================================================
 
+
 class TestStatisticsAndReporting:
     """Tests for statistics and compliance reporting."""
 
@@ -631,6 +647,7 @@ class TestStatisticsAndReporting:
 # Test Factory Function
 # =============================================================================
 
+
 class TestFactoryFunction:
     """Tests for factory function."""
 
@@ -662,11 +679,13 @@ class TestFactoryFunction:
 # Test Thread Safety
 # =============================================================================
 
+
 class TestThreadSafety:
     """Tests for thread safety."""
 
     def test_concurrent_order_recording(self, monitor):
         """Test concurrent order recording."""
+
         def record_orders(n):
             for _ in range(100):
                 monitor.record_order()
@@ -684,6 +703,7 @@ class TestThreadSafety:
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases."""

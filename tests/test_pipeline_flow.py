@@ -28,7 +28,14 @@ class DummyGuards:
 
 
 def test_decision_flow():
-    bar = Bar(ts=0, symbol="BTC", open=Decimal("0"), high=Decimal("0"), low=Decimal("0"), close=Decimal("0"))
+    bar = Bar(
+        ts=0,
+        symbol="BTC",
+        open=Decimal("0"),
+        high=Decimal("0"),
+        low=Decimal("0"),
+        close=Decimal("0"),
+    )
     fp = DummyFP()
     policy = DummyPolicy()
     pol_res = policy_decide(fp, policy, bar)

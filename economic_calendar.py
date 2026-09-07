@@ -54,12 +54,14 @@ import pandas as pd
 # Optional dependencies
 try:
     import requests
+
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
 
 try:
     from bs4 import BeautifulSoup
+
     HAS_BS4 = True
 except ImportError:
     HAS_BS4 = False
@@ -74,47 +76,92 @@ logger = logging.getLogger(__name__)
 # High-impact event keywords by currency
 HIGH_IMPACT_KEYWORDS: Dict[str, List[str]] = {
     "USD": [
-        "Non-Farm Payrolls", "NFP", "FOMC", "Federal Reserve", "Fed Chair",
-        "CPI", "Core CPI", "GDP", "ISM Manufacturing", "ISM Services",
-        "Retail Sales", "Unemployment Rate", "Treasury", "Powell",
+        "Non-Farm Payrolls",
+        "NFP",
+        "FOMC",
+        "Federal Reserve",
+        "Fed Chair",
+        "CPI",
+        "Core CPI",
+        "GDP",
+        "ISM Manufacturing",
+        "ISM Services",
+        "Retail Sales",
+        "Unemployment Rate",
+        "Treasury",
+        "Powell",
     ],
     "EUR": [
-        "ECB", "European Central Bank", "Lagarde", "German CPI", "Eurozone GDP",
-        "German PMI", "Eurozone CPI", "German Ifo", "German ZEW",
+        "ECB",
+        "European Central Bank",
+        "Lagarde",
+        "German CPI",
+        "Eurozone GDP",
+        "German PMI",
+        "Eurozone CPI",
+        "German Ifo",
+        "German ZEW",
     ],
     "GBP": [
-        "BOE", "Bank of England", "Bailey", "UK CPI", "UK GDP",
-        "UK Employment", "UK Retail Sales", "UK PMI",
+        "BOE",
+        "Bank of England",
+        "Bailey",
+        "UK CPI",
+        "UK GDP",
+        "UK Employment",
+        "UK Retail Sales",
+        "UK PMI",
     ],
     "JPY": [
-        "BOJ", "Bank of Japan", "Ueda", "Japan CPI", "Tankan",
-        "Japan GDP", "Japan Trade Balance",
+        "BOJ",
+        "Bank of Japan",
+        "Ueda",
+        "Japan CPI",
+        "Tankan",
+        "Japan GDP",
+        "Japan Trade Balance",
     ],
     "AUD": [
-        "RBA", "Reserve Bank of Australia", "Australia Employment",
-        "Australia CPI", "Australia GDP", "Australia Retail Sales",
+        "RBA",
+        "Reserve Bank of Australia",
+        "Australia Employment",
+        "Australia CPI",
+        "Australia GDP",
+        "Australia Retail Sales",
     ],
     "CAD": [
-        "BOC", "Bank of Canada", "Canada Employment", "Canada CPI",
-        "Canada GDP", "Canada Retail Sales", "Ivey PMI",
+        "BOC",
+        "Bank of Canada",
+        "Canada Employment",
+        "Canada CPI",
+        "Canada GDP",
+        "Canada Retail Sales",
+        "Ivey PMI",
     ],
     "CHF": [
-        "SNB", "Swiss National Bank", "Switzerland CPI",
-        "Switzerland GDP", "KOF Leading Indicator",
+        "SNB",
+        "Swiss National Bank",
+        "Switzerland CPI",
+        "Switzerland GDP",
+        "KOF Leading Indicator",
     ],
     "NZD": [
-        "RBNZ", "Reserve Bank of New Zealand", "NZ GDP",
-        "NZ CPI", "NZ Employment", "NZ Trade Balance",
+        "RBNZ",
+        "Reserve Bank of New Zealand",
+        "NZ GDP",
+        "NZ CPI",
+        "NZ Employment",
+        "NZ Trade Balance",
     ],
 }
 
 # Central bank meeting schedule (approximate, update annually)
 CENTRAL_BANK_MEETINGS: Dict[str, int] = {
-    "FOMC": 8,      # 8 meetings per year
+    "FOMC": 8,  # 8 meetings per year
     "ECB": 8,
     "BOE": 8,
     "BOJ": 8,
-    "RBA": 11,      # Monthly except January
+    "RBA": 11,  # Monthly except January
     "BOC": 8,
     "SNB": 4,
     "RBNZ": 7,
@@ -134,8 +181,10 @@ DEFAULT_CACHE_DIR = "data/calendar_cache"
 # ENUMS
 # =============================================================================
 
+
 class ImpactLevel(Enum):
     """Economic event impact level."""
+
     NONE = 0
     LOW = 1
     MEDIUM = 2
@@ -144,6 +193,7 @@ class ImpactLevel(Enum):
 
 class CalendarSource(Enum):
     """Calendar data source."""
+
     OANDA_LABS = "oanda_labs"
     FOREXFACTORY = "forexfactory"
     INVESTING_COM = "investing_com"
@@ -153,6 +203,7 @@ class CalendarSource(Enum):
 # =============================================================================
 # DATA CLASSES
 # =============================================================================
+
 
 @dataclass
 class EconomicEvent:
@@ -170,6 +221,7 @@ class EconomicEvent:
         previous: Previous value
         source: Data source
     """
+
     event_id: str
     datetime_utc: datetime
     currency: str
@@ -230,6 +282,7 @@ class EconomicEvent:
 @dataclass
 class CalendarConfig:
     """Configuration for calendar data fetching."""
+
     source: CalendarSource = CalendarSource.CACHED
     cache_dir: str = DEFAULT_CACHE_DIR
     cache_ttl_hours: float = 24.0
@@ -242,6 +295,7 @@ class CalendarConfig:
 # =============================================================================
 # BASE CALENDAR PROVIDER
 # =============================================================================
+
 
 class CalendarProvider(ABC):
     """Abstract base class for calendar data providers."""
@@ -288,6 +342,7 @@ class CalendarProvider(ABC):
 # =============================================================================
 # CACHED CALENDAR PROVIDER
 # =============================================================================
+
 
 class CachedCalendarProvider(CalendarProvider):
     """
@@ -369,8 +424,7 @@ class CachedCalendarProvider(CalendarProvider):
                 current = current.replace(month=current.month + 1)
 
         # Filter by date range
-        events = [e for e in all_events
-                  if start_date <= e.datetime_utc <= end_date]
+        events = [e for e in all_events if start_date <= e.datetime_utc <= end_date]
 
         # Filter by currency
         if currencies:
@@ -397,6 +451,7 @@ class CachedCalendarProvider(CalendarProvider):
 # =============================================================================
 # OANDA LABS CALENDAR PROVIDER
 # =============================================================================
+
 
 class OandaCalendarProvider(CalendarProvider):
     """
@@ -449,14 +504,14 @@ class OandaCalendarProvider(CalendarProvider):
                     return response.json()
                 elif response.status_code == 429:
                     # Rate limited
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                 else:
                     logger.warning(f"OANDA API error: {response.status_code}")
                     return None
 
             except requests.RequestException as e:
                 logger.warning(f"OANDA request failed (attempt {attempt + 1}): {e}")
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
         return None
 
@@ -537,6 +592,7 @@ class OandaCalendarProvider(CalendarProvider):
 # FOREXFACTORY CALENDAR PROVIDER (Scraping)
 # =============================================================================
 
+
 class ForexFactoryProvider(CalendarProvider):
     """
     Calendar provider using ForexFactory web scraping.
@@ -554,9 +610,11 @@ class ForexFactoryProvider(CalendarProvider):
 
         self.config = config or CalendarConfig()
         self._session = requests.Session()
-        self._session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        })
+        self._session.headers.update(
+            {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            }
+        )
 
     def get_events(
         self,
@@ -585,8 +643,7 @@ class ForexFactoryProvider(CalendarProvider):
             events = [e for e in events if e.currency.upper() in currencies_upper]
 
         # Filter by date range (exact)
-        events = [e for e in events
-                  if start_date <= e.datetime_utc <= end_date]
+        events = [e for e in events if start_date <= e.datetime_utc <= end_date]
 
         # Filter by impact
         if self.config.high_impact_only:
@@ -627,6 +684,7 @@ class ForexFactoryProvider(CalendarProvider):
 # =============================================================================
 # ECONOMIC CALENDAR (Main Interface)
 # =============================================================================
+
 
 class EconomicCalendar:
     """
@@ -836,6 +894,7 @@ class EconomicCalendar:
 # UTILITY FUNCTIONS
 # =============================================================================
 
+
 def classify_event_impact(event_name: str, currency: str) -> ImpactLevel:
     """
     Classify event impact based on name and currency.
@@ -856,8 +915,13 @@ def classify_event_impact(event_name: str, currency: str) -> ImpactLevel:
 
     # Check for generic high-impact terms
     high_impact_generic = [
-        "CENTRAL BANK", "RATE DECISION", "INTEREST RATE",
-        "EMPLOYMENT", "INFLATION", "CPI", "GDP",
+        "CENTRAL BANK",
+        "RATE DECISION",
+        "INTEREST RATE",
+        "EMPLOYMENT",
+        "INFLATION",
+        "CPI",
+        "GDP",
     ]
     for keyword in high_impact_generic:
         if keyword in event_upper:

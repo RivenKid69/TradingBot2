@@ -30,6 +30,7 @@ errors = []
 
 try:
     import numpy as np
+
     print("✓ numpy imported")
 except ImportError as e:
     print(f"✗ numpy FAILED: {e}")
@@ -37,6 +38,7 @@ except ImportError as e:
 
 try:
     import pandas as pd
+
     print("✓ pandas imported")
 except ImportError as e:
     print(f"✗ pandas FAILED: {e}")
@@ -44,6 +46,7 @@ except ImportError as e:
 
 try:
     from obs_builder import build_observation_vector
+
     print("✓ obs_builder.build_observation_vector imported")
     OBS_BUILDER_AVAILABLE = True
 except ImportError as e:
@@ -54,6 +57,7 @@ except ImportError as e:
 
 try:
     import lob_state_cython as lob
+
     N_FEATURES = lob.N_FEATURES
     print(f"✓ lob_state_cython imported, N_FEATURES = {N_FEATURES}")
 except ImportError as e:
@@ -63,6 +67,7 @@ except ImportError as e:
 
 try:
     from mediator import Mediator
+
     print("✓ mediator.Mediator imported")
 except ImportError as e:
     print(f"✗ mediator FAILED: {e}")
@@ -119,33 +124,40 @@ print("STEP 4: Testing observation building with synthetic data...")
 print("-" * 80)
 
 # Create synthetic dataframe with technical indicators
-df = pd.DataFrame({
-    'timestamp': [1700000000 + i * 14400 for i in range(200)],  # Changed from 3600 (1h) to 14400 (4h)
-    'open': [50000 + i * 10 for i in range(200)],
-    'high': [50100 + i * 10 for i in range(200)],
-    'low': [49900 + i * 10 for i in range(200)],
-    'close': [50000 + i * 10 for i in range(200)],
-    'volume': [100 + i for i in range(200)],
-    'quote_asset_volume': [5000000 + i * 1000 for i in range(200)],
+df = pd.DataFrame(
+    {
+        "timestamp": [
+            1700000000 + i * 14400 for i in range(200)
+        ],  # Changed from 3600 (1h) to 14400 (4h)
+        "open": [50000 + i * 10 for i in range(200)],
+        "high": [50100 + i * 10 for i in range(200)],
+        "low": [49900 + i * 10 for i in range(200)],
+        "close": [50000 + i * 10 for i in range(200)],
+        "volume": [100 + i for i in range(200)],
+        "quote_asset_volume": [5000000 + i * 1000 for i in range(200)],
+        # Technical indicators (from prepare_and_run.py)
+        "sma_5": [50000 + i * 10 for i in range(200)],
+        "sma_15": [50000 + i * 9 for i in range(200)],
+        "rsi": [50 + (i % 20) for i in range(200)],
+        "cvd_24h": [(i % 10) / 10.0 for i in range(200)],
+        "cvd_168h": [(i % 20) / 20.0 for i in range(200)],
+        "yang_zhang_24h": [0.01 + (i % 5) * 0.001 for i in range(200)],
+        "yang_zhang_168h": [0.015 + (i % 7) * 0.001 for i in range(200)],
+        "garch_12h": [0.02 + (i % 3) * 0.002 for i in range(200)],
+        "garch_24h": [0.025 + (i % 4) * 0.002 for i in range(200)],
+        "ret_4h": [(i % 15) * 0.0001 for i in range(200)],  # Changed from ret_15m (migration to 4h)
+        "ret_24h": [
+            (i % 25) * 0.0002 for i in range(200)
+        ],  # Changed from ret_60m (migration to 4h)
+        "fear_greed_value": [50 + (i % 30) for i in range(200)],
+    }
+)
 
-    # Technical indicators (from prepare_and_run.py)
-    'sma_5': [50000 + i * 10 for i in range(200)],
-    'sma_15': [50000 + i * 9 for i in range(200)],
-    'rsi': [50 + (i % 20) for i in range(200)],
-    'cvd_24h': [(i % 10) / 10.0 for i in range(200)],
-    'cvd_168h': [(i % 20) / 20.0 for i in range(200)],
-    'yang_zhang_24h': [0.01 + (i % 5) * 0.001 for i in range(200)],
-    'yang_zhang_168h': [0.015 + (i % 7) * 0.001 for i in range(200)],
-    'garch_12h': [0.02 + (i % 3) * 0.002 for i in range(200)],
-    'garch_24h': [0.025 + (i % 4) * 0.002 for i in range(200)],
-    'ret_4h': [(i % 15) * 0.0001 for i in range(200)],  # Changed from ret_15m (migration to 4h)
-    'ret_24h': [(i % 25) * 0.0002 for i in range(200)],  # Changed from ret_60m (migration to 4h)
-    'fear_greed_value': [50 + (i % 30) for i in range(200)],
-})
 
 # Mock environment
 class MockObsSpace:
     shape = (EXPECTED_OBS_SIZE,)
+
 
 class MockEnv:
     observation_space = MockObsSpace()
@@ -153,9 +165,10 @@ class MockEnv:
     _last_reward_price = 50000.0
 
     def _resolve_reward_price(self, idx, row):
-        if row is not None and hasattr(row, 'close'):
+        if row is not None and hasattr(row, "close"):
             return float(row.close)
         return 50000.0
+
 
 class MockState:
     units = 0.5
@@ -166,6 +179,7 @@ class MockState:
     last_realized_spread = 0.001
     last_agent_fill_ratio = 0.95
     token_index = 0
+
 
 # Create mediator and build observation
 env = MockEnv()
@@ -217,6 +231,7 @@ try:
 except Exception as e:
     print(f"✗ ERROR building observation: {e}")
     import traceback
+
     traceback.print_exc()
 
 print()
@@ -229,7 +244,7 @@ print("-" * 80)
 
 data_dir = "data/processed"
 if os.path.exists(data_dir):
-    feather_files = [f for f in os.listdir(data_dir) if f.endswith('.feather')]
+    feather_files = [f for f in os.listdir(data_dir) if f.endswith(".feather")]
     if feather_files:
         print(f"Found {len(feather_files)} feather files in {data_dir}")
         print(f"Example: {feather_files[0]}")
@@ -243,8 +258,17 @@ if os.path.exists(data_dir):
             print(f"  Total columns: {len(df_real.columns)}")
 
             # Check for technical indicators
-            indicators = ['sma_5', 'sma_15', 'rsi', 'cvd_24h', 'cvd_168h',
-                         'yang_zhang_24h', 'yang_zhang_168h', 'garch_12h', 'garch_24h']
+            indicators = [
+                "sma_5",
+                "sma_15",
+                "rsi",
+                "cvd_24h",
+                "cvd_168h",
+                "yang_zhang_24h",
+                "yang_zhang_168h",
+                "garch_12h",
+                "garch_24h",
+            ]
 
             present = [ind for ind in indicators if ind in df_real.columns]
             missing = [ind for ind in indicators if ind not in df_real.columns]
@@ -280,7 +304,7 @@ if not OBS_BUILDER_AVAILABLE:
 if not _HAVE_OBS_BUILDER:
     issues.append("Mediator cannot import obs_builder - falling back to legacy")
 
-if 'obs' in locals():
+if "obs" in locals():
     if obs.shape[0] != EXPECTED_OBS_SIZE:
         issues.append(f"Wrong observation size: {obs.shape[0]} vs {EXPECTED_OBS_SIZE}")
 

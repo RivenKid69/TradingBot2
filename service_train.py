@@ -40,22 +40,20 @@ class Trainer(Protocol):
         X: pd.DataFrame,
         y: Optional[pd.Series] = None,
         sample_weight: Optional[pd.Series] = None,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
-    def save(self, path: str) -> str:
-        ...
+    def save(self, path: str) -> str: ...
 
 
 @dataclass
 class TrainConfig:
-    input_path: str                       # путь к исходным данным (csv/parquet)
-    input_format: str = "parquet"         # "parquet" | "csv"
-    artifacts_dir: str = "artifacts"      # куда складывать датасеты и модель
-    dataset_name: str = "train_dataset"   # базовое имя файлов датасета
-    model_name: str = "model"             # базовое имя сохранённой модели
+    input_path: str  # путь к исходным данным (csv/parquet)
+    input_format: str = "parquet"  # "parquet" | "csv"
+    artifacts_dir: str = "artifacts"  # куда складывать датасеты и модель
+    dataset_name: str = "train_dataset"  # базовое имя файлов датасета
+    model_name: str = "model"  # базовое имя сохранённой модели
     columns_keep: Optional[Sequence[str]] = None  # если нужно отфильтровать
-    snapshot_config_path: Optional[str] = None    # путь к YAML конфигу запуска
+    snapshot_config_path: Optional[str] = None  # путь к YAML конфигу запуска
 
 
 class ServiceTrain:
@@ -63,6 +61,7 @@ class ServiceTrain:
     Подготавливает датасет и обучает переданный Trainer.
     Никакой бизнес-логики обучения внутри; только пайплайн.
     """
+
     def __init__(self, feature_pipe: FeaturePipe, trainer: Trainer, cfg: TrainConfig):
         self.fp = feature_pipe
         self.trainer = trainer
@@ -126,11 +125,9 @@ class ServiceTrain:
             non_nan_count = X[col].notna().sum()
             fill_percentage = (non_nan_count / total_samples * 100) if total_samples > 0 else 0
 
-            features_stats.append({
-                'feature': col,
-                'non_nan_count': non_nan_count,
-                'fill_percentage': fill_percentage
-            })
+            features_stats.append(
+                {"feature": col, "non_nan_count": non_nan_count, "fill_percentage": fill_percentage}
+            )
 
             if fill_percentage == 100.0:
                 fully_filled += 1
@@ -140,13 +137,19 @@ class ServiceTrain:
                 empty_features += 1
 
         # Сортировка по проценту заполненности (по убыванию)
-        features_stats.sort(key=lambda x: x['fill_percentage'], reverse=True)
+        features_stats.sort(key=lambda x: x["fill_percentage"], reverse=True)
 
         # Сводная статистика
         logger.info("СВОДКА:")
-        logger.info(f"  Признаков с 100% реальными данными: {fully_filled} ({fully_filled/total_features*100:.1f}%)")
-        logger.info(f"  Признаков с частичными данными: {partially_filled} ({partially_filled/total_features*100:.1f}%)")
-        logger.info(f"  Признаков без данных (только NaN): {empty_features} ({empty_features/total_features*100:.1f}%)")
+        logger.info(
+            f"  Признаков с 100% реальными данными: {fully_filled} ({fully_filled/total_features*100:.1f}%)"
+        )
+        logger.info(
+            f"  Признаков с частичными данными: {partially_filled} ({partially_filled/total_features*100:.1f}%)"
+        )
+        logger.info(
+            f"  Признаков без данных (только NaN): {empty_features} ({empty_features/total_features*100:.1f}%)"
+        )
         logger.info("-" * 80)
 
         # Детальная информация по каждому признаку
@@ -245,9 +248,7 @@ class ServiceTrain:
 
                 # Финальная проверка согласованности
                 if len(X) != len(y):
-                    logger.error(
-                        f"Shape mismatch after NaN filtering: X={len(X)}, y={len(y)}"
-                    )
+                    logger.error(f"Shape mismatch after NaN filtering: X={len(X)}, y={len(y)}")
                     raise ValueError(
                         f"X and y have different lengths after filtering: {len(X)} != {len(y)}"
                     )
@@ -259,7 +260,6 @@ class ServiceTrain:
         # Логирование информации о признаках перед обучением
         self._log_feature_statistics(X)
 
-        
         # FIX (2025-11-21): Filter rows with NaN in features
         # Neural networks cannot handle NaN inputs and will crash or produce NaN gradients
         # We apply conservative row-wise filtering: remove ANY row with NaN in features
@@ -306,9 +306,7 @@ class ServiceTrain:
 
                 # Verify alignment and ensure no NaNs remain
                 if y is not None and len(X) != len(y):
-                    logger.error(
-                        f"Shape mismatch after NaN handling: X={len(X)}, y={len(y)}"
-                    )
+                    logger.error(f"Shape mismatch after NaN handling: X={len(X)}, y={len(y)}")
                     raise ValueError(
                         f"X and y have different lengths after NaN handling: {len(X)} != {len(y)}"
                     )
@@ -322,13 +320,10 @@ class ServiceTrain:
                     if y is not None:
                         y = y[valid_rows_mask].reset_index(drop=True)
 
-            logger.info(
-                f"Retained {len(X)} valid samples for training after feature NaN handling."
-            )
+            logger.info(f"Retained {len(X)} valid samples for training after feature NaN handling.")
         else:
             logger.info("No NaN values found in features - all samples are valid.")
 
-        
         ts = int(time.time())
         ds_base = os.path.join(self.cfg.artifacts_dir, f"{self.cfg.dataset_name}_{ts}")
         X_path = ds_base + "_X.parquet"
@@ -338,9 +333,7 @@ class ServiceTrain:
             pd.DataFrame({"y": y}).to_parquet(y_path, index=False)
 
         if len(X) == 0:
-            logger.error(
-                "No valid samples remaining after preprocessing; skipping training run."
-            )
+            logger.error("No valid samples remaining after preprocessing; skipping training run.")
             return {
                 "dataset_X": X_path,
                 "dataset_y": (y_path if y is not None else None),
@@ -367,7 +360,9 @@ class ServiceTrain:
         }
 
 
-def from_config(cfg: CommonRunConfig, *, trainer: Trainer, train_cfg: TrainConfig) -> Dict[str, Any]:
+def from_config(
+    cfg: CommonRunConfig, *, trainer: Trainer, train_cfg: TrainConfig
+) -> Dict[str, Any]:
     """Build dependencies from ``cfg`` and run :class:`ServiceTrain`.
 
     Parameters
@@ -393,15 +388,39 @@ if __name__ == "__main__":
     import glob
     from core_config import load_config
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
 
     parser = argparse.ArgumentParser(description="Offline ML Training Service CLI")
-    parser.add_argument("--config", default="configs/config_train.yaml", help="Path to YAML run configuration")
-    parser.add_argument("--input-path", "--input_path", default=None, help="Path to input data (CSV/Parquet)")
-    parser.add_argument("--input-format", "--input_format", default=None, choices=["parquet", "csv"], help="Format of input data")
-    parser.add_argument("--artifacts-dir", "--artifacts_dir", default=None, help="Directory to save training artifacts")
-    parser.add_argument("--dataset-name", "--dataset_name", default="train_dataset", help="Base name for the dataset files")
-    parser.add_argument("--model-name", "--model_name", default="model", help="Base name for the saved model")
+    parser.add_argument(
+        "--config", default="configs/config_train.yaml", help="Path to YAML run configuration"
+    )
+    parser.add_argument(
+        "--input-path", "--input_path", default=None, help="Path to input data (CSV/Parquet)"
+    )
+    parser.add_argument(
+        "--input-format",
+        "--input_format",
+        default=None,
+        choices=["parquet", "csv"],
+        help="Format of input data",
+    )
+    parser.add_argument(
+        "--artifacts-dir",
+        "--artifacts_dir",
+        default=None,
+        help="Directory to save training artifacts",
+    )
+    parser.add_argument(
+        "--dataset-name",
+        "--dataset_name",
+        default="train_dataset",
+        help="Base name for the dataset files",
+    )
+    parser.add_argument(
+        "--model-name", "--model_name", default="model", help="Base name for the saved model"
+    )
     parser.add_argument("--trainer", default=None, help="Dotted path (module:Class) of the trainer")
 
     args = parser.parse_args()
@@ -417,6 +436,7 @@ if __name__ == "__main__":
     if args.trainer:
         try:
             from di_registry import _load_class
+
             trainer_cls = _load_class(args.trainer)
             trainer = trainer_cls()
             logger.info(f"Loaded custom trainer class: {args.trainer}")
@@ -435,8 +455,11 @@ if __name__ == "__main__":
             # Fallback dummy trainer if no valid trainer is configured or if strategy doesn't support learning
             class FallbackDummyTrainer:
                 def fit(self, X, y=None, sample_weight=None):
-                    logger.info("FallbackDummyTrainer.fit() called (strategy does not support learning).")
+                    logger.info(
+                        "FallbackDummyTrainer.fit() called (strategy does not support learning)."
+                    )
                     return self
+
                 def save(self, path):
                     logger.info(f"FallbackDummyTrainer.save() saving mock model to: {path}")
                     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -506,10 +529,11 @@ if __name__ == "__main__":
         artifacts_dir=artifacts_dir,
         dataset_name=args.dataset_name,
         model_name=args.model_name,
-        snapshot_config_path=args.config
+        snapshot_config_path=args.config,
     )
 
-    logger.info(f"Starting ServiceTrain with input_path={input_path}, format={input_format}, artifacts_dir={artifacts_dir}")
+    logger.info(
+        f"Starting ServiceTrain with input_path={input_path}, format={input_format}, artifacts_dir={artifacts_dir}"
+    )
     results = from_config(cfg, trainer=trainer, train_cfg=train_cfg)
     print(f"Training completed successfully. Results: {results}")
-

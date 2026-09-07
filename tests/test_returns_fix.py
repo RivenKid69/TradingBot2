@@ -18,7 +18,7 @@ def test_all_returns():
     spec = FeatureSpec(
         lookbacks_prices=[240, 720, 1440, 12000],  # 4h, 12h, 24h, 200h в минутах
         bar_duration_minutes=240,
-        rsi_period=14
+        rsi_period=14,
     )
 
     print("=" * 80)
@@ -53,7 +53,7 @@ def test_all_returns():
             volume=1000.0,
             open_price=price - 50,
             high=price + 50,
-            low=price - 50
+            low=price - 50,
         )
         all_feats.append(feats)
 
@@ -65,10 +65,10 @@ def test_all_returns():
 
     # Проверяем каждый return
     expected_returns = {
-        "ret_4h": (prices[-1], prices[-2]),    # 1 бар назад
-        "ret_12h": (prices[-1], prices[-4]),   # 3 бара назад
-        "ret_24h": (prices[-1], prices[-7]),   # 6 баров назад
-        "ret_200h": (prices[-1], prices[-51]), # 50 баров назад
+        "ret_4h": (prices[-1], prices[-2]),  # 1 бар назад
+        "ret_12h": (prices[-1], prices[-4]),  # 3 бара назад
+        "ret_24h": (prices[-1], prices[-7]),  # 6 баров назад
+        "ret_200h": (prices[-1], prices[-51]),  # 50 баров назад
     }
 
     all_passed = True
@@ -155,5 +155,6 @@ def test_all_returns():
 
 if __name__ == "__main__":
     import sys
+
     success = test_all_returns()
     sys.exit(0 if success else 1)

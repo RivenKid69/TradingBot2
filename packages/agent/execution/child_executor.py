@@ -43,11 +43,11 @@ BrokerCancelFn = Callable[[str, Optional[str]], bool]
 
 
 class ChildState:
-    PENDING = "pending"      # scheduled, not yet released
-    WORKING = "working"      # released to engine/broker, awaiting fills
+    PENDING = "pending"  # scheduled, not yet released
+    WORKING = "working"  # released to engine/broker, awaiting fills
     FILLED = "filled"
     CANCELLED = "cancelled"
-    REPLACED = "replaced"    # cancelled and rolled into a replacement child
+    REPLACED = "replaced"  # cancelled and rolled into a replacement child
     REJECTED = "rejected"
 
 
@@ -56,7 +56,7 @@ class ChildOrder:
     child_id: str
     parent_id: str
     qty: Decimal
-    release_at: float                       # scheduled release timestamp (epoch s)
+    release_at: float  # scheduled release timestamp (epoch s)
     slice_index: int
     status: str = ChildState.PENDING
     client_order_id: Optional[str] = None
@@ -64,11 +64,16 @@ class ChildOrder:
     filled_qty: Decimal = Decimal("0")
     avg_fill_price: Optional[Decimal] = None
     released_at: Optional[float] = None
-    replaces: int = 0                       # how many times this lineage was replaced
+    replaces: int = 0  # how many times this lineage was replaced
 
     @property
     def is_terminal(self) -> bool:
-        return self.status in (ChildState.FILLED, ChildState.CANCELLED, ChildState.REJECTED, ChildState.REPLACED)
+        return self.status in (
+            ChildState.FILLED,
+            ChildState.CANCELLED,
+            ChildState.REJECTED,
+            ChildState.REPLACED,
+        )
 
     @property
     def leaves(self) -> Decimal:
@@ -97,7 +102,7 @@ class ChildOrder:
 class ParentOrder:
     parent_id: str
     symbol: str
-    side: str                               # "buy" | "sell"
+    side: str  # "buy" | "sell"
     total_qty: Decimal
     strategy_id: str
     limit_price: Optional[Decimal] = None
@@ -163,7 +168,7 @@ class ClockDrivenChildExecutor:
         self,
         engine: LiveExecutionEngine,
         *,
-        prices_provider: Any = None,          # .get_prices() -> {symbol: price}
+        prices_provider: Any = None,  # .get_prices() -> {symbol: price}
         broker_cancel: Optional[BrokerCancelFn] = None,
         strategy_id: str = "xs_cross_sectional",
         slice_interval_s: float = 30.0,
@@ -206,8 +211,13 @@ class ClockDrivenChildExecutor:
             raise ValueError(f"side must be buy/sell, got {side!r}")
         pid = parent_id or f"parent_{uuid4().hex[:12]}"
         parent = ParentOrder(
-            parent_id=pid, symbol=symbol, side=side, total_qty=total_qty,
-            strategy_id=self._strategy_id, limit_price=limit_price, created_at=float(start_ts),
+            parent_id=pid,
+            symbol=symbol,
+            side=side,
+            total_qty=total_qty,
+            strategy_id=self._strategy_id,
+            limit_price=limit_price,
+            created_at=float(start_ts),
         )
         if total_qty > 0:
             interval = float(interval_s) if interval_s is not None else self._slice_interval_s
@@ -219,10 +229,15 @@ class ClockDrivenChildExecutor:
             for i, q in enumerate(qtys):
                 if q <= 0:
                     continue
-                parent.children.append(ChildOrder(
-                    child_id=f"{pid}_c{i}", parent_id=pid, qty=q,
-                    release_at=float(start_ts) + i * interval, slice_index=i,
-                ))
+                parent.children.append(
+                    ChildOrder(
+                        child_id=f"{pid}_c{i}",
+                        parent_id=pid,
+                        qty=q,
+                        release_at=float(start_ts) + i * interval,
+                        slice_index=i,
+                    )
+                )
         self._parents[pid] = parent
         return parent
 
@@ -265,8 +280,10 @@ class ClockDrivenChildExecutor:
                 if child.replaces + 1 <= self._max_replaces and leaves > self._min_child_qty:
                     repl = ChildOrder(
                         child_id=f"{child.child_id}_r{child.replaces + 1}",
-                        parent_id=parent.parent_id, qty=leaves,
-                        release_at=now_ts, slice_index=child.slice_index,
+                        parent_id=parent.parent_id,
+                        qty=leaves,
+                        release_at=now_ts,
+                        slice_index=child.slice_index,
                         replaces=child.replaces + 1,
                     )
                     parent.children.append(repl)
@@ -350,7 +367,9 @@ class ClockDrivenChildExecutor:
             return False
 
     # ------------------------------------------------------------------
-    def on_child_fill(self, client_order_id: str, cum_filled: Decimal, avg_price: Optional[Decimal]) -> None:
+    def on_child_fill(
+        self, client_order_id: str, cum_filled: Decimal, avg_price: Optional[Decimal]
+    ) -> None:
         """Wire this as FillHandler(on_child_fill=...). Updates child + parent rollup."""
         child = self._child_by_coid.get(client_order_id)
         if child is None:

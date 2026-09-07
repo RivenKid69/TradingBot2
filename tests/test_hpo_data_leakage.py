@@ -22,6 +22,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 import pytest
+
 pytest.importorskip("torch")
 
 
@@ -83,16 +84,17 @@ def _install_distributional_ppo_stub() -> None:
 
     class _DistributionalPPOStub:
         """Stub for DistributionalPPO class."""
+
         def __init__(self, *args, **kwargs):
             # Preserve existing logger if already set (e.g., from test setup)
-            if not hasattr(self, 'logger') or self.logger is None:
+            if not hasattr(self, "logger") or self.logger is None:
                 self.logger = None
-            if not hasattr(self, '_logger'):
+            if not hasattr(self, "_logger"):
                 self._logger = self.logger
             self.num_timesteps = 0
 
             # Handle PopArt value_scale_controller config (for test_popart_integration.py tests)
-            value_scale_controller = kwargs.get('value_scale_controller')
+            value_scale_controller = kwargs.get("value_scale_controller")
             if value_scale_controller is not None:
                 # Store pending config and call _setup_model to trigger logging
                 self._popart_cfg_pending = value_scale_controller
@@ -110,12 +112,15 @@ def _install_distributional_ppo_stub() -> None:
         def load(cls, *args, **kwargs):
             """Load stub that sets up logger and PopArt config for tests."""
             instance = cls.__new__(cls)
+
             # Set up a simple logger that captures records
             class _SimpleLogger:
                 def __init__(self):
                     self.records = {}
+
                 def record(self, key, value, **_):
                     self.records[key] = value
+
             instance.logger = _SimpleLogger()
             instance._logger = instance.logger
             instance.num_timesteps = 0
@@ -134,6 +139,7 @@ def _install_distributional_ppo_stub() -> None:
         def _value_target_outlier_fractions(values, v_min, v_max):
             """Stub method for outlier fraction detection."""
             import numpy as np
+
             values_np = np.asarray(values)
             below = float(np.mean(values_np < v_min))
             above = float(np.mean(values_np > v_max))
@@ -141,17 +147,17 @@ def _install_distributional_ppo_stub() -> None:
 
         def _ensure_volume_head_config(self):
             """Stub method for volume head config verification."""
-            policy = getattr(self, 'policy', None)
+            policy = getattr(self, "policy", None)
             if policy is None:
                 return
-            head_sizes = getattr(policy, '_multi_head_sizes', None)
-            volume_idx = getattr(policy, '_volume_head_index', None)
-            action_space = getattr(self, 'action_space', None)
+            head_sizes = getattr(policy, "_multi_head_sizes", None)
+            volume_idx = getattr(policy, "_volume_head_index", None)
+            action_space = getattr(self, "action_space", None)
             if head_sizes is None or volume_idx is None or action_space is None:
                 return
             if volume_idx >= len(head_sizes):
                 return
-            expected = action_space.nvec[volume_idx] if hasattr(action_space, 'nvec') else 4
+            expected = action_space.nvec[volume_idx] if hasattr(action_space, "nvec") else 4
             actual = head_sizes[volume_idx]
             if actual != expected:
                 raise RuntimeError(f"expected {expected} bins, got {actual}")
@@ -175,12 +181,14 @@ def _install_distributional_ppo_stub() -> None:
         def _initialise_popart_controller(self, cfg):
             """Stub method for PopArt controller initialization."""
             # Log the PopArt configuration as disabled (no real holdout replay)
-            logger = getattr(self, 'logger', None)
+            logger = getattr(self, "logger", None)
             if logger is not None:
                 # Mark PopArt as disabled since holdout replay isn't available
                 try:
                     logger.record("config/popart/enabled", 0.0)
-                    logger.record("config/popart/requested_enabled", 1.0 if cfg.get("enabled") else 0.0)
+                    logger.record(
+                        "config/popart/requested_enabled", 1.0 if cfg.get("enabled") else 0.0
+                    )
                     logger.record("config/popart/replay_path", "")
                     logger.record("config/popart/replay_seed", 0.0)
                     logger.record("config/popart/replay_batch_size", 0.0)
@@ -191,34 +199,38 @@ def _install_distributional_ppo_stub() -> None:
 
         def _setup_model(self):
             """Stub method for model setup (used by PopArt tests)."""
-            pending_cfg = getattr(self, '_popart_cfg_pending', {}) or {}
-            if pending_cfg or not getattr(self, '_popart_disabled_logged', False):
+            pending_cfg = getattr(self, "_popart_cfg_pending", {}) or {}
+            if pending_cfg or not getattr(self, "_popart_disabled_logged", False):
                 self._initialise_popart_controller(pending_cfg)
             self._popart_cfg_pending = {}
 
     def _safe_explained_variance_stub(y_true, y_pred, weights=None):
         """Stub for safe_explained_variance function."""
         import numpy as np
+
         y_true = np.asarray(y_true).flatten()
         y_pred = np.asarray(y_pred).flatten()
         if len(y_true) == 0:
-            return float('nan')
+            return float("nan")
         var_true = np.var(y_true)
         if var_true == 0:
-            return float('nan')
+            return float("nan")
         return 1.0 - np.var(y_true - y_pred) / var_true
 
     class _RecurrentPPOStub:
         """Stub for RecurrentPPO base class."""
+
         def __init__(self, *args, **kwargs):
             pass
 
     class _RawRecurrentRolloutBufferStub:
         """Stub for RawRecurrentRolloutBuffer class."""
+
         pass
 
     class _RawRecurrentRolloutBufferSamplesStub:
         """Stub for RawRecurrentRolloutBufferSamples class."""
+
         pass
 
     def _load_from_zip_file_stub(path, device="auto", custom_objects=None, print_system_info=False):
@@ -244,11 +256,13 @@ import train_model_multi_patch as train_module  # noqa: E402
 def mock_train_data():
     """Create mock training data."""
     return {
-        "BTCUSDT": pd.DataFrame({
-            "timestamp": range(100),
-            "close": np.random.randn(100) + 100,
-            "volume": np.random.randn(100) * 1000,
-        })
+        "BTCUSDT": pd.DataFrame(
+            {
+                "timestamp": range(100),
+                "close": np.random.randn(100) + 100,
+                "volume": np.random.randn(100) * 1000,
+            }
+        )
     }
 
 
@@ -256,11 +270,13 @@ def mock_train_data():
 def mock_val_data():
     """Create mock validation data."""
     return {
-        "BTCUSDT": pd.DataFrame({
-            "timestamp": range(100, 150),
-            "close": np.random.randn(50) + 100,
-            "volume": np.random.randn(50) * 1000,
-        })
+        "BTCUSDT": pd.DataFrame(
+            {
+                "timestamp": range(100, 150),
+                "close": np.random.randn(50) + 100,
+                "volume": np.random.randn(50) * 1000,
+            }
+        )
     }
 
 
@@ -268,20 +284,20 @@ def mock_val_data():
 def mock_test_data():
     """Create mock test data."""
     return {
-        "BTCUSDT": pd.DataFrame({
-            "timestamp": range(150, 200),
-            "close": np.random.randn(50) + 100,
-            "volume": np.random.randn(50) * 1000,
-        })
+        "BTCUSDT": pd.DataFrame(
+            {
+                "timestamp": range(150, 200),
+                "close": np.random.randn(50) + 100,
+                "volume": np.random.randn(50) * 1000,
+            }
+        )
     }
 
 
 @pytest.fixture
 def mock_obs_data():
     """Create mock observation data."""
-    return {
-        "BTCUSDT": np.random.randn(100, 10)
-    }
+    return {"BTCUSDT": np.random.randn(100, 10)}
 
 
 class TestHPODataLeakagePrevention:
@@ -352,12 +368,15 @@ class TestHPODataLeakagePrevention:
 
                 # Mock the training to avoid full execution
                 import distributional_ppo
-                with patch.object(distributional_ppo, 'DistributionalPPO') as mock_ppo, \
-                     patch.object(train_module, 'DummyVecEnv'), \
-                     patch.object(train_module, 'VecMonitor'), \
-                     patch.object(train_module, 'VecNormalize'), \
-                     patch.object(train_module, 'evaluate_policy_custom_cython'), \
-                     patch.object(train_module, 'sortino_ratio', return_value=0.5):
+
+                with (
+                    patch.object(distributional_ppo, "DistributionalPPO") as mock_ppo,
+                    patch.object(train_module, "DummyVecEnv"),
+                    patch.object(train_module, "VecMonitor"),
+                    patch.object(train_module, "VecNormalize"),
+                    patch.object(train_module, "evaluate_policy_custom_cython"),
+                    patch.object(train_module, "sortino_ratio", return_value=0.5),
+                ):
 
                     mock_ppo.return_value = MagicMock()
 
@@ -394,7 +413,9 @@ class TestHPODataLeakagePrevention:
             "Test data provided to HPO objective function but will NOT be used" in msg
             for msg in captured_warnings
         )
-        assert warning_found, f"Expected warning about test data not being used during HPO. Captured warnings: {captured_warnings}"
+        assert (
+            warning_found
+        ), f"Expected warning about test data not being used during HPO. Captured warnings: {captured_warnings}"
 
     def test_objective_uses_validation_data_not_test_data(
         self, mock_train_data, mock_val_data, mock_test_data, mock_obs_data
@@ -436,17 +457,22 @@ class TestHPODataLeakagePrevention:
             trials_dir = Path(tmpdir)
 
             import distributional_ppo
-            with patch.object(train_module, 'TradingEnv', side_effect=mock_trading_env_init), \
-                 patch.object(distributional_ppo, 'DistributionalPPO') as mock_ppo, \
-                 patch.object(train_module, 'DummyVecEnv'), \
-                 patch.object(train_module, 'VecMonitor'), \
-                 patch.object(train_module, 'VecNormalize'), \
-                 patch.object(train_module, 'evaluate_policy_custom_cython') as mock_eval, \
-                 patch.object(train_module, 'sortino_ratio', return_value=0.5), \
-                 patch.object(train_module, 'check_model_compat'), \
-                 patch.object(train_module, 'save_sidecar_metadata'), \
-                 patch.object(train_module, '_freeze_vecnormalize', lambda x: x), \
-                 patch.object(train_module, '_annualization_sqrt_from_env', return_value=(1.0, 3600)):
+
+            with (
+                patch.object(train_module, "TradingEnv", side_effect=mock_trading_env_init),
+                patch.object(distributional_ppo, "DistributionalPPO") as mock_ppo,
+                patch.object(train_module, "DummyVecEnv"),
+                patch.object(train_module, "VecMonitor"),
+                patch.object(train_module, "VecNormalize"),
+                patch.object(train_module, "evaluate_policy_custom_cython") as mock_eval,
+                patch.object(train_module, "sortino_ratio", return_value=0.5),
+                patch.object(train_module, "check_model_compat"),
+                patch.object(train_module, "save_sidecar_metadata"),
+                patch.object(train_module, "_freeze_vecnormalize", lambda x: x),
+                patch.object(
+                    train_module, "_annualization_sqrt_from_env", return_value=(1.0, 3600)
+                ),
+            ):
 
                 mock_model = MagicMock()
                 mock_model.logger = None
@@ -527,17 +553,24 @@ class TestDataSplitValidation:
             trials_dir = Path(tmpdir)
 
             import distributional_ppo
-            with patch.object(train_module, 'TradingEnv', side_effect=mock_trading_env_init), \
-                 patch.object(distributional_ppo, 'DistributionalPPO') as mock_ppo, \
-                 patch.object(train_module, 'DummyVecEnv'), \
-                 patch.object(train_module, 'VecMonitor'), \
-                 patch.object(train_module, 'VecNormalize'), \
-                 patch.object(train_module, 'evaluate_policy_custom_cython', return_value=([0.1], [[1.0]])), \
-                 patch.object(train_module, 'sortino_ratio', return_value=0.5), \
-                 patch.object(train_module, 'check_model_compat'), \
-                 patch.object(train_module, 'save_sidecar_metadata'), \
-                 patch.object(train_module, '_freeze_vecnormalize', lambda x: x), \
-                 patch.object(train_module, '_annualization_sqrt_from_env', return_value=(1.0, 3600)):
+
+            with (
+                patch.object(train_module, "TradingEnv", side_effect=mock_trading_env_init),
+                patch.object(distributional_ppo, "DistributionalPPO") as mock_ppo,
+                patch.object(train_module, "DummyVecEnv"),
+                patch.object(train_module, "VecMonitor"),
+                patch.object(train_module, "VecNormalize"),
+                patch.object(
+                    train_module, "evaluate_policy_custom_cython", return_value=([0.1], [[1.0]])
+                ),
+                patch.object(train_module, "sortino_ratio", return_value=0.5),
+                patch.object(train_module, "check_model_compat"),
+                patch.object(train_module, "save_sidecar_metadata"),
+                patch.object(train_module, "_freeze_vecnormalize", lambda x: x),
+                patch.object(
+                    train_module, "_annualization_sqrt_from_env", return_value=(1.0, 3600)
+                ),
+            ):
 
                 mock_model = MagicMock()
                 mock_model.logger = None
@@ -569,9 +602,9 @@ class TestDataSplitValidation:
                     pass  # Expected due to mocking
 
             # Verify that mode was set to "val" not "test"
-            assert all(mode == "val" for mode in mode_used), (
-                f"Expected all environments to use mode='val', but got: {mode_used}"
-            )
+            assert all(
+                mode == "val" for mode in mode_used
+            ), f"Expected all environments to use mode='val', but got: {mode_used}"
 
 
 class TestIntegrationScenarios:
@@ -602,17 +635,24 @@ class TestIntegrationScenarios:
             trials_dir = Path(tmpdir)
 
             import distributional_ppo
-            with patch.object(train_module, 'TradingEnv', side_effect=log_env_creation), \
-                 patch.object(distributional_ppo, 'DistributionalPPO') as mock_ppo, \
-                 patch.object(train_module, 'DummyVecEnv'), \
-                 patch.object(train_module, 'VecMonitor'), \
-                 patch.object(train_module, 'VecNormalize'), \
-                 patch.object(train_module, 'evaluate_policy_custom_cython', return_value=([0.1], [[1.0]])), \
-                 patch.object(train_module, 'sortino_ratio', return_value=0.5), \
-                 patch.object(train_module, 'check_model_compat'), \
-                 patch.object(train_module, 'save_sidecar_metadata'), \
-                 patch.object(train_module, '_freeze_vecnormalize', lambda x: x), \
-                 patch.object(train_module, '_annualization_sqrt_from_env', return_value=(1.0, 3600)):
+
+            with (
+                patch.object(train_module, "TradingEnv", side_effect=log_env_creation),
+                patch.object(distributional_ppo, "DistributionalPPO") as mock_ppo,
+                patch.object(train_module, "DummyVecEnv"),
+                patch.object(train_module, "VecMonitor"),
+                patch.object(train_module, "VecNormalize"),
+                patch.object(
+                    train_module, "evaluate_policy_custom_cython", return_value=([0.1], [[1.0]])
+                ),
+                patch.object(train_module, "sortino_ratio", return_value=0.5),
+                patch.object(train_module, "check_model_compat"),
+                patch.object(train_module, "save_sidecar_metadata"),
+                patch.object(train_module, "_freeze_vecnormalize", lambda x: x),
+                patch.object(
+                    train_module, "_annualization_sqrt_from_env", return_value=(1.0, 3600)
+                ),
+            ):
 
                 mock_model = MagicMock()
                 mock_model.logger = None

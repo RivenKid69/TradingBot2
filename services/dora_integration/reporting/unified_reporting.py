@@ -48,8 +48,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class ReportType(Enum):
     """Report types supported by the unified manager."""
+
     # DORA-specific
     DORA_MAJOR_INCIDENT = "dora_major_incident"
     DORA_REGISTER_UPDATE = "dora_register_update"
@@ -69,6 +71,7 @@ class ReportType(Enum):
 
 class ReportStatus(Enum):
     """Lifecycle of a report."""
+
     DRAFT = "draft"
     VALIDATING = "validating"
     READY = "ready"
@@ -80,6 +83,7 @@ class ReportStatus(Enum):
 
 class ReportChannel(Enum):
     """Delivery channels for client packages."""
+
     API = "api"
     EMAIL = "email"
     PORTAL = "portal"
@@ -89,6 +93,7 @@ class ReportChannel(Enum):
 
 class PackageFormat(Enum):
     """Export formats for report packages."""
+
     JSON = "json"
     CSV = "csv"
     XML = "xml"
@@ -97,6 +102,7 @@ class PackageFormat(Enum):
 
 class ClientType(Enum):
     """Client types for report routing."""
+
     FINANCIAL_ENTITY = "financial_entity"
     CREDIT_INSTITUTION = "credit_institution"
     INVESTMENT_FIRM = "investment_firm"
@@ -109,9 +115,11 @@ class ClientType(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ReportDestination:
     """Destination metadata for report delivery."""
+
     name: str
     client_id: str
     client_type: ClientType
@@ -138,6 +146,7 @@ class ReportDestination:
 @dataclass
 class ReportValidationResult:
     """Result of report content validation."""
+
     is_valid: bool
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -151,6 +160,7 @@ class ReportValidationResult:
 @dataclass
 class UnifiedReport:
     """A single report entry for client delivery."""
+
     report_type: ReportType
     content: Dict[str, Any]
     destination: ReportDestination
@@ -233,6 +243,7 @@ class UnifiedReport:
 @dataclass
 class SubmissionPackage:
     """Aggregated submission package for client delivery."""
+
     destination: ReportDestination
     reports: List[UnifiedReport]
     package_format: PackageFormat = PackageFormat.JSON
@@ -267,6 +278,7 @@ class SubmissionPackage:
 @dataclass
 class DeliveryRecord:
     """Record of package delivery to client."""
+
     package_id: str
     client_id: str
     delivery_channel: ReportChannel
@@ -280,6 +292,7 @@ class DeliveryRecord:
 # =============================================================================
 # Configuration
 # =============================================================================
+
 
 @dataclass
 class UnifiedReportingConfig:
@@ -309,6 +322,7 @@ class UnifiedReportingConfig:
 # =============================================================================
 # Main Implementation
 # =============================================================================
+
 
 class UnifiedReportingManager:
     """
@@ -346,30 +360,18 @@ class UnifiedReportingManager:
 
     # Required fields per report type
     REQUIRED_FIELDS: Dict[ReportType, set] = {
-        ReportType.DORA_MAJOR_INCIDENT: {
-            "incident_id", "classification", "services_affected"
-        },
-        ReportType.DORA_REGISTER_UPDATE: {
-            "arrangement_reference", "provider_name"
-        },
-        ReportType.DORA_CTPP_NOTIFICATION: {
-            "notification_type", "ctpp_status"
-        },
+        ReportType.DORA_MAJOR_INCIDENT: {"incident_id", "classification", "services_affected"},
+        ReportType.DORA_REGISTER_UPDATE: {"arrangement_reference", "provider_name"},
+        ReportType.DORA_CTPP_NOTIFICATION: {"notification_type", "ctpp_status"},
         ReportType.AI_ACT_SERIOUS_INCIDENT: {
-            "ai_system_id", "incident_description", "harm_assessment"
+            "ai_system_id",
+            "incident_description",
+            "harm_assessment",
         },
-        ReportType.TLPT_RESULT: {
-            "scope", "threat_scenarios", "tester"
-        },
-        ReportType.INTERNAL_RESILIENCE: {
-            "summary", "owner"
-        },
-        ReportType.CLIENT_ROI_PACKAGE: {
-            "provider_identification", "service_records"
-        },
-        ReportType.CLIENT_INCIDENT_PACKAGE: {
-            "incident_id", "incident_data"
-        },
+        ReportType.TLPT_RESULT: {"scope", "threat_scenarios", "tester"},
+        ReportType.INTERNAL_RESILIENCE: {"summary", "owner"},
+        ReportType.CLIENT_ROI_PACKAGE: {"provider_identification", "service_records"},
+        ReportType.CLIENT_INCIDENT_PACKAGE: {"incident_id", "incident_data"},
     }
 
     def __init__(self, config: Optional[UnifiedReportingConfig] = None):
@@ -656,10 +658,7 @@ class UnifiedReportingManager:
             List of pending reports sorted by due date
         """
         pending_statuses = {ReportStatus.DRAFT, ReportStatus.READY}
-        reports = [
-            r for r in self._reports.values()
-            if r.status in pending_statuses
-        ]
+        reports = [r for r in self._reports.values() if r.status in pending_statuses]
 
         if report_type:
             reports = [r for r in reports if r.report_type == report_type]
@@ -679,8 +678,7 @@ class UnifiedReportingManager:
         pending_statuses = {ReportStatus.DRAFT, ReportStatus.READY, ReportStatus.PACKAGED}
 
         return [
-            r for r in self._reports.values()
-            if r.status in pending_statuses and r.due_at < now
+            r for r in self._reports.values() if r.status in pending_statuses and r.due_at < now
         ]
 
     # =========================================================================
@@ -770,25 +768,27 @@ class UnifiedReportingManager:
         writer = csv.writer(output)
 
         # Header
-        writer.writerow([
-            "report_id", "report_type", "status", "due_at",
-            "created_at", "reference_id"
-        ])
+        writer.writerow(
+            ["report_id", "report_type", "status", "due_at", "created_at", "reference_id"]
+        )
 
         for report in reports:
-            writer.writerow([
-                report.report_id,
-                report.report_type.value,
-                report.status.value,
-                report.due_at.isoformat(),
-                report.created_at.isoformat(),
-                report.reference_id,
-            ])
+            writer.writerow(
+                [
+                    report.report_id,
+                    report.report_type.value,
+                    report.status.value,
+                    report.due_at.isoformat(),
+                    report.created_at.isoformat(),
+                    report.reference_id,
+                ]
+            )
 
         return output.getvalue().encode("utf-8")
 
     def _generate_xml_content(self, data: Dict[str, Any]) -> bytes:
         """Generate XML content from data."""
+
         def dict_to_xml(d: Dict, root: str) -> str:
             parts = [f"<{root}>"]
             for key, value in d.items():
@@ -818,15 +818,17 @@ class UnifiedReportingManager:
         """Provide a lightweight view for dashboards."""
         summary = []
         for report in self._reports.values():
-            summary.append({
-                "report_id": report.report_id,
-                "type": report.report_type.value,
-                "status": report.status.value,
-                "destination": report.destination.name,
-                "due_at": report.due_at.isoformat(),
-                "delivered_at": report.delivered_at.isoformat() if report.delivered_at else "",
-                "submitted_at": report.submitted_at.isoformat() if report.submitted_at else "",
-            })
+            summary.append(
+                {
+                    "report_id": report.report_id,
+                    "type": report.report_type.value,
+                    "status": report.status.value,
+                    "destination": report.destination.name,
+                    "due_at": report.due_at.isoformat(),
+                    "delivered_at": report.delivered_at.isoformat() if report.delivered_at else "",
+                    "submitted_at": report.submitted_at.isoformat() if report.submitted_at else "",
+                }
+            )
         return summary
 
     def get_statistics(self) -> Dict[str, Any]:
@@ -855,14 +857,15 @@ class UnifiedReportingManager:
 # Helper Functions
 # =============================================================================
 
+
 def _escape_xml(text: str) -> str:
     """Escape special XML characters."""
     return (
         text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&apos;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
     )
 
 

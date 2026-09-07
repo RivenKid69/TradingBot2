@@ -208,48 +208,61 @@ class TestGDPRExportService:
         }
 
         # Add test data
-        repos["users"].add(MockUser(
-            user_id="user_001",
-            email="user@example.com",
-            name="Test User",
-            created_at=datetime.now(timezone.utc),
-        ))
+        repos["users"].add(
+            MockUser(
+                user_id="user_001",
+                email="user@example.com",
+                name="Test User",
+                created_at=datetime.now(timezone.utc),
+            )
+        )
 
-        repos["strategies"].add("user_001", MockStrategy(
-            strategy_id="strat_001",
-            name="Test Strategy",
-            description="A test strategy",
-            parameters={"window": 20},
-            code="def run(): pass",
-            created_at=datetime.now(timezone.utc),
-        ))
+        repos["strategies"].add(
+            "user_001",
+            MockStrategy(
+                strategy_id="strat_001",
+                name="Test Strategy",
+                description="A test strategy",
+                parameters={"window": 20},
+                code="def run(): pass",
+                created_at=datetime.now(timezone.utc),
+            ),
+        )
 
-        repos["backtests"].add("user_001", MockBacktest(
-            backtest_id="bt_001",
-            strategy_name="Test Strategy",
-            start_date=datetime(2023, 1, 1, tzinfo=timezone.utc),
-            end_date=datetime(2023, 12, 31, tzinfo=timezone.utc),
-            results={"total_return": 0.15},
-            ran_at=datetime.now(timezone.utc),
-        ))
+        repos["backtests"].add(
+            "user_001",
+            MockBacktest(
+                backtest_id="bt_001",
+                strategy_name="Test Strategy",
+                start_date=datetime(2023, 1, 1, tzinfo=timezone.utc),
+                end_date=datetime(2023, 12, 31, tzinfo=timezone.utc),
+                results={"total_return": 0.15},
+                ran_at=datetime.now(timezone.utc),
+            ),
+        )
 
-        repos["executions"].add("user_001", MockExecution(
-            order_id="ord_001",
-            symbol="AAPL",
-            side="buy",
-            quantity=100.0,
-            price=150.0,
-            broker="alpaca",
-            executed_at=datetime.now(timezone.utc),
-            status="filled",
-        ))
+        repos["executions"].add(
+            "user_001",
+            MockExecution(
+                order_id="ord_001",
+                symbol="AAPL",
+                side="buy",
+                quantity=100.0,
+                price=150.0,
+                broker="alpaca",
+                executed_at=datetime.now(timezone.utc),
+                status="filled",
+            ),
+        )
 
-        repos["settings"].set(MockSettings(
-            user_id="user_001",
-            default_broker="alpaca",
-            risk_parameters={"max_position_size": 0.1},
-            notification_preferences={"email": True},
-        ))
+        repos["settings"].set(
+            MockSettings(
+                user_id="user_001",
+                default_broker="alpaca",
+                risk_parameters={"max_position_size": 0.1},
+                notification_preferences={"email": True},
+            )
+        )
 
         return repos
 

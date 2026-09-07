@@ -14,22 +14,30 @@ except ImportError:
     sys.modules["lob_state_cython"] = lob_state_stub
 
 mediator_stub = types.ModuleType("mediator")
+
+
 class _Mediator:
     def __init__(self, env):
         self.env = env
         self.calls = []
+
     def step(self, proto):
         self.calls.append(proto)
         return np.zeros(1), 0.0, False, False, {}
+
     def reset(self):
         return np.zeros(1, dtype=np.float32), {}
+
     def _build_observation(self, row, state, mark_price):
         return np.zeros(1, dtype=np.float32)
+
+
 mediator_stub.Mediator = _Mediator
 sys.modules["mediator"] = mediator_stub
 
 from trading_patchnew import TradingEnv
 from action_proto import ActionProto, ActionType
+
 
 def _make_df(ts_minutes):
     ts = np.array(ts_minutes, dtype=np.int64) * 60_000
@@ -44,6 +52,7 @@ def _make_df(ts_minutes):
             "ts_ms": ts,
         }
     )
+
 
 def test_funding_buffer_mask_applies():
     df = _make_df([360, 410, 470])  # minutes since midnight

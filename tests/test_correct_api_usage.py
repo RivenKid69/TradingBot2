@@ -10,6 +10,7 @@ IMPORTANT: This test demonstrates the CORRECT way to use these features.
 """
 
 import pytest
+
 gym = pytest.importorskip("gymnasium")
 torch = pytest.importorskip("torch")
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -43,7 +44,6 @@ def test_correct_api_all_features():
     model = DistributionalPPO(
         CustomActorCriticPolicy,  # Use custom policy to enable advanced features
         env,
-
         # ✅ UPGD Optimizer (CORRECT)
         optimizer_class="adaptive_upgd",
         optimizer_kwargs={
@@ -51,26 +51,23 @@ def test_correct_api_all_features():
             "sigma": 0.01,
             "beta_utility": 0.999,
         },
-
         # ✅ Variance Gradient Scaling (CORRECT)
         variance_gradient_scaling=True,  # ← 'variance_gradient_scaling', NOT 'vgs_enabled'!
         vgs_beta=0.99,
         vgs_alpha=0.1,
         vgs_warmup_steps=100,
-
         # ✅ Twin Critics (CORRECT - via policy_kwargs)
         policy_kwargs={
-            'arch_params': {
-                'hidden_dim': 64,
-                'critic': {
-                    'distributional': True,
-                    'num_quantiles': 32,
-                    'huber_kappa': 1.0,
-                    'use_twin_critics': True,  # ← This is where Twin Critics goes!
-                }
+            "arch_params": {
+                "hidden_dim": 64,
+                "critic": {
+                    "distributional": True,
+                    "num_quantiles": 32,
+                    "huber_kappa": 1.0,
+                    "use_twin_critics": True,  # ← This is where Twin Critics goes!
+                },
             }
         },
-
         # Training parameters
         n_steps=64,
         n_epochs=2,
@@ -87,8 +84,10 @@ def test_correct_api_all_features():
 
     # Check UPGD optimizer
     from optimizers import AdaptiveUPGD
-    assert isinstance(model.policy.optimizer, AdaptiveUPGD), \
-        f"Expected AdaptiveUPGD, got {type(model.policy.optimizer)}"
+
+    assert isinstance(
+        model.policy.optimizer, AdaptiveUPGD
+    ), f"Expected AdaptiveUPGD, got {type(model.policy.optimizer)}"
     print(f"  [OK] Optimizer: {type(model.policy.optimizer).__name__}")
     print(f"     - lr: {model.policy.optimizer.param_groups[0]['lr']}")
     print(f"     - sigma: {model.policy.optimizer.param_groups[0].get('sigma', 'N/A')}")
@@ -103,12 +102,12 @@ def test_correct_api_all_features():
     print(f"     - warmup_steps: {vgs.warmup_steps}")
 
     # Check Twin Critics
-    use_twin = getattr(model.policy, '_use_twin_critics', False)
+    use_twin = getattr(model.policy, "_use_twin_critics", False)
     assert use_twin is True, "Twin Critics should be enabled"
     print(f"  [OK] Twin Critics: enabled={use_twin}")
 
     # Check second critic exists
-    assert hasattr(model.policy, 'quantile_head_2'), "Second critic head should exist"
+    assert hasattr(model.policy, "quantile_head_2"), "Second critic head should exist"
     assert model.policy.quantile_head_2 is not None, "Second critic head should be initialized"
     print(f"     - Second critic: {type(model.policy.quantile_head_2).__name__}")
 
@@ -129,7 +128,11 @@ def test_correct_api_all_features():
     if vgs._step_count > 0:
         print(f"VGS Statistics:")
         print(f"  - steps: {vgs._step_count}")
-        print(f"  - grad_mean_ema: {vgs._grad_mean_ema:.6f}" if vgs._grad_mean_ema else "  - grad_mean_ema: None")
+        print(
+            f"  - grad_mean_ema: {vgs._grad_mean_ema:.6f}"
+            if vgs._grad_mean_ema
+            else "  - grad_mean_ema: None"
+        )
         print(f"  - normalized_variance: {vgs.get_normalized_variance():.6f}")
         print()
 
@@ -166,9 +169,9 @@ def test_incorrect_api_demonstration():
             "MlpPolicy",
             env,
             optimizer_class="adaptive_upgd",
-            use_twin_critics=True,          # ❌ NOT a direct parameter!
-            adversarial_training=True,       # ❌ Doesn't exist!
-            vgs_enabled=True,                # ❌ Wrong parameter name!
+            use_twin_critics=True,  # ❌ NOT a direct parameter!
+            adversarial_training=True,  # ❌ Doesn't exist!
+            vgs_enabled=True,  # ❌ Wrong parameter name!
             vgs_alpha=0.1,
             vgs_warmup_steps=50,
             n_steps=64,
@@ -184,7 +187,9 @@ def test_incorrect_api_demonstration():
         print()
         print("This error occurs because:")
         print("  [X] 'use_twin_critics' is NOT a direct parameter of DistributionalPPO")
-        print("     [OK] Correct: Pass via policy_kwargs['arch_params']['critic']['use_twin_critics']")
+        print(
+            "     [OK] Correct: Pass via policy_kwargs['arch_params']['critic']['use_twin_critics']"
+        )
         print()
         print("  [X] 'adversarial_training' does NOT exist in DistributionalPPO")
         print("     [OK] Correct: Adversarial training is a separate module")

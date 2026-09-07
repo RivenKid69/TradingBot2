@@ -88,7 +88,7 @@ def _compute_downside_std(returns: np.ndarray, threshold: float = 0.0) -> float:
     excess_returns = returns - threshold
     downside = np.minimum(excess_returns, 0.0)
     downside_var = float(np.mean(downside**2))  # Mean over all N observations
-    
+
     if downside_var < 1e-16:
         # No negative returns (or extremely small) - return small positive value to avoid division issues
         return 1e-8
@@ -185,7 +185,9 @@ def compute_trading_metrics(
     sharpe = _safe_divide(excess_return, std_ret) * ann_factor if std_ret > 1e-10 else 0.0
 
     # Sortino Ratio: (mean_return - rf) / downside_std * sqrt(N)
-    sortino = _safe_divide(excess_return, downside_std) * ann_factor if downside_std > 1e-10 else 0.0
+    sortino = (
+        _safe_divide(excess_return, downside_std) * ann_factor if downside_std > 1e-10 else 0.0
+    )
 
     # Build equity curve
     if equities is not None and len(equities) == len(returns):
@@ -213,7 +215,7 @@ def compute_trading_metrics(
             # Clamp exponent to prevent overflow with extreme returns
             exponent = min(bars_per_year / n_steps, 100.0)
             base = max(1.0 + total_return, 1e-10)  # Prevent negative/zero base
-            ann_return = base ** exponent - 1.0
+            ann_return = base**exponent - 1.0
             if not math.isfinite(ann_return):
                 ann_return = 0.0
         except (OverflowError, ValueError):
@@ -237,7 +239,9 @@ def compute_trading_metrics(
     sum_wins = float(np.sum(wins)) if wins.size > 0 else 0.0
     sum_losses = float(np.abs(np.sum(losses))) if losses.size > 0 else 0.0
 
-    profit_factor = _safe_divide(sum_wins, sum_losses, default=float("inf") if sum_wins > 0 else 0.0)
+    profit_factor = _safe_divide(
+        sum_wins, sum_losses, default=float("inf") if sum_wins > 0 else 0.0
+    )
 
     avg_win = float(np.mean(wins)) if wins.size > 0 else 0.0
     avg_loss = float(np.mean(losses)) if losses.size > 0 else 0.0

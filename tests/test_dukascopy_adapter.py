@@ -34,6 +34,7 @@ def _bi5(*records):
 
 # ------------------------------------------------------------------ registry
 
+
 def test_registered_as_market_data():
     a = create_market_data_adapter(ExchangeVendor.DUKASCOPY)
     assert isinstance(a, DukascopyMarketDataAdapter)
@@ -46,6 +47,7 @@ def test_registered_by_string_vendor():
 
 
 # ------------------------------------------------------------------ url / scaling
+
 
 def test_bi5_url_month_is_zero_indexed():
     a = DukascopyMarketDataAdapter()
@@ -60,10 +62,10 @@ def test_bi5_url_month_is_zero_indexed():
 def test_point_values():
     a = DukascopyMarketDataAdapter()
     assert a._point_value("EURUSD") == 100000.0
-    assert a._point_value("USDJPY") == 1000.0       # JPY pairs: 3 decimals
-    assert a._point_value("XAUUSD") == 1000.0       # metals
+    assert a._point_value("USDJPY") == 1000.0  # JPY pairs: 3 decimals
+    assert a._point_value("XAUUSD") == 1000.0  # metals
     a2 = DukascopyMarketDataAdapter(config={"point_values": {"EURUSD": 12345.0}})
-    assert a2._point_value("EURUSD") == 12345.0     # override
+    assert a2._point_value("EURUSD") == 12345.0  # override
 
 
 def test_normalize_symbol():
@@ -75,6 +77,7 @@ def test_normalize_symbol():
 
 # ------------------------------------------------------------------ decode
 
+
 def test_parse_ticks_scales_and_offsets():
     a = DukascopyMarketDataAdapter()
     h = _hour_ms(2024, 1, 15, 9)
@@ -84,22 +87,25 @@ def test_parse_ticks_scales_and_offsets():
     )
     ticks = a._parse_ticks(raw, h, 100000.0)
     assert len(ticks) == 2
-    assert ticks[0][0] == h + 1000                  # ms offset applied
-    assert abs(ticks[0][1] - 1.08490) < 1e-9        # bid
-    assert abs(ticks[0][2] - 1.08500) < 1e-9        # ask
+    assert ticks[0][0] == h + 1000  # ms offset applied
+    assert abs(ticks[0][1] - 1.08490) < 1e-9  # bid
+    assert abs(ticks[0][2] - 1.08500) < 1e-9  # ask
 
 
 def test_decompress_tolerant_of_garbage():
     a = DukascopyMarketDataAdapter()
-    assert a._decompress(b"not-lzma") == b""        # never raises
+    assert a._decompress(b"not-lzma") == b""  # never raises
 
 
 # ------------------------------------------------------------------ get_bars
 
+
 def _mock_hour(a, mapping):
     """mapping: {(day, hour): bi5-bytes}; missing hours → None (404/weekend)."""
+
     def fake(instrument, dt_hour):
         return mapping.get((dt_hour.day, dt_hour.hour))
+
     a._download_bi5 = fake
 
 
@@ -108,9 +114,9 @@ def test_get_bars_aggregates_ohlc_and_bidask():
     h = _hour_ms(2024, 1, 15, 9)
     # three ticks within minute 0 → one 1m bar with real OHLC
     raw = _bi5(
-        (5_000, 108500, 108490, 1, 1),    # bid 1.08490 ask 1.08500
-        (20_000, 108600, 108590, 1, 1),   # higher
-        (50_000, 108400, 108390, 1, 1),   # lower, last
+        (5_000, 108500, 108490, 1, 1),  # bid 1.08490 ask 1.08500
+        (20_000, 108600, 108590, 1, 1),  # higher
+        (50_000, 108400, 108390, 1, 1),  # lower, last
     )
     _mock_hour(a, {(15, 9): raw})
     bars = a.get_bars("EURUSD", "1m", start_ts=h, end_ts=h + 60_000)
@@ -122,7 +128,7 @@ def test_get_bars_aggregates_ohlc_and_bidask():
     assert float(b.high) == pytest.approx(1.08595, abs=1e-6)
     assert float(b.low) == pytest.approx(1.08395, abs=1e-6)
     assert float(b.close) == pytest.approx(1.08395, abs=1e-6)
-    assert b.volume_base == 3                        # tick count
+    assert b.volume_base == 3  # tick count
     # bid/ask channels preserved
     assert float(b.bid_close) == pytest.approx(1.08390, abs=1e-6)
     assert float(b.ask_close) == pytest.approx(1.08400, abs=1e-6)
@@ -132,21 +138,21 @@ def test_get_bars_multiple_minutes_and_limit():
     a = DukascopyMarketDataAdapter()
     h = _hour_ms(2024, 1, 15, 9)
     raw = _bi5(
-        (1_000, 108500, 108490, 1, 1),    # minute 0
-        (61_000, 108520, 108505, 1, 1),   # minute 1
+        (1_000, 108500, 108490, 1, 1),  # minute 0
+        (61_000, 108520, 108505, 1, 1),  # minute 1
         (121_000, 108480, 108470, 1, 1),  # minute 2
     )
     _mock_hour(a, {(15, 9): raw})
     bars = a.get_bars("EURUSD", "1m", start_ts=h, end_ts=h + 180_000)
     assert len(bars) == 3
     limited = a.get_bars("EURUSD", "1m", start_ts=h, end_ts=h + 180_000, limit=2)
-    assert len(limited) == 2                          # last 2
+    assert len(limited) == 2  # last 2
 
 
 def test_get_bars_weekend_no_data_graceful():
     a = DukascopyMarketDataAdapter()
-    _mock_hour(a, {})                                 # every hour → None
-    h = _hour_ms(2024, 1, 14, 3)                      # Sunday
+    _mock_hour(a, {})  # every hour → None
+    h = _hour_ms(2024, 1, 14, 3)  # Sunday
     assert a.get_bars("EURUSD", "1h", start_ts=h, end_ts=h + 7200_000) == []
 
 
@@ -163,18 +169,20 @@ def test_get_tick_returns_latest():
 
     def fake(instrument, dt_hour):
         return raw if dt_hour.hour == now_hour.hour and dt_hour.day == now_hour.day else None
+
     a._download_bi5 = fake
     tick = a.get_tick("EURUSD")
     assert isinstance(tick, Tick)
-    assert float(tick.ask) == pytest.approx(1.08510, abs=1e-6)   # last tick
+    assert float(tick.ask) == pytest.approx(1.08510, abs=1e-6)  # last tick
     assert float(tick.bid) == pytest.approx(1.08500, abs=1e-6)
     assert tick.symbol == "EURUSD"
 
 
 def test_premium_matrix_includes_dukascopy():
     from services.premium_data import vendor_status
+
     by = {v["vendor"]: v for v in vendor_status()}
     assert "dukascopy" in by
-    assert by["dukascopy"]["ready"] is True           # keyless public feed
+    assert by["dukascopy"]["ready"] is True  # keyless public feed
     assert by["dukascopy"]["ticks"] == "history"
     assert "forex" in by["dukascopy"]["asset_classes"]

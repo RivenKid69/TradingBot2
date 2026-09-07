@@ -72,15 +72,21 @@ from execution_providers import AssetClass
 # Test: ForexSessionType Enum
 # =============================================================================
 
+
 class TestForexSessionType:
     """Test ForexSessionType enum values and properties."""
 
     def test_all_session_types_exist(self):
         """Verify all expected session types are defined."""
         expected = [
-            "SYDNEY", "TOKYO", "LONDON", "NEW_YORK",
-            "LONDON_NY_OVERLAP", "TOKYO_LONDON_OVERLAP",
-            "WEEKEND", "OFF_HOURS"
+            "SYDNEY",
+            "TOKYO",
+            "LONDON",
+            "NEW_YORK",
+            "LONDON_NY_OVERLAP",
+            "TOKYO_LONDON_OVERLAP",
+            "WEEKEND",
+            "OFF_HOURS",
         ]
         actual = [s.name for s in ForexSessionType]
         assert set(expected) == set(actual)
@@ -109,6 +115,7 @@ class TestForexSessionType:
 # Test: CurrencyPairCategory Enum
 # =============================================================================
 
+
 class TestCurrencyPairCategory:
     """Test CurrencyPairCategory enum values."""
 
@@ -134,6 +141,7 @@ class TestCurrencyPairCategory:
 # =============================================================================
 # Test: ForexSessionWindow Dataclass
 # =============================================================================
+
 
 class TestForexSessionWindow:
     """Test ForexSessionWindow dataclass."""
@@ -352,6 +360,7 @@ class TestForexSessionWindow:
 # Test: Forex Session Constants
 # =============================================================================
 
+
 class TestForexSessionConstants:
     """Test predefined forex session constants."""
 
@@ -404,6 +413,7 @@ class TestForexSessionConstants:
 # =============================================================================
 # Test: Pip Size Functions
 # =============================================================================
+
 
 class TestPipSizeFunctions:
     """Test pip size and conversion functions."""
@@ -477,28 +487,37 @@ class TestPipSizeFunctions:
 # Test: Currency Pair Classification
 # =============================================================================
 
+
 class TestCurrencyPairClassification:
     """Test currency pair classification functions."""
 
     def test_classify_major_pairs(self):
         """Test classification of major pairs."""
         for pair in FOREX_MAJOR_PAIRS:
-            assert classify_currency_pair(pair) == CurrencyPairCategory.MAJOR, f"{pair} should be MAJOR"
+            assert (
+                classify_currency_pair(pair) == CurrencyPairCategory.MAJOR
+            ), f"{pair} should be MAJOR"
 
     def test_classify_minor_pairs(self):
         """Test classification of minor pairs."""
         for pair in FOREX_MINOR_PAIRS:
-            assert classify_currency_pair(pair) == CurrencyPairCategory.MINOR, f"{pair} should be MINOR"
+            assert (
+                classify_currency_pair(pair) == CurrencyPairCategory.MINOR
+            ), f"{pair} should be MINOR"
 
     def test_classify_jpy_crosses(self):
         """Test classification of JPY crosses."""
         for pair in FOREX_JPY_CROSSES:
-            assert classify_currency_pair(pair) == CurrencyPairCategory.CROSS, f"{pair} should be CROSS"
+            assert (
+                classify_currency_pair(pair) == CurrencyPairCategory.CROSS
+            ), f"{pair} should be CROSS"
 
     def test_classify_exotic_pairs(self):
         """Test classification of exotic pairs."""
         for pair in FOREX_EXOTIC_PAIRS:
-            assert classify_currency_pair(pair) == CurrencyPairCategory.EXOTIC, f"{pair} should be EXOTIC"
+            assert (
+                classify_currency_pair(pair) == CurrencyPairCategory.EXOTIC
+            ), f"{pair} should be EXOTIC"
 
     def test_classify_slash_format(self):
         """Test classification with slash format."""
@@ -529,6 +548,7 @@ class TestCurrencyPairClassification:
 # =============================================================================
 # Test: Forex Spread Profiles
 # =============================================================================
+
 
 class TestForexSpreadProfiles:
     """Test forex spread profile functionality."""
@@ -583,6 +603,7 @@ class TestForexSpreadProfiles:
 # =============================================================================
 # Test: Session Detection Functions
 # =============================================================================
+
 
 class TestSessionDetection:
     """Test forex session detection functions."""
@@ -642,6 +663,7 @@ class TestSessionDetection:
 # Test: Liquidity and Spread Factor Functions
 # =============================================================================
 
+
 class TestLiquidityFactorFunctions:
     """Test liquidity and spread factor helper functions."""
 
@@ -682,6 +704,7 @@ class TestLiquidityFactorFunctions:
 # Test: ExchangeVendor Forex Extensions
 # =============================================================================
 
+
 class TestExchangeVendorForex:
     """Test ExchangeVendor forex extensions."""
 
@@ -720,6 +743,7 @@ class TestExchangeVendorForex:
 # Test: AssetClass.FOREX
 # =============================================================================
 
+
 class TestAssetClassForex:
     """Test AssetClass.FOREX in execution_providers."""
 
@@ -735,6 +759,7 @@ class TestAssetClassForex:
 # =============================================================================
 # Test: Forex Calendar
 # =============================================================================
+
 
 class TestForexCalendar:
     """Test forex calendar creation."""
@@ -764,6 +789,7 @@ class TestForexCalendar:
 # =============================================================================
 # Test: Backward Compatibility
 # =============================================================================
+
 
 class TestBackwardCompatibility:
     """Test backward compatibility - existing functionality should not break."""
@@ -799,6 +825,7 @@ class TestBackwardCompatibility:
 # =============================================================================
 # Test: Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
@@ -845,6 +872,7 @@ class TestEdgeCases:
 # Test: Property-Based Tests (if hypothesis available)
 # =============================================================================
 
+
 class TestPropertyBased:
     """Property-based tests for robustness."""
 
@@ -883,6 +911,7 @@ class TestPropertyBased:
 # =============================================================================
 # Test: Integration
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests combining multiple components."""
@@ -1015,6 +1044,7 @@ class TestMockOandaFixtures:
 # Test: Parametrized Property-Based Tests
 # =============================================================================
 
+
 class TestParametrizedCurrencyPairs:
     """Parametrized tests for currency pairs (property-based style)."""
 
@@ -1065,6 +1095,7 @@ class TestParametrizedSessionLiquidity:
 # =============================================================================
 # Test: Regression / Isolation Tests
 # =============================================================================
+
 
 class TestRegressionIsolation:
     """Regression and isolation tests to prevent cross-contamination."""
@@ -1131,6 +1162,7 @@ class TestRegressionIsolation:
 # Test: Stress and Boundary Tests
 # =============================================================================
 
+
 class TestStressBoundary:
     """Stress and boundary condition tests."""
 
@@ -1154,9 +1186,9 @@ class TestStressBoundary:
         for day in range(7):
             for hour in range(24):
                 spread = get_session_spread_multiplier(hour, day)
-                assert spread > 0 or spread == float("inf"), (
-                    f"Invalid spread at hour={hour}, day={day}"
-                )
+                assert spread > 0 or spread == float(
+                    "inf"
+                ), f"Invalid spread at hour={hour}, day={day}"
 
     def test_pip_size_consistency_across_formats(self):
         """Test pip size is consistent across symbol formats."""
@@ -1196,12 +1228,14 @@ class TestStressBoundary:
 # Test: OANDA Adapter Full Implementation (Phase 2 Complete)
 # =============================================================================
 
+
 class TestOandaAdapterImplementation:
     """Tests for OANDA adapter full implementation (Phase 2)."""
 
     def test_oanda_module_exists(self):
         """Test that oanda adapter module exists."""
         import adapters.oanda
+
         assert adapters.oanda is not None
 
     def test_oanda_module_exports_adapters(self):
@@ -1237,6 +1271,7 @@ class TestOandaAdapterImplementation:
             OandaExchangeInfoAdapter,
             OandaOrderExecutionAdapter,
         )
+
         assert OandaMarketDataAdapter is not None
         assert OandaFeeAdapter is not None
         assert OandaTradingHoursAdapter is not None

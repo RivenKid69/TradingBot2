@@ -478,6 +478,7 @@ class TestEncryptionResult:
 
         # Base64 encoded
         import base64
+
         decoded = base64.b64decode(envelope["ciphertext"])
         assert decoded == result.ciphertext
 

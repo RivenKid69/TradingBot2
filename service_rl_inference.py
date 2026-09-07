@@ -33,7 +33,9 @@ import pandas as pd
 
 from core_portfolio import Panel
 from impl_rl_signal import (
-    RLAlphaSignal, conformal_confidence_from_widths, expected_utility_from_quantiles,
+    RLAlphaSignal,
+    conformal_confidence_from_widths,
+    expected_utility_from_quantiles,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,7 +49,9 @@ def _default_obs_fn(panel: Panel) -> Any:
     return panel
 
 
-def _default_model_loader(checkpoint: str, device: str) -> Optional[dict]:  # pragma: no cover - модельно-специфично
+def _default_model_loader(
+    checkpoint: str, device: str
+) -> Optional[dict]:  # pragma: no cover - модельно-специфично
     """Честный no-op: универсального лоадера нет. Верните dict(value_fn/quantiles_fn/obs_fn) в BYO-загрузчике."""
     logger.warning(
         "RLInferenceAdapter: дефолтный загрузчик не запускает произвольный чекпоинт '%s' — "
@@ -120,8 +124,12 @@ def make_sb3_distributional_loader(
         # Гейт подписи — ДО импорта torch и до любого чтения pickle-содержимого.
         # В enforce-политике ModelSignatureError намеренно НЕ глотается.
         from services.model_signature_gate import verify_model_artifact
+
         verify_model_artifact(
-            checkpoint, policy=signature_policy, live=live, context="rl-inference",
+            checkpoint,
+            policy=signature_policy,
+            live=live,
+            context="rl-inference",
         )
 
         try:
@@ -207,7 +215,7 @@ class RLInferenceAdapter:
         value_fn: Optional[Callable[[Any], Any]] = None,
         quantiles_fn: Optional[Callable[[Any], Any]] = None,
         obs_fn: Optional[Callable[[Panel], Any]] = None,
-        utility: str = "value",                 # 'value' | 'cvar'
+        utility: str = "value",  # 'value' | 'cvar'
         cvar_alpha: float = 0.05,
         widths_fn: Optional[Callable[[Panel], pd.Series]] = None,
         conf_baseline_width: float = 0.1,
@@ -217,7 +225,9 @@ class RLInferenceAdapter:
         self.checkpoint = checkpoint
         self._value_fn = value_fn
         self._quantiles_fn = quantiles_fn
-        self._user_obs_fn = obs_fn is not None  # пользовательская obs_fn имеет приоритет над лоадерной
+        self._user_obs_fn = (
+            obs_fn is not None
+        )  # пользовательская obs_fn имеет приоритет над лоадерной
         self._obs_fn = obs_fn or _default_obs_fn
         self.utility = utility
         self.cvar_alpha = float(cvar_alpha)
@@ -258,7 +268,9 @@ class RLInferenceAdapter:
         obs = self._obs_fn(panel)
         if self.utility == "cvar" and self._quantiles_fn is not None:
             q = np.asarray(self._quantiles_fn(obs), dtype="float64")
-            u = expected_utility_from_quantiles(pd.DataFrame(q, index=panel.index), cvar_alpha=self.cvar_alpha)
+            u = expected_utility_from_quantiles(
+                pd.DataFrame(q, index=panel.index), cvar_alpha=self.cvar_alpha
+            )
         elif self._value_fn is not None:
             v = np.asarray(self._value_fn(obs), dtype="float64").reshape(-1)
             u = pd.Series(v, index=panel.index)

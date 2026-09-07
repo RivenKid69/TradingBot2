@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class FrameworkComponent(Enum):
     """ICT Risk Management Framework components per Article 6."""
+
     STRATEGY = "strategy"
     POLICY = "policy"
     PROCEDURE = "procedure"
@@ -54,6 +56,7 @@ class FrameworkComponent(Enum):
 
 class PolicyCategory(Enum):
     """Policy categories per DORA requirements."""
+
     ICT_SECURITY = "ict_security"
     ICT_OPERATIONS = "ict_operations"
     ICT_RISK_MANAGEMENT = "ict_risk_management"
@@ -70,15 +73,17 @@ class PolicyCategory(Enum):
 
 class ControlDomain(Enum):
     """ICT control domains aligned with NIST CSF."""
+
     IDENTIFY = "identify"  # Asset management, risk assessment
-    PROTECT = "protect"    # Access control, data security, protective technology
-    DETECT = "detect"      # Anomalies, continuous monitoring
-    RESPOND = "respond"    # Response planning, communications
-    RECOVER = "recover"    # Recovery planning, improvements
+    PROTECT = "protect"  # Access control, data security, protective technology
+    DETECT = "detect"  # Anomalies, continuous monitoring
+    RESPOND = "respond"  # Response planning, communications
+    RECOVER = "recover"  # Recovery planning, improvements
 
 
 class ControlType(Enum):
     """Control types."""
+
     PREVENTIVE = "preventive"
     DETECTIVE = "detective"
     CORRECTIVE = "corrective"
@@ -87,6 +92,7 @@ class ControlType(Enum):
 
 class ControlImplementation(Enum):
     """Control implementation status."""
+
     NOT_IMPLEMENTED = "not_implemented"
     PARTIALLY_IMPLEMENTED = "partially_implemented"
     FULLY_IMPLEMENTED = "fully_implemented"
@@ -95,6 +101,7 @@ class ControlImplementation(Enum):
 
 class ReviewStatus(Enum):
     """Framework review status."""
+
     SCHEDULED = "scheduled"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -103,6 +110,7 @@ class ReviewStatus(Enum):
 
 class RiskLevel(Enum):
     """Risk level classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -113,6 +121,7 @@ class RiskLevel(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class RiskPolicy:
     """
@@ -120,6 +129,7 @@ class RiskPolicy:
 
     Documents policies that form part of the ICT risk management framework.
     """
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -176,6 +186,7 @@ class RiskProcedure:
 
     Documents procedures that implement policies.
     """
+
     procedure_id: str = ""
     name: str = ""
     description: str = ""
@@ -215,6 +226,7 @@ class ICTControl:
 
     Documents controls that implement policies and manage risks.
     """
+
     control_id: str = ""
     name: str = ""
     description: str = ""
@@ -255,6 +267,7 @@ class FrameworkReview:
 
     Documents annual (or more frequent) reviews of the framework.
     """
+
     review_id: str = ""
     review_type: str = ""  # "annual", "post_incident", "regulatory_change", "ad_hoc"
     status: ReviewStatus = ReviewStatus.SCHEDULED
@@ -293,6 +306,7 @@ class ICTRisk:
     """
     ICT Risk identification and assessment.
     """
+
     risk_id: str = ""
     name: str = ""
     description: str = ""
@@ -349,9 +363,11 @@ class ICTRisk:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ICTRiskFrameworkConfig:
     """Configuration for ICT Risk Management Framework."""
+
     # Framework settings
     framework_name: str = "ICT Risk Management Framework"
     framework_version: str = "1.0"
@@ -389,6 +405,7 @@ class ICTRiskFrameworkConfig:
 # =============================================================================
 # Main Framework Implementation
 # =============================================================================
+
 
 class DORAICTRiskFramework:
     """
@@ -501,11 +518,14 @@ class DORAICTRiskFramework:
         with self._lock:
             self._policies[policy.policy_id] = policy
 
-        self._log_event("policy_created", {
-            "policy_id": policy.policy_id,
-            "name": name,
-            "category": category.value,
-        })
+        self._log_event(
+            "policy_created",
+            {
+                "policy_id": policy.policy_id,
+                "name": name,
+                "category": category.value,
+            },
+        )
 
         logger.info(f"Policy created: {name}")
         return policy
@@ -531,10 +551,13 @@ class DORAICTRiskFramework:
             next_review = effective_dt + timedelta(days=policy.review_frequency_months * 30)
             policy.next_review_date = next_review.isoformat()
 
-        self._log_event("policy_approved", {
-            "policy_id": policy_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "policy_approved",
+            {
+                "policy_id": policy_id,
+                "approved_by": approved_by,
+            },
+        )
 
         return policy
 
@@ -574,10 +597,7 @@ class DORAICTRiskFramework:
     ) -> List[RiskPolicy]:
         """Get all policies in a category."""
         with self._lock:
-            return [
-                p for p in self._policies.values()
-                if p.category == category and p.is_active
-            ]
+            return [p for p in self._policies.values() if p.category == category and p.is_active]
 
     def get_policies_due_for_review(self) -> List[RiskPolicy]:
         """Get policies that are due for review."""
@@ -629,11 +649,14 @@ class DORAICTRiskFramework:
         with self._lock:
             self._procedures[procedure.procedure_id] = procedure
 
-        self._log_event("procedure_created", {
-            "procedure_id": procedure.procedure_id,
-            "name": name,
-            "related_policy_id": related_policy_id,
-        })
+        self._log_event(
+            "procedure_created",
+            {
+                "procedure_id": procedure.procedure_id,
+                "name": name,
+                "related_policy_id": related_policy_id,
+            },
+        )
 
         return procedure
 
@@ -646,7 +669,8 @@ class DORAICTRiskFramework:
         """Get all procedures for a policy."""
         with self._lock:
             return [
-                p for p in self._procedures.values()
+                p
+                for p in self._procedures.values()
                 if p.related_policy_id == policy_id and p.is_active
             ]
 
@@ -701,11 +725,14 @@ class DORAICTRiskFramework:
         with self._lock:
             self._controls[control.control_id] = control
 
-        self._log_event("control_created", {
-            "control_id": control.control_id,
-            "name": name,
-            "domain": domain.value,
-        })
+        self._log_event(
+            "control_created",
+            {
+                "control_id": control.control_id,
+                "name": name,
+                "domain": domain.value,
+            },
+        )
 
         logger.info(f"Control created: {name}")
         return control
@@ -723,16 +750,20 @@ class DORAICTRiskFramework:
 
             control = self._controls[control_id]
             control.implementation_status = (
-                ControlImplementation.FULLY_IMPLEMENTED if fully_implemented
+                ControlImplementation.FULLY_IMPLEMENTED
+                if fully_implemented
                 else ControlImplementation.PARTIALLY_IMPLEMENTED
             )
             control.implementation_details = implementation_details
             control.implementation_date = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("control_implemented", {
-            "control_id": control_id,
-            "fully_implemented": fully_implemented,
-        })
+        self._log_event(
+            "control_implemented",
+            {
+                "control_id": control_id,
+                "fully_implemented": fully_implemented,
+            },
+        )
 
         return control
 
@@ -754,16 +785,17 @@ class DORAICTRiskFramework:
 
             control = self._controls[control_id]
             control.last_tested = datetime.now(timezone.utc).isoformat()
-            control.effectiveness_rating = (
-                "effective" if is_effective else "ineffective"
-            )
+            control.effectiveness_rating = "effective" if is_effective else "ineffective"
 
-        self._log_event("control_tested", {
-            "control_id": control_id,
-            "is_effective": is_effective,
-            "tested_by": tested_by,
-            "details": test_details,
-        })
+        self._log_event(
+            "control_tested",
+            {
+                "control_id": control_id,
+                "is_effective": is_effective,
+                "tested_by": tested_by,
+                "details": test_details,
+            },
+        )
 
         return control
 
@@ -791,9 +823,7 @@ class DORAICTRiskFramework:
                     needs_testing.append(control)
                     continue
 
-                last_test = datetime.fromisoformat(
-                    control.last_tested.replace("Z", "+00:00")
-                )
+                last_test = datetime.fromisoformat(control.last_tested.replace("Z", "+00:00"))
                 next_test = last_test + timedelta(days=control.test_frequency_months * 30)
 
                 if now >= next_test:
@@ -852,11 +882,14 @@ class DORAICTRiskFramework:
         with self._lock:
             self._risks[risk.risk_id] = risk
 
-        self._log_event("risk_registered", {
-            "risk_id": risk.risk_id,
-            "name": name,
-            "risk_level": risk.risk_level.value,
-        })
+        self._log_event(
+            "risk_registered",
+            {
+                "risk_id": risk.risk_id,
+                "name": name,
+                "risk_level": risk.risk_level.value,
+            },
+        )
 
         logger.info(f"Risk registered: {name} ({risk.risk_level.value})")
         return risk
@@ -918,17 +951,13 @@ class DORAICTRiskFramework:
         """Get all risks at a specific level."""
         with self._lock:
             return [
-                r for r in self._risks.values()
-                if r.residual_risk_level == level and r.is_active
+                r for r in self._risks.values() if r.residual_risk_level == level and r.is_active
             ]
 
     def get_unmitigated_risks(self) -> List[ICTRisk]:
         """Get risks without mitigating controls."""
         with self._lock:
-            return [
-                r for r in self._risks.values()
-                if not r.mitigating_controls and r.is_active
-            ]
+            return [r for r in self._risks.values() if not r.mitigating_controls and r.is_active]
 
     # =========================================================================
     # Framework Review (Article 6(5))
@@ -959,9 +988,7 @@ class DORAICTRiskFramework:
             FrameworkReview record
         """
         if not scheduled_date:
-            scheduled_date = (
-                datetime.now(timezone.utc) + timedelta(days=30)
-            ).isoformat()
+            scheduled_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
 
         review = FrameworkReview(
             review_type=review_type,
@@ -975,11 +1002,14 @@ class DORAICTRiskFramework:
         with self._lock:
             self._reviews[review.review_id] = review
 
-        self._log_event("review_scheduled", {
-            "review_id": review.review_id,
-            "review_type": review_type,
-            "scheduled_date": scheduled_date,
-        })
+        self._log_event(
+            "review_scheduled",
+            {
+                "review_id": review.review_id,
+                "review_type": review_type,
+                "scheduled_date": scheduled_date,
+            },
+        )
 
         return review
 
@@ -1027,10 +1057,12 @@ class DORAICTRiskFramework:
             review.findings.append(finding)
 
             if recommendation:
-                review.recommendations.append({
-                    "finding_id": finding["id"],
-                    "recommendation": recommendation,
-                })
+                review.recommendations.append(
+                    {
+                        "finding_id": finding["id"],
+                        "recommendation": recommendation,
+                    }
+                )
 
         return review
 
@@ -1052,11 +1084,14 @@ class DORAICTRiskFramework:
             review.approved_date = review.completed_date
             review.action_items = action_items or []
 
-        self._log_event("review_completed", {
-            "review_id": review_id,
-            "findings_count": len(review.findings),
-            "action_items_count": len(review.action_items),
-        })
+        self._log_event(
+            "review_completed",
+            {
+                "review_id": review_id,
+                "findings_count": len(review.findings),
+                "action_items_count": len(review.action_items),
+            },
+        )
 
         return review
 
@@ -1074,9 +1109,7 @@ class DORAICTRiskFramework:
             for review in self._reviews.values():
                 if review.status != ReviewStatus.SCHEDULED:
                     continue
-                scheduled = datetime.fromisoformat(
-                    review.scheduled_date.replace("Z", "+00:00")
-                )
+                scheduled = datetime.fromisoformat(review.scheduled_date.replace("Z", "+00:00"))
                 if now > scheduled:
                     review.status = ReviewStatus.OVERDUE
                     overdue.append(review)
@@ -1119,13 +1152,11 @@ class DORAICTRiskFramework:
                 controls_by_domain[domain.value] = {
                     "total": len(controls),
                     "implemented": sum(
-                        1 for c in controls
+                        1
+                        for c in controls
                         if c.implementation_status == ControlImplementation.FULLY_IMPLEMENTED
                     ),
-                    "effective": sum(
-                        1 for c in controls
-                        if c.effectiveness_rating == "effective"
-                    ),
+                    "effective": sum(1 for c in controls if c.effectiveness_rating == "effective"),
                 }
 
             # Risk summary
@@ -1140,16 +1171,12 @@ class DORAICTRiskFramework:
                 "policies": {
                     "total": len(self._policies),
                     "active": sum(1 for p in self._policies.values() if p.is_active),
-                    "approved": sum(
-                        1 for p in self._policies.values() if p.approved_by
-                    ),
+                    "approved": sum(1 for p in self._policies.values() if p.approved_by),
                     "due_for_review": len(policies_due),
                 },
                 "procedures": {
                     "total": len(self._procedures),
-                    "active": sum(
-                        1 for p in self._procedures.values() if p.is_active
-                    ),
+                    "active": sum(1 for p in self._procedures.values() if p.is_active),
                 },
                 "controls": {
                     "total": len(self._controls),
@@ -1165,8 +1192,7 @@ class DORAICTRiskFramework:
                 "reviews": {
                     "total": len(self._reviews),
                     "completed": sum(
-                        1 for r in self._reviews.values()
-                        if r.status == ReviewStatus.COMPLETED
+                        1 for r in self._reviews.values() if r.status == ReviewStatus.COMPLETED
                     ),
                     "overdue": len(overdue_reviews),
                 },
@@ -1174,9 +1200,8 @@ class DORAICTRiskFramework:
                     "policies_current": len(policies_due) == 0,
                     "controls_tested": len(controls_needing_test) == 0,
                     "reviews_current": len(overdue_reviews) == 0,
-                    "critical_risks_mitigated": len(
-                        self.get_risks_by_level(RiskLevel.CRITICAL)
-                    ) == 0,
+                    "critical_risks_mitigated": len(self.get_risks_by_level(RiskLevel.CRITICAL))
+                    == 0,
                 },
             }
 
@@ -1224,6 +1249,7 @@ class DORAICTRiskFramework:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_ict_risk_framework(
     config: Optional[ICTRiskFrameworkConfig] = None,

@@ -33,7 +33,7 @@ class TestPPOTargetFixCodeReview:
             targets_norm_for_loss = target_returns_norm_selected.reshape(-1, 1)
         """
         # Search for the correct usage
-        pattern = r'targets_norm_for_loss\s*=\s*target_returns_norm_raw_selected\.reshape'
+        pattern = r"targets_norm_for_loss\s*=\s*target_returns_norm_raw_selected\.reshape"
         matches = re.findall(pattern, ppo_code)
         assert len(matches) >= 1, (
             "Missing correct usage of target_returns_norm_raw_selected for "
@@ -41,7 +41,7 @@ class TestPPOTargetFixCodeReview:
         )
 
         # Ensure we don't use the wrong (clipped) version
-        wrong_pattern = r'targets_norm_for_loss\s*=\s*target_returns_norm_selected\.reshape'
+        wrong_pattern = r"targets_norm_for_loss\s*=\s*target_returns_norm_selected\.reshape"
         wrong_matches = re.findall(wrong_pattern, ppo_code)
         assert len(wrong_matches) == 0, (
             "Found incorrect usage of target_returns_norm_selected "
@@ -59,11 +59,10 @@ class TestPPOTargetFixCodeReview:
             clamped_targets = target_returns_norm.clamp(...)
         """
         # Search for correct usage in distributional projection
-        pattern = r'clamped_targets\s*=\s*target_returns_norm_raw\.clamp'
+        pattern = r"clamped_targets\s*=\s*target_returns_norm_raw\.clamp"
         matches = re.findall(pattern, ppo_code)
         assert len(matches) >= 1, (
-            "Missing correct usage of target_returns_norm_raw in "
-            "distributional projection"
+            "Missing correct usage of target_returns_norm_raw in " "distributional projection"
         )
 
     def test_eval_uses_unclipped_target(self, ppo_code):
@@ -77,11 +76,11 @@ class TestPPOTargetFixCodeReview:
             target_norm_col = target_returns_norm.reshape(-1, 1)
         """
         # Search for correct usage
-        pattern = r'target_norm_col\s*=\s*target_returns_norm_unclipped\.reshape'
+        pattern = r"target_norm_col\s*=\s*target_returns_norm_unclipped\.reshape"
         matches = re.findall(pattern, ppo_code)
-        assert len(matches) >= 1, (
-            "Missing correct usage of target_returns_norm_unclipped in eval section"
-        )
+        assert (
+            len(matches) >= 1
+        ), "Missing correct usage of target_returns_norm_unclipped in eval section"
 
     def test_explained_variance_batches_use_unclipped(self, ppo_code):
         """
@@ -94,7 +93,9 @@ class TestPPOTargetFixCodeReview:
             target_returns_norm_selected.reshape(-1, 1)
         """
         # Find the value_target_batches_norm.append section
-        pattern = r'value_target_batches_norm\.append\s*\(\s*target_returns_norm_raw_selected\.reshape'
+        pattern = (
+            r"value_target_batches_norm\.append\s*\(\s*target_returns_norm_raw_selected\.reshape"
+        )
         matches = re.findall(pattern, ppo_code, re.DOTALL)
         assert len(matches) >= 1, (
             "value_target_batches_norm should append target_returns_norm_raw_selected "
@@ -124,7 +125,7 @@ class TestPPOTargetFixCodeReview:
         then clamp to [v_min, v_max] for C51 algorithm.
         """
         # Look for the section that builds target distribution
-        pattern = r'clamped_targets\s*=\s*target_returns_norm_raw\.clamp\s*\(\s*self\.policy\.v_min'
+        pattern = r"clamped_targets\s*=\s*target_returns_norm_raw\.clamp\s*\(\s*self\.policy\.v_min"
         matches = re.findall(pattern, ppo_code)
         assert len(matches) >= 1, (
             "Distributional projection should clamp target_returns_norm_raw "
@@ -136,7 +137,7 @@ class TestPPOTargetFixCodeReview:
         Verify that unclipped target variables are created.
         """
         # Check that target_returns_norm_raw is created in training section
-        pattern = r'target_returns_norm_raw\s*='
+        pattern = r"target_returns_norm_raw\s*="
         matches = re.findall(pattern, ppo_code)
         assert len(matches) >= 2, (
             "target_returns_norm_raw should be created in multiple places "
@@ -144,11 +145,9 @@ class TestPPOTargetFixCodeReview:
         )
 
         # Check that target_returns_norm_unclipped exists in eval section
-        pattern = r'target_returns_norm_unclipped\s*='
+        pattern = r"target_returns_norm_unclipped\s*="
         matches = re.findall(pattern, ppo_code)
-        assert len(matches) >= 2, (
-            "target_returns_norm_unclipped should be created in eval section"
-        )
+        assert len(matches) >= 2, "target_returns_norm_unclipped should be created in eval section"
 
     def test_clipped_and_unclipped_both_exist(self, ppo_code):
         """
@@ -169,22 +168,20 @@ class TestPPOTargetFixCodeReview:
         Line ~8272 should use target_returns_norm_raw_selected.numel()
         """
         # Find weight_tensor creation with numel()
-        pattern = r'target_returns_norm_raw_selected\.numel\(\)'
+        pattern = r"target_returns_norm_raw_selected\.numel\(\)"
         matches = re.findall(pattern, ppo_code)
         assert len(matches) >= 1, (
-            "weight_tensor should use target_returns_norm_raw_selected.numel() "
-            "for consistency"
+            "weight_tensor should use target_returns_norm_raw_selected.numel() " "for consistency"
         )
 
     def test_expected_group_len_uses_correct_shape(self, ppo_code):
         """
         Verify that expected_group_len uses unclipped target for consistency.
         """
-        pattern = r'expected_group_len\s*=.*target_returns_norm_raw_selected'
+        pattern = r"expected_group_len\s*=.*target_returns_norm_raw_selected"
         matches = re.findall(pattern, ppo_code)
         assert len(matches) >= 1, (
-            "expected_group_len should use target_returns_norm_raw_selected "
-            "for consistency"
+            "expected_group_len should use target_returns_norm_raw_selected " "for consistency"
         )
 
     def test_quantile_huber_loss_receives_unclipped_target(self, ppo_code):
@@ -195,7 +192,7 @@ class TestPPOTargetFixCodeReview:
         targets_norm_for_loss (which should be unclipped).
         """
         # Find calls to _quantile_huber_loss
-        pattern = r'self\._quantile_huber_loss\s*\([^)]*targets_norm_for_loss'
+        pattern = r"self\._quantile_huber_loss\s*\([^)]*targets_norm_for_loss"
         matches = re.findall(pattern, ppo_code, re.DOTALL)
         assert len(matches) >= 2, (
             "Both unclipped and clipped losses should use targets_norm_for_loss "
@@ -215,9 +212,9 @@ class TestPPOTargetFixCodeReview:
 
         for pattern in formula_patterns:
             matches = re.findall(pattern, ppo_code, re.IGNORECASE)
-            assert len(matches) >= 1, (
-                f"Missing or incorrect PPO VF clipping formula documentation: {pattern}"
-            )
+            assert (
+                len(matches) >= 1
+            ), f"Missing or incorrect PPO VF clipping formula documentation: {pattern}"
 
 
 class TestPPOTargetFixRegression:
@@ -237,37 +234,33 @@ class TestPPOTargetFixRegression:
         Only targets should remain unclipped.
         """
         # Check that old_values_raw_tensor is still used
-        pattern = r'old_values_raw_tensor'
+        pattern = r"old_values_raw_tensor"
         matches = re.findall(pattern, ppo_code)
-        assert len(matches) >= 5, (
-            "old_values_raw_tensor should still be used for prediction clipping"
-        )
+        assert (
+            len(matches) >= 5
+        ), "old_values_raw_tensor should still be used for prediction clipping"
 
         # Check for value prediction clipping
-        pattern = r'value_pred_raw_clipped\s*=\s*torch\.clamp'
+        pattern = r"value_pred_raw_clipped\s*=\s*torch\.clamp"
         matches = re.findall(pattern, ppo_code)
-        assert len(matches) >= 1, (
-            "Value predictions should still be clipped"
-        )
+        assert len(matches) >= 1, "Value predictions should still be clipped"
 
     def test_clip_range_vf_still_functional(self, ppo_code):
         """
         Verify that clip_range_vf is still checked and used.
         """
-        pattern = r'if\s+clip_range_vf'
+        pattern = r"if\s+clip_range_vf"
         matches = re.findall(pattern, ppo_code)
-        assert len(matches) >= 2, (
-            "clip_range_vf should still be checked in multiple places"
-        )
+        assert len(matches) >= 2, "clip_range_vf should still be checked in multiple places"
 
     def test_statistics_logging_preserved(self, ppo_code):
         """
         Verify that statistics and logging are still present.
         """
         patterns = [
-            r'_record_value_debug_stats',
-            r'train_target_norm',
-            r'ev_target_norm',
+            r"_record_value_debug_stats",
+            r"train_target_norm",
+            r"ev_target_norm",
         ]
 
         for pattern in patterns:

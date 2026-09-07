@@ -184,6 +184,7 @@ _TICK_SIZE_CRYPTO = 1e-8
 # L3 Slippage Provider
 # =============================================================================
 
+
 class L3SlippageProvider:
     """
     L3: LOB walk-through slippage provider.
@@ -226,9 +227,7 @@ class L3SlippageProvider:
                 ImpactModelType.ALMGREN_CHRISS: "almgren_chriss",
                 ImpactModelType.GATHERAL: "gatheral",
             }
-            model_name = model_map.get(
-                self._config.market_impact.model, "almgren_chriss"
-            )
+            model_name = model_map.get(self._config.market_impact.model, "almgren_chriss")
             self._impact_model = create_impact_model(model_name, params=impact_params)
         else:
             self._impact_model = None
@@ -269,16 +268,12 @@ class L3SlippageProvider:
 
         if not has_lob:
             # Fall back to statistical model
-            return self._fallback.compute_slippage_bps(
-                order, market, participation_ratio
-            )
+            return self._fallback.compute_slippage_bps(order, market, participation_ratio)
 
         # Get reference price
         mid_price = market.get_mid_price()
         if mid_price is None or mid_price <= 0:
-            return self._fallback.compute_slippage_bps(
-                order, market, participation_ratio
-            )
+            return self._fallback.compute_slippage_bps(order, market, participation_ratio)
 
         # Walk through the book
         is_buy = str(order.side).upper() == "BUY"
@@ -371,6 +366,7 @@ class L3SlippageProvider:
 # =============================================================================
 # L3 Fill Provider
 # =============================================================================
+
 
 class L3FillProvider:
     """
@@ -468,13 +464,9 @@ class L3FillProvider:
                 ImpactModelType.GATHERAL: "gatheral",
                 ImpactModelType.KYLE: "kyle",
             }
-            model_name = model_map.get(
-                self._config.market_impact.model, "almgren_chriss"
-            )
+            model_name = model_map.get(self._config.market_impact.model, "almgren_chriss")
             impact_model = create_impact_model(model_name, params=impact_params)
-            self._impact_simulator = create_lob_impact_simulator(
-                impact_model=impact_model
-            )
+            self._impact_simulator = create_lob_impact_simulator(impact_model=impact_model)
         else:
             self._impact_simulator = None
 
@@ -502,9 +494,7 @@ class L3FillProvider:
                 LatencyProfileType.RETAIL: "retail",
                 LatencyProfileType.INSTITUTIONAL: "institutional",
             }
-            profile_name = profile_map.get(
-                self._config.latency.profile, "institutional"
-            )
+            profile_name = profile_map.get(self._config.latency.profile, "institutional")
             self._latency_model = create_latency_model(profile_name)
         else:
             self._latency_model = None
@@ -524,7 +514,9 @@ class L3FillProvider:
     def _get_order_manager(self, symbol: str) -> OrderManager:
         """Get or create order manager for symbol."""
         if symbol not in self._order_manager:
-            tick_size = _TICK_SIZE_EQUITY if self._asset_class == AssetClass.EQUITY else _TICK_SIZE_CRYPTO
+            tick_size = (
+                _TICK_SIZE_EQUITY if self._asset_class == AssetClass.EQUITY else _TICK_SIZE_CRYPTO
+            )
             self._order_manager[symbol] = OrderManager(
                 symbol=symbol,
                 tick_size=tick_size,
@@ -788,13 +780,9 @@ class L3FillProvider:
             # Estimate queue position (pessimistic)
             if is_buy and market.bid_depth:
                 # For buy limit below best ask, queue behind existing bids at same level
-                qty_ahead = sum(
-                    size for price, size in market.bid_depth if price >= limit_price
-                )
+                qty_ahead = sum(size for price, size in market.bid_depth if price >= limit_price)
             elif not is_buy and market.ask_depth:
-                qty_ahead = sum(
-                    size for price, size in market.ask_depth if price <= limit_price
-                )
+                qty_ahead = sum(size for price, size in market.ask_depth if price <= limit_price)
             else:
                 qty_ahead = 0.0
 
@@ -876,13 +864,9 @@ class L3FillProvider:
 
         # Estimate queue position
         if is_buy and market.bid_depth:
-            qty_ahead = sum(
-                size for price, size in market.bid_depth if price >= order.limit_price
-            )
+            qty_ahead = sum(size for price, size in market.bid_depth if price >= order.limit_price)
         elif not is_buy and market.ask_depth:
-            qty_ahead = sum(
-                size for price, size in market.ask_depth if price <= order.limit_price
-            )
+            qty_ahead = sum(size for price, size in market.ask_depth if price <= order.limit_price)
         else:
             qty_ahead = 0.0
 
@@ -898,6 +882,7 @@ class L3FillProvider:
 # =============================================================================
 # L3 Execution Provider
 # =============================================================================
+
 
 class L3ExecutionProvider:
     """
@@ -988,9 +973,7 @@ class L3ExecutionProvider:
                 LatencyProfileType.RETAIL: "retail",
                 LatencyProfileType.INSTITUTIONAL: "institutional",
             }
-            profile_name = profile_map.get(
-                self._config.latency.profile, "institutional"
-            )
+            profile_name = profile_map.get(self._config.latency.profile, "institutional")
             self._latency_model = create_latency_model(profile_name)
         else:
             self._latency_model = None
@@ -1240,6 +1223,7 @@ class L3ExecutionProvider:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_l3_execution_provider(
     asset_class: AssetClass = AssetClass.EQUITY,

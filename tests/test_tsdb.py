@@ -8,7 +8,11 @@ import pandas as pd
 import pytest
 
 from services.tsdb import (
-    ParquetTSBackend, SYM_COL, TS_COL, TimeSeriesStore, make_backend,
+    ParquetTSBackend,
+    SYM_COL,
+    TS_COL,
+    TimeSeriesStore,
+    make_backend,
 )
 
 
@@ -53,7 +57,7 @@ def test_upsert_dedup(tmp_path):
     upd = pd.DataFrame([{TS_COL: 1002, SYM_COL: "A", "close": 999.0, "vol": 9.0}])
     be.write("p", upd)
     out = be.read("p", symbols=["A"])
-    assert len(out) == 5                       # без дублей
+    assert len(out) == 5  # без дублей
     assert out[out[TS_COL] == 1002]["close"].iloc[0] == 999.0
 
 

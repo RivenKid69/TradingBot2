@@ -34,11 +34,13 @@ NTP_TIMEOUT: Final[float] = 5.0
 
 class TimeSyncError(Exception):
     """Time synchronization error."""
+
     pass
 
 
 class TimeDriftError(TimeSyncError):
     """Time drift exceeds acceptable threshold."""
+
     pass
 
 
@@ -47,6 +49,7 @@ class TimeSyncResult:
     """
     Result of time synchronization check.
     """
+
     synchronized: bool = False
     drift_seconds: float = 0.0
     drift_ms: int = 0
@@ -80,6 +83,7 @@ class TimeSyncConfig:
     """
     Time sync configuration.
     """
+
     # Drift tolerance
     max_drift_seconds: float = 5.0  # Design Doc D1: допустимый drift
     warning_drift_seconds: float = 2.0
@@ -404,15 +408,16 @@ def verify_time_sync(max_drift_seconds: float = 5.0) -> Tuple[bool, str]:
     Returns:
         (is_ok, message)
     """
-    checker = TimeSyncChecker(
-        config=TimeSyncConfig(max_drift_seconds=max_drift_seconds)
-    )
+    checker = TimeSyncChecker(config=TimeSyncConfig(max_drift_seconds=max_drift_seconds))
     result = checker.check()
 
     if not result.synchronized:
         return False, f"Time sync check failed: {result.error}"
 
     if abs(result.drift_seconds) >= max_drift_seconds:
-        return False, f"Time drift ({result.drift_seconds:.2f}s) exceeds maximum ({max_drift_seconds}s)"
+        return (
+            False,
+            f"Time drift ({result.drift_seconds:.2f}s) exceeds maximum ({max_drift_seconds}s)",
+        )
 
     return True, f"Time synchronized (drift: {result.drift_ms}ms)"

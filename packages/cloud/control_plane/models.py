@@ -83,9 +83,11 @@ DEFAULT_ENROLLMENT_TOKEN_TTL_HOURS: Final[int] = 24
 # Maximum allowed enrollment token TTL
 MAX_ENROLLMENT_TOKEN_TTL_HOURS: Final[int] = 168  # 7 days
 
+
 # Trust states for agents
 class TrustState(str, enum.Enum):
     """Agent trust state."""
+
     ENROLLED = "enrolled"
     REVOKED = "revoked"
     PENDING = "pending"
@@ -106,6 +108,7 @@ class DeploymentState(str, enum.Enum):
            ↓
         REVOKED/RETIRED (terminal)
     """
+
     CREATED = "created"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
@@ -131,6 +134,7 @@ class HaltReason(str, enum.Enum):
     - state divergence
     - data feed invalid
     """
+
     MAX_DAILY_LOSS = "max_daily_loss"
     BROKER_ERROR_BURST = "broker_error_burst"
     LATENCY_SPIKE = "latency_spike"
@@ -158,6 +162,7 @@ class RunState(str, enum.Enum):
            ↓
         COMPLETED/FAILED (terminal)
     """
+
     CREATED = "created"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
@@ -174,6 +179,7 @@ class RunState(str, enum.Enum):
 # Build states
 class BuildState(str, enum.Enum):
     """Build lifecycle state."""
+
     PENDING = "pending"
     BUILDING = "building"
     COMPLETED = "completed"
@@ -184,6 +190,7 @@ class BuildState(str, enum.Enum):
 # Command status
 class CommandStatus(str, enum.Enum):
     """Command lifecycle status."""
+
     PENDING = "pending"
     SENT = "sent"
     ACKNOWLEDGED = "acknowledged"
@@ -198,6 +205,7 @@ class CommandStatus(str, enum.Enum):
 # Change classification
 class ChangeClass(str, enum.Enum):
     """Change classification for approval workflow."""
+
     OPERATIONAL = "operational"
     TRADING_IMPACTING = "trading_impacting"
     SECURITY_SENSITIVE = "security_sensitive"
@@ -207,6 +215,7 @@ class ChangeClass(str, enum.Enum):
 # Telemetry level
 class TelemetryLevel(str, enum.Enum):
     """Telemetry detail level."""
+
     AGGREGATED = "aggregated"  # Default for retail
     DETAILED_NON_SENSITIVE = "detailed_non_sensitive"
     RAW_ORDER_EVENTS = "raw_order_events"  # Enterprise only, opt-in
@@ -215,6 +224,7 @@ class TelemetryLevel(str, enum.Enum):
 # Alert severity
 class AlertSeverity(str, enum.Enum):
     """Alert severity level."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -224,6 +234,7 @@ class AlertSeverity(str, enum.Enum):
 # Access audit action types
 class AuditAction(str, enum.Enum):
     """Audit action types."""
+
     CREATE = "create"
     READ = "read"
     UPDATE = "update"
@@ -240,8 +251,10 @@ class AuditAction(str, enum.Enum):
 # Base Model with Tenant Isolation
 # ============================================================================
 
+
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
+
     pass
 
 
@@ -297,12 +310,14 @@ class SoftDeleteMixin:
 # RBAC Models: Organization, Workspace, User, Role, Permission
 # ============================================================================
 
+
 class Organization(Base, TimestampMixin, SoftDeleteMixin):
     """
     Top-level organization entity.
 
     Organizations contain multiple workspaces and manage billing/compliance.
     """
+
     __tablename__ = "organizations"
 
     id: Mapped[UUID] = mapped_column(
@@ -311,7 +326,9 @@ class Organization(Base, TimestampMixin, SoftDeleteMixin):
         default=uuid4,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    slug: Mapped[Optional[str]] = mapped_column(String(63), unique=True, nullable=True)  # Auto-generated if not provided
+    slug: Mapped[Optional[str]] = mapped_column(
+        String(63), unique=True, nullable=True
+    )  # Auto-generated if not provided
     display_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Status
@@ -346,6 +363,7 @@ class Workspace(Base, TimestampMixin, SoftDeleteMixin):
 
     All tenant-scoped resources reference workspace_id for RLS.
     """
+
     __tablename__ = "workspaces"
 
     id: Mapped[UUID] = mapped_column(
@@ -360,7 +378,9 @@ class Workspace(Base, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    slug: Mapped[Optional[str]] = mapped_column(String(63), nullable=True)  # Auto-generated if not provided
+    slug: Mapped[Optional[str]] = mapped_column(
+        String(63), nullable=True
+    )  # Auto-generated if not provided
     display_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Status
@@ -387,6 +407,7 @@ class Permission(Base, TimestampMixin):
 
     Permissions define specific actions on resources.
     """
+
     __tablename__ = "permissions"
 
     id: Mapped[UUID] = mapped_column(
@@ -401,17 +422,25 @@ class Permission(Base, TimestampMixin):
     resource: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default="*")
     action: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="*")
 
-    __table_args__ = (
-        UniqueConstraint("resource", "action", name="uq_permission_resource_action"),
-    )
+    __table_args__ = (UniqueConstraint("resource", "action", name="uq_permission_resource_action"),)
 
 
 # Role-Permission association table
 role_permissions = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", PGUUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-    Column("permission_id", PGUUID(as_uuid=True), ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "role_id",
+        PGUUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "permission_id",
+        PGUUID(as_uuid=True),
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -422,6 +451,7 @@ class Role(Base, TimestampMixin, SoftDeleteMixin):
     Roles belong to an organization and can optionally be scoped to a workspace.
     If workspace_id is None, the role applies to all workspaces in the organization.
     """
+
     __tablename__ = "roles"
 
     id: Mapped[UUID] = mapped_column(
@@ -461,7 +491,9 @@ class Role(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     __table_args__ = (
-        UniqueConstraint("organization_id", "workspace_id", "name", name="uq_role_org_workspace_name"),
+        UniqueConstraint(
+            "organization_id", "workspace_id", "name", name="uq_role_org_workspace_name"
+        ),
     )
 
 
@@ -470,8 +502,18 @@ class Role(Base, TimestampMixin, SoftDeleteMixin):
 user_roles = Table(
     "user_roles",
     Base.metadata,
-    Column("user_id", PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("role_id", PGUUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "user_id",
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "role_id",
+        PGUUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -481,6 +523,7 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
 
     Users belong to an organization and have roles per workspace.
     """
+
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(
@@ -515,15 +558,15 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
         Text, nullable=True, comment="Hashed backup codes for MFA recovery"
     )
     mfa_verified_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True,
-        comment="When MFA was successfully verified first time"
+        DateTime(timezone=True),
+        nullable=True,
+        comment="When MFA was successfully verified first time",
     )
     failed_mfa_attempts: Mapped[int] = mapped_column(
         Integer, default=0, comment="Failed MFA attempts for lockout"
     )
     mfa_locked_until: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True,
-        comment="MFA lockout expiry time"
+        DateTime(timezone=True), nullable=True, comment="MFA lockout expiry time"
     )
 
     # SSO
@@ -531,7 +574,9 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     @hybrid_property
     def last_login(self) -> Optional[datetime]:
@@ -560,12 +605,14 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
 # Strategy and Artifact Models
 # ============================================================================
 
+
 class Strategy(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
     """
     Strategy definition.
 
     Strategies are versioned and contain multiple versions.
     """
+
     __tablename__ = "strategies"
 
     id: Mapped[UUID] = mapped_column(
@@ -592,9 +639,7 @@ class Strategy(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
         cascade="all, delete-orphan",
     )
 
-    __table_args__ = (
-        UniqueConstraint("workspace_id", "name", name="uq_strategy_workspace_name"),
-    )
+    __table_args__ = (UniqueConstraint("workspace_id", "name", name="uq_strategy_workspace_name"),)
 
 
 class StrategyVersion(Base, TenantMixin, TimestampMixin):
@@ -603,6 +648,7 @@ class StrategyVersion(Base, TenantMixin, TimestampMixin):
 
     Each version represents a specific commit/tag of the strategy.
     """
+
     __tablename__ = "strategy_versions"
 
     id: Mapped[UUID] = mapped_column(
@@ -648,6 +694,7 @@ class Build(Base, TenantMixin, TimestampMixin):
 
     Represents a CI/CD build that produces artifacts.
     """
+
     __tablename__ = "builds"
 
     id: Mapped[UUID] = mapped_column(
@@ -702,6 +749,7 @@ class Artifact(Base, TenantMixin, TimestampMixin):
 
     Contains digest, signature, SBOM reference, and provenance.
     """
+
     __tablename__ = "artifacts"
 
     id: Mapped[UUID] = mapped_column(
@@ -725,8 +773,12 @@ class Artifact(Base, TenantMixin, TimestampMixin):
     size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Security
-    signature_ref: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Signature reference
-    signature_algorithm: Mapped[str] = mapped_column(String(50), default="ed25519")  # Design Doc: Ed25519 default
+    signature_ref: Mapped[Optional[str]] = mapped_column(
+        String(500), nullable=True
+    )  # Signature reference
+    signature_algorithm: Mapped[str] = mapped_column(
+        String(50), default="ed25519"
+    )  # Design Doc: Ed25519 default
     is_signed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # SBOM
@@ -761,12 +813,14 @@ class Artifact(Base, TenantMixin, TimestampMixin):
 # Agent Models
 # ============================================================================
 
+
 class AgentEnrollmentToken(Base, TenantMixin, TimestampMixin):
     """
     Agent enrollment token with TTL.
 
     One-time tokens for agent enrollment process.
     """
+
     __tablename__ = "agent_enrollment_tokens"
 
     id: Mapped[UUID] = mapped_column(
@@ -810,9 +864,7 @@ class AgentEnrollmentToken(Base, TenantMixin, TimestampMixin):
     def is_expired(self) -> bool:
         return datetime.utcnow() > self.expires_at
 
-    __table_args__ = (
-        Index("ix_enrollment_token_expires", "expires_at"),
-    )
+    __table_args__ = (Index("ix_enrollment_token_expires", "expires_at"),)
 
 
 class Agent(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
@@ -821,6 +873,7 @@ class Agent(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
 
     Represents an enrolled agent with trust state and capabilities.
     """
+
     __tablename__ = "agents"
 
     id: Mapped[UUID] = mapped_column(
@@ -853,7 +906,9 @@ class Agent(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
 
     # Health and status
     last_seen_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_heartbeat_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_heartbeat_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     health_status: Mapped[Optional[Dict]] = mapped_column(PortableJSON, nullable=True)
 
     # Enterprise features
@@ -903,12 +958,14 @@ class Agent(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
 # Deployment and Run Models
 # ============================================================================
 
+
 class Deployment(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
     """
     Deployment of an artifact to an agent.
 
     State machine follows Design Doc 11.1.
     """
+
     __tablename__ = "deployments"
 
     id: Mapped[UUID] = mapped_column(
@@ -977,9 +1034,7 @@ class Deployment(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
         cascade="all, delete-orphan",
     )
 
-    __table_args__ = (
-        Index("ix_deployment_agent_state", "agent_id", "state"),
-    )
+    __table_args__ = (Index("ix_deployment_agent_state", "agent_id", "state"),)
 
 
 class Run(Base, TenantMixin, TimestampMixin):
@@ -988,6 +1043,7 @@ class Run(Base, TenantMixin, TimestampMixin):
 
     State machine follows Design Doc 11.2.
     """
+
     __tablename__ = "runs"
 
     id: Mapped[UUID] = mapped_column(
@@ -1042,14 +1098,13 @@ class Run(Base, TenantMixin, TimestampMixin):
     # Relationships
     deployment: Mapped["Deployment"] = relationship(back_populates="runs")
 
-    __table_args__ = (
-        Index("ix_run_deployment_state", "deployment_id", "state"),
-    )
+    __table_args__ = (Index("ix_run_deployment_state", "deployment_id", "state"),)
 
 
 # ============================================================================
 # Command and Approval Models
 # ============================================================================
+
 
 class Command(Base, TenantMixin, TimestampMixin):
     """
@@ -1057,6 +1112,7 @@ class Command(Base, TenantMixin, TimestampMixin):
 
     Includes idempotency key, payload reference, and approval requirement.
     """
+
     __tablename__ = "commands"
 
     id: Mapped[UUID] = mapped_column(
@@ -1107,7 +1163,9 @@ class Command(Base, TenantMixin, TimestampMixin):
 
     # Timing
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     executed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -1122,7 +1180,9 @@ class Command(Base, TenantMixin, TimestampMixin):
     )
 
     __table_args__ = (
-        UniqueConstraint("workspace_id", "idempotency_key", name="uq_command_workspace_idempotency"),
+        UniqueConstraint(
+            "workspace_id", "idempotency_key", name="uq_command_workspace_idempotency"
+        ),
         Index("ix_command_agent_status", "agent_id", "status"),
         Index("ix_command_idempotency", "idempotency_key"),
     )
@@ -1137,6 +1197,7 @@ class ApprovalRecord(Base, TenantMixin, TimestampMixin):
     Design Doc 6.2, 12.2: Structured approval evidence with immutable blob references.
     All digests link to actual stored blobs for full audit trail.
     """
+
     __tablename__ = "approval_records"
 
     id: Mapped[UUID] = mapped_column(
@@ -1185,14 +1246,13 @@ class ApprovalRecord(Base, TenantMixin, TimestampMixin):
     # Relationships
     command: Mapped["Command"] = relationship(back_populates="approvals")
 
-    __table_args__ = (
-        Index("ix_approval_command", "command_id"),
-    )
+    __table_args__ = (Index("ix_approval_command", "command_id"),)
 
 
 # ============================================================================
 # Immutable Config Blob Model
 # ============================================================================
+
 
 class ConfigBlob(Base, TenantMixin, TimestampMixin):
     """
@@ -1201,6 +1261,7 @@ class ConfigBlob(Base, TenantMixin, TimestampMixin):
     Configs are stored by digest; any change creates new digest.
     Cloud stores only desired state (not secrets).
     """
+
     __tablename__ = "config_blobs"
 
     id: Mapped[UUID] = mapped_column(
@@ -1219,7 +1280,9 @@ class ConfigBlob(Base, TenantMixin, TimestampMixin):
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Classification
-    config_type: Mapped[str] = mapped_column(String(100), nullable=False)  # strategy, risk, execution, etc.
+    config_type: Mapped[str] = mapped_column(
+        String(100), nullable=False
+    )  # strategy, risk, execution, etc.
 
     # Schema version
     schema_version: Mapped[str] = mapped_column(String(20), default="1.0.0")
@@ -1242,12 +1305,14 @@ class ConfigBlob(Base, TenantMixin, TimestampMixin):
 # Telemetry and Alert Models
 # ============================================================================
 
+
 class TelemetryEvent(Base, TenantMixin, TimestampMixin):
     """
     Telemetry event from agent.
 
     Events are classified by level (aggregated/detailed/raw).
     """
+
     __tablename__ = "telemetry_events"
 
     id: Mapped[UUID] = mapped_column(
@@ -1297,6 +1362,7 @@ class Alert(Base, TenantMixin, TimestampMixin):
     """
     Alert generated from telemetry or system events.
     """
+
     __tablename__ = "alerts"
 
     id: Mapped[UUID] = mapped_column(
@@ -1330,7 +1396,9 @@ class Alert(Base, TenantMixin, TimestampMixin):
     # Status
     acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
     acknowledged_by: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -1348,12 +1416,14 @@ class Alert(Base, TenantMixin, TimestampMixin):
 # Data Retention and Access Audit Models
 # ============================================================================
 
+
 class DataRetentionPolicy(Base, TenantMixin, TimestampMixin):
     """
     Data retention policy per workspace.
 
     Defines retention periods for different data types.
     """
+
     __tablename__ = "data_retention_policies"
 
     id: Mapped[UUID] = mapped_column(
@@ -1370,7 +1440,9 @@ class DataRetentionPolicy(Base, TenantMixin, TimestampMixin):
 
     # Auto-purge
     auto_purge_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_purge_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_purge_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # GDPR/DSAR
     dsar_export_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -1386,6 +1458,7 @@ class AccessAudit(Base, TenantMixin, TimestampMixin):
 
     Records all access to sensitive data and break-glass events.
     """
+
     __tablename__ = "access_audits"
 
     id: Mapped[UUID] = mapped_column(
@@ -1438,8 +1511,10 @@ class AccessAudit(Base, TenantMixin, TimestampMixin):
 # Governance Models (Design Doc Phase 10: DB-backed governance)
 # ============================================================================
 
+
 class ResidencyPolicyType(str, enum.Enum):
     """Residency mode."""
+
     CLOUD = "cloud"
     ENTERPRISE_LOCAL = "enterprise_local"
     HYBRID = "hybrid"
@@ -1447,6 +1522,7 @@ class ResidencyPolicyType(str, enum.Enum):
 
 class DSARRequestStatus(str, enum.Enum):
     """DSAR request status."""
+
     PENDING = "pending"
     VERIFIED = "verified"
     IN_PROGRESS = "in_progress"
@@ -1457,6 +1533,7 @@ class DSARRequestStatus(str, enum.Enum):
 
 class DSARRequestType(str, enum.Enum):
     """DSAR request type."""
+
     ACCESS = "access"
     ERASURE = "erasure"
     PORTABILITY = "portability"
@@ -1470,6 +1547,7 @@ class GovernancePolicy(Base, TenantMixin, TimestampMixin):
 
     Design Doc Phase 10: DB-backed governance policies.
     """
+
     __tablename__ = "governance_policies"
 
     id: Mapped[UUID] = mapped_column(
@@ -1479,7 +1557,9 @@ class GovernancePolicy(Base, TenantMixin, TimestampMixin):
     )
 
     # Policy type
-    policy_type: Mapped[str] = mapped_column(String(50), nullable=False)  # residency, retention, etc.
+    policy_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # residency, retention, etc.
 
     # Data type this policy applies to (for retention)
     data_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -1509,6 +1589,7 @@ class DSARRequest(Base, TenantMixin, TimestampMixin):
 
     Design Doc Phase 10: DB-backed DSAR workflow.
     """
+
     __tablename__ = "dsar_requests"
 
     id: Mapped[UUID] = mapped_column(
@@ -1533,7 +1614,9 @@ class DSARRequest(Base, TenantMixin, TimestampMixin):
     )
 
     # Data categories
-    data_categories: Mapped[Optional[List[str]]] = mapped_column(PortableStringArray100, nullable=True)
+    data_categories: Mapped[Optional[List[str]]] = mapped_column(
+        PortableStringArray100, nullable=True
+    )
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Identity verification
@@ -1547,7 +1630,9 @@ class DSARRequest(Base, TenantMixin, TimestampMixin):
 
     # Deadlines (GDPR: 30 days, extendable to 90)
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    extended_deadline: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    extended_deadline: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Processing
     processed_by: Mapped[Optional[UUID]] = mapped_column(
@@ -1581,6 +1666,7 @@ class LegalHold(Base, TenantMixin, TimestampMixin):
 
     Design Doc Phase 10: DB-backed legal holds.
     """
+
     __tablename__ = "legal_holds"
 
     id: Mapped[UUID] = mapped_column(
@@ -1624,6 +1710,7 @@ class BreakGlassRequest(Base, TenantMixin, TimestampMixin):
 
     Design Doc Phase 10: DB-backed break-glass audit.
     """
+
     __tablename__ = "break_glass_requests"
 
     id: Mapped[UUID] = mapped_column(
@@ -1681,6 +1768,7 @@ class GovernanceAuditLog(Base, TenantMixin, TimestampMixin):
 
     Design Doc Phase 10: Comprehensive audit trail.
     """
+
     __tablename__ = "governance_audit_logs"
 
     id: Mapped[UUID] = mapped_column(
@@ -1725,8 +1813,10 @@ class GovernanceAuditLog(Base, TenantMixin, TimestampMixin):
 # Experiments Tracking (Design Doc - Feature Flags & A/B Testing)
 # ============================================================================
 
+
 class ExperimentState(str, enum.Enum):
     """Experiment lifecycle state."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     PAUSED = "paused"
@@ -1740,6 +1830,7 @@ class Experiment(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
 
     Tracks experiments across deployments with variant assignments.
     """
+
     __tablename__ = "experiments"
 
     id: Mapped[UUID] = mapped_column(
@@ -1809,6 +1900,7 @@ class ExperimentAssignment(Base, TenantMixin, TimestampMixin):
 
     Tracks which variant an entity is assigned to.
     """
+
     __tablename__ = "experiment_assignments"
 
     id: Mapped[UUID] = mapped_column(
@@ -1865,7 +1957,9 @@ class ExperimentAssignment(Base, TenantMixin, TimestampMixin):
     experiment: Mapped["Experiment"] = relationship(back_populates="assignments")
 
     __table_args__ = (
-        UniqueConstraint("experiment_id", "entity_type", "entity_id", name="uq_experiment_assignment"),
+        UniqueConstraint(
+            "experiment_id", "entity_type", "entity_id", name="uq_experiment_assignment"
+        ),
         Index("ix_experiment_assignment_entity", "entity_type", "entity_id"),
     )
 
@@ -1873,6 +1967,7 @@ class ExperimentAssignment(Base, TenantMixin, TimestampMixin):
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def generate_enrollment_token() -> str:
     """Generate a secure enrollment token."""
@@ -1882,6 +1977,7 @@ def generate_enrollment_token() -> str:
 def compute_token_hash(token: str) -> str:
     """Compute hash of enrollment token for storage."""
     import hashlib
+
     return hashlib.sha256(token.encode()).hexdigest()
 
 

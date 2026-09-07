@@ -77,8 +77,10 @@ ACCESS_TOKEN_PREFIX: Final[str] = "bg_"
 # Enums
 # ============================================================================
 
+
 class BreakGlassReasonType(str, Enum):
     """Pre-defined break-glass reason categories."""
+
     INCIDENT_RESPONSE = "incident_response"
     SECURITY_INVESTIGATION = "security_investigation"
     COMPLIANCE_AUDIT = "compliance_audit"
@@ -92,6 +94,7 @@ class BreakGlassReasonType(str, Enum):
 
 class BreakGlassScope(str, Enum):
     """Scope of break-glass access."""
+
     TELEMETRY_READ = "telemetry_read"
     TELEMETRY_RAW_READ = "telemetry_raw_read"  # RAW_ORDER_EVENTS
     AUDIT_READ = "audit_read"
@@ -108,6 +111,7 @@ class BreakGlassScope(str, Enum):
 
 class BreakGlassStatus(str, Enum):
     """Status of break-glass request."""
+
     PENDING = "pending"
     APPROVED = "approved"
     DENIED = "denied"
@@ -187,6 +191,7 @@ ELEVATED_SCOPES: Set[BreakGlassScope] = {
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class BreakGlassRequest:
     """
@@ -194,6 +199,7 @@ class BreakGlassRequest:
 
     Represents a request for emergency elevated access.
     """
+
     # Identity
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
@@ -242,7 +248,7 @@ class BreakGlassRequest:
         # Enforce duration limits
         self.duration_hours = max(
             MIN_BREAK_GLASS_DURATION_MINUTES // 60,
-            min(self.duration_hours, MAX_BREAK_GLASS_DURATION_HOURS)
+            min(self.duration_hours, MAX_BREAK_GLASS_DURATION_HOURS),
         )
 
         # Compute evidence hash
@@ -360,6 +366,7 @@ class BreakGlassRequest:
 @dataclass
 class BreakGlassResult:
     """Result of a break-glass operation."""
+
     success: bool = True
     request_id: str = ""
     access_token: Optional[str] = None  # Only returned on approval
@@ -383,6 +390,7 @@ class BreakGlassResult:
 @dataclass
 class BreakGlassStats:
     """Break-glass usage statistics."""
+
     total_requests: int = 0
     pending_count: int = 0
     active_count: int = 0
@@ -418,6 +426,7 @@ class BreakGlassStats:
 # ============================================================================
 # Break-Glass Service
 # ============================================================================
+
 
 class BreakGlassPhase6Service:
     """
@@ -559,7 +568,8 @@ class BreakGlassPhase6Service:
 
             # Check max active requests
             active_count = sum(
-                1 for req_id in user_req_ids
+                1
+                for req_id in user_req_ids
                 if self._requests.get(req_id) and self._requests[req_id].is_active
             )
             if active_count >= MAX_ACTIVE_REQUESTS_PER_USER:
@@ -659,16 +669,13 @@ class BreakGlassPhase6Service:
                     )
 
                 # Check if approver is authorized
-                is_authorized = (
-                    approver_id in self._approvers or
-                    approver_email in self._approvers
-                )
+                is_authorized = approver_id in self._approvers or approver_email in self._approvers
 
                 # Elevated scopes require elevated approvers
                 if request.requires_elevated_approval:
                     is_authorized = (
-                        approver_id in self._elevated_approvers or
-                        approver_email in self._elevated_approvers
+                        approver_id in self._elevated_approvers
+                        or approver_email in self._elevated_approvers
                     )
                     if not is_authorized:
                         return BreakGlassResult(
@@ -996,10 +1003,7 @@ class BreakGlassPhase6Service:
     ) -> List[BreakGlassRequest]:
         """Get pending requests awaiting approval."""
         with self._lock:
-            pending = [
-                r for r in self._requests.values()
-                if r.status == BreakGlassStatus.PENDING
-            ]
+            pending = [r for r in self._requests.values() if r.status == BreakGlassStatus.PENDING]
             if workspace_id:
                 pending = [r for r in pending if r.workspace_id == workspace_id]
             return sorted(pending, key=lambda r: r.created_at, reverse=True)
@@ -1023,11 +1027,7 @@ class BreakGlassPhase6Service:
         """Get requests by user."""
         with self._lock:
             request_ids = self._user_requests.get(user_id, [])
-            requests = [
-                self._requests[rid]
-                for rid in request_ids
-                if rid in self._requests
-            ]
+            requests = [self._requests[rid] for rid in request_ids if rid in self._requests]
             return sorted(requests, key=lambda r: r.created_at, reverse=True)[:limit]
 
     # ========================================================================
@@ -1048,9 +1048,9 @@ class BreakGlassPhase6Service:
             # Find expired active requests
             for request in self._requests.values():
                 if (
-                    request.status == BreakGlassStatus.ACTIVE and
-                    request.expires_at and
-                    now > request.expires_at
+                    request.status == BreakGlassStatus.ACTIVE
+                    and request.expires_at
+                    and now > request.expires_at
                 ):
                     request.status = BreakGlassStatus.EXPIRED
                     if request.access_token_hash:
@@ -1153,10 +1153,7 @@ class BreakGlassPhase6Service:
     ) -> List[Dict[str, Any]]:
         """Export break-glass requests for evidence pack."""
         with self._lock:
-            requests = [
-                r for r in self._requests.values()
-                if r.workspace_id == workspace_id
-            ]
+            requests = [r for r in self._requests.values() if r.workspace_id == workspace_id]
 
             if start_time:
                 requests = [r for r in requests if r.created_at >= start_time]

@@ -109,6 +109,7 @@ def test_vgs_parameter_update():
     except Exception as e:
         print(f"   [FAIL] Error during gradient scaling: {e}")
         import traceback
+
         traceback.print_exc()
         print()
         print("RESULT: BUG CONFIRMED - VGS fails during gradient scaling")
@@ -126,6 +127,7 @@ def test_vgs_parameter_update():
     except Exception as e:
         print(f"   [FAIL] Error during training with VGS: {e}")
         import traceback
+
         traceback.print_exc()
         print()
         print("RESULT: BUG CONFIRMED - VGS fails during training")

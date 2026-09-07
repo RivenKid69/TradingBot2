@@ -28,11 +28,7 @@ STATS_PATH = Path("logs/offline/build_adv_base_stats.json")
 def _merge_dicts(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = {key: value for key, value in base.items()}
     for key, value in override.items():
-        if (
-            key in merged
-            and isinstance(merged[key], Mapping)
-            and isinstance(value, Mapping)
-        ):
+        if key in merged and isinstance(merged[key], Mapping) and isinstance(value, Mapping):
             merged[key] = _merge_dicts(merged[key], value)
         else:
             merged[key] = value
@@ -465,4 +461,3 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-

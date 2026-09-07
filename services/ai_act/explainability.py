@@ -238,14 +238,8 @@ class DecisionExplanation:
             return f"Decision: {self.action} {self.symbol} with confidence {self.confidence:.1%}"
 
         # Get top 3 positive and negative factors
-        positive = [
-            fc for fc in self.feature_contributions
-            if fc.direction == "positive"
-        ][:3]
-        negative = [
-            fc for fc in self.feature_contributions
-            if fc.direction == "negative"
-        ][:3]
+        positive = [fc for fc in self.feature_contributions if fc.direction == "positive"][:3]
+        negative = [fc for fc in self.feature_contributions if fc.direction == "negative"][:3]
 
         parts = [f"Decision: {self.action} {self.symbol}"]
         parts.append(f"Confidence: {self.confidence:.1%}")
@@ -455,21 +449,15 @@ class DecisionExplainer:
         timestamp = datetime.now(timezone.utc)
 
         # Calculate feature contributions
-        contributions = self._calculate_feature_contributions(
-            features, action, model_outputs
-        )
+        contributions = self._calculate_feature_contributions(features, action, model_outputs)
 
         # Extract top factors
-        top_factors = [
-            fc.feature_name for fc in contributions[:5]
-        ]
+        top_factors = [fc.feature_name for fc in contributions[:5]]
 
         # Generate counterfactual if not HOLD
         counterfactuals = []
         if action != "HOLD":
-            cf = self._generate_counterfactual(
-                action, features, position_size, contributions
-            )
+            cf = self._generate_counterfactual(action, features, position_size, contributions)
             if cf:
                 counterfactuals.append(cf)
 
@@ -663,9 +651,7 @@ class DecisionExplainer:
                 total_confidence += exp.confidence
 
                 for fc in exp.feature_contributions[:5]:
-                    top_features[fc.feature_name] = (
-                        top_features.get(fc.feature_name, 0) + 1
-                    )
+                    top_features[fc.feature_name] = top_features.get(fc.feature_name, 0) + 1
 
             return {
                 "total_explanations": len(explanations),

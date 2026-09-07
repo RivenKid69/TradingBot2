@@ -151,17 +151,13 @@ def _normalise_rounding_options(
         normalized["decimals"] = decimals
 
     minimum = _safe_non_negative_float(
-        mapping.get("minimum")
-        or mapping.get("min_fee")
-        or mapping.get("minimum_fee")
+        mapping.get("minimum") or mapping.get("min_fee") or mapping.get("minimum_fee")
     )
     if minimum is not None:
         normalized["minimum_fee"] = float(minimum)
 
     maximum = _safe_non_negative_float(
-        mapping.get("maximum")
-        or mapping.get("max_fee")
-        or mapping.get("maximum_fee")
+        mapping.get("maximum") or mapping.get("max_fee") or mapping.get("maximum_fee")
     )
     if maximum is not None:
         normalized["maximum_fee"] = float(maximum)
@@ -269,9 +265,8 @@ def _normalise_settlement_options(payload: Any) -> Optional[Dict[str, Any]]:
     if currency:
         normalized["currency"] = currency.upper()
 
-    fallback_currency = (
-        _safe_str(mapping.get("fallback_currency"))
-        or _safe_str(mapping.get("fallback_asset"))
+    fallback_currency = _safe_str(mapping.get("fallback_currency")) or _safe_str(
+        mapping.get("fallback_asset")
     )
     if fallback_currency:
         normalized["fallback_currency"] = fallback_currency.upper()
@@ -358,9 +353,7 @@ class FeesConfig:
     taker_fee_override_bps: Optional[float] = None
 
     # filled during normalisation
-    maker_taker_share_cfg: Optional[MakerTakerShareSettings] = field(
-        init=False, default=None
-    )
+    maker_taker_share_cfg: Optional[MakerTakerShareSettings] = field(init=False, default=None)
     rounding_options: Optional[Dict[str, Any]] = field(init=False, default=None)
     rounding_enabled: bool = field(init=False, default=False)
     rounding_step_effective: Optional[float] = field(init=False, default=None)
@@ -517,9 +510,7 @@ class FeesConfig:
         if vip_value is not None:
             self.public_snapshot_vip_tier = vip_value
 
-        vip_label = _safe_str(
-            snapshot_cfg.get("vip_label") or snapshot_cfg.get("vip_tier_label")
-        )
+        vip_label = _safe_str(snapshot_cfg.get("vip_label") or snapshot_cfg.get("vip_tier_label"))
         if vip_label:
             self.public_snapshot_vip_label = vip_label
 
@@ -673,14 +664,10 @@ class FeesImpl:
                         self._table_rounding_normalised,
                         self._table_rounding_enabled,
                         self._table_rounding_step,
-                    ) = _normalise_rounding_options(
-                        round_block, fallback_step=fallback_step
-                    )
+                    ) = _normalise_rounding_options(round_block, fallback_step=fallback_step)
                 settle_block = account_payload.get("settlement")
                 if isinstance(settle_block, Mapping):
-                    self._table_settlement_normalised = _normalise_settlement_options(
-                        settle_block
-                    )
+                    self._table_settlement_normalised = _normalise_settlement_options(settle_block)
             share_payload = table_payload.get("share")
             if isinstance(share_payload, Mapping):
                 self._table_share_raw = dict(share_payload)
@@ -727,9 +714,7 @@ class FeesImpl:
             if vip_meta is None:
                 vip_meta = _safe_positive_int(self.table_metadata.get("vip_tier_numeric"))
             if vip_meta is None and isinstance(self.table_metadata.get("vip_tier"), str):
-                vip_meta = _safe_positive_int(
-                    self.table_metadata.get("vip_tier").split(" ")[-1]
-                )
+                vip_meta = _safe_positive_int(self.table_metadata.get("vip_tier").split(" ")[-1])
             if vip_meta is not None:
                 self.cfg.auto_vip_tier = vip_meta
 
@@ -784,18 +769,13 @@ class FeesImpl:
         self._use_bnb_discount = bool(use_bnb_discount)
 
         rounding_payload = (
-            copy.deepcopy(cfg.rounding_options)
-            if cfg.rounding_options is not None
-            else None
+            copy.deepcopy(cfg.rounding_options) if cfg.rounding_options is not None else None
         )
         settlement_payload = (
-            copy.deepcopy(cfg.settlement_options)
-            if cfg.settlement_options is not None
-            else None
+            copy.deepcopy(cfg.settlement_options) if cfg.settlement_options is not None else None
         )
         rounding_disabled_explicit = (
-            rounding_payload is not None
-            and rounding_payload.get("enabled") is False
+            rounding_payload is not None and rounding_payload.get("enabled") is False
         )
 
         fee_rounding_step = cfg.fee_rounding_step
@@ -807,9 +787,7 @@ class FeesImpl:
             elif self._table_rounding_step is not None:
                 fee_rounding_step = self._table_rounding_step
             else:
-                candidate = _safe_float(
-                    self._table_account_overrides.get("fee_rounding_step")
-                )
+                candidate = _safe_float(self._table_account_overrides.get("fee_rounding_step"))
                 if candidate is not None and candidate > 0.0:
                     fee_rounding_step = candidate
 
@@ -837,9 +815,7 @@ class FeesImpl:
         if vip_tier is None and not cfg.vip_tier_overridden and cfg.auto_vip_tier is not None:
             vip_tier = int(cfg.auto_vip_tier)
         if vip_tier is None:
-            vip_candidate = _safe_positive_int(
-                self._table_account_overrides.get("vip_tier")
-            )
+            vip_candidate = _safe_positive_int(self._table_account_overrides.get("vip_tier"))
             if vip_candidate is not None:
                 vip_tier = vip_candidate
         if vip_tier is None:
@@ -879,11 +855,9 @@ class FeesImpl:
 
         self.maker_taker_share_expected: Optional[Dict[str, float]] = None
         if self.maker_taker_share_cfg is not None:
-            self.maker_taker_share_expected = (
-                self.maker_taker_share_cfg.expected_fee_breakdown(
-                    self.base_fee_bps["maker_fee_bps"],
-                    self.base_fee_bps["taker_fee_bps"],
-                )
+            self.maker_taker_share_expected = self.maker_taker_share_cfg.expected_fee_breakdown(
+                self.base_fee_bps["maker_fee_bps"],
+                self.base_fee_bps["taker_fee_bps"],
             )
 
         self.expected_fee_bps: Dict[str, float] = dict(self.base_fee_bps)
@@ -891,9 +865,7 @@ class FeesImpl:
             self.expected_fee_bps.update(self.maker_taker_share_expected)
 
         symbol_table_payload = (
-            {k: dict(v) for k, v in self.symbol_fee_table.items()}
-            if self.symbol_fee_table
-            else {}
+            {k: dict(v) for k, v in self.symbol_fee_table.items()} if self.symbol_fee_table else {}
         )
 
         self.model_payload: Dict[str, Any] = {
@@ -974,9 +946,7 @@ class FeesImpl:
         if self._public_refresh_error is not None:
             table_meta.setdefault("auto_refresh_error", self._public_refresh_error)
         if self.cfg.auto_refresh_metadata:
-            table_meta.setdefault(
-                "public_refresh", copy.deepcopy(self.cfg.auto_refresh_metadata)
-            )
+            table_meta.setdefault("public_refresh", copy.deepcopy(self.cfg.auto_refresh_metadata))
         meta["table"] = table_meta
         account_meta: Dict[str, Any] = {
             "enabled": bool(self.cfg.account_info_enabled),
@@ -1020,9 +990,7 @@ class FeesImpl:
         if fee_rounding_step is not None:
             meta["fee_rounding_step"] = float(fee_rounding_step)
         meta["rounding"] = copy.deepcopy(rounding) if rounding is not None else None
-        meta["settlement"] = (
-            copy.deepcopy(settlement) if settlement is not None else None
-        )
+        meta["settlement"] = copy.deepcopy(settlement) if settlement is not None else None
         meta["maker_taker_share"] = (
             dict(self.maker_taker_share_raw)
             if isinstance(self.maker_taker_share_raw, Mapping)
@@ -1115,9 +1083,7 @@ class FeesImpl:
         return {"table": table, "meta": meta, "account": account, "share": share}
 
     @classmethod
-    def _read_fee_table(
-        cls, path: str
-    ) -> Tuple[Optional[Dict[str, Any]], Optional[float]]:
+    def _read_fee_table(cls, path: str) -> Tuple[Optional[Dict[str, Any]], Optional[float]]:
         abspath = os.path.abspath(path)
         try:
             stat = os.stat(abspath)
@@ -1171,16 +1137,12 @@ class FeesImpl:
 
         if data is None:
             if path_candidate is not None and os.path.exists(abspath):
-                logger.warning(
-                    "Fees table %s is unusable; falling back to global fees", abspath
-                )
+                logger.warning("Fees table %s is unusable; falling back to global fees", abspath)
                 self.table_error = "invalid"
                 auto_reason = "invalid"
             else:
                 if self.cfg.path:
-                    logger.warning(
-                        "Fees table %s not found; falling back to global fees", abspath
-                    )
+                    logger.warning("Fees table %s not found; falling back to global fees", abspath)
                 self.table_error = "missing"
                 auto_reason = "missing"
             self.table_metadata = {
@@ -1213,15 +1175,14 @@ class FeesImpl:
             elif self._can_auto_refresh(abspath):
                 threshold = float(DEFAULT_UPDATE_THRESHOLD_DAYS)
 
-            if (
-                threshold is not None
-                and age_days is not None
-                and age_days > threshold
-            ):
+            if threshold is not None and age_days is not None and age_days > threshold:
                 self.table_stale = True
                 auto_reason = "stale"
                 logger.warning(
-                    "Fees table %s is stale (age %.1f days > %.1f); refreshing", abspath, age_days, threshold
+                    "Fees table %s is stale (age %.1f days > %.1f); refreshing",
+                    abspath,
+                    age_days,
+                    threshold,
                 )
 
             if not payload.get("table"):
@@ -1443,9 +1404,7 @@ class FeesImpl:
 
         if not api_key or not api_secret:
             self.account_fee_status = "missing_credentials"
-            logger.warning(
-                "Account info fetch enabled but API credentials are missing; skipping"
-            )
+            logger.warning("Account info fetch enabled but API credentials are missing; skipping")
             return None
 
         try:
@@ -1540,13 +1499,13 @@ class FeesImpl:
             try:
                 self._model = FeesModel.from_dict(copy.deepcopy(config_payload))
             except Exception:
-                logger.debug(
-                    "Failed to rebuild FeesModel with simulator context", exc_info=True
-                )
+                logger.debug("Failed to rebuild FeesModel with simulator context", exc_info=True)
 
         self.model_payload = config_payload
         if symbol_table:
-            self.symbol_fee_table = {k: dict(v) for k, v in symbol_table.items() if isinstance(v, Mapping)}
+            self.symbol_fee_table = {
+                k: dict(v) for k, v in symbol_table.items() if isinstance(v, Mapping)
+            }
 
         if self._model is not None:
             setattr(sim, "fees", self._model)

@@ -143,10 +143,12 @@ class TestTelemetryBuffer:
 
     def test_add_event(self, buffer):
         """Test adding event."""
-        event_id = buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"status": "running"},
-        ))
+        event_id = buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"status": "running"},
+            )
+        )
 
         assert event_id is not None
         assert len(buffer._memory_buffer) == 1
@@ -184,10 +186,12 @@ class TestTelemetryBuffer:
         """Test batch persistence when size reached."""
         # Add events up to batch size
         for i in range(12):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.METRIC,
-                data={"index": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.METRIC,
+                    data={"index": i},
+                )
+            )
 
         # Should have persisted first batch, some in memory
         assert len(buffer._memory_buffer) < 12
@@ -198,10 +202,12 @@ class TestTelemetryBuffer:
         """Test flush with send function."""
         # Add events
         for i in range(5):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"index": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"index": i},
+                )
+            )
 
         # Mock send function
         send_fn = MagicMock(return_value=True)
@@ -214,10 +220,12 @@ class TestTelemetryBuffer:
 
     def test_flush_failure_increments_retry(self, buffer):
         """Test flush failure increments retry count."""
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": True},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            )
+        )
 
         # Mock failed send
         send_fn = MagicMock(return_value=False)
@@ -236,19 +244,23 @@ class TestTelemetryBuffer:
         assert buffer.get_pending_count() == 0
 
         for i in range(3):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.METRIC,
-                data={"i": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.METRIC,
+                    data={"i": i},
+                )
+            )
 
         assert buffer.get_pending_count() == 3
 
     def test_get_pending_events(self, buffer):
         """Test getting pending events."""
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.ERROR,
-            data={"message": "Test"},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.ERROR,
+                data={"message": "Test"},
+            )
+        )
 
         events = buffer.get_pending_events()
         assert len(events) == 1
@@ -257,10 +269,12 @@ class TestTelemetryBuffer:
     def test_cleanup_old_events(self, buffer):
         """Test cleanup of old sent events."""
         # Add and mark as sent
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": True},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            )
+        )
 
         # Force persist and mark sent
         buffer._persist_batch()
@@ -271,6 +285,7 @@ class TestTelemetryBuffer:
         # Set old timestamp by directly modifying DB
         import contextlib
         import sqlite3
+
         with contextlib.closing(sqlite3.connect(str(buffer.config.db_path))) as conn:
             old_time = (datetime.utcnow() - timedelta(days=10)).isoformat()
             conn.execute("UPDATE telemetry_events SET timestamp = ?", (old_time,))
@@ -283,10 +298,12 @@ class TestTelemetryBuffer:
     def test_export_jsonl(self, buffer, temp_dir):
         """Test JSONL export."""
         for i in range(3):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.METRIC,
-                data={"index": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.METRIC,
+                    data={"index": i},
+                )
+            )
 
         output_path = temp_dir / "export.jsonl"
         count = buffer.export_jsonl(output_path)
@@ -304,10 +321,12 @@ class TestTelemetryBuffer:
     def test_get_statistics(self, buffer):
         """Test statistics retrieval."""
         for i in range(5):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"i": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"i": i},
+                )
+            )
 
         # Force persist to DB
         buffer._persist_batch()
@@ -320,10 +339,12 @@ class TestTelemetryBuffer:
 
     def test_agent_id_propagation(self, buffer):
         """Test agent ID is set on events."""
-        event_id = buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={},
-        ))
+        event_id = buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={},
+            )
+        )
 
         events = buffer.get_pending_events()
         assert events[0].agent_id == "test-agent"
@@ -332,10 +353,12 @@ class TestTelemetryBuffer:
         """Test run ID is set on events."""
         buffer.set_run_id("run-123")
 
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={},
+            )
+        )
 
         events = buffer.get_pending_events()
         assert events[0].run_id == "run-123"
@@ -381,10 +404,12 @@ class TestTelemetryBuffer:
 
         # Create first buffer and add events
         buffer1 = TelemetryBuffer(config=config)
-        buffer1.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": "data"},
-        ))
+        buffer1.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": "data"},
+            )
+        )
         buffer1._persist_batch()
         buffer1.close()  # Explicitly close to release resources
 
@@ -415,7 +440,7 @@ class TestTelemetryBufferResourceManagement:
         config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
         buffer = TelemetryBuffer(config=config)
 
-        assert hasattr(buffer, 'close')
+        assert hasattr(buffer, "close")
         assert callable(buffer.close)
 
         buffer.close()
@@ -425,10 +450,12 @@ class TestTelemetryBufferResourceManagement:
         config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
 
         with TelemetryBuffer(config=config) as buffer:
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"test": True},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"test": True},
+                )
+            )
             count = buffer.get_pending_count()
             assert count == 1
 
@@ -490,10 +517,12 @@ class TestTelemetryBufferResourceManagement:
         config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
         buffer = TelemetryBuffer(config=config)
 
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": True},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            )
+        )
 
         # Multiple close calls should not raise
         buffer.close()
@@ -510,10 +539,12 @@ class TestTelemetryBufferResourceManagement:
 
         # Add events (less than batch size, so they stay in memory)
         for i in range(5):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.METRIC,
-                data={"index": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.METRIC,
+                    data={"index": i},
+                )
+            )
 
         assert len(buffer._memory_buffer) == 5
 
@@ -547,10 +578,12 @@ class TestWindowsFileLocking:
         # Rapid create/close cycles should not cause locking
         for i in range(10):
             buffer = TelemetryBuffer(config=config)
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"iteration": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"iteration": i},
+                )
+            )
             buffer._persist_batch()
             buffer.close()
 
@@ -564,10 +597,12 @@ class TestWindowsFileLocking:
         config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
 
         buffer = TelemetryBuffer(config=config)
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": True},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            )
+        )
         buffer._persist_batch()
         buffer.close()
 
@@ -583,17 +618,21 @@ class TestWindowsFileLocking:
 
         # First buffer
         with TelemetryBuffer(config=config) as buffer1:
-            buffer1.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"buffer": 1},
-            ))
+            buffer1.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"buffer": 1},
+                )
+            )
 
         # Second buffer - should be able to access DB
         with TelemetryBuffer(config=config) as buffer2:
-            buffer2.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"buffer": 2},
-            ))
+            buffer2.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"buffer": 2},
+                )
+            )
             count = buffer2.get_pending_count()
             assert count == 2
 
@@ -602,10 +641,12 @@ class TestWindowsFileLocking:
         config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
 
         buffer = TelemetryBuffer(config=config)
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": True},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            )
+        )
         buffer.flush()
         buffer.get_statistics()
         buffer.get_pending_count()
@@ -640,10 +681,12 @@ class TestWindowsFileLocking:
 
         # Add some events
         for i in range(5):
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"index": i},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"index": i},
+                )
+            )
 
         # Wait for a flush cycle
         time.sleep(1.5)
@@ -663,10 +706,12 @@ class TestWindowsFileLocking:
         config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
         buffer = TelemetryBuffer(config=config)
 
-        buffer.add(TelemetryEvent(
-            event_type=TelemetryEventType.HEARTBEAT,
-            data={"test": True},
-        ))
+        buffer.add(
+            TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            )
+        )
 
         # Send function that raises exception
         def failing_send(events):
@@ -707,10 +752,12 @@ class TestCleanupOldEventsWithClosing:
 
         with TelemetryBuffer(config=config) as buffer:
             # Add and mark as sent
-            buffer.add(TelemetryEvent(
-                event_type=TelemetryEventType.HEARTBEAT,
-                data={"test": True},
-            ))
+            buffer.add(
+                TelemetryEvent(
+                    event_type=TelemetryEventType.HEARTBEAT,
+                    data={"test": True},
+                )
+            )
             buffer._persist_batch()
 
             send_fn = MagicMock(return_value=True)

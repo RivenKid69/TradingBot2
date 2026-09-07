@@ -289,9 +289,7 @@ class TestAuditTrailWriterInit:
 
     def test_init_with_storage(self, sample_lei, mock_storage):
         """Test initialization with provided storage."""
-        config = AuditTrailWriterConfig(
-            firm_lei=sample_lei, enable_retention_management=False
-        )
+        config = AuditTrailWriterConfig(firm_lei=sample_lei, enable_retention_management=False)
         writer = AuditTrailWriter(config, storage=mock_storage)
 
         assert writer.state == WriterState.STOPPED
@@ -315,9 +313,7 @@ class TestAuditTrailWriterInit:
         mock_record.sequence_number = 42
         mock_storage.get_latest_record.return_value = mock_record
 
-        config = AuditTrailWriterConfig(
-            firm_lei=sample_lei, enable_retention_management=False
-        )
+        config = AuditTrailWriterConfig(firm_lei=sample_lei, enable_retention_management=False)
         writer = AuditTrailWriter(config, storage=mock_storage)
 
         assert writer._last_hash == "abc123hash"
@@ -325,9 +321,7 @@ class TestAuditTrailWriterInit:
 
     def test_init_with_retention_management(self, sample_lei, mock_storage):
         """Test initialization with retention management enabled."""
-        config = AuditTrailWriterConfig(
-            firm_lei=sample_lei, enable_retention_management=True
-        )
+        config = AuditTrailWriterConfig(firm_lei=sample_lei, enable_retention_management=True)
 
         with patch(
             "services.core.risk_controls.audit_trail_writer.create_retention_manager"
@@ -345,9 +339,7 @@ class TestAuditTrailWriterInit:
         mock_storage = Mock()
         mock_storage.get_last_hash.side_effect = RuntimeError("Storage error")
 
-        config = AuditTrailWriterConfig(
-            firm_lei=sample_lei, enable_retention_management=False
-        )
+        config = AuditTrailWriterConfig(firm_lei=sample_lei, enable_retention_management=False)
 
         with pytest.raises(RuntimeError):
             AuditTrailWriter(config, storage=mock_storage)
@@ -504,11 +496,7 @@ class TestAuditTrailWriterSyncWrite:
         writer = AuditTrailWriter(sync_config)
         writer.start()
 
-        record = (
-            AuditRecordBuilder()
-            .event_type(AuditEventType.SYSTEM_STARTUP)
-            .build_unsafe()
-        )
+        record = AuditRecordBuilder().event_type(AuditEventType.SYSTEM_STARTUP).build_unsafe()
         record.firm_lei = ""
 
         writer.write(record)
@@ -1157,9 +1145,7 @@ class TestHighLevelWriteMethods:
         writer = AuditTrailWriter(sync_config)
         writer.start()
 
-        result = writer.write_order_rejected(
-            order_id="ORD-12345", reason="Unknown error"
-        )
+        result = writer.write_order_rejected(order_id="ORD-12345", reason="Unknown error")
 
         assert result is True
         writer.stop()
@@ -1254,9 +1240,7 @@ class TestQueryMethods:
 
         # Write some records
         for i in range(5):
-            writer.write_system_event(
-                AuditEventType.SYSTEM_STARTUP, f"Event {i}"
-            )
+            writer.write_system_event(AuditEventType.SYSTEM_STARTUP, f"Event {i}")
 
         # Verify chain
         status = writer.verify_chain()
@@ -1361,9 +1345,7 @@ class TestCreateAuditTrailWriter:
 
     def test_create_default(self, sample_lei, temp_db_path):
         """Test create with default parameters."""
-        writer = create_audit_trail_writer(
-            firm_lei=sample_lei, storage_path=temp_db_path
-        )
+        writer = create_audit_trail_writer(firm_lei=sample_lei, storage_path=temp_db_path)
 
         assert writer.config.firm_lei == sample_lei
         assert writer.config.mode == WriterMode.ASYNC
@@ -1627,9 +1609,7 @@ class TestIntegration:
         writer.start()
 
         # System startup
-        writer.write_system_event(
-            AuditEventType.SYSTEM_STARTUP, "Trading system started"
-        )
+        writer.write_system_event(AuditEventType.SYSTEM_STARTUP, "Trading system started")
 
         # Algorithm started
         writer.write_algorithm_event(
@@ -1688,14 +1668,10 @@ class TestIntegration:
         )
 
         # Algorithm stopped
-        writer.write_algorithm_event(
-            AuditEventType.ALGO_STOPPED, algorithm_id="VWAP-001"
-        )
+        writer.write_algorithm_event(AuditEventType.ALGO_STOPPED, algorithm_id="VWAP-001")
 
         # System shutdown
-        writer.write_system_event(
-            AuditEventType.SYSTEM_SHUTDOWN, "Trading system stopped"
-        )
+        writer.write_system_event(AuditEventType.SYSTEM_SHUTDOWN, "Trading system stopped")
 
         # Verify
         metrics = writer.get_metrics()

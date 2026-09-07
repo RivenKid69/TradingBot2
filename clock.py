@@ -48,9 +48,7 @@ def _collect_sync_samples(
     for _ in range(max(1, attempts)):
         server_ms, rtt_ms = client.get_server_time()
         local_ms = system_utc_ms()
-        offsets.append(
-            float(server_ms) + float(rtt_ms) / 2.0 - float(local_ms)
-        )
+        offsets.append(float(server_ms) + float(rtt_ms) / 2.0 - float(local_ms))
         rtts.append(float(rtt_ms))
     return offsets, rtts
 
@@ -69,11 +67,7 @@ def _apply_sync_samples(
         sorted_rtts = sorted(filtered_rtts)
         idx = max(0, int(math.ceil(len(sorted_rtts) * 0.9)) - 1)
         p90 = sorted_rtts[idx]
-        paired = [
-            (off, rtt)
-            for off, rtt in zip(filtered_offsets, filtered_rtts)
-            if rtt <= p90
-        ]
+        paired = [(off, rtt) for off, rtt in zip(filtered_offsets, filtered_rtts) if rtt <= p90]
         if paired:
             filtered_offsets = [off for off, _ in paired]
             filtered_rtts = [rtt for _, rtt in paired]

@@ -47,16 +47,19 @@ from ..models import (
 # Enums
 # ============================================================================
 
+
 class DSARRequestType(str, enum.Enum):
     """GDPR DSAR request types."""
-    ACCESS = "access"           # Article 15 - Right of access
-    PORTABILITY = "portability" # Article 20 - Data portability
-    ERASURE = "erasure"         # Article 17 - Right to erasure
+
+    ACCESS = "access"  # Article 15 - Right of access
+    PORTABILITY = "portability"  # Article 20 - Data portability
+    ERASURE = "erasure"  # Article 17 - Right to erasure
     RECTIFICATION = "rectification"  # Article 16 - Right to rectification
 
 
 class DSARStatus(str, enum.Enum):
     """DSAR request status."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     AWAITING_VERIFICATION = "awaiting_verification"
@@ -68,6 +71,7 @@ class DSARStatus(str, enum.Enum):
 
 class RetentionAction(str, enum.Enum):
     """Retention policy action."""
+
     DELETE = "delete"
     ARCHIVE = "archive"
     ANONYMIZE = "anonymize"
@@ -76,6 +80,7 @@ class RetentionAction(str, enum.Enum):
 
 class BreakGlassReason(str, enum.Enum):
     """Break-glass access reason types."""
+
     INCIDENT_RESPONSE = "incident_response"
     SECURITY_INVESTIGATION = "security_investigation"
     COMPLIANCE_AUDIT = "compliance_audit"
@@ -87,6 +92,7 @@ class BreakGlassReason(str, enum.Enum):
 
 class BreakGlassScope(str, enum.Enum):
     """Break-glass access scope."""
+
     TELEMETRY_READ = "telemetry_read"
     AUDIT_READ = "audit_read"
     CONFIG_READ = "config_read"
@@ -96,6 +102,7 @@ class BreakGlassScope(str, enum.Enum):
 
 class DataRegion(str, enum.Enum):
     """Data storage regions."""
+
     US_EAST = "us-east-1"
     US_WEST = "us-west-2"
     EU_WEST = "eu-west-1"
@@ -107,19 +114,22 @@ class DataRegion(str, enum.Enum):
 
 class ResidencyMode(str, enum.Enum):
     """Data residency mode."""
-    CLOUD = "cloud"           # Standard cloud storage
-    LOCAL_ONLY = "local_only" # Enterprise - data stays on agent
-    SELECTIVE = "selective"   # Local + selective export
-    HYBRID = "hybrid"         # Mixed mode
+
+    CLOUD = "cloud"  # Standard cloud storage
+    LOCAL_ONLY = "local_only"  # Enterprise - data stays on agent
+    SELECTIVE = "selective"  # Local + selective export
+    HYBRID = "hybrid"  # Mixed mode
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class DSARRequestData:
     """DSAR request data."""
+
     id: UUID
     user_id: str
     workspace_id: UUID
@@ -140,6 +150,7 @@ class DSARRequestData:
 @dataclass
 class ResidencyPolicyData:
     """Data residency policy."""
+
     id: UUID
     workspace_id: UUID
     primary_region: DataRegion
@@ -154,6 +165,7 @@ class ResidencyPolicyData:
 @dataclass
 class BreakGlassRequestData:
     """Break-glass request data."""
+
     id: UUID
     requester_id: str
     requester_email: str
@@ -176,6 +188,7 @@ class BreakGlassRequestData:
 @dataclass
 class PurgeResult:
     """Result of a purge operation."""
+
     workspace_id: UUID
     data_type: str
     records_purged: int
@@ -190,15 +203,43 @@ class PurgeResult:
 # ============================================================================
 
 # EU countries for GDPR compliance
-EU_COUNTRIES = frozenset({
-    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-    "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-    "PL", "PT", "RO", "SK", "SI", "ES", "SE",
-    # EEA
-    "IS", "LI", "NO",
-    # UK post-Brexit still requires similar treatment
-    "GB",
-})
+EU_COUNTRIES = frozenset(
+    {
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "FR",
+        "DE",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE",
+        # EEA
+        "IS",
+        "LI",
+        "NO",
+        # UK post-Brexit still requires similar treatment
+        "GB",
+    }
+)
 
 # EU data regions
 EU_REGIONS = frozenset({DataRegion.EU_WEST, DataRegion.EU_CENTRAL, DataRegion.UK})
@@ -225,7 +266,7 @@ DEFAULT_RETENTION_DAYS: Dict[str, int] = {
     "alerts": 365,
     "commands": 180,
     "approval_records": 2555,  # 7 years for compliance
-    "access_audits": 2555,     # 7 years for compliance
+    "access_audits": 2555,  # 7 years for compliance
     "config_blobs": 365,
     "run_data": 365,
     "deployment_data": 365,
@@ -239,6 +280,7 @@ DSAR_EXTENSION_DAYS = 30  # Can extend once
 # ============================================================================
 # DSAR Service
 # ============================================================================
+
 
 class DSARService:
     """
@@ -396,18 +438,14 @@ class DSARService:
         # Export alerts
         if "alerts" in dsar.data_categories:
             result = await self.session.execute(
-                select(func.count(Alert.id)).where(
-                    Alert.workspace_id == dsar.workspace_id
-                )
+                select(func.count(Alert.id)).where(Alert.workspace_id == dsar.workspace_id)
             )
             total_records += result.scalar() or 0
 
         # Export commands
         if "commands" in dsar.data_categories:
             result = await self.session.execute(
-                select(func.count(Command.id)).where(
-                    Command.workspace_id == dsar.workspace_id
-                )
+                select(func.count(Command.id)).where(Command.workspace_id == dsar.workspace_id)
             )
             total_records += result.scalar() or 0
 
@@ -460,9 +498,7 @@ class DSARService:
             legal_hold = await self._check_legal_hold(dsar.workspace_id, "telemetry_events")
             if not legal_hold:
                 result = await self.session.execute(
-                    delete(TelemetryEvent).where(
-                        TelemetryEvent.workspace_id == dsar.workspace_id
-                    )
+                    delete(TelemetryEvent).where(TelemetryEvent.workspace_id == dsar.workspace_id)
                 )
                 total_deleted += result.rowcount
 
@@ -471,9 +507,7 @@ class DSARService:
             legal_hold = await self._check_legal_hold(dsar.workspace_id, "alerts")
             if not legal_hold:
                 result = await self.session.execute(
-                    delete(Alert).where(
-                        Alert.workspace_id == dsar.workspace_id
-                    )
+                    delete(Alert).where(Alert.workspace_id == dsar.workspace_id)
                 )
                 total_deleted += result.rowcount
 
@@ -535,6 +569,7 @@ class DSARService:
 # Residency Policy Service
 # ============================================================================
 
+
 class ResidencyPolicyService:
     """
     DB-backed data residency policy service.
@@ -565,8 +600,7 @@ class ResidencyPolicyService:
 
         # Determine primary region
         primary_region = COUNTRY_TO_REGION.get(
-            country_code.upper(),
-            DataRegion.EU_WEST if is_eu else DataRegion.US_EAST
+            country_code.upper(), DataRegion.EU_WEST if is_eu else DataRegion.US_EAST
         )
 
         # EU requires EU-only storage
@@ -666,6 +700,7 @@ class ResidencyPolicyService:
 # Retention Policy Service
 # ============================================================================
 
+
 class RetentionPolicyService:
     """
     DB-backed data retention policy service.
@@ -736,9 +771,7 @@ class RetentionPolicyService:
     ) -> List[DataRetentionPolicy]:
         """Get all retention policies for workspace."""
         result = await self.session.execute(
-            select(DataRetentionPolicy).where(
-                DataRetentionPolicy.workspace_id == workspace_id
-            )
+            select(DataRetentionPolicy).where(DataRetentionPolicy.workspace_id == workspace_id)
         )
         return list(result.scalars().all())
 
@@ -925,6 +958,7 @@ class RetentionPolicyService:
 # ============================================================================
 # Break Glass Service
 # ============================================================================
+
 
 class BreakGlassService:
     """
@@ -1171,17 +1205,18 @@ class BreakGlassService:
         """Get active break-glass requests for workspace."""
         now = datetime.now(timezone.utc)
         return [
-            r for r in self._requests.values()
-            if r.workspace_id == workspace_id
-            and r.approved
-            and r.expires_at
-            and r.expires_at > now
+            r
+            for r in self._requests.values()
+            if r.workspace_id == workspace_id and r.approved and r.expires_at and r.expires_at > now
         ]
 
-    async def get_pending_requests(self, workspace_id: Optional[UUID] = None) -> List[BreakGlassRequestData]:
+    async def get_pending_requests(
+        self, workspace_id: Optional[UUID] = None
+    ) -> List[BreakGlassRequestData]:
         """Get pending break-glass requests."""
         return [
-            r for r in self._requests.values()
+            r
+            for r in self._requests.values()
             if r.status == "pending_approval"
             and (workspace_id is None or r.workspace_id == workspace_id)
         ]

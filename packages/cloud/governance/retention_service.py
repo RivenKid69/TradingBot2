@@ -145,6 +145,7 @@ ALL_DATA_CATEGORIES: Final[Set[str]] = {
 
 class RetentionAction(str, Enum):
     """Actions for data after retention period expires."""
+
     DELETE = "delete"
     ARCHIVE = "archive"
     ANONYMIZE = "anonymize"
@@ -153,6 +154,7 @@ class RetentionAction(str, Enum):
 
 class PurgeStatus(str, Enum):
     """Status of a purge operation."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -163,6 +165,7 @@ class PurgeStatus(str, Enum):
 
 class LegalHoldStatus(str, Enum):
     """Status of a legal hold."""
+
     ACTIVE = "active"
     RELEASED = "released"
     EXPIRED = "expired"
@@ -171,6 +174,7 @@ class LegalHoldStatus(str, Enum):
 # ============================================================================
 # Data Classes
 # ============================================================================
+
 
 @dataclass
 class RetentionPolicy:
@@ -189,6 +193,7 @@ class RetentionPolicy:
         updated_at: When policy was last updated
         created_by: User who created the policy
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     data_type: str = ""
@@ -258,6 +263,7 @@ class LegalHold:
         released_at: When hold was released
         release_reason: Reason for releasing
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     data_type: str = ""
@@ -327,6 +333,7 @@ class PurgeEvent:
         error_message: Error details if failed
         legal_hold_blocked: Whether blocked by legal hold
     """
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     event_type: str = "purge_completed"
     workspace_id: str = ""
@@ -351,10 +358,10 @@ class PurgeEvent:
     def total_records_processed(self) -> int:
         """Calculate total records affected."""
         return (
-            self.records_deleted +
-            self.records_archived +
-            self.records_anonymized +
-            self.records_aggregated
+            self.records_deleted
+            + self.records_archived
+            + self.records_anonymized
+            + self.records_aggregated
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -385,9 +392,13 @@ class PurgeEvent:
             },
             "legal_hold_blocked": self.legal_hold_blocked,
             "skip_reason": self.skip_reason,
-            "error": {
-                "message": self.error_message,
-            } if self.error_message else None,
+            "error": (
+                {
+                    "message": self.error_message,
+                }
+                if self.error_message
+                else None
+            ),
         }
 
     def compute_hash(self) -> str:
@@ -399,6 +410,7 @@ class PurgeEvent:
 @dataclass
 class RetentionValidationResult:
     """Result of retention policy validation."""
+
     is_valid: bool
     effective_days: int
     original_days: int
@@ -410,6 +422,7 @@ class RetentionValidationResult:
 # ============================================================================
 # Retention Policy Registry
 # ============================================================================
+
 
 class RetentionPolicyRegistry:
     """
@@ -431,7 +444,9 @@ class RetentionPolicyRegistry:
         Args:
             audit_callback: Callback for audit events (action, details)
         """
-        self._policies: Dict[str, Dict[str, RetentionPolicy]] = {}  # workspace_id -> data_type -> policy
+        self._policies: Dict[str, Dict[str, RetentionPolicy]] = (
+            {}
+        )  # workspace_id -> data_type -> policy
         self._audit_callback = audit_callback
         self._audit_log: List[Dict[str, Any]] = []
 
@@ -483,15 +498,18 @@ class RetentionPolicyRegistry:
         self._policies[workspace_id][data_type] = policy
 
         # Audit
-        self._log_audit("policy_created", {
-            "workspace_id": workspace_id,
-            "data_type": data_type,
-            "retention_days": validation.effective_days,
-            "action": action.value,
-            "created_by": created_by,
-            "adjusted": validation.adjusted,
-            "original_days": validation.original_days,
-        })
+        self._log_audit(
+            "policy_created",
+            {
+                "workspace_id": workspace_id,
+                "data_type": data_type,
+                "retention_days": validation.effective_days,
+                "action": action.value,
+                "created_by": created_by,
+                "adjusted": validation.adjusted,
+                "original_days": validation.original_days,
+            },
+        )
 
         return policy, validation
 
@@ -560,13 +578,16 @@ class RetentionPolicyRegistry:
         policy.updated_at = datetime.now(timezone.utc)
 
         # Audit
-        self._log_audit("policy_updated", {
-            "workspace_id": workspace_id,
-            "data_type": data_type,
-            "old_values": old_values,
-            "new_values": policy.to_dict(),
-            "updated_by": updated_by,
-        })
+        self._log_audit(
+            "policy_updated",
+            {
+                "workspace_id": workspace_id,
+                "data_type": data_type,
+                "old_values": old_values,
+                "new_values": policy.to_dict(),
+                "updated_by": updated_by,
+            },
+        )
 
         return policy, validation
 
@@ -590,9 +611,7 @@ class RetentionPolicyRegistry:
             True if deleted, False otherwise
         """
         if data_type in COMPLIANCE_DATA_CATEGORIES:
-            logger.warning(
-                f"Cannot delete retention policy for compliance data: {data_type}"
-            )
+            logger.warning(f"Cannot delete retention policy for compliance data: {data_type}")
             return False
 
         ws_policies = self._policies.get(workspace_id, {})
@@ -601,12 +620,15 @@ class RetentionPolicyRegistry:
 
         policy = ws_policies.pop(data_type)
 
-        self._log_audit("policy_deleted", {
-            "workspace_id": workspace_id,
-            "data_type": data_type,
-            "deleted_by": deleted_by,
-            "deleted_policy": policy.to_dict(),
-        })
+        self._log_audit(
+            "policy_deleted",
+            {
+                "workspace_id": workspace_id,
+                "data_type": data_type,
+                "deleted_by": deleted_by,
+                "deleted_policy": policy.to_dict(),
+            },
+        )
 
         return True
 
@@ -661,9 +683,7 @@ class RetentionPolicyRegistry:
 
         # Warn if below default
         if effective < default_days and not adjusted:
-            warnings.append(
-                f"Retention below recommended default of {default_days} days"
-            )
+            warnings.append(f"Retention below recommended default of {default_days} days")
 
         return RetentionValidationResult(
             is_valid=not adjusted,
@@ -705,10 +725,7 @@ class RetentionPolicyRegistry:
     ) -> List[Dict[str, Any]]:
         """Get audit log, optionally filtered by workspace."""
         if workspace_id:
-            logs = [
-                e for e in self._audit_log
-                if e.get("workspace_id") == workspace_id
-            ]
+            logs = [e for e in self._audit_log if e.get("workspace_id") == workspace_id]
         else:
             logs = list(self._audit_log)
 
@@ -718,6 +735,7 @@ class RetentionPolicyRegistry:
 # ============================================================================
 # Legal Hold Service
 # ============================================================================
+
 
 class LegalHoldService:
     """
@@ -790,14 +808,17 @@ class LegalHoldService:
         self._holds[workspace_id][data_type] = hold
 
         # Audit
-        self._log_audit("legal_hold_created", {
-            "hold_id": hold.id,
-            "workspace_id": workspace_id,
-            "data_type": data_type,
-            "reason": reason,
-            "hold_until": hold_until.isoformat() if hold_until else "indefinite",
-            "created_by": created_by,
-        })
+        self._log_audit(
+            "legal_hold_created",
+            {
+                "hold_id": hold.id,
+                "workspace_id": workspace_id,
+                "data_type": data_type,
+                "reason": reason,
+                "hold_until": hold_until.isoformat() if hold_until else "indefinite",
+                "created_by": created_by,
+            },
+        )
 
         return hold
 
@@ -875,15 +896,18 @@ class LegalHoldService:
         self._hold_history.append(hold)
 
         # Audit
-        self._log_audit("legal_hold_released", {
-            "hold_id": hold.id,
-            "workspace_id": workspace_id,
-            "data_type": data_type,
-            "released_by": released_by,
-            "release_reason": release_reason,
-            "hold_duration_days": hold.duration_days,
-            "original_reason": hold.reason,
-        })
+        self._log_audit(
+            "legal_hold_released",
+            {
+                "hold_id": hold.id,
+                "workspace_id": workspace_id,
+                "data_type": data_type,
+                "released_by": released_by,
+                "release_reason": release_reason,
+                "hold_duration_days": hold.duration_days,
+                "original_reason": hold.reason,
+            },
+        )
 
         return hold
 
@@ -900,9 +924,9 @@ class LegalHoldService:
         for ws_holds in self._holds.values():
             for hold in ws_holds.values():
                 if (
-                    hold.status == LegalHoldStatus.ACTIVE and
-                    hold.hold_until and
-                    now > hold.hold_until
+                    hold.status == LegalHoldStatus.ACTIVE
+                    and hold.hold_until
+                    and now > hold.hold_until
                 ):
                     hold.status = LegalHoldStatus.EXPIRED
                     hold.released_at = hold.hold_until  # Expired at scheduled time
@@ -910,13 +934,16 @@ class LegalHoldService:
                     expired.append(hold)
                     self._hold_history.append(hold)
 
-                    self._log_audit("legal_hold_expired", {
-                        "hold_id": hold.id,
-                        "workspace_id": hold.workspace_id,
-                        "data_type": hold.data_type,
-                        "hold_until": hold.hold_until.isoformat(),
-                        "hold_duration_days": hold.duration_days,
-                    })
+                    self._log_audit(
+                        "legal_hold_expired",
+                        {
+                            "hold_id": hold.id,
+                            "workspace_id": hold.workspace_id,
+                            "data_type": hold.data_type,
+                            "hold_until": hold.hold_until.isoformat(),
+                            "hold_duration_days": hold.duration_days,
+                        },
+                    )
 
         return expired
 
@@ -948,15 +975,18 @@ class LegalHoldService:
         old_hold_until = hold.hold_until
         hold.hold_until = new_hold_until
 
-        self._log_audit("legal_hold_extended", {
-            "hold_id": hold.id,
-            "workspace_id": workspace_id,
-            "data_type": data_type,
-            "old_hold_until": old_hold_until.isoformat() if old_hold_until else "indefinite",
-            "new_hold_until": new_hold_until.isoformat(),
-            "extended_by": extended_by,
-            "extension_reason": extension_reason,
-        })
+        self._log_audit(
+            "legal_hold_extended",
+            {
+                "hold_id": hold.id,
+                "workspace_id": workspace_id,
+                "data_type": data_type,
+                "old_hold_until": old_hold_until.isoformat() if old_hold_until else "indefinite",
+                "new_hold_until": new_hold_until.isoformat(),
+                "extended_by": extended_by,
+                "extension_reason": extension_reason,
+            },
+        )
 
         return hold
 
@@ -967,10 +997,7 @@ class LegalHoldService:
     ) -> List[LegalHold]:
         """Get historical legal holds."""
         if workspace_id:
-            history = [
-                h for h in self._hold_history
-                if h.workspace_id == workspace_id
-            ]
+            history = [h for h in self._hold_history if h.workspace_id == workspace_id]
         else:
             history = list(self._hold_history)
 
@@ -995,10 +1022,7 @@ class LegalHoldService:
     ) -> List[Dict[str, Any]]:
         """Get audit log, optionally filtered by workspace."""
         if workspace_id:
-            logs = [
-                e for e in self._audit_log
-                if e.get("workspace_id") == workspace_id
-            ]
+            logs = [e for e in self._audit_log if e.get("workspace_id") == workspace_id]
         else:
             logs = list(self._audit_log)
 
@@ -1009,9 +1033,11 @@ class LegalHoldService:
 # Auto-Purge Scheduler
 # ============================================================================
 
+
 @dataclass
 class PurgeSchedulerConfig:
     """Configuration for the auto-purge scheduler."""
+
     enabled: bool = True
     interval_hours: int = 24
     preferred_hour_utc: int = 3  # 3 AM UTC
@@ -1027,6 +1053,7 @@ class PurgeSchedulerConfig:
 @dataclass
 class PurgeSchedulerState:
     """Current state of the purge scheduler."""
+
     is_running: bool = False
     last_run_at: Optional[datetime] = None
     next_run_at: Optional[datetime] = None
@@ -1050,9 +1077,7 @@ class AutoPurgeScheduler:
         policy_registry: RetentionPolicyRegistry,
         legal_hold_service: LegalHoldService,
         config: Optional[PurgeSchedulerConfig] = None,
-        purge_handler: Optional[
-            Callable[[str, str, datetime, RetentionAction, int], int]
-        ] = None,
+        purge_handler: Optional[Callable[[str, str, datetime, RetentionAction, int], int]] = None,
         audit_callback: Optional[Callable[[PurgeEvent], None]] = None,
     ):
         """
@@ -1137,12 +1162,9 @@ class AutoPurgeScheduler:
             ).total_seconds()
             self._state.last_run_workspaces = workspaces_processed
             self._state.last_run_errors = errors
-            self._state.total_records_purged += sum(
-                e.total_records_processed for e in events
-            )
-            self._state.next_run_at = (
-                datetime.now(timezone.utc) +
-                timedelta(hours=self.config.interval_hours)
+            self._state.total_records_purged += sum(e.total_records_processed for e in events)
+            self._state.next_run_at = datetime.now(timezone.utc) + timedelta(
+                hours=self.config.interval_hours
             )
 
         return events
@@ -1171,9 +1193,7 @@ class AutoPurgeScheduler:
             event.skip_reason = "Data under legal hold"
             event.event_type = "purge_skipped"
             event.completed_at = datetime.now(timezone.utc)
-            event.duration_seconds = (
-                event.completed_at - event.started_at
-            ).total_seconds()
+            event.duration_seconds = (event.completed_at - event.started_at).total_seconds()
 
             # Log that purge was blocked
             logger.info(
@@ -1193,9 +1213,7 @@ class AutoPurgeScheduler:
                 event.event_type = "purge_skipped"
 
             event.completed_at = datetime.now(timezone.utc)
-            event.duration_seconds = (
-                event.completed_at - event.started_at
-            ).total_seconds()
+            event.duration_seconds = (event.completed_at - event.started_at).total_seconds()
             return event
 
         try:
@@ -1245,9 +1263,7 @@ class AutoPurgeScheduler:
             event.error_message = str(e)
 
         event.completed_at = datetime.now(timezone.utc)
-        event.duration_seconds = (
-            event.completed_at - event.started_at
-        ).total_seconds()
+        event.duration_seconds = (event.completed_at - event.started_at).total_seconds()
 
         return event
 
@@ -1311,10 +1327,7 @@ class AutoPurgeScheduler:
     ) -> Dict[str, Any]:
         """Get purge statistics for the specified period."""
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-        events = [
-            e for e in self._event_log
-            if e.started_at >= cutoff
-        ]
+        events = [e for e in self._event_log if e.started_at >= cutoff]
 
         if workspace_id:
             events = [e for e in events if e.workspace_id == workspace_id]
@@ -1337,8 +1350,7 @@ class AutoPurgeScheduler:
             "total_records_anonymized": sum(e.records_anonymized for e in successful),
             "total_records_aggregated": sum(e.records_aggregated for e in successful),
             "average_duration_seconds": (
-                sum(e.duration_seconds for e in successful) / len(successful)
-                if successful else 0
+                sum(e.duration_seconds for e in successful) / len(successful) if successful else 0
             ),
             "by_data_type": self._group_stats_by_data_type(successful),
         }

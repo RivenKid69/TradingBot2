@@ -40,9 +40,16 @@ client = TestClient(api, headers={"X-API-Key": app_module.API_TOKEN})
 # L2-001 — Emergency Halt is fail-closed
 # ---------------------------------------------------------------------------
 
+
 def test_panic_halt_without_backend_reports_unavailable(monkeypatch):
-    for var in ("ALPACA_API_KEY", "ALPACA_API_SECRET", "OANDA_API_KEY",
-                "OANDA_ACCOUNT_ID", "BINANCE_API_KEY", "BINANCE_API_SECRET"):
+    for var in (
+        "ALPACA_API_KEY",
+        "ALPACA_API_SECRET",
+        "OANDA_API_KEY",
+        "OANDA_ACCOUNT_ID",
+        "BINANCE_API_KEY",
+        "BINANCE_API_SECRET",
+    ):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(app_module, "_CCEA_SUPERVISOR", None, raising=False)
 
@@ -78,6 +85,7 @@ def test_lite_ui_handles_non_success_halt_statuses():
 # L2-003 / L2-004 — Data Manager contracts and LeakGuard floor
 # ---------------------------------------------------------------------------
 
+
 def _capture_job_cmd(monkeypatch):
     captured = {}
 
@@ -93,10 +101,13 @@ def _capture_job_cmd(monkeypatch):
 
 def test_run_no_trade_contract_and_alias(monkeypatch):
     captured = _capture_job_cmd(monkeypatch)
-    res = client.post("/api/run_job", json={
-        "job": "run_notrade",  # legacy alias must map to the canonical worker
-        "params": {"data": "data/targets.parquet", "out": "data/targets_masked.parquet"},
-    })
+    res = client.post(
+        "/api/run_job",
+        json={
+            "job": "run_notrade",  # legacy alias must map to the canonical worker
+            "params": {"data": "data/targets.parquet", "out": "data/targets_masked.parquet"},
+        },
+    )
     assert res.status_code == 200, res.text
     cmd = captured["cmd"]
     assert any(c.endswith("apply_no_trade_mask.py") for c in cmd)
@@ -108,10 +119,13 @@ def test_run_no_trade_contract_and_alias(monkeypatch):
 
 def test_run_splits_contract_passes_data_and_simple_mode(monkeypatch):
     captured = _capture_job_cmd(monkeypatch)
-    res = client.post("/api/run_job", json={
-        "job": "run_splits",
-        "params": {"data": "data/targets.parquet", "n_splits": 5, "train_size_pct": 80},
-    })
+    res = client.post(
+        "/api/run_job",
+        json={
+            "job": "run_splits",
+            "params": {"data": "data/targets.parquet", "n_splits": 5, "train_size_pct": 80},
+        },
+    )
     assert res.status_code == 200, res.text
     cmd = captured["cmd"]
     assert any(c.endswith("make_walkforward_splits.py") for c in cmd)
@@ -128,17 +142,23 @@ def test_walkforward_worker_accepts_simple_mode_args():
 def test_run_training_table_requires_safe_decision_delay(monkeypatch):
     captured = _capture_job_cmd(monkeypatch)
 
-    res = client.post("/api/run_job", json={
-        "job": "run_training_table",
-        "params": {"decision_delay_ms": 50},
-    })
+    res = client.post(
+        "/api/run_job",
+        json={
+            "job": "run_training_table",
+            "params": {"decision_delay_ms": 50},
+        },
+    )
     assert res.status_code == 400
     assert "8000" in res.json()["detail"]
 
-    res = client.post("/api/run_job", json={
-        "job": "run_training_table",
-        "params": {"decision_delay_ms": 8000, "price_col": "close"},
-    })
+    res = client.post(
+        "/api/run_job",
+        json={
+            "job": "run_training_table",
+            "params": {"decision_delay_ms": 8000, "price_col": "close"},
+        },
+    )
     assert res.status_code == 200, res.text
     cmd = captured["cmd"]
     assert "--decision-delay-ms" in cmd and "8000" in cmd
@@ -148,10 +168,13 @@ def test_run_training_table_requires_safe_decision_delay(monkeypatch):
 def test_unsafe_delay_override_is_recorded(monkeypatch, tmp_path):
     _capture_job_cmd(monkeypatch)
     monkeypatch.setattr(app_module, "GLOBAL_LOGS_DIR", str(tmp_path))
-    res = client.post("/api/run_job", json={
-        "job": "run_training_table",
-        "params": {"decision_delay_ms": 50, "unsafe_decision_delay_override": True},
-    })
+    res = client.post(
+        "/api/run_job",
+        json={
+            "job": "run_training_table",
+            "params": {"decision_delay_ms": 50, "unsafe_decision_delay_override": True},
+        },
+    )
     assert res.status_code == 200, res.text
     manifest = tmp_path / "lite_unsafe_overrides.jsonl"
     assert manifest.is_file()
@@ -172,10 +195,13 @@ def test_unsafe_delay_override_requires_strict_truthiness(monkeypatch):
     """Review fix: JSON strings like "false"/"0" must not bypass the floor."""
     _capture_job_cmd(monkeypatch)
     for bogus in ("false", "0", "no", "", None, 0):
-        res = client.post("/api/run_job", json={
-            "job": "run_training_table",
-            "params": {"decision_delay_ms": 50, "unsafe_decision_delay_override": bogus},
-        })
+        res = client.post(
+            "/api/run_job",
+            json={
+                "job": "run_training_table",
+                "params": {"decision_delay_ms": 50, "unsafe_decision_delay_override": bogus},
+            },
+        )
         assert res.status_code == 400, f"override={bogus!r} must NOT bypass the 8000ms floor"
 
 
@@ -236,10 +262,14 @@ def test_ui_review_honesty_fixes():
 # writes, permanently green while real drift could be severe).
 # ---------------------------------------------------------------------------
 
+
 def test_drift_widget_no_fabricated_stable_default():
     # The hardcoded green "PSI 0.000 / Стабильно" initial values are gone.
     assert 'id="litedata-drift-val" class="text-emerald-400 font-bold font-mono">0.000<' not in HTML
-    assert 'id="litedata-drift-status" class="text-[11px] font-semibold text-white uppercase font-mono">Стабильно' not in HTML
+    assert (
+        'id="litedata-drift-status" class="text-[11px] font-semibold text-white uppercase font-mono">Стабильно'
+        not in HTML
+    )
 
 
 def test_drift_widget_is_wired_to_real_source():
@@ -257,8 +287,14 @@ def test_analytics_status_defaults_not_falsely_green():
     # WS/Broker/PSI must not start as hardcoded green "OK"/"Стабильно" before a
     # real check — they self-correct from /api/telemetry/live, but the initial
     # paint must be neutral.
-    assert 'id="lite-status-ws" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK' not in HTML
-    assert 'id="lite-status-broker-api" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK' not in HTML
+    assert (
+        'id="lite-status-ws" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK'
+        not in HTML
+    )
+    assert (
+        'id="lite-status-broker-api" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK'
+        not in HTML
+    )
     assert 'id="lite-psi-val" class="font-bold text-emerald-400">0.05 (Стабильно)' not in HTML
 
 
@@ -275,9 +311,10 @@ def test_telemetry_live_exposes_honest_drift_shape():
 # L2-005 — packaged RL training stack ships its data files
 # ---------------------------------------------------------------------------
 
+
 def test_spec_bundles_sb3_data_files_in_research_profile():
     assert "collect_data_files" in SPEC_SRC
-    research_block = SPEC_SRC[SPEC_SRC.index('PROFILE != "research"'):]
+    research_block = SPEC_SRC[SPEC_SRC.index('PROFILE != "research"') :]
     assert '"stable_baselines3"' in research_block
     assert '"gymnasium"' in research_block
 
@@ -300,10 +337,17 @@ def test_pyinstaller_collects_sb3_version_txt():
 )
 def test_packaged_exe_can_import_sb3():
     import subprocess
+
     exe = str(ROOT / "dist" / "riven-backend.exe")
     proc = subprocess.run(
-        [exe, "--riven-worker-code", "import stable_baselines3; print(stable_baselines3.__version__)"],
-        capture_output=True, text=True, timeout=180,
+        [
+            exe,
+            "--riven-worker-code",
+            "import stable_baselines3; print(stable_baselines3.__version__)",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
     )
     assert proc.returncode == 0, proc.stderr
 
@@ -311,6 +355,7 @@ def test_packaged_exe_can_import_sb3():
 # ---------------------------------------------------------------------------
 # L2-006 — typed risk-limit persistence with read-back
 # ---------------------------------------------------------------------------
+
 
 def test_risk_limits_roundtrip(monkeypatch, tmp_path):
     path = tmp_path / "risk.yaml"
@@ -359,12 +404,18 @@ def test_risk_limits_validation_rejects_nonsense(monkeypatch, tmp_path):
 
 
 def test_lite_ui_saves_all_risk_fields_via_typed_endpoint():
-    save_fn = HTML[HTML.index("async function saveRiskLimits"):]
-    save_fn = save_fn[:save_fn.index("// Web3 Connection Methods")]
+    save_fn = HTML[HTML.index("async function saveRiskLimits") :]
+    save_fn = save_fn[: save_fn.index("// Web3 Connection Methods")]
     assert "/api/risk/limits" in save_fn
-    for field in ("daily_loss_limit_usd", "max_drawdown_pct", "max_leverage",
-                  "max_concentration_pct", "pdt_guard_enabled", "span_guard_enabled",
-                  "greeks_guard_enabled"):
+    for field in (
+        "daily_loss_limit_usd",
+        "max_drawdown_pct",
+        "max_leverage",
+        "max_concentration_pct",
+        "pdt_guard_enabled",
+        "span_guard_enabled",
+        "greeks_guard_enabled",
+    ):
         assert field in save_fn, field
     assert "max_total_exposure_pct:\\s*" not in save_fn  # no regex string-replace saves
 
@@ -373,6 +424,7 @@ def test_lite_ui_saves_all_risk_fields_via_typed_endpoint():
 # L2-007 — Gas Guard is now a REAL on-chain gas oracle + threshold (2026-07-16),
 # no longer a fabricated "active" guard NOR a permanent "NOT IMPLEMENTED" stub.
 # ---------------------------------------------------------------------------
+
 
 def test_gas_guard_is_real_not_fabricated_or_stub():
     # Not a fabricated always-green "active" guard...
@@ -387,9 +439,15 @@ def test_gas_guard_is_real_not_fabricated_or_stub():
 # L2-008 — portfolio risk endpoint is honest
 # ---------------------------------------------------------------------------
 
+
 def test_portfolio_risk_summary_never_fakes_values(monkeypatch):
-    for var in ("ALPACA_API_KEY", "ALPACA_API_SECRET", "OANDA_API_KEY",
-                "OANDA_ACCOUNT_ID", "BINANCE_API_KEY"):
+    for var in (
+        "ALPACA_API_KEY",
+        "ALPACA_API_SECRET",
+        "OANDA_API_KEY",
+        "OANDA_ACCOUNT_ID",
+        "BINANCE_API_KEY",
+    ):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(app_module, "_CCEA_SUPERVISOR", None, raising=False)
 
@@ -413,6 +471,7 @@ def test_ui_has_no_var_interface_formula():
 # L2-009 — telemetry shows absence as absence
 # ---------------------------------------------------------------------------
 
+
 def test_telemetry_defaults_are_no_data():
     assert 'LATEST_TELEMETRY["psi_avg"] = 0.045' not in APP_SRC
     assert '"psi_status": "no_data"' in APP_SRC
@@ -432,18 +491,20 @@ def test_ui_telemetry_has_no_healthy_defaults():
 # L2-010 — job lifecycle reaches terminal UI states
 # ---------------------------------------------------------------------------
 
+
 def test_quantlab_lifecycle_has_terminal_states():
     assert "restoreQuantLabTrainButtons" in HTML
     assert "restoreQuantLabBacktestButtons" in HTML
     # Training poller must consult the real job status endpoint.
-    train_fn = HTML[HTML.index("async function startQuantLabTraining"):]
-    train_fn = train_fn[:train_fn.index("function restoreQuantLabTrainButtons")]
+    train_fn = HTML[HTML.index("async function startQuantLabTraining") :]
+    train_fn = train_fn[: train_fn.index("function restoreQuantLabTrainButtons")]
     assert "/api/job/status?job=run_train" in train_fn
 
 
 # ---------------------------------------------------------------------------
 # L2-011 — Quant Lab follows the active asset class
 # ---------------------------------------------------------------------------
+
 
 def test_quantlab_asset_defaults_exist():
     assert "QUANTLAB_ASSET_DEFAULTS" in HTML
@@ -456,6 +517,7 @@ def test_quantlab_asset_defaults_exist():
 # L2-012 / L2-013 — canonical configs that actually exist
 # ---------------------------------------------------------------------------
 
+
 def test_backend_sandbox_configs_exist_for_all_assets():
     for asset in ("equity", "forex", "futures", "crypto", "options"):
         path = get_default_config_for_asset("sandbox", asset)
@@ -463,15 +525,19 @@ def test_backend_sandbox_configs_exist_for_all_assets():
 
 
 def test_ui_sandbox_config_paths_exist():
-    fn = HTML[HTML.index("function getActiveSandboxConfigPath"):]
-    fn = fn[:fn.index("async function resolveActiveSandboxConfigPath")]
-    for path in re.findall(r'configs/[\w./-]+\.yaml', fn):
+    fn = HTML[HTML.index("function getActiveSandboxConfigPath") :]
+    fn = fn[: fn.index("async function resolveActiveSandboxConfigPath")]
+    for path in re.findall(r"configs/[\w./-]+\.yaml", fn):
         assert (ROOT / path).is_file(), path
 
 
 def test_futures_sandbox_is_backtest_not_live():
-    assert get_default_config_for_asset("sandbox", "futures") == "configs/config_backtest_futures.yaml"
-    cfg = yaml.safe_load((ROOT / "configs" / "config_backtest_futures.yaml").read_text(encoding="utf-8"))
+    assert (
+        get_default_config_for_asset("sandbox", "futures") == "configs/config_backtest_futures.yaml"
+    )
+    cfg = yaml.safe_load(
+        (ROOT / "configs" / "config_backtest_futures.yaml").read_text(encoding="utf-8")
+    )
     assert cfg["mode"] == "backtest"
     # No live-broker connectivity keys in the historical sandbox.
     for live_key in ("api_key", "api_secret", "ib_host", "ib_port", "paper_trading"):
@@ -484,9 +550,10 @@ def test_futures_sandbox_is_backtest_not_live():
 # L2-014 — empty risk log is not proof of health
 # ---------------------------------------------------------------------------
 
+
 def test_risk_log_states_are_distinguished():
-    fn = HTML[HTML.index("async function syncRiskLogs"):]
-    fn = fn[:fn.index("// --- LITE TRADE HISTORY ---")]
+    fn = HTML[HTML.index("async function syncRiskLogs") :]
+    fn = fn[: fn.index("// --- LITE TRADE HISTORY ---")]
     assert "Все лимиты в норме" not in fn
     assert "подтверждённо пуст" in fn
     assert "недоступен" in fn
@@ -497,11 +564,13 @@ def test_risk_log_states_are_distinguished():
 # L2-015 — every wired onclick handler resolves to a definition
 # ---------------------------------------------------------------------------
 
+
 def test_all_onclick_handlers_are_defined():
     names = set(re.findall(r'onclick="([A-Za-z_$][\w$]*)\s*\(', HTML))
     names |= set(re.findall(r"onclick='([A-Za-z_$][\w$]*)\s*\(", HTML))
     missing = [
-        n for n in sorted(names)
+        n
+        for n in sorted(names)
         if not re.search(rf"function\s+{re.escape(n)}\s*\(", HTML)
         and not re.search(rf"window\.{re.escape(n)}\s*=", HTML)
         and not re.search(rf"(?:const|let|var)\s+{re.escape(n)}\s*=", HTML)
@@ -517,6 +586,7 @@ def test_previously_missing_handlers_now_exist():
 # ---------------------------------------------------------------------------
 # L2-016 — source runtime separates code root from data root
 # ---------------------------------------------------------------------------
+
 
 def test_prepare_python_command_resolves_scripts_against_code_root(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, "frozen", False, raising=False)
@@ -537,6 +607,7 @@ def test_worker_environment_exposes_code_root_on_pythonpath():
 # L2-002 — Quick Start readiness comes from backend evidence
 # ---------------------------------------------------------------------------
 
+
 def test_workflow_readiness_endpoint_shape():
     res = client.get("/api/workflow/readiness")
     assert res.status_code == 200
@@ -553,8 +624,14 @@ def test_quick_start_ui_uses_backend_evidence():
     assert "/api/workflow/readiness" in HTML
     assert "renderPipelineStatusFromEvidence" in HTML
     # Fabricated success constants must be gone.
-    for fabricated in ("12,450", "0 NaN строк (100% OK)", "Успешно (OK)",
-                       "0 утечек (Чисто)", "'1.84'", "'+24.5%'"):
+    for fabricated in (
+        "12,450",
+        "0 NaN строк (100% OK)",
+        "Успешно (OK)",
+        "0 утечек (Чисто)",
+        "'1.84'",
+        "'+24.5%'",
+    ):
         assert fabricated not in HTML, fabricated
     # Trade-readiness can only be claimed with backend confirmation.
     assert HTML.count("ГОТОВО К ТОРГАМ") == 1
@@ -564,6 +641,7 @@ def test_quick_start_ui_uses_backend_evidence():
 # ---------------------------------------------------------------------------
 # L2-018 / L2-019 / L2-020 / L2-021 / L2-022 / L2-023 / L2-024 — UX honesty
 # ---------------------------------------------------------------------------
+
 
 def test_import_date_range_is_dynamic():
     assert 'value="2024-12-31"' not in HTML
@@ -588,14 +666,14 @@ def test_strategy_registry_renamed_to_local_bookmarks():
 
 def test_asset_adapter_selection_is_validate_then_commit():
     assert "commitSystemState" in HTML
-    fn = HTML[HTML.index("async function commitSystemState"):]
-    fn = fn[:fn.index("async function selectAsset")]
+    fn = HTML[HTML.index("async function commitSystemState") :]
+    fn = fn[: fn.index("async function selectAsset")]
     assert "res.ok" in fn
 
 
 def test_module_switch_resets_scroll():
-    fn = HTML[HTML.index("function switchModule"):]
-    fn = fn[:fn.index("function fetchStatus") if "function fetchStatus" in fn else 4000]
+    fn = HTML[HTML.index("function switchModule") :]
+    fn = fn[: fn.index("function fetchStatus") if "function fetchStatus" in fn else 4000]
     assert "scrollTo" in fn
 
 

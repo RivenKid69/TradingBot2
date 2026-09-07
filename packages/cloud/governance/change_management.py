@@ -60,8 +60,10 @@ MAX_PENDING_CHANGES_PER_WORKSPACE: Final[int] = 100
 # Enums
 # ============================================================================
 
+
 class ChangeClass(str, Enum):
     """Change classification per Design Doc."""
+
     OPERATIONAL = "operational"
     TRADING_IMPACTING = "trading_impacting"
     SECURITY_SENSITIVE = "security_sensitive"
@@ -70,6 +72,7 @@ class ChangeClass(str, Enum):
 
 class ChangeType(str, Enum):
     """Types of changes."""
+
     DEPLOY = "deploy"
     UPGRADE = "upgrade"
     CONFIG_UPDATE = "config_update"
@@ -84,6 +87,7 @@ class ChangeType(str, Enum):
 
 class ChangeStatus(str, Enum):
     """Status of a change request."""
+
     PENDING = "pending"
     AWAITING_APPROVAL = "awaiting_approval"
     APPROVED = "approved"
@@ -98,8 +102,9 @@ class ChangeStatus(str, Enum):
 
 class ApprovalType(str, Enum):
     """Type of approval."""
-    LOCAL = "local"          # User approval on agent
-    CLOUD = "cloud"          # Cloud admin approval
+
+    LOCAL = "local"  # User approval on agent
+    CLOUD = "cloud"  # Cloud admin approval
     AUTOMATIC = "automatic"  # Auto-approved (non-impacting)
     BREAK_GLASS = "break_glass"
 
@@ -158,6 +163,7 @@ CLASSIFICATION_REQUIREMENTS: Dict[ChangeClass, Dict[str, Any]] = {
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ChangeEvidence:
     """
@@ -165,6 +171,7 @@ class ChangeEvidence:
 
     Per Design Doc 6.2, 12.2: Evidence includes blob digests for audit verification.
     """
+
     # Config blob at approval time
     config_blob_digest: Optional[str] = None
 
@@ -187,13 +194,16 @@ class ChangeEvidence:
 
     def compute_evidence_hash(self) -> str:
         """Compute overall evidence hash."""
-        content = json.dumps({
-            "config_blob_digest": self.config_blob_digest,
-            "manifest_digest": self.manifest_digest,
-            "previous_state_digest": self.previous_state_digest,
-            "new_state_digest": self.new_state_digest,
-            "diff_hash": self.diff_hash,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "config_blob_digest": self.config_blob_digest,
+                "manifest_digest": self.manifest_digest,
+                "previous_state_digest": self.previous_state_digest,
+                "new_state_digest": self.new_state_digest,
+                "diff_hash": self.diff_hash,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -215,6 +225,7 @@ class ApprovalRecord:
     """
     Record of approval decision.
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     change_id: str = ""
 
@@ -249,7 +260,9 @@ class ApprovalRecord:
             "approved_by_email": self.approved_by_email,
             "approved_at": self.approved_at.isoformat() if self.approved_at else None,
             "user_acknowledged": self.user_acknowledged,
-            "acknowledgment_timestamp": self.acknowledgment_timestamp.isoformat() if self.acknowledgment_timestamp else None,
+            "acknowledgment_timestamp": (
+                self.acknowledgment_timestamp.isoformat() if self.acknowledgment_timestamp else None
+            ),
             "reason": self.reason,
             "rejection_reason": self.rejection_reason,
             "evidence": self.evidence.to_dict(),
@@ -264,6 +277,7 @@ class ChangeRequest:
 
     Tracks the full lifecycle of a change.
     """
+
     # Identity
     id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
@@ -395,6 +409,7 @@ class ChangeJournalEntry:
 
     Provides exportable record of changes for evidence pack.
     """
+
     change_id: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     workspace_id: str = ""
@@ -425,18 +440,21 @@ class ChangeJournalEntry:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "change_id": self.change_id,
-            "timestamp": self.timestamp.isoformat(),
-            "workspace_id": self.workspace_id,
-            "change_type": self.change_type,
-            "change_class": self.change_class,
-            "requester_id": self.requester_id,
-            "approver_id": self.approver_id,
-            "artifact_digest": self.artifact_digest,
-            "config_digest": self.config_digest,
-            "status": self.status,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "change_id": self.change_id,
+                "timestamp": self.timestamp.isoformat(),
+                "workspace_id": self.workspace_id,
+                "change_type": self.change_type,
+                "change_class": self.change_class,
+                "requester_id": self.requester_id,
+                "approver_id": self.approver_id,
+                "artifact_digest": self.artifact_digest,
+                "config_digest": self.config_digest,
+                "status": self.status,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -461,6 +479,7 @@ class ChangeJournalEntry:
 @dataclass
 class ChangeStats:
     """Change management statistics."""
+
     total_changes: int = 0
     by_status: Dict[str, int] = field(default_factory=dict)
     by_class: Dict[str, int] = field(default_factory=dict)
@@ -494,6 +513,7 @@ class ChangeStats:
 # ============================================================================
 # Change Management Service
 # ============================================================================
+
 
 class ChangeManagementService:
     """
@@ -672,8 +692,7 @@ class ChangeManagementService:
         with self._lock:
             ws_changes = self._changes_by_workspace.get(workspace_id, [])
             pending_count = sum(
-                1 for cid in ws_changes
-                if self._changes.get(cid) and self._changes[cid].is_pending
+                1 for cid in ws_changes if self._changes.get(cid) and self._changes[cid].is_pending
             )
             if pending_count >= MAX_PENDING_CHANGES_PER_WORKSPACE:
                 raise ValueError(
@@ -770,10 +789,11 @@ class ChangeManagementService:
 
             # Check local approval requirement
             if change.requires_local_approval:
-                if approval_type != ApprovalType.LOCAL and approval_type != ApprovalType.BREAK_GLASS:
-                    logger.error(
-                        f"Change requires local approval: {change_id}"
-                    )
+                if (
+                    approval_type != ApprovalType.LOCAL
+                    and approval_type != ApprovalType.BREAK_GLASS
+                ):
+                    logger.error(f"Change requires local approval: {change_id}")
                     return None
 
             # Validate reason
@@ -786,9 +806,7 @@ class ChangeManagementService:
 
                 # User acknowledgment required for trading impacting
                 if not user_acknowledged and approval_type == ApprovalType.LOCAL:
-                    logger.error(
-                        f"User acknowledgment required for TRADING_IMPACTING change"
-                    )
+                    logger.error(f"User acknowledgment required for TRADING_IMPACTING change")
                     return None
 
             # Create approval record
@@ -834,9 +852,7 @@ class ChangeManagementService:
             except Exception as e:
                 logger.error(f"on_change_approved callback error: {e}")
 
-        logger.info(
-            f"Change approved: {change_id} by {approver_id} type={approval_type.value}"
-        )
+        logger.info(f"Change approved: {change_id} by {approver_id} type={approval_type.value}")
 
         return approval
 

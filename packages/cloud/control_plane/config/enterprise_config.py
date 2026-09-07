@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 # Environment Variable Names
 # ============================================================================
 
+
 class EnvVar(str, Enum):
     """Environment variable names for enterprise configuration."""
+
     # Mode flags
     AIR_GAPPED_MODE = "CCEA_AIR_GAPPED_MODE"
     ENTERPRISE_MODE = "CCEA_ENTERPRISE_MODE"
@@ -105,9 +107,11 @@ class EnvVar(str, Enum):
 # Configuration Classes
 # ============================================================================
 
+
 @dataclass
 class AirGappedConfig:
     """Air-gapped deployment configuration."""
+
     enabled: bool = False
     skip_update_check: bool = True
     offline_verification: bool = True
@@ -142,6 +146,7 @@ class AirGappedConfig:
 @dataclass
 class MTLSConfig:
     """mTLS configuration."""
+
     enabled: bool = False
     cert_path: Optional[Path] = None
     key_path: Optional[Path] = None
@@ -195,6 +200,7 @@ class MTLSConfig:
 @dataclass
 class TelemetryConfig:
     """Telemetry configuration."""
+
     enabled: bool = True
     local_only: bool = False
     external_export: bool = True
@@ -218,6 +224,7 @@ class TelemetryConfig:
 @dataclass
 class RegistryConfig:
     """Artifact registry configuration."""
+
     url: str = "https://registry.ccea.io"
     mirror_enabled: bool = False
     mirror_url: Optional[str] = None
@@ -237,6 +244,7 @@ class RegistryConfig:
 @dataclass
 class SigningConfig:
     """Signing configuration."""
+
     enabled: bool = True
     keyless: bool = True
     offline_mode: bool = False
@@ -256,6 +264,7 @@ class SigningConfig:
 @dataclass
 class SBOMConfig:
     """SBOM configuration."""
+
     enabled: bool = True
     offline_mode: bool = False
     local_db_path: Optional[Path] = None
@@ -276,6 +285,7 @@ class SBOMConfig:
 # Main Enterprise Configuration
 # ============================================================================
 
+
 @dataclass
 class EnterpriseConfig:
     """
@@ -295,6 +305,7 @@ class EnterpriseConfig:
             # Create mTLS context
             ctx = config.mtls.create_ssl_context()
     """
+
     # Mode
     environment: str = "development"
     enterprise_mode: bool = False
@@ -435,6 +446,7 @@ class EnterpriseConfig:
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def _get_bool_env(var: EnvVar, default: bool = False) -> bool:
     """Get boolean environment variable."""

@@ -39,12 +39,14 @@ def test_yang_zhang_with_full_ohlc():
     ohlc_bars = []
     for i in range(24):
         base = 100 + i * 0.5
-        ohlc_bars.append({
-            "open": base,
-            "high": base + 1.0,
-            "low": base - 0.5,
-            "close": base + 0.3,
-        })
+        ohlc_bars.append(
+            {
+                "open": base,
+                "high": base + 1.0,
+                "low": base - 0.5,
+                "close": base + 0.3,
+            }
+        )
 
     vol = calculate_yang_zhang_volatility(ohlc_bars, 24)
 

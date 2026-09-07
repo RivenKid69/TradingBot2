@@ -296,7 +296,9 @@ class PostTradeAnalysis:
             "total_cost_bps": str(self.total_cost_bps),
             "total_cost_currency": str(self.total_cost_currency),
             "estimated_cost_bps": str(self.estimated_cost_bps) if self.estimated_cost_bps else None,
-            "cost_vs_estimate_bps": str(self.cost_vs_estimate_bps) if self.cost_vs_estimate_bps else None,
+            "cost_vs_estimate_bps": (
+                str(self.cost_vs_estimate_bps) if self.cost_vs_estimate_bps else None
+            ),
             "within_estimate_range": self.within_estimate_range,
             "fill_rate": self.fill_rate,
             "execution_duration_seconds": self.execution_duration_seconds,
@@ -516,12 +518,12 @@ class TCAComplianceWrapper:
             if self.config.impact_model == "linear":
                 impact = self.config.permanent_impact_coefficient * participation * 10000
             elif self.config.impact_model == "square_root":
-                impact = self.config.permanent_impact_coefficient * (participation ** 0.5) * 10000
+                impact = self.config.permanent_impact_coefficient * (participation**0.5) * 10000
             else:  # almgren_chriss
                 # Combined permanent + temporary impact
                 sigma = estimate.volatility if estimate.volatility else 0.02  # Default 2% vol
                 permanent = self.config.permanent_impact_coefficient * participation
-                temporary = self.config.temporary_impact_coefficient * (participation ** 0.5)
+                temporary = self.config.temporary_impact_coefficient * (participation**0.5)
                 impact = (permanent + temporary) * sigma * 10000 * self.config.volatility_scaling
 
             estimate.estimated_impact_bps = Decimal(str(min(impact, 500)))  # Cap at 500bps
@@ -535,15 +537,19 @@ class TCAComplianceWrapper:
 
         # 4. Total estimated cost
         estimate.estimated_total_cost_bps = (
-            estimate.estimated_spread_cost_bps +
-            estimate.estimated_impact_bps +
-            estimate.estimated_timing_cost_bps
+            estimate.estimated_spread_cost_bps
+            + estimate.estimated_impact_bps
+            + estimate.estimated_timing_cost_bps
         )
 
         # 5. Estimated execution price
         side_multiplier = 1 if estimate.side.upper() == "BUY" else -1
-        price_adjustment = float(estimate.arrival_price) * float(estimate.estimated_total_cost_bps) / 10000
-        estimate.estimated_execution_price = estimate.arrival_price + Decimal(str(side_multiplier * price_adjustment))
+        price_adjustment = (
+            float(estimate.arrival_price) * float(estimate.estimated_total_cost_bps) / 10000
+        )
+        estimate.estimated_execution_price = estimate.arrival_price + Decimal(
+            str(side_multiplier * price_adjustment)
+        )
 
         # 6. Confidence range (simplified: ±50% of estimate)
         range_factor = Decimal("0.5")
@@ -567,7 +573,9 @@ class TCAComplianceWrapper:
             # Expected duration
             participation = float(estimate.notional_value / estimate.adv)
             if rate > 0:
-                estimate.expected_duration_seconds = (participation / (rate / 100)) * 6.5 * 3600  # 6.5hr trading day
+                estimate.expected_duration_seconds = (
+                    (participation / (rate / 100)) * 6.5 * 3600
+                )  # 6.5hr trading day
 
         # Store estimate
         with self._lock:
@@ -575,14 +583,16 @@ class TCAComplianceWrapper:
 
         # Audit callback
         if self.audit_callback:
-            self.audit_callback({
-                "type": "pre_trade_estimate",
-                "estimate_id": estimate.estimate_id,
-                "order_id": estimate.order_id,
-                "timestamp_ns": estimate.timestamp_ns,
-                "estimated_cost_bps": str(estimate.estimated_total_cost_bps),
-                "recommended_strategy": estimate.recommended_strategy.value,
-            })
+            self.audit_callback(
+                {
+                    "type": "pre_trade_estimate",
+                    "estimate_id": estimate.estimate_id,
+                    "order_id": estimate.order_id,
+                    "timestamp_ns": estimate.timestamp_ns,
+                    "estimated_cost_bps": str(estimate.estimated_total_cost_bps),
+                    "recommended_strategy": estimate.recommended_strategy.value,
+                }
+            )
 
         return estimate
 
@@ -710,9 +720,7 @@ class TCAComplianceWrapper:
 
         # Total cost
         analysis.total_cost_bps = analysis.implementation_shortfall_bps
-        analysis.total_cost_currency = (
-            total_notional * analysis.total_cost_bps / Decimal("10000")
-        )
+        analysis.total_cost_currency = total_notional * analysis.total_cost_bps / Decimal("10000")
 
         # === Comparison with Pre-Trade Estimate ===
 
@@ -724,7 +732,9 @@ class TCAComplianceWrapper:
 
             # Check if within range
             analysis.within_estimate_range = (
-                estimate.cost_range_low_bps <= analysis.total_cost_bps <= estimate.cost_range_high_bps
+                estimate.cost_range_low_bps
+                <= analysis.total_cost_bps
+                <= estimate.cost_range_high_bps
             )
 
             if not analysis.within_estimate_range:
@@ -734,7 +744,10 @@ class TCAComplianceWrapper:
                 )
 
             # Alert if significantly worse
-            if analysis.cost_vs_estimate_bps and analysis.cost_vs_estimate_bps > self.config.alert_threshold_bps:
+            if (
+                analysis.cost_vs_estimate_bps
+                and analysis.cost_vs_estimate_bps > self.config.alert_threshold_bps
+            ):
                 analysis.notes.append(
                     f"WARNING: Cost exceeded estimate by {analysis.cost_vs_estimate_bps}bps"
                 )
@@ -745,15 +758,17 @@ class TCAComplianceWrapper:
 
         # Audit callback
         if self.audit_callback:
-            self.audit_callback({
-                "type": "post_trade_analysis",
-                "analysis_id": analysis.analysis_id,
-                "order_id": analysis.order_id,
-                "timestamp_ns": analysis.timestamp_ns,
-                "total_cost_bps": str(analysis.total_cost_bps),
-                "implementation_shortfall_bps": str(analysis.implementation_shortfall_bps),
-                "within_estimate_range": analysis.within_estimate_range,
-            })
+            self.audit_callback(
+                {
+                    "type": "post_trade_analysis",
+                    "analysis_id": analysis.analysis_id,
+                    "order_id": analysis.order_id,
+                    "timestamp_ns": analysis.timestamp_ns,
+                    "total_cost_bps": str(analysis.total_cost_bps),
+                    "implementation_shortfall_bps": str(analysis.implementation_shortfall_bps),
+                    "within_estimate_range": analysis.within_estimate_range,
+                }
+            )
 
         return analysis
 

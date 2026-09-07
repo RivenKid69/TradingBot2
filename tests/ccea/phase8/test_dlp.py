@@ -49,10 +49,17 @@ class TestDLPServiceBasic:
 class TestCriticalDataBlocking:
     """Critical data blocking tests."""
 
-    @pytest.mark.parametrize("field_name", [
-        "private_key", "secret_key", "api_secret",
-        "encryption_key", "seed_phrase", "mnemonic",
-    ])
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "private_key",
+            "secret_key",
+            "api_secret",
+            "encryption_key",
+            "seed_phrase",
+            "mnemonic",
+        ],
+    )
     def test_critical_fields_blocked(self, field_name):
         """Test critical fields are blocked."""
         dlp = DLPService()
@@ -74,13 +81,7 @@ class TestCriticalDataBlocking:
     def test_nested_critical_data_blocked(self):
         """Test nested critical data is blocked."""
         dlp = DLPService()
-        data = {
-            "config": {
-                "broker": {
-                    "private_key": "-----BEGIN PRIVATE KEY-----"
-                }
-            }
-        }
+        data = {"config": {"broker": {"private_key": "-----BEGIN PRIVATE KEY-----"}}}
         result = dlp.process(data)
 
         assert result.blocked is True
@@ -89,10 +90,17 @@ class TestCriticalDataBlocking:
 class TestSensitiveDataMasking:
     """Sensitive data masking tests."""
 
-    @pytest.mark.parametrize("field_name", [
-        "account_number", "card_number", "bank_account",
-        "iban", "swift", "routing_number",
-    ])
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "account_number",
+            "card_number",
+            "bank_account",
+            "iban",
+            "swift",
+            "routing_number",
+        ],
+    )
     def test_financial_data_masked(self, field_name):
         """Test financial data is masked."""
         dlp = DLPService()
@@ -104,9 +112,14 @@ class TestSensitiveDataMasking:
         if not result.blocked:
             assert "***" in str(result.data.get(field_name, ""))
 
-    @pytest.mark.parametrize("field_name", [
-        "ssn", "social_security", "tax_id",
-    ])
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "ssn",
+            "social_security",
+            "tax_id",
+        ],
+    )
     def test_pii_data_masked(self, field_name):
         """Test PII data is masked."""
         dlp = DLPService()
@@ -215,11 +228,7 @@ class TestDataClassification:
     def test_classify_nested_data(self):
         """Test nested data classification."""
         dlp = DLPService()
-        data = {
-            "config": {
-                "secret_key": "abc123"
-            }
-        }
+        data = {"config": {"secret_key": "abc123"}}
 
         classifications = dlp.classify_data(data)
 

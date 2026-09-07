@@ -51,21 +51,41 @@ import yaml
 # EU regions (same as in enterprise_posture.py)
 EU_REGIONS: Set[str] = {
     # AWS
-    "eu-west-1", "eu-west-2", "eu-west-3",
-    "eu-central-1", "eu-central-2",
-    "eu-north-1", "eu-south-1", "eu-south-2",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "eu-central-1",
+    "eu-central-2",
+    "eu-north-1",
+    "eu-south-1",
+    "eu-south-2",
     # GCP
-    "europe-west1", "europe-west2", "europe-west3",
-    "europe-west4", "europe-west6", "europe-west8", "europe-west9",
-    "europe-north1", "europe-central2",
+    "europe-west1",
+    "europe-west2",
+    "europe-west3",
+    "europe-west4",
+    "europe-west6",
+    "europe-west8",
+    "europe-west9",
+    "europe-north1",
+    "europe-central2",
     # Azure
-    "westeurope", "northeurope",
-    "germanywestcentral", "germanynorth",
-    "francecentral", "francesouth",
-    "swedencentral", "switzerlandnorth", "switzerlandwest",
-    "uksouth", "ukwest",
+    "westeurope",
+    "northeurope",
+    "germanywestcentral",
+    "germanynorth",
+    "francecentral",
+    "francesouth",
+    "swedencentral",
+    "switzerlandnorth",
+    "switzerlandwest",
+    "uksouth",
+    "ukwest",
     # Generic
-    "eu", "europe", "on-prem", "local",
+    "eu",
+    "europe",
+    "on-prem",
+    "local",
 }
 
 # Non-EU regions to detect
@@ -127,16 +147,19 @@ EXTERNAL_PATTERNS_COMPILED = [re.compile(p, re.IGNORECASE) for p in EXTERNAL_END
 # Enums
 # =============================================================================
 
+
 class ViolationSeverity(str, Enum):
     """Severity of configuration violation."""
+
     CRITICAL = "critical"  # Blocks deployment
-    HIGH = "high"          # Should block
-    MEDIUM = "medium"      # Warning
-    LOW = "low"            # Info
+    HIGH = "high"  # Should block
+    MEDIUM = "medium"  # Warning
+    LOW = "low"  # Info
 
 
 class DeploymentMode(str, Enum):
     """Deployment mode being checked."""
+
     SAAS = "saas"
     ENTERPRISE_CLOUD = "enterprise_cloud"
     ON_PREM = "on_prem"
@@ -149,9 +172,11 @@ class DeploymentMode(str, Enum):
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class PostureViolation:
     """A posture configuration violation."""
+
     rule_id: str
     severity: ViolationSeverity
     message: str
@@ -177,6 +202,7 @@ class PostureViolation:
 @dataclass
 class PostureCheckReport:
     """Report from posture configuration check."""
+
     checked_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     files_checked: int = 0
     mode_detected: Optional[str] = None
@@ -210,6 +236,7 @@ class PostureCheckReport:
 # =============================================================================
 # Enterprise Posture Check
 # =============================================================================
+
 
 class EnterprisePostureCheck:
     """
@@ -286,16 +313,20 @@ class EnterprisePostureCheck:
                 violations.extend(file_violations)
             except Exception as e:
                 # Log but continue
-                violations.append(PostureViolation(
-                    rule_id="FILE_READ_ERROR",
-                    severity=ViolationSeverity.LOW,
-                    message=f"Could not read file: {e}",
-                    file_path=str(file_path),
-                ))
+                violations.append(
+                    PostureViolation(
+                        rule_id="FILE_READ_ERROR",
+                        severity=ViolationSeverity.LOW,
+                        message=f"Could not read file: {e}",
+                        file_path=str(file_path),
+                    )
+                )
 
         # Count by severity
         report.violations = violations
-        report.critical_count = len([v for v in violations if v.severity == ViolationSeverity.CRITICAL])
+        report.critical_count = len(
+            [v for v in violations if v.severity == ViolationSeverity.CRITICAL]
+        )
         report.high_count = len([v for v in violations if v.severity == ViolationSeverity.HIGH])
         report.medium_count = len([v for v in violations if v.severity == ViolationSeverity.MEDIUM])
         report.low_count = len([v for v in violations if v.severity == ViolationSeverity.LOW])
@@ -315,7 +346,10 @@ class EnterprisePostureCheck:
                     # Check for air-gapped indicators
                     if self._get_nested(content, "global.airgapped", False):
                         return DeploymentMode.AIR_GAPPED
-                    if self._get_nested(content, "networkPolicy.egress.allowExternal", True) is False:
+                    if (
+                        self._get_nested(content, "networkPolicy.egress.allowExternal", True)
+                        is False
+                    ):
                         return DeploymentMode.AIR_GAPPED
 
                     # Check for on-prem indicators
@@ -359,12 +393,14 @@ class EnterprisePostureCheck:
             if not content:
                 return violations
         except Exception as e:
-            return [PostureViolation(
-                rule_id="YAML_PARSE_ERROR",
-                severity=ViolationSeverity.LOW,
-                message=f"Could not parse YAML: {e}",
-                file_path=str(file_path),
-            )]
+            return [
+                PostureViolation(
+                    rule_id="YAML_PARSE_ERROR",
+                    severity=ViolationSeverity.LOW,
+                    message=f"Could not parse YAML: {e}",
+                    file_path=str(file_path),
+                )
+            ]
 
         # Check EU residency
         violations.extend(self._check_eu_residency_yaml(file_path, content))
@@ -390,12 +426,14 @@ class EnterprisePostureCheck:
             content = file_path.read_text()
             lines = content.split("\n")
         except Exception as e:
-            return [PostureViolation(
-                rule_id="ENV_READ_ERROR",
-                severity=ViolationSeverity.LOW,
-                message=f"Could not read env file: {e}",
-                file_path=str(file_path),
-            )]
+            return [
+                PostureViolation(
+                    rule_id="ENV_READ_ERROR",
+                    severity=ViolationSeverity.LOW,
+                    message=f"Could not read env file: {e}",
+                    file_path=str(file_path),
+                )
+            ]
 
         env_vars = {}
         for i, line in enumerate(lines, 1):
@@ -434,15 +472,17 @@ class EnterprisePostureCheck:
         residency = self._get_nested(content, "global.dataResidency", "")
         if residency and residency.lower() not in ["eu", "on-prem", "local", "europe"]:
             if not self._is_eu_region(residency):
-                violations.append(PostureViolation(
-                    rule_id="NON_EU_DATA_RESIDENCY",
-                    severity=ViolationSeverity.CRITICAL,
-                    message=f"Non-EU data residency configured: {residency}",
-                    file_path=str(file_path),
-                    key_path="global.dataResidency",
-                    actual_value=residency,
-                    expected_value="eu, on-prem, or EU region",
-                ))
+                violations.append(
+                    PostureViolation(
+                        rule_id="NON_EU_DATA_RESIDENCY",
+                        severity=ViolationSeverity.CRITICAL,
+                        message=f"Non-EU data residency configured: {residency}",
+                        file_path=str(file_path),
+                        key_path="global.dataResidency",
+                        actual_value=residency,
+                        expected_value="eu, on-prem, or EU region",
+                    )
+                )
 
         # Scan all values for non-EU regions
         violations.extend(self._scan_for_non_eu_regions(file_path, content, ""))
@@ -462,31 +502,35 @@ class EnterprisePostureCheck:
             value, line = env_vars["CCEA_DATA_RESIDENCY"]
             if value.lower() not in ["eu", "on-prem", "local", "europe"]:
                 if not self._is_eu_region(value):
-                    violations.append(PostureViolation(
-                        rule_id="NON_EU_DATA_RESIDENCY",
-                        severity=ViolationSeverity.CRITICAL,
-                        message=f"Non-EU data residency configured: {value}",
-                        file_path=str(file_path),
-                        line_number=line,
-                        key_path="CCEA_DATA_RESIDENCY",
-                        actual_value=value,
-                        expected_value="eu, on-prem, or EU region",
-                    ))
+                    violations.append(
+                        PostureViolation(
+                            rule_id="NON_EU_DATA_RESIDENCY",
+                            severity=ViolationSeverity.CRITICAL,
+                            message=f"Non-EU data residency configured: {value}",
+                            file_path=str(file_path),
+                            line_number=line,
+                            key_path="CCEA_DATA_RESIDENCY",
+                            actual_value=value,
+                            expected_value="eu, on-prem, or EU region",
+                        )
+                    )
 
         # Check AWS region
         if "AWS_REGION" in env_vars:
             value, line = env_vars["AWS_REGION"]
             if not self._is_eu_region(value):
-                violations.append(PostureViolation(
-                    rule_id="NON_EU_AWS_REGION",
-                    severity=ViolationSeverity.CRITICAL,
-                    message=f"Non-EU AWS region configured: {value}",
-                    file_path=str(file_path),
-                    line_number=line,
-                    key_path="AWS_REGION",
-                    actual_value=value,
-                    expected_value="EU region (eu-west-1, eu-central-1, etc.)",
-                ))
+                violations.append(
+                    PostureViolation(
+                        rule_id="NON_EU_AWS_REGION",
+                        severity=ViolationSeverity.CRITICAL,
+                        message=f"Non-EU AWS region configured: {value}",
+                        file_path=str(file_path),
+                        line_number=line,
+                        key_path="AWS_REGION",
+                        actual_value=value,
+                        expected_value="EU region (eu-west-1, eu-central-1, etc.)",
+                    )
+                )
 
         return violations
 
@@ -514,15 +558,17 @@ class EnterprisePostureCheck:
                 # Only flag if key suggests it's a region
                 key_lower = path.lower()
                 if any(kw in key_lower for kw in ["region", "location", "zone"]):
-                    violations.append(PostureViolation(
-                        rule_id="NON_EU_REGION_VALUE",
-                        severity=ViolationSeverity.HIGH,
-                        message=f"Non-EU region detected: {data}",
-                        file_path=str(file_path),
-                        key_path=path,
-                        actual_value=data,
-                        expected_value="EU region",
-                    ))
+                    violations.append(
+                        PostureViolation(
+                            rule_id="NON_EU_REGION_VALUE",
+                            severity=ViolationSeverity.HIGH,
+                            message=f"Non-EU region detected: {data}",
+                            file_path=str(file_path),
+                            key_path=path,
+                            actual_value=data,
+                            expected_value="EU region",
+                        )
+                    )
 
         return violations
 
@@ -563,45 +609,43 @@ class EnterprisePostureCheck:
             content,
             "controlPlane.config.CCEA_TELEMETRY_REDACTION_MANDATORY",
             self._get_nested(
-                content,
-                "telemetryIngester.config.CCEA_TELEMETRY_REDACTION_MANDATORY",
-                None
-            )
+                content, "telemetryIngester.config.CCEA_TELEMETRY_REDACTION_MANDATORY", None
+            ),
         )
 
         if redaction is not None and str(redaction).lower() != "true":
-            violations.append(PostureViolation(
-                rule_id="REDACTION_NOT_MANDATORY",
-                severity=ViolationSeverity.CRITICAL,
-                message="Telemetry redaction must be mandatory (cannot be disabled)",
-                file_path=str(file_path),
-                key_path="CCEA_TELEMETRY_REDACTION_MANDATORY",
-                actual_value=str(redaction),
-                expected_value="true",
-            ))
+            violations.append(
+                PostureViolation(
+                    rule_id="REDACTION_NOT_MANDATORY",
+                    severity=ViolationSeverity.CRITICAL,
+                    message="Telemetry redaction must be mandatory (cannot be disabled)",
+                    file_path=str(file_path),
+                    key_path="CCEA_TELEMETRY_REDACTION_MANDATORY",
+                    actual_value=str(redaction),
+                    expected_value="true",
+                )
+            )
 
         # For on-prem/air-gapped, check local only mode
         if self.mode in [DeploymentMode.ON_PREM, DeploymentMode.AIR_GAPPED]:
             local_only = self._get_nested(
                 content,
                 "telemetryIngester.config.CCEA_TELEMETRY_LOCAL_ONLY",
-                self._get_nested(
-                    content,
-                    "controlPlane.config.CCEA_TELEMETRY_LOCAL_ONLY",
-                    None
-                )
+                self._get_nested(content, "controlPlane.config.CCEA_TELEMETRY_LOCAL_ONLY", None),
             )
 
             if local_only is None or str(local_only).lower() != "true":
-                violations.append(PostureViolation(
-                    rule_id="TELEMETRY_NOT_LOCAL",
-                    severity=ViolationSeverity.HIGH,
-                    message="Telemetry local mode should be enabled for on-prem/air-gapped",
-                    file_path=str(file_path),
-                    key_path="CCEA_TELEMETRY_LOCAL_ONLY",
-                    actual_value=str(local_only) if local_only else "not set",
-                    expected_value="true",
-                ))
+                violations.append(
+                    PostureViolation(
+                        rule_id="TELEMETRY_NOT_LOCAL",
+                        severity=ViolationSeverity.HIGH,
+                        message="Telemetry local mode should be enabled for on-prem/air-gapped",
+                        file_path=str(file_path),
+                        key_path="CCEA_TELEMETRY_LOCAL_ONLY",
+                        actual_value=str(local_only) if local_only else "not set",
+                        expected_value="true",
+                    )
+                )
 
         return violations
 
@@ -617,28 +661,32 @@ class EnterprisePostureCheck:
         if "CCEA_TELEMETRY_REDACTION_MANDATORY" in env_vars:
             value, line = env_vars["CCEA_TELEMETRY_REDACTION_MANDATORY"]
             if value.lower() != "true":
-                violations.append(PostureViolation(
-                    rule_id="REDACTION_NOT_MANDATORY",
-                    severity=ViolationSeverity.CRITICAL,
-                    message="Telemetry redaction must be mandatory",
-                    file_path=str(file_path),
-                    line_number=line,
-                    key_path="CCEA_TELEMETRY_REDACTION_MANDATORY",
-                    actual_value=value,
-                    expected_value="true",
-                ))
+                violations.append(
+                    PostureViolation(
+                        rule_id="REDACTION_NOT_MANDATORY",
+                        severity=ViolationSeverity.CRITICAL,
+                        message="Telemetry redaction must be mandatory",
+                        file_path=str(file_path),
+                        line_number=line,
+                        key_path="CCEA_TELEMETRY_REDACTION_MANDATORY",
+                        actual_value=value,
+                        expected_value="true",
+                    )
+                )
 
         # For on-prem/air-gapped, check local only
         if self.mode in [DeploymentMode.ON_PREM, DeploymentMode.AIR_GAPPED]:
             if "CCEA_TELEMETRY_LOCAL_ONLY" not in env_vars:
-                violations.append(PostureViolation(
-                    rule_id="TELEMETRY_NOT_LOCAL",
-                    severity=ViolationSeverity.MEDIUM,
-                    message="CCEA_TELEMETRY_LOCAL_ONLY should be set for on-prem/air-gapped",
-                    file_path=str(file_path),
-                    key_path="CCEA_TELEMETRY_LOCAL_ONLY",
-                    expected_value="true",
-                ))
+                violations.append(
+                    PostureViolation(
+                        rule_id="TELEMETRY_NOT_LOCAL",
+                        severity=ViolationSeverity.MEDIUM,
+                        message="CCEA_TELEMETRY_LOCAL_ONLY should be set for on-prem/air-gapped",
+                        file_path=str(file_path),
+                        key_path="CCEA_TELEMETRY_LOCAL_ONLY",
+                        expected_value="true",
+                    )
+                )
 
         return violations
 
@@ -657,29 +705,31 @@ class EnterprisePostureCheck:
         # Check air-gapped flag
         airgapped = self._get_nested(content, "global.airgapped", False)
         if not airgapped:
-            violations.append(PostureViolation(
-                rule_id="AIR_GAP_NOT_ENABLED",
-                severity=ViolationSeverity.MEDIUM,
-                message="Air-gapped mode should be explicitly enabled",
-                file_path=str(file_path),
-                key_path="global.airgapped",
-                expected_value="true",
-            ))
+            violations.append(
+                PostureViolation(
+                    rule_id="AIR_GAP_NOT_ENABLED",
+                    severity=ViolationSeverity.MEDIUM,
+                    message="Air-gapped mode should be explicitly enabled",
+                    file_path=str(file_path),
+                    key_path="global.airgapped",
+                    expected_value="true",
+                )
+            )
 
         # Check no external egress
-        allow_external = self._get_nested(
-            content, "networkPolicy.egress.allowExternal", True
-        )
+        allow_external = self._get_nested(content, "networkPolicy.egress.allowExternal", True)
         if allow_external:
-            violations.append(PostureViolation(
-                rule_id="EXTERNAL_EGRESS_ALLOWED",
-                severity=ViolationSeverity.HIGH,
-                message="External egress should be disabled for air-gapped",
-                file_path=str(file_path),
-                key_path="networkPolicy.egress.allowExternal",
-                actual_value=str(allow_external),
-                expected_value="false",
-            ))
+            violations.append(
+                PostureViolation(
+                    rule_id="EXTERNAL_EGRESS_ALLOWED",
+                    severity=ViolationSeverity.HIGH,
+                    message="External egress should be disabled for air-gapped",
+                    file_path=str(file_path),
+                    key_path="networkPolicy.egress.allowExternal",
+                    actual_value=str(allow_external),
+                    expected_value="false",
+                )
+            )
 
         # Scan for external URLs
         violations.extend(self._scan_for_external_urls(file_path, content, ""))
@@ -696,14 +746,16 @@ class EnterprisePostureCheck:
 
         # Check air-gapped mode
         if "CCEA_AIR_GAPPED_MODE" not in env_vars:
-            violations.append(PostureViolation(
-                rule_id="AIR_GAP_NOT_ENABLED",
-                severity=ViolationSeverity.MEDIUM,
-                message="CCEA_AIR_GAPPED_MODE should be set for air-gapped",
-                file_path=str(file_path),
-                key_path="CCEA_AIR_GAPPED_MODE",
-                expected_value="true",
-            ))
+            violations.append(
+                PostureViolation(
+                    rule_id="AIR_GAP_NOT_ENABLED",
+                    severity=ViolationSeverity.MEDIUM,
+                    message="CCEA_AIR_GAPPED_MODE should be set for air-gapped",
+                    file_path=str(file_path),
+                    key_path="CCEA_AIR_GAPPED_MODE",
+                    expected_value="true",
+                )
+            )
 
         # Check for external URLs in values
         for key, (value, line) in env_vars.items():
@@ -715,15 +767,17 @@ class EnterprisePostureCheck:
                     if ".internal." in value or ".local" in value:
                         continue
 
-                    violations.append(PostureViolation(
-                        rule_id="EXTERNAL_URL_IN_AIR_GAP",
-                        severity=ViolationSeverity.HIGH,
-                        message=f"External URL detected in air-gapped config: {value}",
-                        file_path=str(file_path),
-                        line_number=line,
-                        key_path=key,
-                        actual_value=value,
-                    ))
+                    violations.append(
+                        PostureViolation(
+                            rule_id="EXTERNAL_URL_IN_AIR_GAP",
+                            severity=ViolationSeverity.HIGH,
+                            message=f"External URL detected in air-gapped config: {value}",
+                            file_path=str(file_path),
+                            line_number=line,
+                            key_path=key,
+                            actual_value=value,
+                        )
+                    )
                     break
 
         return violations
@@ -758,14 +812,16 @@ class EnterprisePostureCheck:
                     if "docs." in data or "example.com" in data:
                         continue
 
-                    violations.append(PostureViolation(
-                        rule_id="EXTERNAL_URL_IN_AIR_GAP",
-                        severity=ViolationSeverity.MEDIUM,
-                        message=f"External URL detected: {data}",
-                        file_path=str(file_path),
-                        key_path=path,
-                        actual_value=data,
-                    ))
+                    violations.append(
+                        PostureViolation(
+                            rule_id="EXTERNAL_URL_IN_AIR_GAP",
+                            severity=ViolationSeverity.MEDIUM,
+                            message=f"External URL detected: {data}",
+                            file_path=str(file_path),
+                            key_path=path,
+                            actual_value=data,
+                        )
+                    )
                     break
 
         return violations
@@ -784,20 +840,20 @@ class EnterprisePostureCheck:
 
         # Check evidence export local only
         evidence_local = self._get_nested(
-            content,
-            "governance.config.CCEA_EVIDENCE_EXPORT_LOCAL_ONLY",
-            None
+            content, "governance.config.CCEA_EVIDENCE_EXPORT_LOCAL_ONLY", None
         )
 
         if evidence_local is None:
-            violations.append(PostureViolation(
-                rule_id="EVIDENCE_EXPORT_NOT_LOCAL",
-                severity=ViolationSeverity.MEDIUM,
-                message="Evidence export should be configured for local for on-prem",
-                file_path=str(file_path),
-                key_path="governance.config.CCEA_EVIDENCE_EXPORT_LOCAL_ONLY",
-                expected_value="true",
-            ))
+            violations.append(
+                PostureViolation(
+                    rule_id="EVIDENCE_EXPORT_NOT_LOCAL",
+                    severity=ViolationSeverity.MEDIUM,
+                    message="Evidence export should be configured for local for on-prem",
+                    file_path=str(file_path),
+                    key_path="governance.config.CCEA_EVIDENCE_EXPORT_LOCAL_ONLY",
+                    expected_value="true",
+                )
+            )
 
         return violations
 
@@ -828,6 +884,7 @@ class EnterprisePostureCheck:
 # CLI Interface
 # =============================================================================
 
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -840,19 +897,22 @@ def main() -> None:
         help="Paths to scan (directories or files)",
     )
     parser.add_argument(
-        "--config", "-c",
+        "--config",
+        "-c",
         action="append",
         dest="config_files",
         help="Specific config files to check",
     )
     parser.add_argument(
-        "--mode", "-m",
+        "--mode",
+        "-m",
         choices=["auto", "saas", "enterprise_cloud", "on_prem", "vpc", "air_gapped"],
         default="auto",
         help="Deployment mode to validate against",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Output report to JSON file",
     )
     parser.add_argument(
@@ -861,7 +921,8 @@ def main() -> None:
         help="Don't exit with error code on violations",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Verbose output",
     )

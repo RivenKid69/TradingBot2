@@ -11,6 +11,7 @@ This test suite performs exhaustive validation of:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -31,7 +32,9 @@ class TestDefaultBehaviorExhaustive:
         policy = CustomActorCriticPolicy(obs_space, act_space, lambda x: 0.001)
 
         # Should still enable Twin Critics by default
-        assert policy._use_twin_critics is True, "Twin Critics should be enabled with no arch_params"
+        assert (
+            policy._use_twin_critics is True
+        ), "Twin Critics should be enabled with no arch_params"
 
     def test_default_with_none_arch_params(self):
         """Test default with None arch_params."""
@@ -57,8 +60,7 @@ class TestDefaultBehaviorExhaustive:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': None}
+            obs_space, act_space, lambda x: 0.001, arch_params={"critic": None}
         )
 
         assert policy._use_twin_critics is True
@@ -69,20 +71,19 @@ class TestDefaultBehaviorExhaustive:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         configs = [
-            {'distributional': True, 'num_quantiles': 8},
-            {'distributional': True, 'num_quantiles': 16},
-            {'distributional': True, 'num_quantiles': 32},
-            {'distributional': True, 'num_quantiles': 64},
+            {"distributional": True, "num_quantiles": 8},
+            {"distributional": True, "num_quantiles": 16},
+            {"distributional": True, "num_quantiles": 32},
+            {"distributional": True, "num_quantiles": 64},
         ]
 
         for cfg in configs:
             policy = CustomActorCriticPolicy(
-                obs_space, act_space, lambda x: 0.001,
-                arch_params={'critic': cfg}
+                obs_space, act_space, lambda x: 0.001, arch_params={"critic": cfg}
             )
             assert policy._use_twin_critics is True, f"Failed for config {cfg}"
             assert policy.quantile_head_2 is not None, f"Second critic missing for {cfg}"
-            assert policy.quantile_head_2.num_quantiles == cfg['num_quantiles']
+            assert policy.quantile_head_2.num_quantiles == cfg["num_quantiles"]
 
     def test_default_categorical_all_atom_sizes(self):
         """Test categorical mode with various atom sizes."""
@@ -93,11 +94,10 @@ class TestDefaultBehaviorExhaustive:
 
         for n_atoms in atom_sizes:
             policy = CustomActorCriticPolicy(
-                obs_space, act_space, lambda x: 0.001,
-                arch_params={
-                    'num_atoms': n_atoms,
-                    'critic': {'distributional': False}
-                }
+                obs_space,
+                act_space,
+                lambda x: 0.001,
+                arch_params={"num_atoms": n_atoms, "critic": {"distributional": False}},
             )
             assert policy._use_twin_critics is True, f"Failed for {n_atoms} atoms"
             assert policy.dist_head_2 is not None
@@ -116,8 +116,12 @@ class TestExplicitControlExhaustive:
 
         for val in true_values:
             policy = CustomActorCriticPolicy(
-                obs_space, act_space, lambda x: 0.001,
-                arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': val}}
+                obs_space,
+                act_space,
+                lambda x: 0.001,
+                arch_params={
+                    "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": val}
+                },
             )
             # All should be True (bool coercion)
             assert policy._use_twin_critics is True, f"Failed for value {val}"
@@ -133,8 +137,12 @@ class TestExplicitControlExhaustive:
 
         for val in false_values:
             policy = CustomActorCriticPolicy(
-                obs_space, act_space, lambda x: 0.001,
-                arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': val}}
+                obs_space,
+                act_space,
+                lambda x: 0.001,
+                arch_params={
+                    "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": val}
+                },
             )
             # All should be False (bool coercion)
             assert policy._use_twin_critics is False, f"Failed for value {val}"
@@ -153,8 +161,10 @@ class TestArchitectureConsistency:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 32}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 32}},
         )
 
         # Same number of quantiles
@@ -167,10 +177,15 @@ class TestArchitectureConsistency:
         assert policy.quantile_head.linear.in_features == policy.quantile_head_2.linear.in_features
 
         # Same output dimension
-        assert policy.quantile_head.linear.out_features == policy.quantile_head_2.linear.out_features
+        assert (
+            policy.quantile_head.linear.out_features == policy.quantile_head_2.linear.out_features
+        )
 
         # But different parameters
-        assert policy.quantile_head.linear.weight.data_ptr() != policy.quantile_head_2.linear.weight.data_ptr()
+        assert (
+            policy.quantile_head.linear.weight.data_ptr()
+            != policy.quantile_head_2.linear.weight.data_ptr()
+        )
 
     def test_both_critics_same_architecture_categorical(self):
         """Verify both categorical critics have identical architecture."""
@@ -178,8 +193,10 @@ class TestArchitectureConsistency:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'num_atoms': 51, 'critic': {'distributional': False}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"num_atoms": 51, "critic": {"distributional": False}},
         )
 
         # Same dimensions
@@ -195,8 +212,10 @@ class TestArchitectureConsistency:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Quantile levels should be identical
@@ -212,8 +231,10 @@ class TestForwardPassExhaustive:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256]
@@ -237,8 +258,10 @@ class TestForwardPassExhaustive:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # float32
@@ -265,11 +288,13 @@ class TestOptimizerIntegration:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
-        opt_params = {id(p) for group in policy.optimizer.param_groups for p in group['params']}
+        opt_params = {id(p) for group in policy.optimizer.param_groups for p in group["params"]}
         critic1_params = {id(p) for p in policy.quantile_head.parameters()}
         critic2_params = {id(p) for p in policy.quantile_head_2.parameters()}
 
@@ -285,11 +310,10 @@ class TestOptimizerIntegration:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': False}}
+            obs_space, act_space, lambda x: 0.001, arch_params={"critic": {"distributional": False}}
         )
 
-        opt_params = {id(p) for group in policy.optimizer.param_groups for p in group['params']}
+        opt_params = {id(p) for group in policy.optimizer.param_groups for p in group["params"]}
         critic1_params = {id(p) for p in policy.dist_head.parameters()}
         critic2_params = {id(p) for p in policy.dist_head_2.parameters()}
 
@@ -303,8 +327,10 @@ class TestOptimizerIntegration:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         latent_vf = torch.randn(4, policy.hidden_dim, requires_grad=True)
@@ -338,14 +364,22 @@ class TestMemoryAndPerformance:
 
         # Single critic
         policy_single = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False}
+            },
         )
 
         # Twin critics
         policy_twin = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}  # Default: twin enabled
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={
+                "critic": {"distributional": True, "num_quantiles": 16}
+            },  # Default: twin enabled
         )
 
         params_single = sum(p.numel() for p in policy_single.quantile_head.parameters())
@@ -365,12 +399,15 @@ class TestMemoryAndPerformance:
 
         # Create and delete policy
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Store weak references
         import weakref
+
         weak_critic1 = weakref.ref(policy.quantile_head)
         weak_critic2 = weakref.ref(policy.quantile_head_2)
 
@@ -392,8 +429,10 @@ class TestMinValueSelection:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Create specific latent that will give predictable outputs
@@ -421,8 +460,10 @@ class TestMinValueSelection:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Multiple samples
@@ -450,8 +491,12 @@ class TestErrorHandling:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False}
+            },
         )
 
         latent_vf = torch.randn(4, policy.hidden_dim)
@@ -469,8 +514,12 @@ class TestErrorHandling:
         act_space = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False}
+            },
         )
 
         latent_vf = torch.randn(4, policy.hidden_dim)
@@ -492,14 +541,15 @@ class TestCrossValidation:
 
         # Quantile mode
         policy_q = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs_space,
+            act_space,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Categorical mode
         policy_c = CustomActorCriticPolicy(
-            obs_space, act_space, lambda x: 0.001,
-            arch_params={'critic': {'distributional': False}}
+            obs_space, act_space, lambda x: 0.001, arch_params={"critic": {"distributional": False}}
         )
 
         # Both should have Twin Critics enabled

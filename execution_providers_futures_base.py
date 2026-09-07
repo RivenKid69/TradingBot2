@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 # DATA MODELS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @dataclass(frozen=True)
 class FuturesMarketState:
     """
@@ -76,6 +77,7 @@ class FuturesMarketState:
         settlement_price: Daily settlement price (CME only)
         days_to_expiry: Days until contract expiration (quarterly/dated)
     """
+
     timestamp_ms: int
     bid: Decimal
     ask: Decimal
@@ -178,6 +180,7 @@ class ExecutionCostEstimate:
         funding_cost: Expected funding cost over holding period (crypto only)
         participation_rate: Order size as fraction of available liquidity
     """
+
     slippage_bps: Decimal
     fee_bps: Decimal
     total_cost_bps: Decimal
@@ -202,6 +205,7 @@ class ExecutionCostEstimate:
 # ═══════════════════════════════════════════════════════════════════════════
 # PROTOCOL INTERFACES (Dependency Injection)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class FuturesMarginProvider(Protocol):
     """
@@ -479,6 +483,7 @@ class FuturesSettlementProvider(Protocol):
 # ABSTRACT BASE CLASSES
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class BaseFuturesExecutionProvider(ABC):
     """
     Abstract base class for all futures execution providers.
@@ -600,12 +605,8 @@ class BaseFuturesExecutionProvider(ABC):
             MarginRequirement with initial and maintenance
         """
         notional = abs(qty) * price * contract.multiplier
-        initial = self._margin_provider.calculate_initial_margin(
-            contract, notional, leverage
-        )
-        maintenance = self._margin_provider.calculate_maintenance_margin(
-            contract, notional
-        )
+        initial = self._margin_provider.calculate_initial_margin(contract, notional, leverage)
+        maintenance = self._margin_provider.calculate_maintenance_margin(contract, notional)
         return MarginRequirement(
             initial=initial,
             maintenance=maintenance,
@@ -633,7 +634,7 @@ class BaseFuturesExecutionProvider(ABC):
             return Decimal("0")
 
         # Use position's own method if available
-        if hasattr(position, 'calculate_pnl'):
+        if hasattr(position, "calculate_pnl"):
             return position.calculate_pnl(current_price)
 
         # Manual calculation (without contract multiplier for simplicity)
@@ -738,15 +739,12 @@ class L2FuturesExecutionProvider(BaseFuturesExecutionProvider):
 
         if position and position.qty != Decimal("0"):
             # Check if reducing position
-            is_reducing = (
-                (position.qty > 0 and order.side == OrderSide.SELL) or
-                (position.qty < 0 and order.side == OrderSide.BUY)
+            is_reducing = (position.qty > 0 and order.side == OrderSide.SELL) or (
+                position.qty < 0 and order.side == OrderSide.BUY
             )
             if is_reducing:
                 close_qty = min(order.qty, abs(position.qty))
-                realized_pnl = self._calculate_realized_pnl(
-                    position, exec_price, close_qty
-                )
+                realized_pnl = self._calculate_realized_pnl(position, exec_price, close_qty)
                 # Update position
                 if order.side == OrderSide.SELL:
                     new_position_size = position.qty - order.qty
@@ -995,6 +993,7 @@ class L3FuturesExecutionProvider(BaseFuturesExecutionProvider):
 # FACTORY FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def create_futures_execution_provider(
     futures_type: FuturesType,
     level: str = "L2",
@@ -1068,10 +1067,7 @@ def _create_margin_provider(
 
     if futures_type.is_crypto:
         # Use tiered brackets for crypto
-        brackets_file = config.get(
-            "brackets_file",
-            "data/futures/leverage_brackets.json"
-        )
+        brackets_file = config.get("brackets_file", "data/futures/leverage_brackets.json")
         try:
             brackets = load_leverage_brackets(brackets_file)
             symbol = config.get("symbol", "BTCUSDT")
@@ -1152,6 +1148,7 @@ def _create_funding_provider(
 # DEFAULT IMPLEMENTATIONS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class _ParametricSlippageProvider:
     """Simple parametric slippage provider."""
 
@@ -1178,6 +1175,7 @@ class _ParametricSlippageProvider:
         if participation_rate and participation_rate > Decimal("0"):
             # Almgren-Chriss √participation
             import math
+
             sqrt_part = Decimal(str(math.sqrt(float(participation_rate))))
             impact = self.impact_coefficient * sqrt_part * Decimal("10000")
 

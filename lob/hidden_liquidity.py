@@ -569,9 +569,9 @@ class IcebergDetector:
 
         # Check refill consistency
         if len(recent_refills) >= 2:
-            refill_variance = sum(
-                (e.refill_qty - avg_refill) ** 2 for e in recent_refills
-            ) / len(recent_refills)
+            refill_variance = sum((e.refill_qty - avg_refill) ** 2 for e in recent_refills) / len(
+                recent_refills
+            )
             consistency = 1.0 - min(1.0, math.sqrt(refill_variance) / (avg_refill + 1e-9))
         else:
             consistency = 0.5
@@ -664,9 +664,7 @@ class IcebergDetector:
         # Create iceberg from pattern
         total_executed = sum(t.qty for t in executions)
         avg_display = (
-            sum(e.refill_qty for e in refill_events) / len(refill_events)
-            if refill_events
-            else 0.0
+            sum(e.refill_qty for e in refill_events) / len(refill_events) if refill_events else 0.0
         )
 
         self._iceberg_counter += 1
@@ -688,9 +686,7 @@ class IcebergDetector:
             confidence=(
                 DetectionConfidence.HIGH
                 if len(refill_events) >= 3
-                else DetectionConfidence.MEDIUM
-                if is_confirmed
-                else DetectionConfidence.LOW
+                else DetectionConfidence.MEDIUM if is_confirmed else DetectionConfidence.LOW
             ),
             first_seen_ns=executions[0].timestamp_ns if executions else 0,
             last_update_ns=executions[-1].timestamp_ns if executions else 0,
@@ -740,9 +736,7 @@ class IcebergDetector:
 
         if len(refills) >= 2:
             # More data -> better estimate
-            std_refill = math.sqrt(
-                sum((r - avg_refill) ** 2 for r in refills) / len(refills)
-            )
+            std_refill = math.sqrt(sum((r - avg_refill) ** 2 for r in refills) / len(refills))
             cv = std_refill / (avg_refill + 1e-9)  # Coefficient of variation
 
             # Lower CV = more consistent = likely more hidden reserve
@@ -762,7 +756,7 @@ class IcebergDetector:
                 base_estimate *= 1.2  # Boost estimate
 
         # Apply decay based on executions
-        decay = self._decay_factor ** iceberg.refill_count
+        decay = self._decay_factor**iceberg.refill_count
         final_estimate = base_estimate * decay
 
         return max(0.0, final_estimate)
@@ -828,8 +822,7 @@ class IcebergDetector:
         """Get detector statistics."""
         active_count = sum(1 for i in self._icebergs.values() if i.is_active)
         confirmed_active = sum(
-            1 for i in self._icebergs.values()
-            if i.is_active and i.state == IcebergState.CONFIRMED
+            1 for i in self._icebergs.values() if i.is_active and i.state == IcebergState.CONFIRMED
         )
         total_hidden_estimate = sum(
             i.estimated_hidden_qty for i in self._icebergs.values() if i.is_active

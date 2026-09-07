@@ -64,16 +64,19 @@ class DataCategory(Enum):
 
 class DeletionError(Exception):
     """Base exception for deletion errors."""
+
     pass
 
 
 class DeletionInProgressError(DeletionError):
     """Raised when a deletion is already in progress for the user."""
+
     pass
 
 
 class DeletionNotFoundError(DeletionError):
     """Raised when a deletion request is not found."""
+
     pass
 
 
@@ -159,7 +162,9 @@ class DeletionRequest:
             requested_at=datetime.fromisoformat(data["requested_at"]),
             categories=[DataCategory(c) for c in data["categories"]],
             status=DeletionStatus(data["status"]),
-            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            completed_at=(
+                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
+            ),
             deadline=datetime.fromisoformat(data["deadline"]) if data.get("deadline") else None,
             retention_exceptions=data.get("retention_exceptions", []),
             deleted_categories=data.get("deleted_categories", []),
@@ -230,7 +235,8 @@ class InMemoryDeletionRequestStorage:
     def get_pending(self) -> List[DeletionRequest]:
         """Get all pending deletion requests."""
         return [
-            r for r in self._requests.values()
+            r
+            for r in self._requests.values()
             if r.status in (DeletionStatus.PENDING, DeletionStatus.IN_PROGRESS)
         ]
 
@@ -588,18 +594,14 @@ class GDPRDeletionService:
             raise DeletionNotFoundError(f"Deletion request {request_id} not found")
 
         if request.status not in (DeletionStatus.PENDING,):
-            raise DeletionError(
-                f"Cannot cancel request in {request.status.value} status"
-            )
+            raise DeletionError(f"Cannot cancel request in {request.status.value} status")
 
         request.status = DeletionStatus.CANCELLED
         request.completed_at = datetime.now(timezone.utc)
         self._request_storage.update(request)
 
         logger.info(
-            f"DELETION_CANCELLED | "
-            f"request_id={request_id} | "
-            f"user_id={request.user_id}"
+            f"DELETION_CANCELLED | " f"request_id={request_id} | " f"user_id={request.user_id}"
         )
 
         return request

@@ -209,17 +209,17 @@ def test_actual_code_uses_correct_value():
     print("Test 6: Verifying actual code uses ±10...")
 
     try:
-        with open('/home/user/ai-quant-platform/distributional_ppo.py', 'r') as f:
+        with open("/home/user/ai-quant-platform/distributional_ppo.py", "r") as f:
             content = f.read()
     except FileNotFoundError:
         print("  ⚠ distributional_ppo.py not found, skipping")
         return True
 
     # Look for the clamping line
-    if 'torch.clamp(log_ratio, min=-10.0, max=10.0)' in content:
+    if "torch.clamp(log_ratio, min=-10.0, max=10.0)" in content:
         print("  ✓ PASSED: Code uses min=-10.0, max=10.0")
         return True
-    elif 'torch.clamp(log_ratio, min=-20.0, max=20.0)' in content:
+    elif "torch.clamp(log_ratio, min=-20.0, max=20.0)" in content:
         print("  ✗ FAILED: Code still uses old values min=-20.0, max=20.0")
         return False
     else:
@@ -267,5 +267,5 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

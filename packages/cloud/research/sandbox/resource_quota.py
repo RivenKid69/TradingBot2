@@ -68,6 +68,7 @@ ENTERPRISE_NETWORK_GB_DAILY: Final[float] = 100.0
 
 class QuotaTier(Enum):
     """Quota tier levels."""
+
     FREE = auto()
     PREMIUM = auto()
     ENTERPRISE = auto()
@@ -76,6 +77,7 @@ class QuotaTier(Enum):
 
 class QuotaResource(Enum):
     """Types of quota resources."""
+
     CPU_HOURS = auto()
     MEMORY_GB_HOURS = auto()
     CONCURRENT_JOBS = auto()
@@ -99,7 +101,10 @@ class QuotaExceededError(Exception):
         self.resource = resource
         self.requested = requested
         self.available = available
-        self.message = message or f"Quota exceeded for {resource.name}: requested {requested}, available {available}"
+        self.message = (
+            message
+            or f"Quota exceeded for {resource.name}: requested {requested}, available {available}"
+        )
         super().__init__(self.message)
 
 
@@ -108,6 +113,7 @@ class TenantQuota:
     """
     Quota definition for a tenant.
     """
+
     tenant_id: str = ""
     tier: QuotaTier = QuotaTier.FREE
 
@@ -166,6 +172,7 @@ class QuotaUsage:
     """
     Current quota usage for a tenant.
     """
+
     tenant_id: str = ""
 
     # Period tracking
@@ -212,6 +219,7 @@ class QuotaUsage:
 @dataclass
 class QuotaCheckResult:
     """Result of a quota check."""
+
     allowed: bool = False
     resource: Optional[QuotaResource] = None
     requested: float = 0.0
@@ -475,7 +483,9 @@ class ResourceQuotaManager:
                 result.resource = QuotaResource.MEMORY_GB_HOURS
                 result.requested = memory_mb
                 result.available = quota.max_memory_per_job_mb
-                result.message = f"Memory per job exceeds limit: {memory_mb}MB > {quota.max_memory_per_job_mb}MB"
+                result.message = (
+                    f"Memory per job exceeds limit: {memory_mb}MB > {quota.max_memory_per_job_mb}MB"
+                )
                 return result
 
             if duration_seconds > quota.max_job_duration_seconds:
@@ -510,7 +520,9 @@ class ResourceQuotaManager:
 
             # Warn if close to limit
             if usage.cpu_hours_used / quota.cpu_hours_daily > self._warning_threshold:
-                warnings.append(f"CPU hours at {usage.cpu_hours_used/quota.cpu_hours_daily*100:.0f}% of daily limit")
+                warnings.append(
+                    f"CPU hours at {usage.cpu_hours_used/quota.cpu_hours_daily*100:.0f}% of daily limit"
+                )
 
             # Check memory hours
             estimated_memory_hours = (memory_mb / 1024 * duration_seconds) / 3600
@@ -538,7 +550,9 @@ class ResourceQuotaManager:
 
             # Check network
             if network_bytes > 0:
-                network_available = (quota.network_gb_daily * 1024 * 1024 * 1024) - usage.network_bytes_used
+                network_available = (
+                    quota.network_gb_daily * 1024 * 1024 * 1024
+                ) - usage.network_bytes_used
                 if network_bytes > network_available:
                     result.resource = QuotaResource.NETWORK_BYTES
                     result.requested = network_bytes
@@ -564,7 +578,9 @@ class ResourceQuotaManager:
                 result.available = 0
                 result.used = usage.jobs_this_month
                 result.limit = quota.jobs_per_month
-                result.message = f"Monthly job limit reached: {usage.jobs_this_month}/{quota.jobs_per_month}"
+                result.message = (
+                    f"Monthly job limit reached: {usage.jobs_this_month}/{quota.jobs_per_month}"
+                )
                 self._stats["quota_exceeded"] += 1
                 return result
 
@@ -769,18 +785,32 @@ class ResourceQuotaManager:
                 return {}
 
             return {
-                "cpu_hours": (usage.cpu_hours_used / quota.cpu_hours_daily * 100)
-                            if quota.cpu_hours_daily > 0 else 0,
-                "memory_gb_hours": (usage.memory_gb_hours_used / quota.memory_gb_hours_daily * 100)
-                                   if quota.memory_gb_hours_daily > 0 else 0,
-                "concurrent_jobs": (usage.concurrent_jobs / quota.max_concurrent_jobs * 100)
-                                   if quota.max_concurrent_jobs > 0 else 0,
-                "storage": (usage.storage_mb_used / quota.storage_mb * 100)
-                           if quota.storage_mb > 0 else 0,
-                "network": (usage.network_bytes_used / (quota.network_gb_daily * 1024**3) * 100)
-                           if quota.network_gb_daily > 0 else 0,
-                "jobs_today": (usage.jobs_today / quota.jobs_per_day * 100)
-                              if quota.jobs_per_day > 0 else 0,
+                "cpu_hours": (
+                    (usage.cpu_hours_used / quota.cpu_hours_daily * 100)
+                    if quota.cpu_hours_daily > 0
+                    else 0
+                ),
+                "memory_gb_hours": (
+                    (usage.memory_gb_hours_used / quota.memory_gb_hours_daily * 100)
+                    if quota.memory_gb_hours_daily > 0
+                    else 0
+                ),
+                "concurrent_jobs": (
+                    (usage.concurrent_jobs / quota.max_concurrent_jobs * 100)
+                    if quota.max_concurrent_jobs > 0
+                    else 0
+                ),
+                "storage": (
+                    (usage.storage_mb_used / quota.storage_mb * 100) if quota.storage_mb > 0 else 0
+                ),
+                "network": (
+                    (usage.network_bytes_used / (quota.network_gb_daily * 1024**3) * 100)
+                    if quota.network_gb_daily > 0
+                    else 0
+                ),
+                "jobs_today": (
+                    (usage.jobs_today / quota.jobs_per_day * 100) if quota.jobs_per_day > 0 else 0
+                ),
             }
 
     def get_remaining(
@@ -837,7 +867,8 @@ class ResourceQuotaManager:
             cleaned = 0
 
             stale_job_ids = [
-                job_id for job_id, job in self._active_jobs.items()
+                job_id
+                for job_id, job in self._active_jobs.items()
                 if job["start_time"] < stale_cutoff
             ]
 

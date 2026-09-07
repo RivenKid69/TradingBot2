@@ -50,12 +50,12 @@ except Exception:  # pragma: no cover
 class OptimizerConstraints:
     """Ограничения оптимизатора (жёсткие проецируемые + tilt-лимиты для cvxpy)."""
 
-    gross_max: Optional[float] = None        # Σ|w| ≤ gross_max
-    net_target: Optional[float] = None       # Σw = net_target
-    long_only: bool = False                  # w ≥ 0
-    max_position: Optional[float] = None      # верхняя граница |w_i|
-    min_position: Optional[float] = None      # нижняя граница w_i (если задана)
-    max_turnover: Optional[float] = None     # Σ|w − w₀| ≤ max_turnover
+    gross_max: Optional[float] = None  # Σ|w| ≤ gross_max
+    net_target: Optional[float] = None  # Σw = net_target
+    long_only: bool = False  # w ≥ 0
+    max_position: Optional[float] = None  # верхняя граница |w_i|
+    min_position: Optional[float] = None  # нижняя граница w_i (если задана)
+    max_turnover: Optional[float] = None  # Σ|w − w₀| ≤ max_turnover
     # tilt-лимиты (точно — только cvxpy)
     sector_map: Optional[Dict[str, str]] = None
     sector_caps: Optional[Dict[str, float]] = None
@@ -84,7 +84,7 @@ def _risk_parity(cov: np.ndarray, *, iters: int = 4000, tol: float = 1e-12) -> n
         rc = w * sw
         target = float(np.mean(np.abs(rc)))
         denom = np.where(np.abs(rc) < 1e-15, 1e-15, np.abs(rc))
-        w_new = w * np.sqrt(target / denom)   # sqrt-damping → стабильная сходимость к ERC
+        w_new = w * np.sqrt(target / denom)  # sqrt-damping → стабильная сходимость к ERC
         w_new = np.maximum(w_new, 1e-15)
         w_new = w_new / w_new.sum()
         if np.max(np.abs(w_new - w)) < tol:
@@ -123,6 +123,7 @@ def black_litterman_mu(
 # ---------------------------------------------------------------------------
 try:  # scipy есть в окружении (cvxpy — нет) → tcost-aware solve через SLSQP
     from scipy.optimize import minimize as _scipy_minimize  # type: ignore
+
     _HAS_SCIPY = True
 except Exception:  # pragma: no cover
     _scipy_minimize = None
@@ -143,19 +144,21 @@ class TCostModel:
     ``adv`` — вектор среднего дневного оборота по именам (USD), выровненный к порядку
     весов; ``nav`` — ноционал портфеля (USD). Передаются в ``cost`` из оптимизатора.
     """
+
     linear: float = 0.0008
     quad: float = 0.0
-    coef: float = 1.0          # общий множитель κ
+    coef: float = 1.0  # общий множитель κ
     sqrt_impact: bool = False
-    impact_coef: float = 0.1   # k в √-impact: bps-эквивалент = k·√participation
+    impact_coef: float = 0.1  # k в √-impact: bps-эквивалент = k·√participation
 
-    def cost(self, delta: np.ndarray, *, adv: Optional[np.ndarray] = None,
-             nav: Optional[float] = None) -> float:
+    def cost(
+        self, delta: np.ndarray, *, adv: Optional[np.ndarray] = None, nav: Optional[float] = None
+    ) -> float:
         d = np.abs(np.asarray(delta, dtype="float64"))
         linear = self.linear * float(d.sum())
         if self.sqrt_impact and adv is not None and nav:
             adv_v = np.asarray(adv, dtype="float64")
-            adv_v = np.where(adv_v > 0.0, adv_v, np.inf)   # unknown ADV → no impact term
+            adv_v = np.where(adv_v > 0.0, adv_v, np.inf)  # unknown ADV → no impact term
             traded_notional = d * float(nav)
             participation = traded_notional / adv_v
             impact = float((self.impact_coef * np.sqrt(participation) * d).sum())
@@ -167,9 +170,10 @@ class TCostModel:
 @dataclass
 class SizingConfig:
     """Сайзинг после оптимизации: vol-targeting или (фракционный) Kelly."""
-    method: str = "none"        # none | vol_target | kelly
-    target_vol: Optional[float] = None    # для vol_target (σ на период)
-    kelly_fraction: float = 0.5           # для kelly (0.5 = half-Kelly)
+
+    method: str = "none"  # none | vol_target | kelly
+    target_vol: Optional[float] = None  # для vol_target (σ на период)
+    kelly_fraction: float = 0.5  # для kelly (0.5 = half-Kelly)
     max_leverage: Optional[float] = None  # ограничить gross после сайзинга
 
 
@@ -182,17 +186,19 @@ class RobustConfig:
     * **ellipsoidal**: μ ∈ {μ̂ + Ω^½ u : ‖u‖₂ ≤ κ} ⇒ worst-case = μ̂ᵀw − κ·√(wᵀΩw).
       Ω — ковариация оценки μ (по умолчанию diag(σ_μ²)); если не задана, берётся из Σ.
     """
+
     enabled: bool = False
-    kind: str = "box"                       # box | ellipsoidal
-    kappa: float = 1.0                       # размер множества неопределённости
-    mu_uncertainty: Optional[np.ndarray] = None   # σ_μ по именам (box) — выровнен к symbols
-    omega: Optional[np.ndarray] = None      # Ω для ellipsoidal (N×N); None → diag(σ_μ²) или Σ
+    kind: str = "box"  # box | ellipsoidal
+    kappa: float = 1.0  # размер множества неопределённости
+    mu_uncertainty: Optional[np.ndarray] = None  # σ_μ по именам (box) — выровнен к symbols
+    omega: Optional[np.ndarray] = None  # Ω для ellipsoidal (N×N); None → diag(σ_μ²) или Σ
 
 
 def kelly_weights(mu: np.ndarray, cov: np.ndarray, fraction: float = 1.0) -> np.ndarray:
     """Фракционный Kelly: w = fraction · Σ⁻¹μ (рост log-капитала)."""
-    return float(fraction) * _solve_psd(np.asarray(cov, dtype="float64"),
-                                        np.asarray(mu, dtype="float64"))
+    return float(fraction) * _solve_psd(
+        np.asarray(cov, dtype="float64"), np.asarray(mu, dtype="float64")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -209,9 +215,9 @@ class PortfolioOptimizer:
         objective: str = "mean_variance",
         risk_aversion: float = 5.0,
         constraints: Optional[OptimizerConstraints] = None,
-        use_cvxpy: str = "auto",   # 'auto' | 'never'
+        use_cvxpy: str = "auto",  # 'auto' | 'never'
         bl_views: Optional[Dict[str, Any]] = None,
-        tcost: Optional["TCostModel"] = None,   # tcost(w−w₀) В целевой функции (P1)
+        tcost: Optional["TCostModel"] = None,  # tcost(w−w₀) В целевой функции (P1)
         sizing: Optional["SizingConfig"] = None,  # vol-target / Kelly после оптимизации
         robust: Optional["RobustConfig"] = None,  # robust μ-uncertainty (P2 #15)
     ) -> None:
@@ -233,8 +239,8 @@ class PortfolioOptimizer:
         constraints: Optional[OptimizerConstraints] = None,
         tcost_model: Any = None,
         *,
-        adv: Optional[pd.Series] = None,   # per-name ADV (USD) for √-impact tcost (#16)
-        nav: Optional[float] = None,       # portfolio notional (USD) for √-impact tcost
+        adv: Optional[pd.Series] = None,  # per-name ADV (USD) for √-impact tcost (#16)
+        nav: Optional[float] = None,  # portfolio notional (USD) for √-impact tcost
     ) -> pd.Series:
         cons = constraints or self.constraints
         symbols = list(mu.index)
@@ -254,14 +260,23 @@ class PortfolioOptimizer:
         #    optimization is enabled — so none of those are silently ignored.
         _robust_on = bool(self.robust is not None and self.robust.enabled)
         _needs_constrained = bool(cons.sector_caps or cons.factor_caps or _robust_on)
-        if (self.tcost is not None or _needs_constrained) and _HAS_SCIPY and self.objective in self._CONVEX:
+        if (
+            (self.tcost is not None or _needs_constrained)
+            and _HAS_SCIPY
+            and self.objective in self._CONVEX
+        ):
             try:
                 w = self._solve_scipy(mu_v, Sigma, w0, cons, symbols, raw, adv=adv_v, nav=nav)
             except Exception as exc:
                 logger.warning("scipy constrained solve failed (%s); falling back", exc)
                 w = None
         # 2) cvxpy (если доступен в окружении)
-        if w is None and self.use_cvxpy != "never" and _HAS_CVXPY and self.objective in self._CONVEX:
+        if (
+            w is None
+            and self.use_cvxpy != "never"
+            and _HAS_CVXPY
+            and self.objective in self._CONVEX
+        ):
             try:  # pragma: no cover - cvxpy недоступен в текущем окружении
                 w = self._solve_cvxpy(mu_v, Sigma, w0, cons)
             except Exception as exc:  # pragma: no cover
@@ -280,6 +295,7 @@ class PortfolioOptimizer:
     # ---- tcost-aware solve (scipy) ----
     def _solve_scipy(self, mu, Sigma, w0, cons, symbols, raw, *, adv=None, nav=None):
         import math as _math
+
         n = len(mu)
         eps = 1e-6
         la = self.risk_aversion
@@ -337,15 +353,21 @@ class PortfolioOptimizer:
             ccs.append({"type": "ineq", "fun": (lambda w, gm=gm: gm - float(smooth_l1(w).sum()))})
         if cons.max_turnover is not None and w0 is not None:
             mt = float(cons.max_turnover)
-            ccs.append({"type": "ineq", "fun": (lambda w, mt=mt: mt - float(smooth_l1(w - w0).sum()))})
+            ccs.append(
+                {"type": "ineq", "fun": (lambda w, mt=mt: mt - float(smooth_l1(w - w0).sum()))}
+            )
         if cons.exposures is not None and cons.factor_caps:
             B = cons.exposures.reindex(index=list(symbols)).fillna(0.0)
             for f, cap in cons.factor_caps.items():
                 if f in B.columns:
                     bf = B[f].to_numpy(dtype="float64")
                     cap = float(cap)
-                    ccs.append({"type": "ineq", "fun": (lambda w, bf=bf, cap=cap: cap - float(bf @ w))})
-                    ccs.append({"type": "ineq", "fun": (lambda w, bf=bf, cap=cap: cap + float(bf @ w))})
+                    ccs.append(
+                        {"type": "ineq", "fun": (lambda w, bf=bf, cap=cap: cap - float(bf @ w))}
+                    )
+                    ccs.append(
+                        {"type": "ineq", "fun": (lambda w, bf=bf, cap=cap: cap + float(bf @ w))}
+                    )
         # Sector caps: gross sector exposure Σ_{i∈sector}|w_i| ≤ cap (smooth-L1 for SLSQP).
         if cons.sector_map and cons.sector_caps:
             sector_idx = self._sector_index_groups(symbols, cons.sector_map)
@@ -354,12 +376,22 @@ class PortfolioOptimizer:
                 if idx:
                     ia = np.asarray(idx, dtype=int)
                     cap = float(cap)
-                    ccs.append({"type": "ineq",
-                                "fun": (lambda w, ia=ia, cap=cap: cap - float(smooth_l1(w[ia]).sum()))})
+                    ccs.append(
+                        {
+                            "type": "ineq",
+                            "fun": (lambda w, ia=ia, cap=cap: cap - float(smooth_l1(w[ia]).sum())),
+                        }
+                    )
 
         x0 = self._project(np.asarray(raw, dtype="float64"), cons, w0, symbols)
-        res = _scipy_minimize(objective, x0, method="SLSQP", bounds=bounds,
-                              constraints=ccs, options={"maxiter": 300, "ftol": 1e-10})
+        res = _scipy_minimize(
+            objective,
+            x0,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=ccs,
+            options={"maxiter": 300, "ftol": 1e-10},
+        )
         w = np.asarray(res.x, dtype="float64")
         # гарантия жёстких границ (SLSQP даёт приближённое выполнение)
         w = self._apply_box(w, cons)
@@ -372,6 +404,7 @@ class PortfolioOptimizer:
     # ---- sizing (vol-target / Kelly) ----
     def _apply_sizing(self, w, mu, Sigma, cons):
         import math as _math
+
         sc = self.sizing
         w = np.asarray(w, dtype="float64")
         if sc.method == "vol_target" and sc.target_vol:
@@ -383,7 +416,7 @@ class PortfolioOptimizer:
             target_gross = float(np.abs(kw).sum())
             g = float(np.abs(w).sum())
             if g > 1e-12 and target_gross > 0:
-                w = w * (target_gross / g)   # направление оптимизатора, Kelly-плечо
+                w = w * (target_gross / g)  # направление оптимизатора, Kelly-плечо
         if sc.max_leverage is not None:
             g = float(np.abs(w).sum())
             if g > float(sc.max_leverage) and g > 0:
@@ -391,7 +424,9 @@ class PortfolioOptimizer:
         return w
 
     # ---- raw analytic weights ----
-    def _raw_weights(self, mu: np.ndarray, Sigma: np.ndarray, cons: OptimizerConstraints) -> np.ndarray:
+    def _raw_weights(
+        self, mu: np.ndarray, Sigma: np.ndarray, cons: OptimizerConstraints
+    ) -> np.ndarray:
         n = len(mu)
         obj = self.objective
         if obj == "equal_weight":
@@ -480,9 +515,9 @@ class PortfolioOptimizer:
         nt = float(cons.net_target)
         s = float(w.sum())
         if abs(nt) < 1e-12:
-            return w - w.mean()         # market-neutral: центрируем
+            return w - w.mean()  # market-neutral: центрируем
         if abs(s) > 1e-12:
-            return w * (nt / s)         # масштабируем (сохраняет направление)
+            return w * (nt / s)  # масштабируем (сохраняет направление)
         return w
 
     @staticmethod
@@ -495,7 +530,9 @@ class PortfolioOptimizer:
         return w
 
     @staticmethod
-    def _sector_index_groups(symbols: Sequence[str], sector_map: Dict[str, str]) -> Dict[str, List[int]]:
+    def _sector_index_groups(
+        symbols: Sequence[str], sector_map: Dict[str, str]
+    ) -> Dict[str, List[int]]:
         groups: Dict[str, List[int]] = {}
         for i, s in enumerate(symbols):
             sec = sector_map.get(str(s))
@@ -607,24 +644,32 @@ class MultiPeriodOptimizer:
 
     def solve_path(
         self,
-        mu_path: pd.DataFrame,           # index=period, columns=symbol
+        mu_path: pd.DataFrame,  # index=period, columns=symbol
         cov: Any,
         current_w: Optional[pd.Series] = None,
         **solve_kwargs: Any,
     ) -> pd.DataFrame:
         symbols = list(mu_path.columns)
         phi = self._phi()
-        w_prev = (current_w.reindex(symbols).fillna(0.0) if current_w is not None
-                  else pd.Series(0.0, index=symbols))
+        w_prev = (
+            current_w.reindex(symbols).fillna(0.0)
+            if current_w is not None
+            else pd.Series(0.0, index=symbols)
+        )
         rows: Dict[Any, pd.Series] = {}
         for t in mu_path.index:
             mu_t = mu_path.loc[t].astype("float64")
             aim = self.single.solve(mu_t, cov, current_w=w_prev, **solve_kwargs)
-            blended = (1.0 - phi) * w_prev.reindex(symbols).fillna(0.0) + phi * aim.reindex(symbols).fillna(0.0)
+            blended = (1.0 - phi) * w_prev.reindex(symbols).fillna(0.0) + phi * aim.reindex(
+                symbols
+            ).fillna(0.0)
             # project the blended target back onto hard constraints
             wv = self.single._project(
-                blended.to_numpy(dtype="float64"), self.single.constraints,
-                w_prev.reindex(symbols).fillna(0.0).to_numpy(dtype="float64"), symbols)
+                blended.to_numpy(dtype="float64"),
+                self.single.constraints,
+                w_prev.reindex(symbols).fillna(0.0).to_numpy(dtype="float64"),
+                symbols,
+            )
             w_t = pd.Series(wv, index=symbols)
             rows[t] = w_t
             w_prev = w_t
@@ -643,15 +688,23 @@ class MultiPeriodOptimizer:
         contract: aim = single-period target, then move φ of the way and project."""
         symbols = list(mu.index)
         phi = self._phi()
-        w0 = (current_w.reindex(symbols).fillna(0.0) if current_w is not None
-              else pd.Series(0.0, index=symbols))
-        aim = self.single.solve(mu, cov, current_w=w0, constraints=constraints,
-                                tcost_model=tcost_model, **solve_kwargs)
-        blended = (1.0 - phi) * w0.reindex(symbols).fillna(0.0) + phi * aim.reindex(symbols).fillna(0.0)
+        w0 = (
+            current_w.reindex(symbols).fillna(0.0)
+            if current_w is not None
+            else pd.Series(0.0, index=symbols)
+        )
+        aim = self.single.solve(
+            mu, cov, current_w=w0, constraints=constraints, tcost_model=tcost_model, **solve_kwargs
+        )
+        blended = (1.0 - phi) * w0.reindex(symbols).fillna(0.0) + phi * aim.reindex(symbols).fillna(
+            0.0
+        )
         wv = self.single._project(
             blended.to_numpy(dtype="float64"),
             constraints or self.single.constraints,
-            w0.reindex(symbols).fillna(0.0).to_numpy(dtype="float64"), symbols)
+            w0.reindex(symbols).fillna(0.0).to_numpy(dtype="float64"),
+            symbols,
+        )
         return pd.Series(wv, index=symbols, name="weight")
 
     # delegate attributes the backtest may read off the optimizer

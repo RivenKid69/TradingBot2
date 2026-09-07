@@ -17,6 +17,7 @@ def get_obs_builder():
     """Import obs_builder or skip test."""
     try:
         from obs_builder import build_observation_vector
+
         return build_observation_vector
     except ImportError:
         pytest.skip("obs_builder not compiled")
@@ -60,11 +61,18 @@ class TestValidityFlags:
 
         # Test 1: Valid ma5
         params = create_base_params()
-        params.update({
-            "ma5": 50100.0,  # Valid value
-            "ma20": np.nan, "rsi14": np.nan, "macd": np.nan,
-            "macd_signal": np.nan, "momentum": np.nan, "cci": np.nan, "obv": np.nan
-        })
+        params.update(
+            {
+                "ma5": 50100.0,  # Valid value
+                "ma20": np.nan,
+                "rsi14": np.nan,
+                "macd": np.nan,
+                "macd_signal": np.nan,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         assert params["out_features"][3] == 50100.0, "ma5 value should be preserved"
@@ -72,11 +80,18 @@ class TestValidityFlags:
 
         # Test 2: NaN ma5
         params = create_base_params()
-        params.update({
-            "ma5": np.nan,  # NaN
-            "ma20": np.nan, "rsi14": np.nan, "macd": np.nan,
-            "macd_signal": np.nan, "momentum": np.nan, "cci": np.nan, "obv": np.nan
-        })
+        params.update(
+            {
+                "ma5": np.nan,  # NaN
+                "ma20": np.nan,
+                "rsi14": np.nan,
+                "macd": np.nan,
+                "macd_signal": np.nan,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         assert params["out_features"][3] == 0.0, "ma5 fallback should be 0.0"
@@ -88,12 +103,18 @@ class TestValidityFlags:
 
         # Test 1: Valid RSI
         params = create_base_params()
-        params.update({
-            "ma5": np.nan, "ma20": np.nan,
-            "rsi14": 55.0,  # Valid neutral RSI
-            "macd": np.nan, "macd_signal": np.nan, "momentum": np.nan,
-            "cci": np.nan, "obv": np.nan
-        })
+        params.update(
+            {
+                "ma5": np.nan,
+                "ma20": np.nan,
+                "rsi14": 55.0,  # Valid neutral RSI
+                "macd": np.nan,
+                "macd_signal": np.nan,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         assert params["out_features"][7] == 55.0, "rsi14 value should be preserved"
@@ -101,12 +122,18 @@ class TestValidityFlags:
 
         # Test 2: NaN RSI (warmup period)
         params = create_base_params()
-        params.update({
-            "ma5": np.nan, "ma20": np.nan,
-            "rsi14": np.nan,  # NaN
-            "macd": np.nan, "macd_signal": np.nan, "momentum": np.nan,
-            "cci": np.nan, "obv": np.nan
-        })
+        params.update(
+            {
+                "ma5": np.nan,
+                "ma20": np.nan,
+                "rsi14": np.nan,  # NaN
+                "macd": np.nan,
+                "macd_signal": np.nan,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         assert params["out_features"][7] == 50.0, "rsi14 fallback should be 50.0"
@@ -118,12 +145,18 @@ class TestValidityFlags:
 
         # Test: Both valid
         params = create_base_params()
-        params.update({
-            "ma5": np.nan, "ma20": np.nan, "rsi14": np.nan,
-            "macd": 10.5,
-            "macd_signal": 8.2,
-            "momentum": np.nan, "cci": np.nan, "obv": np.nan
-        })
+        params.update(
+            {
+                "ma5": np.nan,
+                "ma20": np.nan,
+                "rsi14": np.nan,
+                "macd": 10.5,
+                "macd_signal": 8.2,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         assert params["out_features"][9] == 10.5, "macd value preserved"
@@ -133,12 +166,18 @@ class TestValidityFlags:
 
         # Test: Both NaN
         params = create_base_params()
-        params.update({
-            "ma5": np.nan, "ma20": np.nan, "rsi14": np.nan,
-            "macd": np.nan,
-            "macd_signal": np.nan,
-            "momentum": np.nan, "cci": np.nan, "obv": np.nan
-        })
+        params.update(
+            {
+                "ma5": np.nan,
+                "ma20": np.nan,
+                "rsi14": np.nan,
+                "macd": np.nan,
+                "macd_signal": np.nan,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         assert params["out_features"][9] == 0.0, "macd fallback = 0.0"
@@ -152,16 +191,18 @@ class TestValidityFlags:
 
         # Set all indicators to valid values
         params = create_base_params()
-        params.update({
-            "ma5": 50100.0,
-            "ma20": 50200.0,
-            "rsi14": 55.0,
-            "macd": 10.0,
-            "macd_signal": 8.0,
-            "momentum": 5.0,
-            "cci": 20.0,
-            "obv": 1000.0,
-        })
+        params.update(
+            {
+                "ma5": 50100.0,
+                "ma20": 50200.0,
+                "rsi14": 55.0,
+                "macd": 10.0,
+                "macd_signal": 8.0,
+                "momentum": 5.0,
+                "cci": 20.0,
+                "obv": 1000.0,
+            }
+        )
         build_observation_vector(**params)
 
         # Check all validity flags are 1.0
@@ -177,8 +218,9 @@ class TestValidityFlags:
         }
 
         for idx, name in validity_indices.items():
-            assert params["out_features"][idx] == 1.0, \
-                f"{name} at index {idx} should be 1.0, got {params['out_features'][idx]}"
+            assert (
+                params["out_features"][idx] == 1.0
+            ), f"{name} at index {idx} should be 1.0, got {params['out_features'][idx]}"
 
     def test_warmup_period_simulation(self, get_obs_builder):
         """Simulate early bars where all indicators are NaN."""
@@ -186,23 +228,26 @@ class TestValidityFlags:
 
         # Bar 1: Nothing is ready
         params = create_base_params()
-        params.update({
-            "ma5": np.nan,
-            "ma20": np.nan,
-            "rsi14": np.nan,
-            "macd": np.nan,
-            "macd_signal": np.nan,
-            "momentum": np.nan,
-            "cci": np.nan,
-            "obv": np.nan,
-        })
+        params.update(
+            {
+                "ma5": np.nan,
+                "ma20": np.nan,
+                "rsi14": np.nan,
+                "macd": np.nan,
+                "macd_signal": np.nan,
+                "momentum": np.nan,
+                "cci": np.nan,
+                "obv": np.nan,
+            }
+        )
         build_observation_vector(**params)
 
         # All validity flags should be 0.0
         validity_indices = [4, 6, 8, 10, 12, 14, 17, 19]
         for idx in validity_indices:
-            assert params["out_features"][idx] == 0.0, \
-                f"Validity flag at index {idx} should be 0.0 during warmup"
+            assert (
+                params["out_features"][idx] == 0.0
+            ), f"Validity flag at index {idx} should be 0.0 during warmup"
 
         # Check fallback values
         assert params["out_features"][3] == 0.0, "ma5 fallback"

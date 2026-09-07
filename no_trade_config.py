@@ -188,7 +188,14 @@ def _normalise_no_trade_payload(raw: Mapping[str, Any]) -> Dict[str, Any]:
     else:
         maintenance["format"] = "HH:MM-HH:MM"
 
-    for key in ("funding_buffer_min", "daily_utc", "custom_ms", "path", "max_age_sec", "max_age_hours"):
+    for key in (
+        "funding_buffer_min",
+        "daily_utc",
+        "custom_ms",
+        "path",
+        "max_age_sec",
+        "max_age_hours",
+    ):
         if key not in maintenance and raw.get(key) is not None:
             maintenance[key] = raw[key]
 
@@ -670,11 +677,7 @@ def _iter_anomaly_entries(raw: Any) -> Iterable[Tuple[str, int]]:
         for item in raw:
             if not isinstance(item, Mapping):
                 continue
-            symbol = _coerce_str(
-                item.get("symbol")
-                or item.get("pair")
-                or item.get("instrument")
-            )
+            symbol = _coerce_str(item.get("symbol") or item.get("pair") or item.get("instrument"))
             if not symbol:
                 continue
             ts = (

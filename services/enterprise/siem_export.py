@@ -248,7 +248,7 @@ class SecurityEvent:
 
         return (
             f"<{priority}>1 {timestamp} {hostname} DORA-Platform - {self.event_id} "
-            f"[dora category=\"{self.category.value}\" action=\"{self.action}\"] {self.message}"
+            f'[dora category="{self.category.value}" action="{self.action}"] {self.message}'
         )
 
     def calculate_hash(self) -> str:
@@ -369,6 +369,7 @@ class SplunkExporter(BaseSIEMExporter):
         super().__init__(config)
         self.simulation_mode = simulation_mode
         import logging
+
         self._logger = logging.getLogger(__name__)
 
     def export_event(self, event: SecurityEvent) -> bool:
@@ -440,7 +441,9 @@ class SplunkExporter(BaseSIEMExporter):
             True if all events sent successfully, False otherwise.
         """
         if self.simulation_mode:
-            self._logger.info(f"[SIMULATION] Splunk HEC export: {len(events)} events to {self.config.endpoint}")
+            self._logger.info(
+                f"[SIMULATION] Splunk HEC export: {len(events)} events to {self.config.endpoint}"
+            )
             return True
 
         # Production mode: send real HTTP POST to Splunk HEC
@@ -545,6 +548,7 @@ class ElasticsearchExporter(BaseSIEMExporter):
         super().__init__(config)
         self.simulation_mode = simulation_mode
         import logging
+
         self._logger = logging.getLogger(__name__)
 
     def export_event(self, event: SecurityEvent) -> bool:
@@ -602,7 +606,9 @@ class ElasticsearchExporter(BaseSIEMExporter):
         In simulation mode, logs the document for testing purposes.
         """
         if self.simulation_mode:
-            self._logger.info(f"[SIMULATION] Elasticsearch index: 1 document to {self.config.index}")
+            self._logger.info(
+                f"[SIMULATION] Elasticsearch index: 1 document to {self.config.index}"
+            )
             return True
 
         if not self.config.endpoint:
@@ -633,7 +639,9 @@ class ElasticsearchExporter(BaseSIEMExporter):
             if success:
                 self._logger.info(f"Elasticsearch document indexed: {doc_id}")
             else:
-                self._logger.error(f"Elasticsearch index failed: {response.status_code} - {response.text[:200]}")
+                self._logger.error(
+                    f"Elasticsearch index failed: {response.status_code} - {response.text[:200]}"
+                )
             return success
         except Exception as e:
             self._logger.error(f"Elasticsearch index failed: {str(e)}")
@@ -649,7 +657,9 @@ class ElasticsearchExporter(BaseSIEMExporter):
             Tuple of (success_count, failure_count).
         """
         if self.simulation_mode:
-            self._logger.info(f"[SIMULATION] Elasticsearch bulk index: {len(docs)} documents to {self.config.index}")
+            self._logger.info(
+                f"[SIMULATION] Elasticsearch bulk index: {len(docs)} documents to {self.config.index}"
+            )
             return len(docs), 0
 
         if not self.config.endpoint:
@@ -688,10 +698,13 @@ class ElasticsearchExporter(BaseSIEMExporter):
             result = response.json()
             if result.get("errors", False):
                 # Count failures
-                fail_count = sum(1 for item in result.get("items", [])
-                               if item.get("index", {}).get("error"))
+                fail_count = sum(
+                    1 for item in result.get("items", []) if item.get("index", {}).get("error")
+                )
                 success_count = len(docs) - fail_count
-                self._logger.warning(f"Elasticsearch bulk index partial: {success_count} success, {fail_count} failed")
+                self._logger.warning(
+                    f"Elasticsearch bulk index partial: {success_count} success, {fail_count} failed"
+                )
                 return success_count, fail_count
             else:
                 self._logger.info(f"Elasticsearch bulk index successful: {len(docs)} documents")
@@ -730,9 +743,13 @@ class ElasticsearchExporter(BaseSIEMExporter):
             success = response.status_code == 200
             if success:
                 health = response.json()
-                self._logger.info(f"Elasticsearch connection test successful: cluster status = {health.get('status', 'unknown')}")
+                self._logger.info(
+                    f"Elasticsearch connection test successful: cluster status = {health.get('status', 'unknown')}"
+                )
             else:
-                self._logger.warning(f"Elasticsearch connection test failed: {response.status_code}")
+                self._logger.warning(
+                    f"Elasticsearch connection test failed: {response.status_code}"
+                )
             return success
         except Exception as e:
             self._logger.error(f"Elasticsearch connection test failed: {str(e)}")
@@ -778,11 +795,21 @@ class SIEMExportService:
 
         # Create appropriate exporter with simulation mode from service
         if config.provider == SIEMProvider.SPLUNK:
-            self._exporters[connection_id] = SplunkExporter(config, simulation_mode=self._simulation_mode)
-        elif config.provider in (SIEMProvider.ELASTICSEARCH, SIEMProvider.ELK, SIEMProvider.OPENSEARCH):
-            self._exporters[connection_id] = ElasticsearchExporter(config, simulation_mode=self._simulation_mode)
+            self._exporters[connection_id] = SplunkExporter(
+                config, simulation_mode=self._simulation_mode
+            )
+        elif config.provider in (
+            SIEMProvider.ELASTICSEARCH,
+            SIEMProvider.ELK,
+            SIEMProvider.OPENSEARCH,
+        ):
+            self._exporters[connection_id] = ElasticsearchExporter(
+                config, simulation_mode=self._simulation_mode
+            )
         else:
-            self._exporters[connection_id] = ElasticsearchExporter(config, simulation_mode=self._simulation_mode)  # Default to ES
+            self._exporters[connection_id] = ElasticsearchExporter(
+                config, simulation_mode=self._simulation_mode
+            )  # Default to ES
 
         self._connections[connection_id] = connection
         return connection
@@ -892,7 +919,9 @@ class SIEMExportService:
         self._export_results.append(result)
         return result
 
-    def export_pending_events(self, connection_id: str, batch_size: int | None = None) -> ExportResult | None:
+    def export_pending_events(
+        self, connection_id: str, batch_size: int | None = None
+    ) -> ExportResult | None:
         """Export pending events to a SIEM."""
         connection = self._connections.get(connection_id)
         if not connection:
@@ -915,14 +944,21 @@ class SIEMExportService:
             if not connection:
                 return {}
 
-            results = [r for r in self._export_results if r.batch_id in self._batches and self._batches[r.batch_id].target_provider == connection.config.provider]
+            results = [
+                r
+                for r in self._export_results
+                if r.batch_id in self._batches
+                and self._batches[r.batch_id].target_provider == connection.config.provider
+            ]
             return {
                 "connection_id": connection_id,
                 "provider": connection.config.provider.value,
                 "is_connected": connection.is_connected,
                 "events_exported_total": connection.events_exported_total,
                 "batches_exported_total": connection.batches_exported_total,
-                "last_connected": connection.last_connected.isoformat() if connection.last_connected else None,
+                "last_connected": (
+                    connection.last_connected.isoformat() if connection.last_connected else None
+                ),
             }
 
         # Global statistics
@@ -932,8 +968,12 @@ class SIEMExportService:
             "total_events_pending": len(self._events),
             "total_batches": len(self._batches),
             "total_exports": len(self._export_results),
-            "successful_exports": sum(1 for r in self._export_results if r.status == ExportStatus.COMPLETED),
-            "failed_exports": sum(1 for r in self._export_results if r.status == ExportStatus.FAILED),
+            "successful_exports": sum(
+                1 for r in self._export_results if r.status == ExportStatus.COMPLETED
+            ),
+            "failed_exports": sum(
+                1 for r in self._export_results if r.status == ExportStatus.FAILED
+            ),
         }
 
     def get_events_by_category(

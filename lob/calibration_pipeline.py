@@ -119,6 +119,7 @@ class LatencyObservation:
         symbol: Optional symbol
         side: Optional order side
     """
+
     timestamp_ns: int
     latency_type: str  # "feed", "order", "exchange", "fill", "round_trip"
     latency_us: float
@@ -140,6 +141,7 @@ class QuoteObservation:
         ask_size: Best ask size
         spread_bps: Spread in basis points
     """
+
     timestamp_ns: int
     bid_price: float
     ask_price: float
@@ -159,6 +161,7 @@ class LatencyDistributionParams:
 
     Supports log-normal fitting (most common for latency).
     """
+
     distribution: LatencyDistributionType = LatencyDistributionType.LOGNORMAL
     mean_us: float = 100.0
     std_us: float = 30.0
@@ -205,7 +208,7 @@ class LatencyDistributionParams:
         if mean_val > 0 and std_val > 0:
             cv2 = (std_val / mean_val) ** 2
             sigma = math.sqrt(math.log(1 + cv2))
-            mu = math.log(mean_val) - sigma ** 2 / 2
+            mu = math.log(mean_val) - sigma**2 / 2
         else:
             mu = math.log(max(mean_val, 1.0))
             sigma = 0.5
@@ -497,11 +500,15 @@ class QueueDynamicsCalibrator:
                 times = position_times[bucket]
                 if times:
                     avg_time = sum(times) / len(times)
-                    result.fill_rate_by_level[bucket] = sum(fills) / sum(times) if sum(times) > 0 else 0
+                    result.fill_rate_by_level[bucket] = (
+                        sum(fills) / sum(times) if sum(times) > 0 else 0
+                    )
 
             # Average queue position at fill
             positions = [pos for pos, _, _ in self._queue_fills]
-            result.avg_queue_position_at_fill = sum(positions) / len(positions) if positions else 5.0
+            result.avg_queue_position_at_fill = (
+                sum(positions) / len(positions) if positions else 5.0
+            )
 
             # Average time in queue
             times = [t for _, _, t in self._queue_fills if t > 0]
@@ -912,9 +919,7 @@ class L3CalibrationPipeline:
             quality = "low"
 
         # Compute confidence intervals (95% CI)
-        confidence_intervals = self._compute_confidence_intervals(
-            impact_result, latency_result
-        )
+        confidence_intervals = self._compute_confidence_intervals(impact_result, latency_result)
 
         return L3CalibrationResult(
             impact_result=impact_result,
@@ -1232,9 +1237,7 @@ def calibrate_from_alpaca(
     cal_data = adapter.to_calibration_pipeline_data(symbol, start_date, end_date)
 
     if "error" in cal_data:
-        logger.warning(
-            f"Failed to get calibration data for {symbol}: {cal_data.get('error')}"
-        )
+        logger.warning(f"Failed to get calibration data for {symbol}: {cal_data.get('error')}")
         # Return default equity config
         return L3ExecutionConfig.for_equity()
 

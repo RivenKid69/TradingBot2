@@ -82,22 +82,24 @@ def ledoit_wolf_identity(X: np.ndarray) -> Tuple[np.ndarray, float]:
         d = np.var(X, axis=0, ddof=0) if T > 0 else np.zeros(N)
         return np.diag(d), 1.0
     S = (X.T @ X) / T
-    m = float(np.trace(S) / N)              # средняя дисперсия
+    m = float(np.trace(S) / N)  # средняя дисперсия
     F = m * np.eye(N)
-    d2 = float(np.sum((S - F) ** 2))        # ||S - mI||_F^2
+    d2 = float(np.sum((S - F) ** 2))  # ||S - mI||_F^2
     if d2 <= 0:
         return S, 0.0
     # b̄^2 = (1/T^2) Σ_t || x_t x_t' - S ||_F^2  (векторизовано)
-    norm_sq = np.einsum("tj,tj->t", X, X)            # ||x_t||^2
-    quad = np.einsum("tj,jk,tk->t", X, S, X)         # x_t' S x_t
-    b_bar2 = float(np.sum(norm_sq ** 2 - 2.0 * quad) + T * np.sum(S ** 2)) / (T ** 2)
+    norm_sq = np.einsum("tj,tj->t", X, X)  # ||x_t||^2
+    quad = np.einsum("tj,jk,tk->t", X, S, X)  # x_t' S x_t
+    b_bar2 = float(np.sum(norm_sq**2 - 2.0 * quad) + T * np.sum(S**2)) / (T**2)
     b2 = max(0.0, min(b_bar2, d2))
     delta = b2 / d2
     sigma = delta * F + (1.0 - delta) * S
     return nearest_psd(sigma), float(delta)
 
 
-def _estimate_factor_cov(F_ret: np.ndarray, method: str, *, ewma_halflife: float = 20.0) -> np.ndarray:
+def _estimate_factor_cov(
+    F_ret: np.ndarray, method: str, *, ewma_halflife: float = 20.0
+) -> np.ndarray:
     """Ковариация факторных доходностей: 'sample' | 'ledoit_wolf' | 'ewma'."""
     X = np.asarray(F_ret, dtype="float64")
     X = X[np.all(np.isfinite(X), axis=1)]  # полные строки
@@ -253,7 +255,7 @@ class StatRiskModel:
     def __init__(
         self,
         *,
-        method: str = "ledoit_wolf",   # 'ledoit_wolf' | 'sample'
+        method: str = "ledoit_wolf",  # 'ledoit_wolf' | 'sample'
         n_factors: Optional[int] = None,
         return_col: Optional[str] = None,
         specific_var_floor: float = 0.0,
@@ -292,13 +294,13 @@ class StatRiskModel:
         # PCA-разложение Σ на статфакторы
         k = self.n_factors if self.n_factors is not None else N
         k = max(1, min(int(k), N))
-        vals, vecs = np.linalg.eigh(sigma)            # по возрастанию
-        idx = np.argsort(vals)[::-1][:k]              # top-k
+        vals, vecs = np.linalg.eigh(sigma)  # по возрастанию
+        idx = np.argsort(vals)[::-1][:k]  # top-k
         lam = np.clip(vals[idx], 0.0, None)
         V = vecs[:, idx]
-        B = V * np.sqrt(lam)                          # N×k, exposures*sqrt(eig)
-        Fk = np.eye(k)                                # факторы ортонормированы
-        common_diag = np.sum(B ** 2, axis=1)
+        B = V * np.sqrt(lam)  # N×k, exposures*sqrt(eig)
+        Fk = np.eye(k)  # факторы ортонормированы
+        common_diag = np.sum(B**2, axis=1)
         D = np.clip(np.diag(sigma) - common_diag, self.specific_var_floor, None)
 
         self._symbols = list(wide.columns)

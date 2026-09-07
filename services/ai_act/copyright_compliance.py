@@ -34,6 +34,7 @@ class DataSourceType(Enum):
 
     Classification helps determine copyright compliance requirements.
     """
+
     PUBLIC_MARKET_DATA = "public_market_data"  # OHLCV, order book
     LICENSED_DATA = "licensed_data"  # Commercial licenses
     OPEN_DATA = "open_data"  # Open source / public domain
@@ -50,6 +51,7 @@ class CopyrightStatus(Enum):
     Per Article 53(1)(c), each data source must have a clear
     copyright status documented.
     """
+
     PUBLIC_DOMAIN = "public_domain"  # No copyright restrictions
     LICENSED = "licensed"  # Proper license obtained
     FAIR_USE = "fair_use"  # Fair use exception applies
@@ -65,6 +67,7 @@ class OptOutMechanism(Enum):
 
     These are "state-of-the-art technologies" referenced in Article 53(1)(c).
     """
+
     ROBOTS_TXT = "robots.txt"  # robots.txt directives
     TDMREP_HEADER = "tdmrep_header"  # TDMRep HTTP header
     TDMREP_META = "tdmrep_meta"  # TDMRep HTML meta tag
@@ -99,6 +102,7 @@ class DataSourceRecord:
         temporal_scope_start: Start of data time range
         temporal_scope_end: End of data time range
     """
+
     source_id: str
     source_name: str
     source_type: DataSourceType
@@ -131,8 +135,7 @@ class DataSourceRecord:
             "license_url": self.license_url,
             "opt_out_checked": self.opt_out_checked,
             "opt_out_check_date": (
-                self.opt_out_check_date.isoformat()
-                if self.opt_out_check_date else None
+                self.opt_out_check_date.isoformat() if self.opt_out_check_date else None
             ),
             "opt_out_mechanism": self.opt_out_mechanism,
             "description": self.description,
@@ -155,13 +158,15 @@ class DataSourceRecord:
             opt_out_checked=data.get("opt_out_checked", False),
             opt_out_check_date=(
                 datetime.fromisoformat(data["opt_out_check_date"])
-                if data.get("opt_out_check_date") else None
+                if data.get("opt_out_check_date")
+                else None
             ),
             opt_out_mechanism=data.get("opt_out_mechanism"),
             description=data.get("description", ""),
             date_added=(
                 datetime.fromisoformat(data["date_added"])
-                if data.get("date_added") else datetime.utcnow()
+                if data.get("date_added")
+                else datetime.utcnow()
             ),
             data_category=data.get("data_category", "market_data"),
             geographic_scope=data.get("geographic_scope", "global"),
@@ -186,6 +191,7 @@ class OptOutCheck:
         evidence_content: Optional raw evidence content
         checked_by: Who/what performed the check
     """
+
     check_id: str
     source_id: str
     check_date: datetime
@@ -219,6 +225,7 @@ class RightsHolderRequest:
 
     Per Article 53(1)(c), we must respond to rights holder requests.
     """
+
     request_id: str
     requester_name: str
     requester_email: str
@@ -245,7 +252,7 @@ DEFAULT_DATA_SOURCES: List[DataSourceRecord] = [
         opt_out_mechanism="api_terms",
         data_category="market_data",
         geographic_scope="global",
-        notes="Price data is factual and not subject to copyright"
+        notes="Price data is factual and not subject to copyright",
     ),
     DataSourceRecord(
         source_id="polygon_stocks",
@@ -260,7 +267,7 @@ DEFAULT_DATA_SOURCES: List[DataSourceRecord] = [
         opt_out_check_date=datetime(2024, 12, 1),
         data_category="market_data",
         geographic_scope="United States",
-        notes="License permits ML training use"
+        notes="License permits ML training use",
     ),
     DataSourceRecord(
         source_id="alpha_vantage",
@@ -274,7 +281,7 @@ DEFAULT_DATA_SOURCES: List[DataSourceRecord] = [
         opt_out_checked=True,
         opt_out_check_date=datetime(2024, 12, 1),
         data_category="market_data",
-        geographic_scope="global"
+        geographic_scope="global",
     ),
     DataSourceRecord(
         source_id="internal_synthetic",
@@ -285,7 +292,7 @@ DEFAULT_DATA_SOURCES: List[DataSourceRecord] = [
         description="Synthetically generated market scenarios for adversarial training",
         opt_out_checked=True,
         data_category="synthetic_data",
-        notes="Internally generated, no third-party copyright"
+        notes="Internally generated, no third-party copyright",
     ),
     DataSourceRecord(
         source_id="technical_indicators",
@@ -296,7 +303,7 @@ DEFAULT_DATA_SOURCES: List[DataSourceRecord] = [
         description="Technical indicators computed from raw price data",
         opt_out_checked=True,
         data_category="derived_data",
-        notes="Computed features, mathematical formulas not copyrightable"
+        notes="Computed features, mathematical formulas not copyrightable",
     ),
 ]
 
@@ -352,11 +359,7 @@ class CopyrightComplianceManager:
         self.data_sources[source.source_id] = source
         return source.source_id
 
-    def update_data_source(
-        self,
-        source_id: str,
-        updates: Dict[str, Any]
-    ) -> bool:
+    def update_data_source(self, source_id: str, updates: Dict[str, Any]) -> bool:
         """
         Update an existing data source.
 
@@ -398,7 +401,7 @@ class CopyrightComplianceManager:
         source_id: str,
         mechanism: str,
         content_hash: Optional[str] = None,
-        evidence_content: Optional[str] = None
+        evidence_content: Optional[str] = None,
     ) -> OptOutCheck:
         """
         Check and record opt-out status per Article 4(3) DSM Directive.
@@ -466,7 +469,7 @@ class CopyrightComplianceManager:
             opt_out_found=opt_out_found,
             action_taken=action_taken,
             evidence_hash=content_hash,
-            evidence_content=evidence_content
+            evidence_content=evidence_content,
         )
 
         self.opt_out_checks.append(check)
@@ -489,18 +492,16 @@ class CopyrightComplianceManager:
         total = len(self.data_sources)
         checked = sum(1 for s in self.data_sources.values() if s.opt_out_checked)
         licensed = sum(
-            1 for s in self.data_sources.values()
-            if s.copyright_status == CopyrightStatus.LICENSED
+            1 for s in self.data_sources.values() if s.copyright_status == CopyrightStatus.LICENSED
         )
         public_domain = sum(
-            1 for s in self.data_sources.values()
-            if s.copyright_status in (
-                CopyrightStatus.PUBLIC_DOMAIN,
-                CopyrightStatus.NOT_APPLICABLE
-            )
+            1
+            for s in self.data_sources.values()
+            if s.copyright_status in (CopyrightStatus.PUBLIC_DOMAIN, CopyrightStatus.NOT_APPLICABLE)
         )
         pending = sum(
-            1 for s in self.data_sources.values()
+            1
+            for s in self.data_sources.values()
             if s.copyright_status == CopyrightStatus.PENDING_REVIEW
         )
 
@@ -513,7 +514,7 @@ class CopyrightComplianceManager:
             "compliance_percentage": (checked / total * 100) if total > 0 else 100,
             "last_audit": datetime.utcnow().isoformat(),
             "all_sources_reviewed": checked == total,
-            "article_reference": "EU AI Act Article 53(1)(c)"
+            "article_reference": "EU AI Act Article 53(1)(c)",
         }
 
     def get_training_data_sources(self) -> List[Dict[str, Any]]:
@@ -536,10 +537,7 @@ class CopyrightComplianceManager:
             for s in self.data_sources.values()
         ]
 
-    def get_sources_by_status(
-        self,
-        status: CopyrightStatus
-    ) -> List[DataSourceRecord]:
+    def get_sources_by_status(self, status: CopyrightStatus) -> List[DataSourceRecord]:
         """
         Get sources with a specific copyright status.
 
@@ -549,15 +547,9 @@ class CopyrightComplianceManager:
         Returns:
             List of matching sources
         """
-        return [
-            s for s in self.data_sources.values()
-            if s.copyright_status == status
-        ]
+        return [s for s in self.data_sources.values() if s.copyright_status == status]
 
-    def get_sources_by_type(
-        self,
-        source_type: DataSourceType
-    ) -> List[DataSourceRecord]:
+    def get_sources_by_type(self, source_type: DataSourceType) -> List[DataSourceRecord]:
         """
         Get sources of a specific type.
 
@@ -567,17 +559,10 @@ class CopyrightComplianceManager:
         Returns:
             List of matching sources
         """
-        return [
-            s for s in self.data_sources.values()
-            if s.source_type == source_type
-        ]
+        return [s for s in self.data_sources.values() if s.source_type == source_type]
 
     def record_rights_holder_request(
-        self,
-        requester_name: str,
-        requester_email: str,
-        request_type: str,
-        content_description: str
+        self, requester_name: str, requester_email: str, request_type: str, content_description: str
     ) -> RightsHolderRequest:
         """
         Record a rights holder request.
@@ -602,16 +587,13 @@ class CopyrightComplianceManager:
             request_date=datetime.utcnow(),
             request_type=request_type,
             content_description=content_description,
-            status="received"
+            status="received",
         )
 
         self.rights_holder_requests.append(request)
         return request
 
-    def get_opt_out_checks(
-        self,
-        source_id: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def get_opt_out_checks(self, source_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Get opt-out check records.
 
@@ -637,10 +619,12 @@ class CopyrightComplianceManager:
         status = self.get_compliance_status()
         sources = self.get_training_data_sources()
 
-        source_table = "\n".join([
-            f"| {s['name']} | {s['type']} | {s['copyright_status']} | {s['provider']} |"
-            for s in sources
-        ])
+        source_table = "\n".join(
+            [
+                f"| {s['name']} | {s['type']} | {s['copyright_status']} | {s['provider']} |"
+                for s in sources
+            ]
+        )
 
         return f"""# Copyright Compliance Policy
 
@@ -761,7 +745,7 @@ This policy is reviewed annually and updated as required by:
                 "source_id": source_id,
                 "found": False,
                 "compliant": False,
-                "message": "Source not found in registry"
+                "message": "Source not found in registry",
             }
 
         source = self.data_sources[source_id]
@@ -787,7 +771,7 @@ This policy is reviewed annually and updated as required by:
             "compliant": all_compliant,
             "checks": checks,
             "copyright_status": source.copyright_status.value,
-            "verification_date": datetime.utcnow().isoformat()
+            "verification_date": datetime.utcnow().isoformat(),
         }
 
 

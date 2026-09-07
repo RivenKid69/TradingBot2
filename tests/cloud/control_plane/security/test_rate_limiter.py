@@ -173,16 +173,12 @@ class TestLockoutState:
 
     def test_is_locked_when_future(self):
         """is_locked should be True when locked_until is in future."""
-        state = LockoutState(
-            locked_until=datetime.now(timezone.utc) + timedelta(minutes=5)
-        )
+        state = LockoutState(locked_until=datetime.now(timezone.utc) + timedelta(minutes=5))
         assert state.is_locked
 
     def test_is_locked_when_past(self):
         """is_locked should be False when locked_until is in past."""
-        state = LockoutState(
-            locked_until=datetime.now(timezone.utc) - timedelta(minutes=5)
-        )
+        state = LockoutState(locked_until=datetime.now(timezone.utc) - timedelta(minutes=5))
         assert not state.is_locked
 
     def test_is_locked_when_none(self):
@@ -192,9 +188,7 @@ class TestLockoutState:
 
     def test_time_remaining(self):
         """time_remaining should return seconds."""
-        state = LockoutState(
-            locked_until=datetime.now(timezone.utc) + timedelta(seconds=30)
-        )
+        state = LockoutState(locked_until=datetime.now(timezone.utc) + timedelta(seconds=30))
         assert 25 < state.time_remaining <= 30
 
 

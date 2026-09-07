@@ -33,6 +33,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # Test 1: Import Boundary Enforcement
 # =============================================================================
 
+
 class TestImportBoundary:
     """Test that Cloud zone doesn't import Agent-only modules."""
 
@@ -107,18 +108,33 @@ class TestImportBoundary:
 # Test 2: Intent Prohibition
 # =============================================================================
 
+
 class TestIntentProhibition:
     """Test that prohibited fields are blocked in protocol messages."""
 
     PROHIBITED_FIELDS = {
-        "side", "quantity", "qty", "price", "order_type",
-        "intent", "signal", "target_position", "execute_order",
-        "place_order", "submit_order", "target_qty",
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "intent",
+        "signal",
+        "target_position",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "target_qty",
     }
 
     PROHIBITED_COMMAND_TYPES = {
-        "PLACE_ORDER", "SUBMIT_ORDER", "EXECUTE_ORDER",
-        "SEND_ORDER", "SET_TARGET", "PUSH_INTENT", "PUSH_SIGNAL",
+        "PLACE_ORDER",
+        "SUBMIT_ORDER",
+        "EXECUTE_ORDER",
+        "SEND_ORDER",
+        "SET_TARGET",
+        "PUSH_INTENT",
+        "PUSH_SIGNAL",
     }
 
     def check_dict_for_prohibited(self, data: Dict[str, Any], path: str = "") -> list:
@@ -152,7 +168,7 @@ class TestIntentProhibition:
                 "cpu_percent": 45.5,
                 "memory_percent": 60.0,
                 "broker_connected": True,
-            }
+            },
         }
 
         violations = self.check_dict_for_prohibited(heartbeat)
@@ -171,7 +187,7 @@ class TestIntentProhibition:
                     "deployment_id": "deploy_123",
                     "artifact_digest": "sha256:" + "a" * 64,
                 }
-            ]
+            ],
         }
 
         violations = self.check_dict_for_prohibited(command_batch)
@@ -200,6 +216,7 @@ class TestIntentProhibition:
 # Test 3: Protocol Schema Validation
 # =============================================================================
 
+
 class TestProtocolSchema:
     """Test protocol schema enforcement."""
 
@@ -217,21 +234,24 @@ class TestProtocolSchema:
         """Schema must define prohibited_order_fields."""
         # prohibited_order_fields can be in root definitions or nested in messages
         schema_str = json.dumps(schema)
-        assert "prohibited_order_fields" in schema_str, \
-            "Schema must reference prohibited_order_fields somewhere"
+        assert (
+            "prohibited_order_fields" in schema_str
+        ), "Schema must reference prohibited_order_fields somewhere"
 
     def test_schema_prohibits_side_field(self, schema):
         """Schema must use prohibited_order_fields pattern."""
         schema_str = json.dumps(schema)
         # Schema uses allOf with prohibited_order_fields which uses "not" pattern
-        assert "prohibited_order_fields" in schema_str, \
-            "Schema must use prohibited_order_fields pattern"
+        assert (
+            "prohibited_order_fields" in schema_str
+        ), "Schema must use prohibited_order_fields pattern"
 
     def test_schema_prohibits_quantity_field(self, schema):
         """Schema must reference prohibited_order_fields pattern."""
         schema_str = json.dumps(schema)
-        assert "prohibited_order_fields" in schema_str, \
-            "Schema must reference prohibited_order_fields"
+        assert (
+            "prohibited_order_fields" in schema_str
+        ), "Schema must reference prohibited_order_fields"
 
     def test_allowed_command_types(self, schema):
         """Schema must define only lifecycle command types."""
@@ -254,6 +274,7 @@ class TestProtocolSchema:
 # Test 4: Hard Caps Enforcement
 # =============================================================================
 
+
 class TestHardCapsEnforcement:
     """Test that hard caps are properly enforced."""
 
@@ -262,14 +283,17 @@ class TestHardCapsEnforcement:
         """Create test hard caps."""
         try:
             from packages.agent.policy.hard_caps import HardCaps, HardCapEnforcer
-            return HardCapEnforcer(HardCaps(
-                absolute_max_order_size=Decimal("10000"),
-                absolute_max_position=Decimal("100000"),
-                absolute_max_daily_loss=Decimal("5000"),
-                absolute_max_daily_loss_pct=Decimal("0.1"),
-                kill_switch_loss_pct=Decimal("0.05"),
-                kill_switch_error_count=5,
-            ))
+
+            return HardCapEnforcer(
+                HardCaps(
+                    absolute_max_order_size=Decimal("10000"),
+                    absolute_max_position=Decimal("100000"),
+                    absolute_max_daily_loss=Decimal("5000"),
+                    absolute_max_daily_loss_pct=Decimal("0.1"),
+                    kill_switch_loss_pct=Decimal("0.05"),
+                    kill_switch_error_count=5,
+                )
+            )
         except ImportError:
             pytest.skip("HardCaps not available")
 
@@ -313,6 +337,7 @@ class TestHardCapsEnforcement:
 # Test 5: Kill Switch
 # =============================================================================
 
+
 class TestKillSwitch:
     """Test kill switch functionality."""
 
@@ -321,6 +346,7 @@ class TestKillSwitch:
         """Create test kill switch."""
         try:
             from packages.agent.daemon.kill_switch import KillSwitch, HaltReasonType
+
             return KillSwitch()
         except ImportError:
             pytest.skip("KillSwitch not available")
@@ -370,8 +396,9 @@ class TestKillSwitch:
             ]
 
             for reason_type in expected_types:
-                assert hasattr(HaltReasonType, reason_type), \
-                    f"HaltReasonType should have {reason_type}"
+                assert hasattr(
+                    HaltReasonType, reason_type
+                ), f"HaltReasonType should have {reason_type}"
         except ImportError:
             pytest.skip("HaltReasonType not available")
 
@@ -379,6 +406,7 @@ class TestKillSwitch:
 # =============================================================================
 # Test 6: Artifact Manifest
 # =============================================================================
+
 
 class TestArtifactManifest:
     """Test artifact manifest validation."""
@@ -451,6 +479,7 @@ class TestArtifactManifest:
 # Test 7: Zone Separation
 # =============================================================================
 
+
 class TestZoneSeparation:
     """Test that zones are properly separated."""
 
@@ -504,6 +533,7 @@ class TestZoneSeparation:
 # Test 8: OrderIntent Contract
 # =============================================================================
 
+
 class TestOrderIntentContract:
     """Test OrderIntent is properly defined."""
 
@@ -555,6 +585,7 @@ class TestOrderIntentContract:
 # Test 9: Telemetry Redaction
 # =============================================================================
 
+
 class TestTelemetryRedaction:
     """Test that telemetry is properly redacted."""
 
@@ -577,6 +608,7 @@ class TestTelemetryRedaction:
 # =============================================================================
 # Test 10: CI Guardrails Integration
 # =============================================================================
+
 
 class TestCIGuardrailsIntegration:
     """Test CI guardrails are properly integrated."""
@@ -620,6 +652,7 @@ class TestCIGuardrailsIntegration:
 # =============================================================================
 # Test 11: Legal Documentation
 # =============================================================================
+
 
 class TestLegalDocumentation:
     """Test that legal documentation exists and contains CCEA info."""

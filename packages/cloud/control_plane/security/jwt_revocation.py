@@ -39,9 +39,11 @@ DEFAULT_TOKEN_TTL_HOURS: Final[int] = 24
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class RevokedToken:
     """Record of a revoked token."""
+
     jti: str
     revoked_at: datetime
     expires_at: datetime
@@ -71,6 +73,7 @@ class RevokedToken:
 @dataclass
 class BlocklistStats:
     """Statistics about the blocklist."""
+
     total_entries: int = 0
     active_entries: int = 0
     expired_entries: int = 0
@@ -91,6 +94,7 @@ class BlocklistStats:
 # ============================================================================
 # JTI Blocklist
 # ============================================================================
+
 
 class JTIBlocklist:
     """

@@ -77,6 +77,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # =========================
 
+
 @dataclass
 class SwapDownloadConfig:
     """Configuration for swap rate download."""
@@ -91,7 +92,7 @@ class SwapDownloadConfig:
 
     # Date range
     start_date: Optional[str] = None  # YYYY-MM-DD
-    end_date: Optional[str] = None    # YYYY-MM-DD
+    end_date: Optional[str] = None  # YYYY-MM-DD
 
     # Output
     output_dir: str = "data/forex/swaps"
@@ -109,8 +110,13 @@ class SwapDownloadConfig:
 # =========================
 
 MAJOR_PAIRS = [
-    "EUR_USD", "USD_JPY", "GBP_USD", "USD_CHF",
-    "AUD_USD", "USD_CAD", "NZD_USD",
+    "EUR_USD",
+    "USD_JPY",
+    "GBP_USD",
+    "USD_CHF",
+    "AUD_USD",
+    "USD_CAD",
+    "NZD_USD",
 ]
 
 # Currency to interest rate series mapping
@@ -163,16 +169,16 @@ CIP_BASIS_SERIES = {
 # Positive = USD funding premium (more expensive to borrow USD in FX swap market)
 # Negative = non-USD funding premium
 HISTORICAL_CIP_DEVIATIONS = {
-    "EUR_USD": -25,   # EUR/USD: -20 to -40 bps (USD premium)
-    "GBP_USD": -15,   # GBP/USD: -10 to -30 bps
-    "USD_JPY": -35,   # USD/JPY: -30 to -50 bps (JPY funding cheap)
-    "AUD_USD": -10,   # AUD/USD: -5 to -20 bps
-    "USD_CAD": -5,    # USD/CAD: -5 to -15 bps (close economies)
-    "NZD_USD": -8,    # NZD/USD: -5 to -15 bps
-    "USD_CHF": -45,   # USD/CHF: -40 to -60 bps (CHF safe haven)
-    "EUR_GBP": 10,    # EUR/GBP: +5 to +15 bps (GBP premium post-Brexit)
-    "EUR_JPY": -10,   # EUR/JPY: cross basis
-    "GBP_JPY": -20,   # GBP/JPY: cross basis
+    "EUR_USD": -25,  # EUR/USD: -20 to -40 bps (USD premium)
+    "GBP_USD": -15,  # GBP/USD: -10 to -30 bps
+    "USD_JPY": -35,  # USD/JPY: -30 to -50 bps (JPY funding cheap)
+    "AUD_USD": -10,  # AUD/USD: -5 to -20 bps
+    "USD_CAD": -5,  # USD/CAD: -5 to -15 bps (close economies)
+    "NZD_USD": -8,  # NZD/USD: -5 to -15 bps
+    "USD_CHF": -45,  # USD/CHF: -40 to -60 bps (CHF safe haven)
+    "EUR_GBP": 10,  # EUR/GBP: +5 to +15 bps (GBP premium post-Brexit)
+    "EUR_JPY": -10,  # EUR/JPY: cross basis
+    "GBP_JPY": -20,  # GBP/JPY: cross basis
 }
 
 # CIP deviation volatility multiplier during stress (VIX > 25)
@@ -237,6 +243,7 @@ def get_cip_deviation(
 # =========================
 # Swap Rate Estimation
 # =========================
+
 
 def estimate_swap_from_interest_rates(
     pair: str,
@@ -318,8 +325,12 @@ def estimate_swap_from_interest_rates(
         pip_value = 0.0001  # Standard pairs
 
     # Swap in pips = (Daily Rate % × Spot Price × Lot Size) / Pip Value
-    long_swap_pips = (long_rate_daily / 100) * spot_price * contract_size / pip_value / contract_size
-    short_swap_pips = (short_rate_daily / 100) * spot_price * contract_size / pip_value / contract_size
+    long_swap_pips = (
+        (long_rate_daily / 100) * spot_price * contract_size / pip_value / contract_size
+    )
+    short_swap_pips = (
+        (short_rate_daily / 100) * spot_price * contract_size / pip_value / contract_size
+    )
 
     return long_swap_pips, short_swap_pips
 
@@ -463,8 +474,7 @@ def fetch_current_swaps_oanda(
         import requests
 
         base_url = (
-            "https://api-fxpractice.oanda.com" if practice
-            else "https://api-fxtrade.oanda.com"
+            "https://api-fxpractice.oanda.com" if practice else "https://api-fxtrade.oanda.com"
         )
 
         headers = {
@@ -505,6 +515,7 @@ def fetch_current_swaps_oanda(
 # Historical Swap Estimation
 # =========================
 
+
 def build_historical_swaps(
     pair: str,
     config: SwapDownloadConfig,
@@ -544,7 +555,9 @@ def build_historical_swaps(
 
         # Load interest rates
         base_rates = load_interest_rates(base_currency, config.interest_rate_dir, start_dt, end_dt)
-        quote_rates = load_interest_rates(quote_currency, config.interest_rate_dir, start_dt, end_dt)
+        quote_rates = load_interest_rates(
+            quote_currency, config.interest_rate_dir, start_dt, end_dt
+        )
 
         if base_rates is None or quote_rates is None:
             # Fall back to synthetic data with typical rates
@@ -552,10 +565,16 @@ def build_historical_swaps(
             return _build_synthetic_swaps(pair, start_dt, end_dt)
 
         # Align rates to common dates
-        combined = pd.DataFrame({
-            "base_rate": base_rates,
-            "quote_rate": quote_rates,
-        }).ffill().dropna()
+        combined = (
+            pd.DataFrame(
+                {
+                    "base_rate": base_rates,
+                    "quote_rate": quote_rates,
+                }
+            )
+            .ffill()
+            .dropna()
+        )
 
         if combined.empty:
             return pair, None, "No overlapping interest rate data"
@@ -575,17 +594,21 @@ def build_historical_swaps(
                 spot_price=spot,
             )
 
-            records.append({
-                "date": date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date),
-                "pair": pair,
-                "long_swap": long_swap,
-                "short_swap": short_swap,
-                "long_swap_pct": (row["base_rate"] - row["quote_rate"]) - BROKER_SPREAD_BPS / 100,
-                "short_swap_pct": (row["quote_rate"] - row["base_rate"]) - BROKER_SPREAD_BPS / 100,
-                "base_rate": row["base_rate"],
-                "quote_rate": row["quote_rate"],
-                "source": "estimated",
-            })
+            records.append(
+                {
+                    "date": date.strftime("%Y-%m-%d") if hasattr(date, "strftime") else str(date),
+                    "pair": pair,
+                    "long_swap": long_swap,
+                    "short_swap": short_swap,
+                    "long_swap_pct": (row["base_rate"] - row["quote_rate"])
+                    - BROKER_SPREAD_BPS / 100,
+                    "short_swap_pct": (row["quote_rate"] - row["base_rate"])
+                    - BROKER_SPREAD_BPS / 100,
+                    "base_rate": row["base_rate"],
+                    "quote_rate": row["quote_rate"],
+                    "source": "estimated",
+                }
+            )
 
         df = pd.DataFrame(records)
         df["date"] = pd.to_datetime(df["date"])
@@ -611,8 +634,8 @@ def _build_synthetic_swaps(
     # Typical swap rates (pips per lot per day) as of 2024
     # These are approximations based on typical broker rates
     TYPICAL_SWAPS = {
-        "EUR_USD": (-0.5, -0.3),   # Long pays, short pays (both negative due to spreads)
-        "USD_JPY": (0.8, -1.2),    # Long receives (positive carry)
+        "EUR_USD": (-0.5, -0.3),  # Long pays, short pays (both negative due to spreads)
+        "USD_JPY": (0.8, -1.2),  # Long receives (positive carry)
         "GBP_USD": (-0.4, -0.4),
         "USD_CHF": (0.6, -1.0),
         "AUD_USD": (0.3, -0.7),
@@ -630,17 +653,19 @@ def _build_synthetic_swaps(
         # Add some variation (±20%)
         noise = np.random.uniform(0.8, 1.2)
 
-        records.append({
-            "date": date.strftime("%Y-%m-%d"),
-            "pair": pair,
-            "long_swap": long_swap * noise,
-            "short_swap": short_swap * noise,
-            "long_swap_pct": long_swap * noise * 365 * 0.0001,  # Rough conversion
-            "short_swap_pct": short_swap * noise * 365 * 0.0001,
-            "base_rate": np.nan,
-            "quote_rate": np.nan,
-            "source": "synthetic",
-        })
+        records.append(
+            {
+                "date": date.strftime("%Y-%m-%d"),
+                "pair": pair,
+                "long_swap": long_swap * noise,
+                "short_swap": short_swap * noise,
+                "long_swap_pct": long_swap * noise * 365 * 0.0001,  # Rough conversion
+                "short_swap_pct": short_swap * noise * 365 * 0.0001,
+                "base_rate": np.nan,
+                "quote_rate": np.nan,
+                "source": "synthetic",
+            }
+        )
 
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
@@ -652,6 +677,7 @@ def _build_synthetic_swaps(
 # =========================
 # File I/O
 # =========================
+
 
 def save_swaps(
     df: pd.DataFrame,
@@ -677,6 +703,7 @@ def save_swaps(
 # =========================
 # Main Runner
 # =========================
+
 
 def download_all_swaps(config: SwapDownloadConfig) -> Dict[str, Any]:
     """
@@ -729,6 +756,7 @@ def download_all_swaps(config: SwapDownloadConfig) -> Dict[str, Any]:
 # CLI
 # =========================
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download historical swap rates for forex pairs",
@@ -780,7 +808,8 @@ def parse_args() -> argparse.Namespace:
         help="Reprocess even if files exist",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose logging",
     )

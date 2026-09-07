@@ -101,7 +101,8 @@ DSAR_OUT_OF_SCOPE_CATEGORIES: Final[Set[str]] = {
 }
 
 # CCEA boundary notice for DSAR responses
-CCEA_BOUNDARY_NOTICE: Final[str] = """
+CCEA_BOUNDARY_NOTICE: Final[str] = (
+    """
 CCEA Architecture Data Boundary Notice
 
 Your request has been processed for all personal data held in our Cloud systems.
@@ -124,6 +125,7 @@ Per GDPR Article 20(2), the right to data portability shall not adversely affect
 the rights and freedoms of others. Trading strategy IP stored locally remains
 under your control.
 """.strip()
+)
 
 # Exemption categories for erasure (Art. 17(3))
 ERASURE_EXEMPTIONS: Final[Dict[str, str]] = {
@@ -147,17 +149,20 @@ COMPLIANCE_DATA_CATEGORIES: Final[Set[str]] = {
 # Enums
 # ============================================================================
 
+
 class DSARRequestType(str, Enum):
     """Types of DSAR requests per GDPR articles."""
-    ACCESS = "access"              # Art. 15 - Right of access
-    PORTABILITY = "portability"    # Art. 20 - Right to data portability
-    ERASURE = "erasure"            # Art. 17 - Right to erasure
+
+    ACCESS = "access"  # Art. 15 - Right of access
+    PORTABILITY = "portability"  # Art. 20 - Right to data portability
+    ERASURE = "erasure"  # Art. 17 - Right to erasure
     RECTIFICATION = "rectification"  # Art. 16 - Right to rectification
-    RESTRICTION = "restriction"    # Art. 18 - Right to restriction
+    RESTRICTION = "restriction"  # Art. 18 - Right to restriction
 
 
 class DSARStatus(str, Enum):
     """DSAR request processing status."""
+
     PENDING = "pending"
     AWAITING_VERIFICATION = "awaiting_verification"
     VERIFIED = "verified"
@@ -172,6 +177,7 @@ class DSARStatus(str, Enum):
 
 class VerificationMethod(str, Enum):
     """Identity verification methods."""
+
     EMAIL_LINK = "email_link"
     EMAIL_OTP = "email_otp"
     SMS_OTP = "sms_otp"
@@ -184,6 +190,7 @@ class VerificationMethod(str, Enum):
 
 class VerificationStatus(str, Enum):
     """Status of identity verification."""
+
     PENDING = "pending"
     SENT = "sent"
     VERIFIED = "verified"
@@ -193,6 +200,7 @@ class VerificationStatus(str, Enum):
 
 class ExportFormat(str, Enum):
     """Export file formats."""
+
     JSON = "json"
     JSON_ENCRYPTED = "json_encrypted"
     CSV = "csv"
@@ -201,6 +209,7 @@ class ExportFormat(str, Enum):
 
 class AuditAction(str, Enum):
     """DSAR audit action types."""
+
     REQUEST_CREATED = "request_created"
     VERIFICATION_SENT = "verification_sent"
     VERIFICATION_ATTEMPTED = "verification_attempted"
@@ -226,13 +235,18 @@ class AuditAction(str, Enum):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class VerificationToken:
     """Token for identity verification."""
+
     token_hash: str  # SHA-256 hash of token
     method: VerificationMethod
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_TTL_HOURS))
+    expires_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+        + timedelta(hours=VERIFICATION_TOKEN_TTL_HOURS)
+    )
     attempts: int = 0
     max_attempts: int = 5
     status: VerificationStatus = VerificationStatus.PENDING
@@ -266,6 +280,7 @@ class DSARRequest:
     Tracks full lifecycle of a data subject request including
     verification, processing, and completion.
     """
+
     id: str = field(default_factory=lambda: str(uuid4()))
     request_type: DSARRequestType = DSARRequestType.ACCESS
     user_id: str = ""
@@ -282,7 +297,10 @@ class DSARRequest:
 
     # Timing and deadlines
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    deadline: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=DSAR_RESPONSE_DEADLINE_DAYS))
+    deadline: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+        + timedelta(days=DSAR_RESPONSE_DEADLINE_DAYS)
+    )
     extended_deadline: Optional[datetime] = None
     extension_reason: Optional[str] = None
     completed_at: Optional[datetime] = None
@@ -325,9 +343,11 @@ class DSARRequest:
     @property
     def is_overdue(self) -> bool:
         """Check if request is overdue."""
-        return (
-            datetime.now(timezone.utc) > self.effective_deadline and
-            self.status not in (DSARStatus.COMPLETED, DSARStatus.REJECTED, DSARStatus.CANCELLED, DSARStatus.EXPIRED)
+        return datetime.now(timezone.utc) > self.effective_deadline and self.status not in (
+            DSARStatus.COMPLETED,
+            DSARStatus.REJECTED,
+            DSARStatus.CANCELLED,
+            DSARStatus.EXPIRED,
         )
 
     @property
@@ -367,7 +387,9 @@ class DSARRequest:
             "timing": {
                 "created_at": self.created_at.isoformat(),
                 "deadline": self.deadline.isoformat(),
-                "extended_deadline": self.extended_deadline.isoformat() if self.extended_deadline else None,
+                "extended_deadline": (
+                    self.extended_deadline.isoformat() if self.extended_deadline else None
+                ),
                 "extension_reason": self.extension_reason,
                 "completed_at": self.completed_at.isoformat() if self.completed_at else None,
                 "effective_deadline": self.effective_deadline.isoformat(),
@@ -376,7 +398,9 @@ class DSARRequest:
             },
             "processing": {
                 "processed_by": self.processed_by,
-                "processing_started_at": self.processing_started_at.isoformat() if self.processing_started_at else None,
+                "processing_started_at": (
+                    self.processing_started_at.isoformat() if self.processing_started_at else None
+                ),
             },
             "export": {
                 "path": self.export_path,
@@ -396,19 +420,26 @@ class DSARRequest:
             },
             "download": {
                 "token": self.download_token is not None,
-                "expires_at": self.download_expires_at.isoformat() if self.download_expires_at else None,
+                "expires_at": (
+                    self.download_expires_at.isoformat() if self.download_expires_at else None
+                ),
             },
             "notes": self.notes,
-            "error": {
-                "message": self.error_message,
-                "count": self.error_count,
-            } if self.error_message else None,
+            "error": (
+                {
+                    "message": self.error_message,
+                    "count": self.error_count,
+                }
+                if self.error_message
+                else None
+            ),
         }
 
 
 @dataclass
 class DSARResult:
     """Result of DSAR processing."""
+
     success: bool = True
     request_id: str = ""
     request_type: DSARRequestType = DSARRequestType.ACCESS
@@ -426,7 +457,9 @@ class DSARResult:
     # CCEA boundary information
     ccea_boundary_notice: str = CCEA_BOUNDARY_NOTICE
     in_scope_categories: Set[str] = field(default_factory=lambda: set(DSAR_DATA_CATEGORIES))
-    out_of_scope_categories: Set[str] = field(default_factory=lambda: set(DSAR_OUT_OF_SCOPE_CATEGORIES))
+    out_of_scope_categories: Set[str] = field(
+        default_factory=lambda: set(DSAR_OUT_OF_SCOPE_CATEGORIES)
+    )
 
     # Exemptions
     exemptions_applied: List[str] = field(default_factory=list)
@@ -449,7 +482,9 @@ class DSARResult:
                 "path": self.export_path,
                 "checksum": self.export_checksum,
                 "download_url": self.download_url,
-                "download_expires_at": self.download_expires_at.isoformat() if self.download_expires_at else None,
+                "download_expires_at": (
+                    self.download_expires_at.isoformat() if self.download_expires_at else None
+                ),
             },
             "ccea_boundary": {
                 "notice": self.ccea_boundary_notice,
@@ -472,6 +507,7 @@ class DSARResult:
 @dataclass
 class DSARMetrics:
     """DSAR metrics and statistics."""
+
     total_requests: int = 0
     by_type: Dict[str, int] = field(default_factory=dict)
     by_status: Dict[str, int] = field(default_factory=dict)
@@ -505,6 +541,7 @@ class DSARMetrics:
 @dataclass
 class AuditEntry:
     """Immutable audit log entry."""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     action: AuditAction = AuditAction.REQUEST_CREATED
     request_id: str = ""
@@ -523,17 +560,21 @@ class AuditEntry:
 
     def _compute_hash(self) -> str:
         """Compute integrity hash for this entry."""
-        content = json.dumps({
-            "id": self.id,
-            "action": self.action.value,
-            "request_id": self.request_id,
-            "user_id": self.user_id,
-            "workspace_id": self.workspace_id,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "actor_type": self.actor_type,
-            "details": self.details,
-        }, sort_keys=True, default=str)
+        content = json.dumps(
+            {
+                "id": self.id,
+                "action": self.action.value,
+                "request_id": self.request_id,
+                "user_id": self.user_id,
+                "workspace_id": self.workspace_id,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "actor_type": self.actor_type,
+                "details": self.details,
+            },
+            sort_keys=True,
+            default=str,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -554,6 +595,7 @@ class AuditEntry:
 @dataclass
 class DataCategory:
     """Data category definition for DSAR."""
+
     name: str
     description: str
     table_name: Optional[str] = None
@@ -661,6 +703,7 @@ DATA_CATEGORIES: Dict[str, DataCategory] = {
 # ============================================================================
 # DSAR Service
 # ============================================================================
+
 
 class DSARPhase5Service:
     """
@@ -860,7 +903,8 @@ class DSARPhase5Service:
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         with self._lock:
             return [
-                r for r in self._requests.values()
+                r
+                for r in self._requests.values()
                 if r.user_id == user_id and r.created_at >= cutoff
             ]
 
@@ -917,9 +961,7 @@ class DSARPhase5Service:
                 },
             )
 
-        logger.info(
-            f"Verification initiated: request={request_id}, method={method.value}"
-        )
+        logger.info(f"Verification initiated: request={request_id}, method={method.value}")
 
         return token
 
@@ -1010,7 +1052,11 @@ class DSARPhase5Service:
                 action=AuditAction.VERIFICATION_COMPLETED,
                 request=request,
                 details={
-                    "method": request.verification_method.value if request.verification_method else "manual",
+                    "method": (
+                        request.verification_method.value
+                        if request.verification_method
+                        else "manual"
+                    ),
                     "verified_by": request.verified_by,
                 },
             )
@@ -1243,9 +1289,7 @@ class DSARPhase5Service:
                 request_type=request.request_type,
                 status=DSARStatus.PARTIALLY_COMPLETED,
                 error=str(e),
-                processing_time_seconds=(
-                    datetime.now(timezone.utc) - start_time
-                ).total_seconds(),
+                processing_time_seconds=(datetime.now(timezone.utc) - start_time).total_seconds(),
             )
 
     async def _process_export(self, request: DSARRequest) -> DSARResult:
@@ -1284,7 +1328,11 @@ class DSARPhase5Service:
                 "exported_at": datetime.now(timezone.utc).isoformat(),
                 "data_categories": list(request.data_categories),
                 "record_count": len(records),
-                "gdpr_article": "Article 15 (Access)" if request.request_type == DSARRequestType.ACCESS else "Article 20 (Portability)",
+                "gdpr_article": (
+                    "Article 15 (Access)"
+                    if request.request_type == DSARRequestType.ACCESS
+                    else "Article 20 (Portability)"
+                ),
             },
             "ccea_boundary": {
                 "notice": CCEA_BOUNDARY_NOTICE,
@@ -1371,8 +1419,7 @@ class DSARPhase5Service:
                 exemption_key = cat_info.exemption or "regulatory_retention"
                 exemptions_applied.append(category)
                 exemption_details[category] = ERASURE_EXEMPTIONS.get(
-                    exemption_key,
-                    "Data cannot be deleted due to legal requirements"
+                    exemption_key, "Data cannot be deleted due to legal requirements"
                 )
                 continue
 
@@ -1644,10 +1691,17 @@ class DSARPhase5Service:
         cutoff = datetime.now(timezone.utc) + timedelta(days=days)
         with self._lock:
             return [
-                r for r in self._requests.values()
+                r
+                for r in self._requests.values()
                 if (
-                    r.effective_deadline <= cutoff and
-                    r.status not in (DSARStatus.COMPLETED, DSARStatus.REJECTED, DSARStatus.CANCELLED, DSARStatus.EXPIRED)
+                    r.effective_deadline <= cutoff
+                    and r.status
+                    not in (
+                        DSARStatus.COMPLETED,
+                        DSARStatus.REJECTED,
+                        DSARStatus.CANCELLED,
+                        DSARStatus.EXPIRED,
+                    )
                 )
             ]
 
@@ -1724,14 +1778,25 @@ class DSARPhase5Service:
 
             # Overdue and pending counts
             overdue_count = len([r for r in period_requests if r.is_overdue])
-            pending_count = len([
-                r for r in period_requests
-                if r.status not in (DSARStatus.COMPLETED, DSARStatus.REJECTED, DSARStatus.CANCELLED, DSARStatus.EXPIRED)
-            ])
+            pending_count = len(
+                [
+                    r
+                    for r in period_requests
+                    if r.status
+                    not in (
+                        DSARStatus.COMPLETED,
+                        DSARStatus.REJECTED,
+                        DSARStatus.CANCELLED,
+                        DSARStatus.EXPIRED,
+                    )
+                ]
+            )
 
             # On-time rate
             completed = [r for r in period_requests if r.status == DSARStatus.COMPLETED]
-            on_time = [r for r in completed if r.completed_at and r.completed_at <= r.effective_deadline]
+            on_time = [
+                r for r in completed if r.completed_at and r.completed_at <= r.effective_deadline
+            ]
             on_time_rate = len(on_time) / len(completed) if completed else 0.0
 
             return DSARMetrics(
@@ -1739,15 +1804,13 @@ class DSARPhase5Service:
                 by_type=by_type,
                 by_status=by_status,
                 average_completion_days=(
-                    sum(completion_days) / len(completion_days)
-                    if completion_days else 0.0
+                    sum(completion_days) / len(completion_days) if completion_days else 0.0
                 ),
                 overdue_count=overdue_count,
                 pending_count=pending_count,
                 completed_on_time_rate=on_time_rate,
                 average_records_per_request=(
-                    total_records_processed / len(period_requests)
-                    if period_requests else 0.0
+                    total_records_processed / len(period_requests) if period_requests else 0.0
                 ),
                 total_records_processed=total_records_processed,
                 total_records_deleted=total_records_deleted,

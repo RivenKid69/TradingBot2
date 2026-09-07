@@ -5,6 +5,7 @@ generated files are kept in git and that `make clean` returns a pristine tree.
 It is intentionally conservative about what it deletes: only common build/test
 outputs and files that include Cython generation markers are removed.
 """
+
 from __future__ import annotations
 
 import argparse

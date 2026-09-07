@@ -46,52 +46,65 @@ from ccea.guardrails.residency_check import (
 # Test Region Detection
 # ============================================================================
 
+
 class TestRegionDetection:
     """Tests for region detection functions."""
 
-    @pytest.mark.parametrize("region", [
-        "eu-west-1",
-        "eu-west-2",
-        "eu-west-3",
-        "eu-central-1",
-        "eu-north-1",
-        "EU-WEST-1",  # Case insensitive
-        "europe-west1",  # GCP
-        "westeurope",  # Azure
-    ])
+    @pytest.mark.parametrize(
+        "region",
+        [
+            "eu-west-1",
+            "eu-west-2",
+            "eu-west-3",
+            "eu-central-1",
+            "eu-north-1",
+            "EU-WEST-1",  # Case insensitive
+            "europe-west1",  # GCP
+            "westeurope",  # Azure
+        ],
+    )
     def test_is_eu_region_true(self, region: str):
         """Test EU regions are correctly identified."""
         assert is_eu_region(region) is True
 
-    @pytest.mark.parametrize("region", [
-        "us-east-1",
-        "us-west-2",
-        "ap-northeast-1",
-        "sa-east-1",
-        "ca-central-1",
-    ])
+    @pytest.mark.parametrize(
+        "region",
+        [
+            "us-east-1",
+            "us-west-2",
+            "ap-northeast-1",
+            "sa-east-1",
+            "ca-central-1",
+        ],
+    )
     def test_is_eu_region_false(self, region: str):
         """Test non-EU regions are rejected."""
         assert is_eu_region(region) is False
 
-    @pytest.mark.parametrize("region", [
-        "us-east-1",
-        "us-west-2",
-        "us-east-2",
-        "ap-northeast-1",
-        "ap-southeast-1",
-        "sa-east-1",
-        "me-south-1",
-    ])
+    @pytest.mark.parametrize(
+        "region",
+        [
+            "us-east-1",
+            "us-west-2",
+            "us-east-2",
+            "ap-northeast-1",
+            "ap-southeast-1",
+            "sa-east-1",
+            "me-south-1",
+        ],
+    )
     def test_is_non_eu_region_true(self, region: str):
         """Test non-EU regions are correctly identified."""
         assert is_non_eu_region(region) is True
 
-    @pytest.mark.parametrize("region", [
-        "eu-west-1",
-        "eu-central-1",
-        "eu-north-1",
-    ])
+    @pytest.mark.parametrize(
+        "region",
+        [
+            "eu-west-1",
+            "eu-central-1",
+            "eu-north-1",
+        ],
+    )
     def test_is_non_eu_region_false(self, region: str):
         """Test EU regions are not flagged as non-EU."""
         assert is_non_eu_region(region) is False
@@ -128,6 +141,7 @@ class TestDetectRegionInString:
 # ============================================================================
 # Test YAML File Checking
 # ============================================================================
+
 
 class TestYAMLFileChecking:
     """Tests for YAML file checking."""
@@ -196,6 +210,7 @@ services:
 # Test Environment File Checking
 # ============================================================================
 
+
 class TestEnvFileChecking:
     """Tests for environment file checking."""
 
@@ -250,6 +265,7 @@ DATABASE_URL=postgres://mydb.us-east-1.rds.amazonaws.com:5432/db
 # ============================================================================
 # Test Helm Values Checking
 # ============================================================================
+
 
 class TestHelmValuesChecking:
     """Tests for Helm values file checking."""
@@ -328,6 +344,7 @@ governance:
 # Test Docker Compose Checking
 # ============================================================================
 
+
 class TestDockerComposeChecking:
     """Tests for Docker Compose file checking."""
 
@@ -376,6 +393,7 @@ services:
 # Test Full Compliance Check
 # ============================================================================
 
+
 class TestFullComplianceCheck:
     """Tests for full residency compliance check."""
 
@@ -392,12 +410,14 @@ class TestFullComplianceCheck:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create EU-only config file
             config_path = Path(tmpdir) / "values.yaml"
-            config_path.write_text("""
+            config_path.write_text(
+                """
 global:
   region: eu-central-1
 database:
   region: eu-central-1
-""")
+"""
+            )
 
             result = check_residency_compliance(Path(tmpdir))
 
@@ -409,12 +429,14 @@ database:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create non-EU config file
             config_path = Path(tmpdir) / "values.yaml"
-            config_path.write_text("""
+            config_path.write_text(
+                """
 global:
   region: us-east-1
 database:
   region: us-west-2
-""")
+"""
+            )
 
             result = check_residency_compliance(Path(tmpdir))
 
@@ -426,6 +448,7 @@ database:
 # ============================================================================
 # Test Report Generation
 # ============================================================================
+
 
 class TestReportGeneration:
     """Tests for report generation."""
@@ -497,6 +520,7 @@ class TestReportGeneration:
 # Test File Discovery
 # ============================================================================
 
+
 class TestFileDiscovery:
     """Tests for config file discovery."""
 
@@ -532,6 +556,7 @@ class TestFileDiscovery:
 # ============================================================================
 # Test Violation Data Class
 # ============================================================================
+
 
 class TestResidencyViolation:
     """Tests for ResidencyViolation data class."""
@@ -574,6 +599,7 @@ class TestResidencyViolation:
 # Test Result Data Class
 # ============================================================================
 
+
 class TestResidencyCheckResult:
     """Tests for ResidencyCheckResult data class."""
 
@@ -613,6 +639,7 @@ class TestResidencyCheckResult:
 # ============================================================================
 # Test Constants
 # ============================================================================
+
 
 class TestConstants:
     """Tests for module constants."""

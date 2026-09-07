@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class ExecutionPhase(Enum):
     """DR execution phases."""
+
     PREPARATION = "preparation"
     INITIATION = "initiation"
     FAILOVER = "failover"
@@ -40,6 +41,7 @@ class ExecutionPhase(Enum):
 
 class ExecutionStatus(Enum):
     """Execution status."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     PAUSED = "paused"
@@ -50,6 +52,7 @@ class ExecutionStatus(Enum):
 
 class ValidationResult(Enum):
     """Validation check results."""
+
     PASSED = "passed"
     FAILED = "failed"
     SKIPPED = "skipped"
@@ -59,6 +62,7 @@ class ValidationResult(Enum):
 @dataclass
 class ExecutionStep:
     """DR execution step."""
+
     step_id: str = ""
     phase: ExecutionPhase = ExecutionPhase.PREPARATION
     order: int = 0
@@ -92,6 +96,7 @@ class ExecutionStep:
 @dataclass
 class ValidationCheck:
     """Validation checkpoint."""
+
     check_id: str = ""
     name: str = ""
     description: str = ""
@@ -120,6 +125,7 @@ class ValidationCheck:
 @dataclass
 class ExecutionResult:
     """DR execution result."""
+
     execution_id: str = ""
     test_name: str = ""
 
@@ -174,6 +180,7 @@ class ExecutionResult:
 @dataclass
 class DRExecutionConfig:
     """Configuration for DRExecutionManager."""
+
     default_rto_minutes: float = 240.0
     default_rpo_minutes: float = 60.0
     require_evidence: bool = True
@@ -457,7 +464,9 @@ class DRExecutionManager:
                 },
             },
             "dora_compliance": {
-                "article_11": "compliant" if execution.overall_result == "passed" else "attention_required",
+                "article_11": (
+                    "compliant" if execution.overall_result == "passed" else "attention_required"
+                ),
                 "article_12": "compliant" if execution.rpo_met else "non_compliant",
                 "article_15": "compliant" if execution.rto_met else "non_compliant",
             },
@@ -481,11 +490,19 @@ class DRExecutionManager:
             },
             "rto_compliance": {
                 "met": sum(1 for e in completed if e.rto_met),
-                "rate": round(sum(1 for e in completed if e.rto_met) / len(completed) * 100, 1) if completed else 0,
+                "rate": (
+                    round(sum(1 for e in completed if e.rto_met) / len(completed) * 100, 1)
+                    if completed
+                    else 0
+                ),
             },
             "rpo_compliance": {
                 "met": sum(1 for e in completed if e.rpo_met),
-                "rate": round(sum(1 for e in completed if e.rpo_met) / len(completed) * 100, 1) if completed else 0,
+                "rate": (
+                    round(sum(1 for e in completed if e.rpo_met) / len(completed) * 100, 1)
+                    if completed
+                    else 0
+                ),
             },
         }
 

@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class IncidentSeverity(Enum):
     """Incident severity levels."""
+
     CRITICAL = "critical"  # Complete outage, data breach, security compromise
     HIGH = "high"  # Partial outage, significant degradation
     MEDIUM = "medium"  # Minor impact, limited scope
@@ -57,6 +59,7 @@ class IncidentSeverity(Enum):
 
 class NotificationStatus(Enum):
     """Client notification status."""
+
     PENDING = "pending"
     SENDING = "sending"
     SENT = "sent"
@@ -67,6 +70,7 @@ class NotificationStatus(Enum):
 
 class NotificationChannel(Enum):
     """Notification delivery channels."""
+
     WEBHOOK = "webhook"
     EMAIL = "email"
     SMS = "sms"
@@ -76,6 +80,7 @@ class NotificationChannel(Enum):
 
 class IncidentCategory(Enum):
     """DORA-aligned incident categories."""
+
     ICT_SERVICE_DISRUPTION = "ict_service_disruption"
     DATA_BREACH = "data_breach"
     SECURITY_INCIDENT = "security_incident"
@@ -91,9 +96,11 @@ class IncidentCategory(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class ClientContact:
     """Client contact information for incident notifications."""
+
     contact_id: str = ""
     client_id: str = ""
     client_name: str = ""
@@ -127,6 +134,7 @@ class ClientContact:
 @dataclass
 class IncidentNotification:
     """Incident notification to a client."""
+
     notification_id: str = ""
     incident_id: str = ""
     client_id: str = ""
@@ -176,6 +184,7 @@ class IncidentNotification:
 @dataclass
 class IncidentUpdate:
     """Update to an existing incident notification."""
+
     update_id: str = ""
     notification_id: str = ""
     incident_id: str = ""
@@ -208,6 +217,7 @@ class IncidentUpdate:
 @dataclass
 class ClientIncident:
     """Internal incident record."""
+
     incident_id: str = ""
 
     # Incident details
@@ -248,6 +258,7 @@ class ClientIncident:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class ClientNotificationConfig:
     """Configuration for client notification system."""
@@ -285,6 +296,7 @@ class ClientNotificationConfig:
 # =============================================================================
 # Notification Templates
 # =============================================================================
+
 
 def get_notification_template(severity: IncidentSeverity) -> Dict[str, str]:
     """Get notification template based on severity."""
@@ -416,6 +428,7 @@ Platform Operations Team
 # Main Implementation
 # =============================================================================
 
+
 class ClientNotificationService:
     """
     DORA Client Incident Notification System.
@@ -521,11 +534,14 @@ class ClientNotificationService:
             self._clients[client_id] = contact
             self._notifications_by_client[client_id] = set()
 
-        self._log_event("client_registered", {
-            "client_id": client_id,
-            "client_name": client_name,
-            "is_critical_function": is_critical_function,
-        })
+        self._log_event(
+            "client_registered",
+            {
+                "client_id": client_id,
+                "client_name": client_name,
+                "is_critical_function": is_critical_function,
+            },
+        )
 
         return contact
 
@@ -601,11 +617,14 @@ class ClientNotificationService:
             self._incidents[incident.incident_id] = incident
             self._notifications_by_incident[incident.incident_id] = set()
 
-        self._log_event("incident_created", {
-            "incident_id": incident.incident_id,
-            "severity": severity.value,
-            "title": title,
-        })
+        self._log_event(
+            "incident_created",
+            {
+                "incident_id": incident.incident_id,
+                "severity": severity.value,
+                "title": title,
+            },
+        )
 
         return incident
 
@@ -671,7 +690,8 @@ class ClientNotificationService:
             # Determine affected clients
             if incident.clients_affected:
                 affected_clients = [
-                    self._clients[cid] for cid in incident.clients_affected
+                    self._clients[cid]
+                    for cid in incident.clients_affected
                     if cid in self._clients and self._clients[cid].is_active
                 ]
             else:
@@ -680,8 +700,7 @@ class ClientNotificationService:
 
             # Filter by severity preference
             affected_clients = [
-                c for c in affected_clients
-                if incident.severity.value in c.severity_filter
+                c for c in affected_clients if incident.severity.value in c.severity_filter
             ]
 
             for client in affected_clients:
@@ -712,9 +731,7 @@ class ClientNotificationService:
         """Create a notification for a specific client."""
         # Calculate SLA deadline
         sla_minutes = self._get_sla_minutes(incident.severity, client)
-        detected_time = datetime.fromisoformat(
-            incident.detected_at.replace("Z", "+00:00")
-        )
+        detected_time = datetime.fromisoformat(incident.detected_at.replace("Z", "+00:00"))
         sla_deadline = detected_time + timedelta(minutes=sla_minutes)
 
         notification = IncidentNotification(
@@ -777,16 +794,22 @@ class ClientNotificationService:
 
                 # Callback
                 if self.config.on_notification_sent:
-                    self.config.on_notification_sent(notification.notification_id, {
-                        "client_id": client.client_id,
-                        "severity": notification.severity.value,
-                    })
+                    self.config.on_notification_sent(
+                        notification.notification_id,
+                        {
+                            "client_id": client.client_id,
+                            "severity": notification.severity.value,
+                        },
+                    )
 
-                self._log_event("notification_sent", {
-                    "notification_id": notification.notification_id,
-                    "client_id": client.client_id,
-                    "channel": channel.value,
-                })
+                self._log_event(
+                    "notification_sent",
+                    {
+                        "notification_id": notification.notification_id,
+                        "client_id": client.client_id,
+                        "channel": channel.value,
+                    },
+                )
 
                 return True
             else:
@@ -795,10 +818,13 @@ class ClientNotificationService:
                 else:
                     notification.status = NotificationStatus.FAILED
                     if self.config.on_delivery_failure:
-                        self.config.on_delivery_failure(notification.notification_id, {
-                            "client_id": client.client_id,
-                            "attempts": notification.delivery_attempts,
-                        })
+                        self.config.on_delivery_failure(
+                            notification.notification_id,
+                            {
+                                "client_id": client.client_id,
+                                "attempts": notification.delivery_attempts,
+                            },
+                        )
                 return False
 
         except Exception as e:
@@ -885,12 +911,8 @@ class ClientNotificationService:
         if not notification.notification_sent_at or not notification.sla_deadline:
             return
 
-        sent_time = datetime.fromisoformat(
-            notification.notification_sent_at.replace("Z", "+00:00")
-        )
-        deadline = datetime.fromisoformat(
-            notification.sla_deadline.replace("Z", "+00:00")
-        )
+        sent_time = datetime.fromisoformat(notification.notification_sent_at.replace("Z", "+00:00"))
+        deadline = datetime.fromisoformat(notification.sla_deadline.replace("Z", "+00:00"))
 
         if sent_time <= deadline:
             notification.sla_met = True
@@ -902,10 +924,13 @@ class ClientNotificationService:
 
             # Escalate
             if self.config.escalate_on_sla_breach and self.config.on_sla_breach:
-                self.config.on_sla_breach(notification.notification_id, {
-                    "client_id": notification.client_id,
-                    "breach_minutes": notification.sla_breach_minutes,
-                })
+                self.config.on_sla_breach(
+                    notification.notification_id,
+                    {
+                        "client_id": notification.client_id,
+                        "breach_minutes": notification.sla_breach_minutes,
+                    },
+                )
 
     # =========================================================================
     # Updates and Resolution
@@ -970,12 +995,15 @@ class ClientNotificationService:
                 update.sent_at = datetime.now(timezone.utc).isoformat()
                 updates.append(update)
 
-                self._log_event("update_sent", {
-                    "update_id": update.update_id,
-                    "incident_id": incident_id,
-                    "client_id": notification.client_id,
-                    "update_type": update_type,
-                })
+                self._log_event(
+                    "update_sent",
+                    {
+                        "update_id": update.update_id,
+                        "incident_id": incident_id,
+                        "client_id": notification.client_id,
+                        "update_type": update_type,
+                    },
+                )
 
             return updates
 
@@ -1050,11 +1078,14 @@ Prevention Measures:
             notification.acknowledged_by = acknowledged_by
             notification.client_response = response
 
-            self._log_event("notification_acknowledged", {
-                "notification_id": notification_id,
-                "client_id": notification.client_id,
-                "acknowledged_by": acknowledged_by,
-            })
+            self._log_event(
+                "notification_acknowledged",
+                {
+                    "notification_id": notification_id,
+                    "client_id": notification.client_id,
+                    "acknowledged_by": acknowledged_by,
+                },
+            )
 
             return notification
 
@@ -1071,15 +1102,11 @@ Prevention Measures:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "total_notifications": len(all_notifications),
                 "by_status": {
-                    status.value: sum(
-                        1 for n in all_notifications if n.status == status
-                    )
+                    status.value: sum(1 for n in all_notifications if n.status == status)
                     for status in NotificationStatus
                 },
                 "by_severity": {
-                    severity.value: sum(
-                        1 for n in all_notifications if n.severity == severity
-                    )
+                    severity.value: sum(1 for n in all_notifications if n.severity == severity)
                     for severity in IncidentSeverity
                 },
                 "sla_compliance": {
@@ -1088,8 +1115,7 @@ Prevention Measures:
                     "pending": sum(1 for n in all_notifications if n.sla_met is None),
                 },
                 "active_incidents": sum(
-                    1 for i in self._incidents.values()
-                    if i.status not in ["resolved", "closed"]
+                    1 for i in self._incidents.values() if i.status not in ["resolved", "closed"]
                 ),
             }
 
@@ -1102,15 +1128,11 @@ Prevention Measures:
         with self._lock:
             notification_ids = self._notifications_by_client.get(client_id, set())
             notifications = [
-                self._notifications[nid] for nid in notification_ids
-                if nid in self._notifications
+                self._notifications[nid] for nid in notification_ids if nid in self._notifications
             ]
 
             # Sort by creation date descending
-            notifications.sort(
-                key=lambda n: n.notification_created_at,
-                reverse=True
-            )
+            notifications.sort(key=lambda n: n.notification_created_at, reverse=True)
 
             return notifications[:limit]
 
@@ -1142,15 +1164,9 @@ Prevention Measures:
             if client_id:
                 notifications = [n for n in notifications if n.client_id == client_id]
             if from_date:
-                notifications = [
-                    n for n in notifications
-                    if n.notification_created_at >= from_date
-                ]
+                notifications = [n for n in notifications if n.notification_created_at >= from_date]
             if to_date:
-                notifications = [
-                    n for n in notifications
-                    if n.notification_created_at <= to_date
-                ]
+                notifications = [n for n in notifications if n.notification_created_at <= to_date]
 
             return {
                 "report_generated": datetime.now(timezone.utc).isoformat(),
@@ -1218,15 +1234,13 @@ Prevention Measures:
 
             # Get notifications for this client/incident
             notifications = [
-                n for n in self._notifications.values()
+                n
+                for n in self._notifications.values()
                 if n.incident_id == incident_id and n.client_id == client_id
             ]
 
             # Get updates
-            updates = [
-                u for u in self._updates.values()
-                if u.incident_id == incident_id
-            ]
+            updates = [u for u in self._updates.values() if u.incident_id == incident_id]
 
             return {
                 "export_type": "client_roi_data",
@@ -1300,6 +1314,7 @@ DORAClientNotification = ClientNotificationService
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_client_notification_service(
     config: Optional[ClientNotificationConfig] = None,

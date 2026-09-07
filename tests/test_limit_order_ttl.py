@@ -13,6 +13,7 @@ ActionProto = exec_mod.ActionProto
 ActionType = exec_mod.ActionType
 ExecutionSimulator = exec_mod.ExecutionSimulator
 
+
 def test_limit_order_ttl_expires():
     sim = ExecutionSimulator()
     proto = ActionProto(action_type=ActionType.LIMIT, volume_frac=1.0, abs_price=100.0, ttl_steps=1)
@@ -60,6 +61,7 @@ def test_limit_order_ttl_ms_rounds_up():
 
 
 from fast_lob import CythonLOB
+
 
 def test_cpp_lob_ttl_expires():
     lob = CythonLOB()

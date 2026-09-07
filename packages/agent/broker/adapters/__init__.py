@@ -23,6 +23,7 @@ Usage:
 # Import adapters to trigger registration
 from packages.agent.broker.adapters import alpaca
 from packages.agent.broker.adapters import binance
+
 # IB / OANDA Agent connectors (P2 #26) — import lazily-safe (delegating base only).
 from packages.agent.broker.adapters.ib import IBConnector
 from packages.agent.broker.adapters.oanda import OANDAConnector

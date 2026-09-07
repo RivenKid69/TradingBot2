@@ -8,6 +8,7 @@ See VGS_UPGD_NOISE_INTERACTION_ANALYSIS.md for full analysis.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import pytest
@@ -20,6 +21,7 @@ from variance_gradient_scaler import VarianceGradientScaler
 
 class SimpleTestModel(nn.Module):
     """Simple model for testing VGS + UPGD interaction."""
+
     def __init__(self, input_dim: int = 10, hidden_dim: int = 20, output_dim: int = 5):
         super().__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
@@ -39,10 +41,7 @@ def compute_gradient_norm(model: nn.Module) -> float:
     return np.sqrt(grad_norm)
 
 
-def compute_noise_to_signal_ratio(
-    optimizer: AdaptiveUPGD,
-    grad_norm: float
-) -> float:
+def compute_noise_to_signal_ratio(optimizer: AdaptiveUPGD, grad_norm: float) -> float:
     """
     Estimate noise-to-signal ratio from optimizer state.
 
@@ -69,12 +68,9 @@ def compute_noise_to_signal_ratio(
                 else:
                     grad_norm_for_noise = 1.0
 
-                adaptive_sigma = max(
-                    group["sigma"] * grad_norm_for_noise,
-                    group["min_noise_std"]
-                )
+                adaptive_sigma = max(group["sigma"] * grad_norm_for_noise, group["min_noise_std"])
                 # Approximate noise variance per parameter
-                noise_var = adaptive_sigma ** 2 * p.numel()
+                noise_var = adaptive_sigma**2 * p.numel()
             else:
                 # Fixed noise
                 noise_var = (group["sigma"] ** 2) * p.numel()
@@ -102,18 +98,12 @@ class TestVGSUPGDNoiseInteraction:
 
         # UPGD without adaptive noise (PROBLEMATIC)
         optimizer = AdaptiveUPGD(
-            model.parameters(),
-            lr=1e-4,
-            sigma=0.001,
-            adaptive_noise=False  # ❌ PROBLEMATIC
+            model.parameters(), lr=1e-4, sigma=0.001, adaptive_noise=False  # ❌ PROBLEMATIC
         )
 
         # VGS enabled
         vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=True,
-            alpha=0.1,
-            warmup_steps=0  # Skip warmup for testing
+            model.parameters(), enabled=True, alpha=0.1, warmup_steps=0  # Skip warmup for testing
         )
 
         # Simulate training steps to build up VGS statistics
@@ -176,19 +166,11 @@ class TestVGSUPGDNoiseInteraction:
 
         # UPGD with adaptive noise (FIXED)
         optimizer = AdaptiveUPGD(
-            model.parameters(),
-            lr=1e-4,
-            sigma=0.001,
-            adaptive_noise=True  # ✅ FIX
+            model.parameters(), lr=1e-4, sigma=0.001, adaptive_noise=True  # ✅ FIX
         )
 
         # VGS enabled
-        vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=True,
-            alpha=0.1,
-            warmup_steps=0
-        )
+        vgs = VarianceGradientScaler(model.parameters(), enabled=True, alpha=0.1, warmup_steps=0)
 
         # Simulate training steps
         ratios = []
@@ -233,20 +215,15 @@ class TestVGSUPGDNoiseInteraction:
 
         # Verify that VGS DID scale gradients down (problem exists)
         late_scaling = np.mean(scaling_factors[10:])
-        assert late_scaling < 0.8, (
-            f"Expected VGS to scale gradients down, but got scaling_factor={late_scaling:.4f}"
-        )
+        assert (
+            late_scaling < 0.8
+        ), f"Expected VGS to scale gradients down, but got scaling_factor={late_scaling:.4f}"
 
     def test_adaptive_noise_scales_with_gradient_norm(self):
         """Verify that adaptive noise scales proportionally to gradient norm."""
         model = SimpleTestModel()
 
-        optimizer = AdaptiveUPGD(
-            model.parameters(),
-            lr=1e-4,
-            sigma=0.001,
-            adaptive_noise=True
-        )
+        optimizer = AdaptiveUPGD(model.parameters(), lr=1e-4, sigma=0.001, adaptive_noise=True)
 
         # Warmup: establish grad_norm_ema
         for _ in range(10):
@@ -278,10 +255,7 @@ class TestVGSUPGDNoiseInteraction:
                     grad_norm_for_noise = p.grad.data.norm().item()
                 else:
                     grad_norm_for_noise = state.get("grad_norm_ema", 1.0)
-                adaptive_sigma = max(
-                    group["sigma"] * grad_norm_for_noise,
-                    group["min_noise_std"]
-                )
+                adaptive_sigma = max(group["sigma"] * grad_norm_for_noise, group["min_noise_std"])
                 noise_std_large.append(adaptive_sigma)
 
         avg_noise_large = np.mean(noise_std_large)
@@ -306,10 +280,7 @@ class TestVGSUPGDNoiseInteraction:
                     grad_norm_for_noise = p.grad.data.norm().item()
                 else:
                     grad_norm_for_noise = state.get("grad_norm_ema", 1.0)
-                adaptive_sigma = max(
-                    group["sigma"] * grad_norm_for_noise,
-                    group["min_noise_std"]
-                )
+                adaptive_sigma = max(group["sigma"] * grad_norm_for_noise, group["min_noise_std"])
                 noise_std_small.append(adaptive_sigma)
 
         avg_noise_small = np.mean(noise_std_small)
@@ -359,20 +330,15 @@ class TestVGSUPGDNoiseInteraction:
         Verify that training with adaptive_noise=True is more stable
         than with adaptive_noise=False when VGS is enabled.
         """
+
         def train_model(adaptive_noise: bool, num_steps: int = 50) -> List[float]:
             """Train model and return list of losses."""
             model = SimpleTestModel()
             optimizer = AdaptiveUPGD(
-                model.parameters(),
-                lr=1e-4,
-                sigma=0.001,
-                adaptive_noise=adaptive_noise
+                model.parameters(), lr=1e-4, sigma=0.001, adaptive_noise=adaptive_noise
             )
             vgs = VarianceGradientScaler(
-                model.parameters(),
-                enabled=True,
-                alpha=0.1,
-                warmup_steps=5
+                model.parameters(), enabled=True, alpha=0.1, warmup_steps=5
             )
 
             losses = []

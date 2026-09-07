@@ -50,6 +50,7 @@ POLICY_VERSION_LIMIT: Final[int] = 100  # Max versions to retain
 
 class PolicyType(str, Enum):
     """Types of policies."""
+
     RISK_LIMIT = "risk_limit"
     POSITION_LIMIT = "position_limit"
     TRADE_LIMIT = "trade_limit"
@@ -63,6 +64,7 @@ class PolicyType(str, Enum):
 
 class PolicyEffect(str, Enum):
     """Policy effect when matched."""
+
     ALLOW = "allow"
     DENY = "deny"
     AUDIT = "audit"  # Log but don't block
@@ -71,6 +73,7 @@ class PolicyEffect(str, Enum):
 
 class PolicyStatus(str, Enum):
     """Policy lifecycle status."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     DISABLED = "disabled"
@@ -79,6 +82,7 @@ class PolicyStatus(str, Enum):
 
 class ComparisonOperator(str, Enum):
     """Comparison operators for conditions."""
+
     EQUALS = "equals"
     NOT_EQUALS = "not_equals"
     GREATER_THAN = "greater_than"
@@ -96,6 +100,7 @@ class ComparisonOperator(str, Enum):
 
 class EvaluationResult(str, Enum):
     """Result of policy evaluation."""
+
     ALLOWED = "allowed"
     DENIED = "denied"
     AUDIT_ONLY = "audit_only"
@@ -116,6 +121,7 @@ class PolicyCondition:
 
     Example: position_value > 1000000
     """
+
     field: str
     operator: ComparisonOperator
     value: Any
@@ -222,6 +228,7 @@ class PolicyRule:
     Rules consist of conditions and an effect.
     All conditions must match (AND logic).
     """
+
     rule_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     description: str = ""
@@ -278,6 +285,7 @@ class Policy:
 
     Contains rules, targeting criteria, and lifecycle metadata.
     """
+
     policy_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     workspace_id: Optional[UUID] = None
     name: str = ""
@@ -328,11 +336,14 @@ class Policy:
 
     def get_content_hash(self) -> str:
         """Get hash of policy content for versioning."""
-        content = json.dumps({
-            "rules": [r.to_dict() for r in self.rules],
-            "default_effect": self.default_effect.value,
-            "targets": self.targets,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "rules": [r.to_dict() for r in self.rules],
+                "default_effect": self.default_effect.value,
+                "targets": self.targets,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
     def to_dict(self) -> Dict[str, Any]:
@@ -357,7 +368,11 @@ class Policy:
     def from_dict(cls, data: Dict[str, Any]) -> "Policy":
         workspace_id = None
         if data.get("workspace_id"):
-            workspace_id = UUID(data["workspace_id"]) if isinstance(data["workspace_id"], str) else data["workspace_id"]
+            workspace_id = (
+                UUID(data["workspace_id"])
+                if isinstance(data["workspace_id"], str)
+                else data["workspace_id"]
+            )
 
         return cls(
             policy_id=data.get("policy_id", str(uuid.uuid4())),
@@ -380,6 +395,7 @@ class Policy:
 @dataclass
 class PolicyEvaluationContext:
     """Context for policy evaluation."""
+
     workspace_id: UUID
     resource_type: str
     action: str
@@ -405,8 +421,11 @@ class PolicyEvaluationContext:
 @dataclass
 class PolicyEvaluationReport:
     """Report of policy evaluation."""
+
     evaluation_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    context: PolicyEvaluationContext = field(default_factory=lambda: PolicyEvaluationContext(UUID(int=0), "", ""))
+    context: PolicyEvaluationContext = field(
+        default_factory=lambda: PolicyEvaluationContext(UUID(int=0), "", "")
+    )
     result: EvaluationResult = EvaluationResult.NOT_APPLICABLE
     matched_policies: List[str] = field(default_factory=list)
     matched_rules: List[str] = field(default_factory=list)
@@ -477,7 +496,9 @@ class PolicyEngine:
             if policy.workspace_id:
                 workspace_policies = self._workspace_policies.get(policy.workspace_id, set())
                 if len(workspace_policies) >= MAX_POLICIES_PER_WORKSPACE:
-                    raise ValueError(f"Maximum policies per workspace ({MAX_POLICIES_PER_WORKSPACE}) exceeded")
+                    raise ValueError(
+                        f"Maximum policies per workspace ({MAX_POLICIES_PER_WORKSPACE}) exceeded"
+                    )
 
             # Validate
             self._validate_policy(policy)
@@ -527,6 +548,7 @@ class PolicyEngine:
 
             # Create copy for versioning
             import copy
+
             old_version = copy.deepcopy(policy)
 
             # Apply updates
@@ -657,6 +679,7 @@ class PolicyEngine:
             PolicyEvaluationReport with results
         """
         import time
+
         start_time = time.perf_counter()
 
         report = PolicyEvaluationReport(
@@ -696,9 +719,7 @@ class PolicyEngine:
                 )
 
             elif effect == PolicyEffect.WARN:
-                report.warnings.append(
-                    f"Warning from policy: {policy.name}"
-                )
+                report.warnings.append(f"Warning from policy: {policy.name}")
 
         # Set final result if not already denied
         if report.result not in (EvaluationResult.DENIED, EvaluationResult.ERROR):

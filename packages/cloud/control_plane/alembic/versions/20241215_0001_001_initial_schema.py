@@ -8,6 +8,7 @@ Phase 7 (WI-CLOUD-04): Creates all tables for multi-tenant control plane.
 Includes: Organizations, Workspaces, Users, Roles, Permissions, Strategies,
 Agents, Deployments, Runs, Commands, ConfigBlobs, Telemetry, Alerts.
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -51,8 +52,16 @@ def upgrade() -> None:
         sa.Column("sso_config", json_type, nullable=True),
         sa.Column("billing_email", sa.String(255), nullable=True),
         sa.Column("billing_tier", sa.String(50), default="free"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
 
@@ -62,15 +71,29 @@ def upgrade() -> None:
     op.create_table(
         "workspaces",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("organization_id", uuid_type, sa.ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "organization_id",
+            uuid_type,
+            sa.ForeignKey("organizations.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("slug", sa.String(63), nullable=True),
         sa.Column("display_name", sa.String(255), nullable=True),
         sa.Column("is_active", sa.Boolean(), default=True),
         sa.Column("settings", json_type, nullable=True),
         sa.Column("data_residency_region", sa.String(50), default="us-east-1"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.UniqueConstraint("organization_id", "slug", name="uq_workspace_org_slug"),
     )
@@ -86,8 +109,16 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("resource", sa.String(100), nullable=True, default="*"),
         sa.Column("action", sa.String(50), nullable=True, default="*"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("resource", "action", name="uq_permission_resource_action"),
     )
 
@@ -99,20 +130,49 @@ def upgrade() -> None:
         sa.Column("id", uuid_type, primary_key=True),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("organization_id", uuid_type, sa.ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True),
+        sa.Column(
+            "organization_id",
+            uuid_type,
+            sa.ForeignKey("organizations.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=True,
+            index=True,
+        ),
         sa.Column("is_system_role", sa.Boolean(), default=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
-        sa.UniqueConstraint("organization_id", "workspace_id", "name", name="uq_role_org_workspace_name"),
+        sa.UniqueConstraint(
+            "organization_id", "workspace_id", "name", name="uq_role_org_workspace_name"
+        ),
     )
 
     # Role-Permission association
     op.create_table(
         "role_permissions",
-        sa.Column("role_id", uuid_type, sa.ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-        sa.Column("permission_id", uuid_type, sa.ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
+        sa.Column(
+            "role_id", uuid_type, sa.ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+        ),
+        sa.Column(
+            "permission_id",
+            uuid_type,
+            sa.ForeignKey("permissions.id", ondelete="CASCADE"),
+            primary_key=True,
+        ),
     )
 
     # ============================================================================
@@ -121,8 +181,20 @@ def upgrade() -> None:
     op.create_table(
         "users",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("organization_id", uuid_type, sa.ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("default_workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True, index=True),
+        sa.Column(
+            "organization_id",
+            uuid_type,
+            sa.ForeignKey("organizations.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "default_workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
         sa.Column("email", sa.String(255), unique=True, nullable=False),
         sa.Column("display_name", sa.String(255), nullable=True),
         sa.Column("password_hash", sa.String(255), nullable=True),
@@ -131,8 +203,16 @@ def upgrade() -> None:
         sa.Column("sso_subject", sa.String(255), nullable=True),
         sa.Column("is_active", sa.Boolean(), default=True),
         sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
     op.create_index("ix_user_org_id", "users", ["organization_id"])
@@ -141,8 +221,12 @@ def upgrade() -> None:
     # User-Role association
     op.create_table(
         "user_roles",
-        sa.Column("user_id", uuid_type, sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-        sa.Column("role_id", uuid_type, sa.ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+        sa.Column(
+            "user_id", uuid_type, sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+        ),
+        sa.Column(
+            "role_id", uuid_type, sa.ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+        ),
     )
 
     # ============================================================================
@@ -151,15 +235,29 @@ def upgrade() -> None:
     op.create_table(
         "strategies",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("is_active", sa.Boolean(), default=True),
         sa.Column("git_repo", sa.String(500), nullable=True),
         sa.Column("tags", array_type_50, nullable=True),
         sa.Column("extra_metadata", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.UniqueConstraint("workspace_id", "name", name="uq_strategy_workspace_name"),
     )
@@ -170,8 +268,20 @@ def upgrade() -> None:
     op.create_table(
         "strategy_versions",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("strategy_id", uuid_type, sa.ForeignKey("strategies.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "strategy_id",
+            uuid_type,
+            sa.ForeignKey("strategies.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("version", sa.String(50), nullable=False),
         sa.Column("git_sha", sa.String(40), nullable=True),
         sa.Column("git_tag", sa.String(100), nullable=True),
@@ -179,8 +289,16 @@ def upgrade() -> None:
         sa.Column("is_deprecated", sa.Boolean(), default=False),
         sa.Column("changelog", sa.Text(), nullable=True),
         sa.Column("extra_metadata", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("strategy_id", "version", name="uq_strategyversion_strategy_version"),
     )
 
@@ -190,8 +308,20 @@ def upgrade() -> None:
     op.create_table(
         "builds",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("strategy_version_id", uuid_type, sa.ForeignKey("strategy_versions.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "strategy_version_id",
+            uuid_type,
+            sa.ForeignKey("strategy_versions.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("build_number", sa.Integer(), nullable=False),
         sa.Column("builder_id", sa.String(255), nullable=True, default="system"),
         sa.Column("ci_job_id", sa.String(255), nullable=True),
@@ -202,8 +332,16 @@ def upgrade() -> None:
         sa.Column("logs_url", sa.String(500), nullable=True),
         sa.Column("error_message", sa.Text(), nullable=True),
         sa.Column("extra_metadata", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("strategy_version_id", "build_number", name="uq_build_version_number"),
     )
 
@@ -213,8 +351,20 @@ def upgrade() -> None:
     op.create_table(
         "artifacts",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("build_id", uuid_type, sa.ForeignKey("builds.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "build_id",
+            uuid_type,
+            sa.ForeignKey("builds.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("format", sa.String(50), nullable=False),
         sa.Column("digest", sa.String(128), nullable=False, index=True),
@@ -228,8 +378,16 @@ def upgrade() -> None:
         sa.Column("change_class", sa.String(50), default="trading_impacting"),
         sa.Column("registry_url", sa.String(500), nullable=True),
         sa.Column("extra_metadata", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("digest", name="uq_artifact_digest"),
     )
     op.create_index("ix_artifact_digest", "artifacts", ["digest"])
@@ -240,7 +398,13 @@ def upgrade() -> None:
     op.create_table(
         "agents",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("agent_version", sa.String(50), nullable=False),
         sa.Column("public_key", sa.Text(), nullable=False),
@@ -255,8 +419,16 @@ def upgrade() -> None:
         sa.Column("attestation", json_type, nullable=True),
         sa.Column("device_id", sa.String(255), nullable=True),
         sa.Column("os_info", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.UniqueConstraint("workspace_id", "name", name="uq_agent_workspace_name"),
     )
@@ -269,18 +441,42 @@ def upgrade() -> None:
     op.create_table(
         "agent_enrollment_tokens",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("token_hash", sa.String(128), unique=True, nullable=False),
         sa.Column("capabilities", array_type_100, nullable=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("is_used", sa.Boolean(), default=False),
         sa.Column("used_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("used_by_agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("created_by_user_id", uuid_type, sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "used_by_agent_id",
+            uuid_type,
+            sa.ForeignKey("agents.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        sa.Column(
+            "created_by_user_id",
+            uuid_type,
+            sa.ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         sa.Column("extra_metadata", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
     )
     op.create_index("ix_enrollment_token_expires", "agent_enrollment_tokens", ["expires_at"])
 
@@ -290,15 +486,34 @@ def upgrade() -> None:
     op.create_table(
         "config_blobs",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("digest", sa.String(128), nullable=False, index=True),
         sa.Column("content", json_type, nullable=False),
         sa.Column("size_bytes", sa.Integer(), nullable=False),
         sa.Column("config_type", sa.String(100), nullable=False),
         sa.Column("schema_version", sa.String(20), default="1.0.0"),
-        sa.Column("created_by_user_id", uuid_type, sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_by_user_id",
+            uuid_type,
+            sa.ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("workspace_id", "digest", name="uq_configblob_workspace_digest"),
     )
     op.create_index("ix_configblob_digest", "config_blobs", ["digest"])
@@ -310,16 +525,47 @@ def upgrade() -> None:
     op.create_table(
         "deployments",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("artifact_id", uuid_type, sa.ForeignKey("artifacts.id", ondelete="RESTRICT"), nullable=False, index=True),
-        sa.Column("config_blob_id", uuid_type, sa.ForeignKey("config_blobs.id", ondelete="RESTRICT"), nullable=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "agent_id",
+            uuid_type,
+            sa.ForeignKey("agents.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "artifact_id",
+            uuid_type,
+            sa.ForeignKey("artifacts.id", ondelete="RESTRICT"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "config_blob_id",
+            uuid_type,
+            sa.ForeignKey("config_blobs.id", ondelete="RESTRICT"),
+            nullable=True,
+        ),
         sa.Column("state", sa.String(50), default="created"),
         sa.Column("state_changed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("desired_state", sa.String(50), default="deployed"),
         sa.Column("extra_metadata", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
     op.create_index("ix_deployment_agent_state", "deployments", ["agent_id", "state"])
@@ -330,8 +576,20 @@ def upgrade() -> None:
     op.create_table(
         "runs",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("deployment_id", uuid_type, sa.ForeignKey("deployments.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "deployment_id",
+            uuid_type,
+            sa.ForeignKey("deployments.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("state", sa.String(50), default="created"),
         sa.Column("state_changed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
@@ -340,8 +598,16 @@ def upgrade() -> None:
         sa.Column("error_message", sa.Text(), nullable=True),
         sa.Column("error_code", sa.String(50), nullable=True),
         sa.Column("metrics_summary", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
     )
     op.create_index("ix_run_deployment_state", "runs", ["deployment_id", "state"])
 
@@ -351,11 +617,30 @@ def upgrade() -> None:
     op.create_table(
         "commands",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("idempotency_key", sa.String(255), nullable=False),
-        sa.Column("agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("deployment_id", uuid_type, sa.ForeignKey("deployments.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("run_id", uuid_type, sa.ForeignKey("runs.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "agent_id",
+            uuid_type,
+            sa.ForeignKey("agents.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "deployment_id",
+            uuid_type,
+            sa.ForeignKey("deployments.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        sa.Column(
+            "run_id", uuid_type, sa.ForeignKey("runs.id", ondelete="SET NULL"), nullable=True
+        ),
         sa.Column("command_type", sa.String(100), nullable=False),
         sa.Column("payload_ref", sa.String(128), nullable=False),
         sa.Column("change_class", sa.String(50), default="operational"),
@@ -367,9 +652,19 @@ def upgrade() -> None:
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("result", json_type, nullable=True),
         sa.Column("error_message", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
-        sa.UniqueConstraint("workspace_id", "idempotency_key", name="uq_command_workspace_idempotency"),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
+        sa.UniqueConstraint(
+            "workspace_id", "idempotency_key", name="uq_command_workspace_idempotency"
+        ),
     )
     op.create_index("ix_command_agent_status", "commands", ["agent_id", "status"])
     op.create_index("ix_command_idempotency", "commands", ["idempotency_key"])
@@ -380,16 +675,36 @@ def upgrade() -> None:
     op.create_table(
         "approval_records",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("command_id", uuid_type, sa.ForeignKey("commands.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "command_id",
+            uuid_type,
+            sa.ForeignKey("commands.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("approved", sa.Boolean(), nullable=False),
         sa.Column("approved_by", sa.String(255), nullable=False),
         sa.Column("evidence_hash", sa.String(128), nullable=True),
         sa.Column("attestation", json_type, nullable=True),
         sa.Column("reason", sa.Text(), nullable=True),
         sa.Column("diff_summary", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
     )
     op.create_index("ix_approval_command", "approval_records", ["command_id"])
 
@@ -399,17 +714,43 @@ def upgrade() -> None:
     op.create_table(
         "telemetry_events",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("run_id", uuid_type, sa.ForeignKey("runs.id", ondelete="SET NULL"), nullable=True, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "agent_id",
+            uuid_type,
+            sa.ForeignKey("agents.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "run_id",
+            uuid_type,
+            sa.ForeignKey("runs.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
         sa.Column("event_type", sa.String(100), nullable=False),
         sa.Column("event_timestamp", sa.DateTime(timezone=True), nullable=False),
         sa.Column("telemetry_level", sa.String(50), default="aggregated"),
         sa.Column("payload", json_type, nullable=False),
         sa.Column("redaction_applied", sa.Boolean(), default=True),
         sa.Column("redaction_version", sa.String(20), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
     )
     op.create_index("ix_telemetry_agent_time", "telemetry_events", ["agent_id", "event_timestamp"])
     op.create_index("ix_telemetry_type", "telemetry_events", ["event_type"])
@@ -420,9 +761,23 @@ def upgrade() -> None:
     op.create_table(
         "alerts",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True),
-        sa.Column("run_id", uuid_type, sa.ForeignKey("runs.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "agent_id",
+            uuid_type,
+            sa.ForeignKey("agents.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+        sa.Column(
+            "run_id", uuid_type, sa.ForeignKey("runs.id", ondelete="SET NULL"), nullable=True
+        ),
         sa.Column("alert_type", sa.String(100), nullable=False),
         sa.Column("severity", sa.String(20), default="info"),
         sa.Column("title", sa.String(255), nullable=False),
@@ -433,8 +788,16 @@ def upgrade() -> None:
         sa.Column("resolved", sa.Boolean(), default=False),
         sa.Column("resolved_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("context", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
     )
     op.create_index("ix_alert_severity", "alerts", ["severity"])
     op.create_index("ix_alert_unresolved", "alerts", ["resolved", "severity"])
@@ -445,14 +808,28 @@ def upgrade() -> None:
     op.create_table(
         "data_retention_policies",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("data_type", sa.String(100), nullable=False),
         sa.Column("retention_days", sa.Integer(), nullable=False),
         sa.Column("auto_purge_enabled", sa.Boolean(), default=True),
         sa.Column("last_purge_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("dsar_export_enabled", sa.Boolean(), default=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("workspace_id", "data_type", name="uq_retention_workspace_type"),
     )
 
@@ -462,9 +839,19 @@ def upgrade() -> None:
     op.create_table(
         "access_audits",
         sa.Column("id", uuid_type, primary_key=True),
-        sa.Column("workspace_id", uuid_type, sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("user_id", uuid_type, sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "workspace_id",
+            uuid_type,
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "user_id", uuid_type, sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        ),
+        sa.Column(
+            "agent_id", uuid_type, sa.ForeignKey("agents.id", ondelete="SET NULL"), nullable=True
+        ),
         sa.Column("actor_type", sa.String(50), nullable=False),
         sa.Column("actor_ip", sa.String(50), nullable=True),
         sa.Column("action", sa.String(50), nullable=False),
@@ -477,8 +864,16 @@ def upgrade() -> None:
         sa.Column("error_message", sa.Text(), nullable=True),
         sa.Column("request_id", sa.String(255), nullable=True),
         sa.Column("context", json_type, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            nullable=False,
+        ),
     )
     op.create_index("ix_audit_actor", "access_audits", ["actor_type", "user_id"])
     op.create_index("ix_audit_resource", "access_audits", ["resource_type", "resource_id"])

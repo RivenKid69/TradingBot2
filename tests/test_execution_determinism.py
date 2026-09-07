@@ -81,7 +81,10 @@ def test_pov_determinism():
     assert plan1 == plan2
 
     sim1 = ExecutionSimulator(
-        execution_config={"algo": "POV", "pov": {"participation": 0.5, "child_interval_s": 1, "min_child_notional": 1.0}},
+        execution_config={
+            "algo": "POV",
+            "pov": {"participation": 0.5, "child_interval_s": 1, "min_child_notional": 1.0},
+        },
         slippage_config=slippage_cfg,
         latency_config=latency_cfg,
     )
@@ -99,7 +102,10 @@ def test_pov_determinism():
     )
 
     sim2 = ExecutionSimulator(
-        execution_config={"algo": "POV", "pov": {"participation": 0.5, "child_interval_s": 1, "min_child_notional": 1.0}},
+        execution_config={
+            "algo": "POV",
+            "pov": {"participation": 0.5, "child_interval_s": 1, "min_child_notional": 1.0},
+        },
         slippage_config=slippage_cfg,
         latency_config=latency_cfg,
     )
@@ -153,9 +159,7 @@ def test_schedule_child_remainder_respects_cadence():
     plan = [first_child, second_child]
     snapshot = {"bar_timeframe_ms": 6_000, "bar_start_ts": 0}
 
-    queue, cadence_map, bar_end = sim._prepare_child_queue(
-        plan, now_ts_ms=0, snapshot=snapshot
-    )
+    queue, cadence_map, bar_end = sim._prepare_child_queue(plan, now_ts_ms=0, snapshot=snapshot)
 
     existing_ids = {id(child) for child in queue}
     sim._schedule_child_remainder(

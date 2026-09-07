@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 class FeedbackType(Enum):
     """Types of supervisory feedback per Article 22."""
+
     ACKNOWLEDGEMENT = "acknowledgement"
     CLARIFICATION_REQUEST = "clarification_request"
     ADDITIONAL_INFORMATION_REQUEST = "additional_information_request"
@@ -46,6 +47,7 @@ class FeedbackType(Enum):
 
 class FeedbackPriority(Enum):
     """Priority levels for supervisory feedback."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -54,6 +56,7 @@ class FeedbackPriority(Enum):
 
 class FeedbackStatus(Enum):
     """Status of supervisory feedback processing."""
+
     RECEIVED = "received"
     ACKNOWLEDGED = "acknowledged"
     UNDER_REVIEW = "under_review"
@@ -65,6 +68,7 @@ class FeedbackStatus(Enum):
 
 class CorrectiveActionType(Enum):
     """Types of corrective actions that may be required."""
+
     INCIDENT_RECLASSIFICATION = "incident_reclassification"
     ADDITIONAL_REPORTING = "additional_reporting"
     PROCESS_IMPROVEMENT = "process_improvement"
@@ -78,6 +82,7 @@ class CorrectiveActionType(Enum):
 
 class ResponseType(Enum):
     """Types of responses to supervisory feedback."""
+
     ACKNOWLEDGEMENT = "acknowledgement"
     CLARIFICATION = "clarification"
     ADDITIONAL_INFORMATION = "additional_information"
@@ -89,6 +94,7 @@ class ResponseType(Enum):
 @dataclass
 class CompetentAuthority:
     """Competent authority issuing feedback."""
+
     authority_id: str
     name: str
     country_code: str
@@ -101,6 +107,7 @@ class CompetentAuthority:
 @dataclass
 class SupervisoryFeedback:
     """Individual supervisory feedback item per Article 22."""
+
     feedback_id: str
     incident_id: str
     report_id: str
@@ -128,6 +135,7 @@ class SupervisoryFeedback:
 @dataclass
 class CorrectiveAction:
     """Corrective action required by supervisory feedback."""
+
     action_id: str
     feedback_id: str
     action_type: CorrectiveActionType
@@ -166,6 +174,7 @@ class CorrectiveAction:
 @dataclass
 class FeedbackResponse:
     """Response to supervisory feedback."""
+
     response_id: str
     feedback_id: str
     response_type: ResponseType
@@ -185,6 +194,7 @@ class FeedbackResponse:
 @dataclass
 class FeedbackAuditEntry:
     """Audit trail entry for feedback processing."""
+
     entry_id: str
     feedback_id: str
     action: str
@@ -202,6 +212,7 @@ class FeedbackAuditEntry:
 @dataclass
 class AnonymisedInsight:
     """Anonymised and aggregated insight from supervisory feedback per Article 22(2)."""
+
     insight_id: str
     title: str
     description: str
@@ -240,7 +251,7 @@ class DORASupervisioryFeedback:
         entity_name: str,
         primary_authority: Optional[CompetentAuthority] = None,
         response_sla_hours: int = 24,
-        auto_acknowledge: bool = True
+        auto_acknowledge: bool = True,
     ):
         """
         Initialize the supervisory feedback handler.
@@ -273,12 +284,10 @@ class DORASupervisioryFeedback:
             "average_response_time_hours": 0.0,
             "on_time_response_rate": 0.0,
             "corrective_actions_completed": 0,
-            "corrective_actions_overdue": 0
+            "corrective_actions_overdue": 0,
         }
 
-        logger.info(
-            f"Initialized DORASupervisioryFeedback for entity {entity_id}"
-        )
+        logger.info(f"Initialized DORASupervisioryFeedback for entity {entity_id}")
 
     def receive_feedback(
         self,
@@ -294,7 +303,7 @@ class DORASupervisioryFeedback:
         attachments: Optional[list[str]] = None,
         reference_number: Optional[str] = None,
         cross_border_implications: bool = False,
-        affected_member_states: Optional[list[str]] = None
+        affected_member_states: Optional[list[str]] = None,
     ) -> SupervisoryFeedback:
         """
         Receive and register supervisory feedback.
@@ -332,7 +341,7 @@ class DORASupervisioryFeedback:
             attachments=attachments or [],
             reference_number=reference_number,
             cross_border_implications=cross_border_implications,
-            affected_member_states=affected_member_states or []
+            affected_member_states=affected_member_states or [],
         )
 
         self._feedback[feedback.feedback_id] = feedback
@@ -344,15 +353,17 @@ class DORASupervisioryFeedback:
             feedback.feedback_id,
             "feedback_received",
             "system",
-            {"authority": authority.name, "type": feedback_type.value}
+            {"authority": authority.name, "type": feedback_type.value},
         )
 
         # Update metrics
         self._metrics["total_feedback_received"] += 1
-        self._metrics["feedback_by_type"][feedback_type.value] = \
+        self._metrics["feedback_by_type"][feedback_type.value] = (
             self._metrics["feedback_by_type"].get(feedback_type.value, 0) + 1
-        self._metrics["feedback_by_priority"][priority.value] = \
+        )
+        self._metrics["feedback_by_priority"][priority.value] = (
             self._metrics["feedback_by_priority"].get(priority.value, 0) + 1
+        )
 
         # Auto-acknowledge if enabled
         if self.auto_acknowledge:
@@ -371,16 +382,12 @@ class DORASupervisioryFeedback:
             FeedbackPriority.CRITICAL: 4,
             FeedbackPriority.HIGH: 24,
             FeedbackPriority.MEDIUM: 72,
-            FeedbackPriority.LOW: 168  # 7 days
+            FeedbackPriority.LOW: 168,  # 7 days
         }
         hours = hours_by_priority.get(priority, self.response_sla_hours)
         return datetime.utcnow() + timedelta(hours=hours)
 
-    def acknowledge_feedback(
-        self,
-        feedback_id: str,
-        acknowledged_by: str
-    ) -> FeedbackResponse:
+    def acknowledge_feedback(self, feedback_id: str, acknowledged_by: str) -> FeedbackResponse:
         """
         Acknowledge receipt of supervisory feedback.
 
@@ -400,9 +407,9 @@ class DORASupervisioryFeedback:
             feedback_id=feedback_id,
             response_type=ResponseType.ACKNOWLEDGEMENT,
             content=f"Feedback acknowledged by {self.entity_name}. "
-                    f"We will review and respond within the specified deadline.",
+            f"We will review and respond within the specified deadline.",
             submitted_at=datetime.utcnow(),
-            submitted_by=acknowledged_by
+            submitted_by=acknowledged_by,
         )
 
         self._responses[feedback_id].append(response)
@@ -417,7 +424,7 @@ class DORASupervisioryFeedback:
             acknowledged_by,
             {},
             old_status,
-            FeedbackStatus.ACKNOWLEDGED
+            FeedbackStatus.ACKNOWLEDGED,
         )
 
         logger.info(f"Acknowledged feedback {feedback_id}")
@@ -425,10 +432,7 @@ class DORASupervisioryFeedback:
         return response
 
     def start_review(
-        self,
-        feedback_id: str,
-        reviewer: str,
-        notes: Optional[str] = None
+        self, feedback_id: str, reviewer: str, notes: Optional[str] = None
     ) -> SupervisoryFeedback:
         """
         Start reviewing supervisory feedback.
@@ -454,7 +458,7 @@ class DORASupervisioryFeedback:
             reviewer,
             {"notes": notes} if notes else {},
             old_status,
-            FeedbackStatus.UNDER_REVIEW
+            FeedbackStatus.UNDER_REVIEW,
         )
 
         logger.info(f"Started review of feedback {feedback_id} by {reviewer}")
@@ -469,7 +473,7 @@ class DORASupervisioryFeedback:
         assigned_to: str,
         deadline: datetime,
         evidence_required: bool = True,
-        verification_required: bool = False
+        verification_required: bool = False,
     ) -> CorrectiveAction:
         """
         Create a corrective action based on supervisory feedback.
@@ -498,7 +502,7 @@ class DORASupervisioryFeedback:
             assigned_to=assigned_to,
             deadline=deadline,
             evidence_required=evidence_required,
-            verification_required=verification_required
+            verification_required=verification_required,
         )
 
         self._corrective_actions[action.action_id] = action
@@ -514,24 +518,17 @@ class DORASupervisioryFeedback:
             {
                 "action_id": action.action_id,
                 "action_type": action_type.value,
-                "deadline": deadline.isoformat()
+                "deadline": deadline.isoformat(),
             },
             old_status,
-            FeedbackStatus.ACTION_IN_PROGRESS
+            FeedbackStatus.ACTION_IN_PROGRESS,
         )
 
-        logger.info(
-            f"Created corrective action {action.action_id} "
-            f"for feedback {feedback_id}"
-        )
+        logger.info(f"Created corrective action {action.action_id} " f"for feedback {feedback_id}")
 
         return action
 
-    def start_corrective_action(
-        self,
-        action_id: str,
-        started_by: str
-    ) -> CorrectiveAction:
+    def start_corrective_action(self, action_id: str, started_by: str) -> CorrectiveAction:
         """
         Mark a corrective action as started.
 
@@ -550,10 +547,7 @@ class DORASupervisioryFeedback:
         action.started_at = datetime.utcnow()
 
         self._add_audit_entry(
-            action.feedback_id,
-            "corrective_action_started",
-            started_by,
-            {"action_id": action_id}
+            action.feedback_id, "corrective_action_started", started_by, {"action_id": action_id}
         )
 
         logger.info(f"Started corrective action {action_id}")
@@ -565,7 +559,7 @@ class DORASupervisioryFeedback:
         action_id: str,
         completed_by: str,
         evidence: Optional[list[str]] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
     ) -> CorrectiveAction:
         """
         Mark a corrective action as completed.
@@ -599,10 +593,7 @@ class DORASupervisioryFeedback:
             action.feedback_id,
             "corrective_action_completed",
             completed_by,
-            {
-                "action_id": action_id,
-                "evidence_count": len(evidence) if evidence else 0
-            }
+            {"action_id": action_id, "evidence_count": len(evidence) if evidence else 0},
         )
 
         logger.info(f"Completed corrective action {action_id}")
@@ -613,11 +604,7 @@ class DORASupervisioryFeedback:
         return action
 
     def verify_corrective_action(
-        self,
-        action_id: str,
-        verified_by: str,
-        approved: bool,
-        notes: Optional[str] = None
+        self, action_id: str, verified_by: str, approved: bool, notes: Optional[str] = None
     ) -> CorrectiveAction:
         """
         Verify a completed corrective action.
@@ -652,16 +639,11 @@ class DORASupervisioryFeedback:
             action.feedback_id,
             "corrective_action_verified",
             verified_by,
-            {
-                "action_id": action_id,
-                "approved": approved,
-                "notes": notes
-            }
+            {"action_id": action_id, "approved": approved, "notes": notes},
         )
 
         logger.info(
-            f"Verified corrective action {action_id}: "
-            f"{'approved' if approved else 'failed'}"
+            f"Verified corrective action {action_id}: " f"{'approved' if approved else 'failed'}"
         )
 
         return action
@@ -673,18 +655,13 @@ class DORASupervisioryFeedback:
             return
 
         # Get all actions for this feedback
-        actions = [
-            a for a in self._corrective_actions.values()
-            if a.feedback_id == feedback_id
-        ]
+        actions = [a for a in self._corrective_actions.values() if a.feedback_id == feedback_id]
 
         if not actions:
             return
 
         # Check if all actions are completed/verified
-        all_complete = all(
-            a.status in ["completed", "verified"] for a in actions
-        )
+        all_complete = all(a.status in ["completed", "verified"] for a in actions)
 
         if all_complete:
             old_status = feedback.status
@@ -696,7 +673,7 @@ class DORASupervisioryFeedback:
                 "system",
                 {"actions_completed": len(actions)},
                 old_status,
-                FeedbackStatus.RESOLVED
+                FeedbackStatus.RESOLVED,
             )
 
             logger.info(f"Feedback {feedback_id} resolved - all actions complete")
@@ -708,7 +685,7 @@ class DORASupervisioryFeedback:
         content: str,
         submitted_by: str,
         attachments: Optional[list[str]] = None,
-        action_references: Optional[list[str]] = None
+        action_references: Optional[list[str]] = None,
     ) -> FeedbackResponse:
         """
         Submit a response to supervisory feedback.
@@ -736,7 +713,7 @@ class DORASupervisioryFeedback:
             submitted_at=datetime.utcnow(),
             submitted_by=submitted_by,
             attachments=attachments or [],
-            action_references=action_references or []
+            action_references=action_references or [],
         )
 
         self._responses[feedback_id].append(response)
@@ -745,25 +722,18 @@ class DORASupervisioryFeedback:
             feedback_id,
             "response_submitted",
             submitted_by,
-            {
-                "response_type": response_type.value,
-                "response_id": response.response_id
-            }
+            {"response_type": response_type.value, "response_id": response.response_id},
         )
 
         # Update response time metrics
         self._update_response_metrics(feedback, response)
 
-        logger.info(
-            f"Submitted {response_type.value} response to feedback {feedback_id}"
-        )
+        logger.info(f"Submitted {response_type.value} response to feedback {feedback_id}")
 
         return response
 
     def _update_response_metrics(
-        self,
-        feedback: SupervisoryFeedback,
-        response: FeedbackResponse
+        self, feedback: SupervisoryFeedback, response: FeedbackResponse
     ) -> None:
         """Update response time metrics."""
         response_time = (response.submitted_at - feedback.received_at).total_seconds() / 3600
@@ -771,8 +741,9 @@ class DORASupervisioryFeedback:
         # Update average response time
         total = self._metrics["total_feedback_received"]
         current_avg = self._metrics["average_response_time_hours"]
-        self._metrics["average_response_time_hours"] = \
-            (current_avg * (total - 1) + response_time) / total
+        self._metrics["average_response_time_hours"] = (
+            current_avg * (total - 1) + response_time
+        ) / total
 
         # Update on-time rate
         if feedback.response_deadline and response.submitted_at <= feedback.response_deadline:
@@ -781,11 +752,7 @@ class DORASupervisioryFeedback:
             self._metrics["on_time_response_rate"] = on_time_count / total
 
     def request_deadline_extension(
-        self,
-        feedback_id: str,
-        requested_by: str,
-        new_deadline: datetime,
-        justification: str
+        self, feedback_id: str, requested_by: str, new_deadline: datetime, justification: str
     ) -> FeedbackResponse:
         """
         Request an extension for feedback response deadline.
@@ -815,7 +782,7 @@ class DORASupervisioryFeedback:
             feedback_id=feedback_id,
             response_type=ResponseType.EXTENSION_REQUEST,
             content=content,
-            submitted_by=requested_by
+            submitted_by=requested_by,
         )
 
         feedback.status = FeedbackStatus.PENDING_CLARIFICATION
@@ -825,10 +792,7 @@ class DORASupervisioryFeedback:
         return response
 
     def close_feedback(
-        self,
-        feedback_id: str,
-        closed_by: str,
-        resolution_summary: str
+        self, feedback_id: str, closed_by: str, resolution_summary: str
     ) -> SupervisoryFeedback:
         """
         Close resolved feedback.
@@ -850,7 +814,7 @@ class DORASupervisioryFeedback:
             if feedback.feedback_type not in [
                 FeedbackType.ACKNOWLEDGEMENT,
                 FeedbackType.COMMENDATION,
-                FeedbackType.ANONYMISED_AGGREGATION
+                FeedbackType.ANONYMISED_AGGREGATION,
             ]:
                 raise ValueError(
                     f"Feedback must be resolved before closing. "
@@ -866,7 +830,7 @@ class DORASupervisioryFeedback:
             closed_by,
             {"resolution_summary": resolution_summary},
             old_status,
-            FeedbackStatus.CLOSED
+            FeedbackStatus.CLOSED,
         )
 
         logger.info(f"Closed feedback {feedback_id}")
@@ -884,7 +848,7 @@ class DORASupervisioryFeedback:
         severity_level: str,
         geographic_scope: Optional[list[str]] = None,
         related_vulnerabilities: Optional[list[str]] = None,
-        mitigation_guidance: Optional[list[str]] = None
+        mitigation_guidance: Optional[list[str]] = None,
     ) -> AnonymisedInsight:
         """
         Register anonymised and aggregated insight per Article 22(2).
@@ -916,7 +880,7 @@ class DORASupervisioryFeedback:
             severity_level=severity_level,
             geographic_scope=geographic_scope or [],
             related_vulnerabilities=related_vulnerabilities or [],
-            mitigation_guidance=mitigation_guidance or []
+            mitigation_guidance=mitigation_guidance or [],
         )
 
         self._insights[insight.insight_id] = insight
@@ -932,7 +896,7 @@ class DORASupervisioryFeedback:
         actor: str,
         details: dict[str, Any],
         previous_status: Optional[FeedbackStatus] = None,
-        new_status: Optional[FeedbackStatus] = None
+        new_status: Optional[FeedbackStatus] = None,
     ) -> FeedbackAuditEntry:
         """Add an audit trail entry."""
         entry = FeedbackAuditEntry(
@@ -943,7 +907,7 @@ class DORASupervisioryFeedback:
             timestamp=datetime.utcnow(),
             details=details,
             previous_status=previous_status,
-            new_status=new_status
+            new_status=new_status,
         )
 
         if feedback_id not in self._audit_trail:
@@ -959,15 +923,13 @@ class DORASupervisioryFeedback:
 
     def get_feedback_by_incident(self, incident_id: str) -> list[SupervisoryFeedback]:
         """Get all feedback for an incident."""
-        return [
-            f for f in self._feedback.values()
-            if f.incident_id == incident_id
-        ]
+        return [f for f in self._feedback.values() if f.incident_id == incident_id]
 
     def get_pending_feedback(self) -> list[SupervisoryFeedback]:
         """Get all pending (unresolved) feedback."""
         return [
-            f for f in self._feedback.values()
+            f
+            for f in self._feedback.values()
             if f.status not in [FeedbackStatus.RESOLVED, FeedbackStatus.CLOSED]
         ]
 
@@ -975,17 +937,16 @@ class DORASupervisioryFeedback:
         """Get all feedback with overdue responses."""
         now = datetime.utcnow()
         return [
-            f for f in self._feedback.values()
-            if f.response_deadline and now > f.response_deadline
+            f
+            for f in self._feedback.values()
+            if f.response_deadline
+            and now > f.response_deadline
             and f.status not in [FeedbackStatus.RESOLVED, FeedbackStatus.CLOSED]
         ]
 
     def get_corrective_actions(self, feedback_id: str) -> list[CorrectiveAction]:
         """Get all corrective actions for a feedback."""
-        return [
-            a for a in self._corrective_actions.values()
-            if a.feedback_id == feedback_id
-        ]
+        return [a for a in self._corrective_actions.values() if a.feedback_id == feedback_id]
 
     def get_overdue_actions(self) -> list[CorrectiveAction]:
         """Get all overdue corrective actions."""
@@ -1005,10 +966,7 @@ class DORASupervisioryFeedback:
 
     def get_insights_by_threat_category(self, category: str) -> list[AnonymisedInsight]:
         """Get insights by threat category."""
-        return [
-            i for i in self._insights.values()
-            if i.threat_category.lower() == category.lower()
-        ]
+        return [i for i in self._insights.values() if i.threat_category.lower() == category.lower()]
 
     def get_metrics(self) -> dict[str, Any]:
         """Get supervisory feedback metrics."""
@@ -1020,7 +978,7 @@ class DORASupervisioryFeedback:
             "total_pending_feedback": len(self.get_pending_feedback()),
             "total_overdue_feedback": len(self.get_overdue_feedback()),
             "total_corrective_actions": len(self._corrective_actions),
-            "total_insights_registered": len(self._insights)
+            "total_insights_registered": len(self._insights),
         }
 
     def generate_feedback_summary(self, feedback_id: str) -> dict[str, Any]:
@@ -1051,8 +1009,10 @@ class DORASupervisioryFeedback:
                 "status": feedback.status.value,
                 "subject": feedback.subject,
                 "received_at": feedback.received_at.isoformat(),
-                "response_deadline": feedback.response_deadline.isoformat() if feedback.response_deadline else None,
-                "cross_border": feedback.cross_border_implications
+                "response_deadline": (
+                    feedback.response_deadline.isoformat() if feedback.response_deadline else None
+                ),
+                "cross_border": feedback.cross_border_implications,
             },
             "corrective_actions": {
                 "total": len(actions),
@@ -1064,10 +1024,10 @@ class DORASupervisioryFeedback:
                         "type": a.action_type.value,
                         "status": a.status,
                         "deadline": a.deadline.isoformat(),
-                        "is_overdue": a.is_overdue
+                        "is_overdue": a.is_overdue,
                     }
                     for a in actions
-                ]
+                ],
             },
             "responses": {
                 "total": len(responses),
@@ -1075,22 +1035,18 @@ class DORASupervisioryFeedback:
                     {
                         "id": r.response_id,
                         "type": r.response_type.value,
-                        "submitted_at": r.submitted_at.isoformat()
+                        "submitted_at": r.submitted_at.isoformat(),
                     }
                     for r in responses
-                ]
+                ],
             },
             "audit_trail": {
                 "entries": len(audit_trail),
                 "timeline": [
-                    {
-                        "action": e.action,
-                        "actor": e.actor,
-                        "timestamp": e.timestamp.isoformat()
-                    }
+                    {"action": e.action, "actor": e.actor, "timestamp": e.timestamp.isoformat()}
                     for e in audit_trail
-                ]
-            }
+                ],
+            },
         }
 
 
@@ -1099,7 +1055,7 @@ def create_supervisory_feedback(
     entity_name: str,
     primary_authority: Optional[CompetentAuthority] = None,
     response_sla_hours: int = 24,
-    auto_acknowledge: bool = True
+    auto_acknowledge: bool = True,
 ) -> DORASupervisioryFeedback:
     """
     Factory function to create a DORASupervisioryFeedback instance.
@@ -1119,5 +1075,5 @@ def create_supervisory_feedback(
         entity_name=entity_name,
         primary_authority=primary_authority,
         response_sla_hours=response_sla_hours,
-        auto_acknowledge=auto_acknowledge
+        auto_acknowledge=auto_acknowledge,
     )

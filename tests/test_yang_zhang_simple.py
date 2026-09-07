@@ -30,7 +30,9 @@ def calculate_yang_zhang_volatility(ohlc_bars, n):
             return None
 
         mean_overnight = sum(overnight_returns) / len(overnight_returns)
-        sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (len(overnight_returns) - 1)
+        sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (
+            len(overnight_returns) - 1
+        )
 
         # Open-close волатильность
         oc_returns = []
@@ -89,12 +91,14 @@ def test_basic():
         low = open_p * 0.995
         close = base_price * (1 + 0.01 * math.sin((i + 0.5) * 0.5))
 
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.001
 
     vol = calculate_yang_zhang_volatility(ohlc_bars, 24)
@@ -123,10 +127,7 @@ def test_zero_volatility():
     """Тест нулевой волатильности."""
     print("Тест 3: Нулевая волатильность")
 
-    ohlc_bars = [
-        {"open": 100, "high": 100, "low": 100, "close": 100}
-        for _ in range(50)
-    ]
+    ohlc_bars = [{"open": 100, "high": 100, "low": 100, "close": 100} for _ in range(50)]
     vol = calculate_yang_zhang_volatility(ohlc_bars, 24)
 
     assert vol is not None, "Волатильность должна быть рассчитана"
@@ -152,12 +153,14 @@ def test_formula_components():
         high = max(open_p, close) + 0.2
         low = min(open_p, close) - 0.2
 
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
 
     vol = calculate_yang_zhang_volatility(ohlc_bars, 24)
 
@@ -180,12 +183,14 @@ def test_window_sizes():
         high = open_p * 1.01
         low = open_p * 0.99
         close = base_price * (1 + 0.02 * math.sin((i + 0.5) * 0.01))
-        ohlc_bars.append({
-            "open": open_p,
-            "high": high,
-            "low": low,
-            "close": close,
-        })
+        ohlc_bars.append(
+            {
+                "open": open_p,
+                "high": high,
+                "low": low,
+                "close": close,
+            }
+        )
         base_price *= 1.00001
 
     windows = [24, 100, 500]
@@ -227,6 +232,7 @@ def main():
         except Exception as e:
             print(f"  ❌ ИСКЛЮЧЕНИЕ: {e}\n")
             import traceback
+
             traceback.print_exc()
             failed += 1
 
@@ -239,5 +245,6 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     success = main()
     sys.exit(0 if success else 1)

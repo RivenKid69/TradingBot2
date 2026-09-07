@@ -18,7 +18,9 @@ def scan_path(path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scan files for common PII patterns")
-    parser.add_argument("root", nargs="?", default="data/seasonality_source", help="Directory to scan")
+    parser.add_argument(
+        "root", nargs="?", default="data/seasonality_source", help="Directory to scan"
+    )
     args = parser.parse_args()
 
     root = Path(args.root)

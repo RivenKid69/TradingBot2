@@ -20,6 +20,7 @@ References:
 """
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 import math
 import time
@@ -98,6 +99,7 @@ from impl_circuit_breaker import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def es_matching_engine():
     """Create E-mini S&P 500 matching engine."""
@@ -163,6 +165,7 @@ def settlement_simulator():
 # =============================================================================
 # Test: GlobexMatchingEngine Basic Operations
 # =============================================================================
+
 
 class TestGlobexMatchingEngineBasic:
     """Test basic GlobexMatchingEngine functionality."""
@@ -303,14 +306,28 @@ class TestGlobexMatchingEngineBasic:
     def test_get_spread(self, es_matching_engine):
         """Test spread calculation."""
         # Add bid and ask
-        es_matching_engine.add_order(LimitOrder(
-            order_id="bid_1", price=4500.00, qty=10.0, remaining_qty=10.0,
-            timestamp_ns=time.time_ns(), side=Side.BUY, order_type=LOBOrderType.LIMIT,
-        ))
-        es_matching_engine.add_order(LimitOrder(
-            order_id="ask_1", price=4500.25, qty=10.0, remaining_qty=10.0,
-            timestamp_ns=time.time_ns(), side=Side.SELL, order_type=LOBOrderType.LIMIT,
-        ))
+        es_matching_engine.add_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=4500.00,
+                qty=10.0,
+                remaining_qty=10.0,
+                timestamp_ns=time.time_ns(),
+                side=Side.BUY,
+                order_type=LOBOrderType.LIMIT,
+            )
+        )
+        es_matching_engine.add_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=4500.25,
+                qty=10.0,
+                remaining_qty=10.0,
+                timestamp_ns=time.time_ns(),
+                side=Side.SELL,
+                order_type=LOBOrderType.LIMIT,
+            )
+        )
 
         spread = es_matching_engine.get_spread()
         assert spread == pytest.approx(0.25, abs=0.001)
@@ -318,10 +335,17 @@ class TestGlobexMatchingEngineBasic:
     def test_clear_book(self, es_matching_engine):
         """Test clearing the order book."""
         # Add some orders
-        es_matching_engine.add_order(LimitOrder(
-            order_id="bid_1", price=4500.00, qty=10.0, remaining_qty=10.0,
-            timestamp_ns=time.time_ns(), side=Side.BUY, order_type=LOBOrderType.LIMIT,
-        ))
+        es_matching_engine.add_order(
+            LimitOrder(
+                order_id="bid_1",
+                price=4500.00,
+                qty=10.0,
+                remaining_qty=10.0,
+                timestamp_ns=time.time_ns(),
+                side=Side.BUY,
+                order_type=LOBOrderType.LIMIT,
+            )
+        )
 
         assert es_matching_engine.get_best_bid() is not None
 
@@ -334,6 +358,7 @@ class TestGlobexMatchingEngineBasic:
 # Test: Market with Protection (MWP)
 # =============================================================================
 
+
 class TestGlobexMatchingEngineMWP:
     """Test Market with Protection order handling."""
 
@@ -341,15 +366,17 @@ class TestGlobexMatchingEngineMWP:
         """Test MWP execution within protection limit."""
         # Add some liquidity
         for i in range(5):
-            es_matching_engine.add_order(LimitOrder(
-                order_id=f"ask_{i}",
-                price=4500.25 + i * 0.25,
-                qty=100.0,
-                remaining_qty=100.0,
-                timestamp_ns=time.time_ns(),
-                side=Side.SELL,
-                order_type=LOBOrderType.LIMIT,
-            ))
+            es_matching_engine.add_order(
+                LimitOrder(
+                    order_id=f"ask_{i}",
+                    price=4500.25 + i * 0.25,
+                    qty=100.0,
+                    remaining_qty=100.0,
+                    timestamp_ns=time.time_ns(),
+                    side=Side.SELL,
+                    order_type=LOBOrderType.LIMIT,
+                )
+            )
 
         # MWP buy order
         mwp_order = LimitOrder(
@@ -384,15 +411,17 @@ class TestGlobexMatchingEngineMWP:
     def test_protection_limit_calculation(self, es_matching_engine):
         """Test protection limit price calculation."""
         # Add ask at 4500.25
-        es_matching_engine.add_order(LimitOrder(
-            order_id="ask_1",
-            price=4500.25,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=time.time_ns(),
-            side=Side.SELL,
-            order_type=LOBOrderType.LIMIT,
-        ))
+        es_matching_engine.add_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=4500.25,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=time.time_ns(),
+                side=Side.SELL,
+                order_type=LOBOrderType.LIMIT,
+            )
+        )
 
         # Get protection limit
         limit = es_matching_engine.get_protection_limit(Side.BUY, protection_points=6)
@@ -403,6 +432,7 @@ class TestGlobexMatchingEngineMWP:
 # =============================================================================
 # Test: Stop Orders
 # =============================================================================
+
 
 class TestGlobexMatchingEngineStops:
     """Test stop order handling."""
@@ -435,15 +465,17 @@ class TestGlobexMatchingEngineStops:
         es_matching_engine.submit_stop_order(stop)
 
         # Add some liquidity first
-        es_matching_engine.add_order(LimitOrder(
-            order_id="ask_1",
-            price=4510.25,
-            qty=100.0,
-            remaining_qty=100.0,
-            timestamp_ns=time.time_ns(),
-            side=Side.SELL,
-            order_type=LOBOrderType.LIMIT,
-        ))
+        es_matching_engine.add_order(
+            LimitOrder(
+                order_id="ask_1",
+                price=4510.25,
+                qty=100.0,
+                remaining_qty=100.0,
+                timestamp_ns=time.time_ns(),
+                side=Side.SELL,
+                order_type=LOBOrderType.LIMIT,
+            )
+        )
 
         # Trigger via trade at 4510.00
         triggered_orders = es_matching_engine.check_stops(last_trade_price=4510.00)
@@ -505,6 +537,7 @@ class TestGlobexMatchingEngineStops:
 # Test: Session Detection
 # =============================================================================
 
+
 class TestSessionDetection:
     """Test CME session detection."""
 
@@ -565,6 +598,7 @@ class TestSessionDetection:
 # =============================================================================
 # Test: Daily Settlement Simulator
 # =============================================================================
+
 
 class TestDailySettlementSimulator:
     """Test daily settlement simulation."""
@@ -680,6 +714,7 @@ class TestDailySettlementSimulator:
 # Test: CMEL3SlippageProvider
 # =============================================================================
 
+
 class TestCMEL3SlippageProvider:
     """Test CMEL3 slippage provider."""
 
@@ -757,6 +792,7 @@ class TestCMEL3SlippageProvider:
 # Test: CMEL3FillProvider
 # =============================================================================
 
+
 class TestCMEL3FillProvider:
     """Test CMEL3 fill provider."""
 
@@ -798,6 +834,7 @@ class TestCMEL3FillProvider:
 # Test: Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Test factory functions."""
 
@@ -825,6 +862,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test: Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
@@ -862,6 +900,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test: Integration
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests."""

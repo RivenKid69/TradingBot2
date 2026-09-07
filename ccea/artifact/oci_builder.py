@@ -38,6 +38,7 @@ from ccea.crypto.digest import compute_file_digest, compute_digest
 
 class OCIMediaType(str, Enum):
     """OCI media types per OCI Image Spec."""
+
     MANIFEST = "application/vnd.oci.image.manifest.v1+json"
     CONFIG = "application/vnd.oci.image.config.v1+json"
     LAYER_TAR_GZIP = "application/vnd.oci.image.layer.v1.tar+gzip"
@@ -47,6 +48,7 @@ class OCIMediaType(str, Enum):
 
 class Platform(str, Enum):
     """Target platforms."""
+
     LINUX_AMD64 = "linux/amd64"
     LINUX_ARM64 = "linux/arm64"
     ANY = "any"
@@ -55,6 +57,7 @@ class Platform(str, Enum):
 @dataclass
 class OCILayer:
     """OCI image layer."""
+
     digest: str
     size: int
     media_type: OCIMediaType = OCIMediaType.LAYER_TAR_GZIP
@@ -64,6 +67,7 @@ class OCILayer:
 @dataclass
 class OCIConfig:
     """OCI image configuration."""
+
     architecture: str = "amd64"
     os: str = "linux"
     created: Optional[str] = None
@@ -76,6 +80,7 @@ class OCIConfig:
 @dataclass
 class OCIManifest:
     """OCI image manifest."""
+
     schema_version: int = 2
     media_type: str = OCIMediaType.MANIFEST.value
     config: Dict[str, Any] = field(default_factory=dict)
@@ -109,6 +114,7 @@ class OCIManifest:
 @dataclass
 class OCIBuildConfig:
     """OCI image build configuration."""
+
     # Source
     source_dir: Path
     entrypoint_module: str
@@ -131,7 +137,9 @@ class OCIBuildConfig:
     # Dependencies
     requirements_file: Optional[Path] = None
     include_patterns: List[str] = field(default_factory=lambda: ["*.py"])
-    exclude_patterns: List[str] = field(default_factory=lambda: ["__pycache__", "*.pyc", ".git", "*.test.py"])
+    exclude_patterns: List[str] = field(
+        default_factory=lambda: ["__pycache__", "*.pyc", ".git", "*.test.py"]
+    )
 
     # Build settings
     output_dir: Optional[Path] = None
@@ -146,6 +154,7 @@ class OCIBuildConfig:
 @dataclass
 class OCIBuildResult:
     """Result of OCI image build."""
+
     image_ref: str
     manifest_digest: str
     config_digest: str
@@ -327,7 +336,8 @@ class OCIImageBuilder:
             for root, dirs, files in os.walk(config.source_dir):
                 # Filter directories
                 dirs[:] = [
-                    d for d in dirs
+                    d
+                    for d in dirs
                     if not any(fnmatch.fnmatch(d, p) for p in config.exclude_patterns)
                 ]
 
@@ -397,9 +407,7 @@ class OCIImageBuilder:
             arch = "arm64"
 
         # Build entrypoint command
-        entrypoint = config.entrypoint_cmd or [
-            "python", "-m", config.entrypoint_module
-        ]
+        entrypoint = config.entrypoint_cmd or ["python", "-m", config.entrypoint_module]
 
         layer_digests = [layer.digest for layer in layers]
 

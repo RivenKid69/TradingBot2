@@ -32,7 +32,9 @@ def test_maxlen_fix():
         )
         ratio = feats.get("taker_buy_ratio", float("nan"))
         momentum_24h = feats.get("taker_buy_ratio_momentum_24h", float("nan"))
-        print(f"  Bar {i}: ratio={ratio:.3f}, momentum_24h={'NaN' if str(momentum_24h) == 'nan' else f'{momentum_24h:.3f}'}")
+        print(
+            f"  Bar {i}: ratio={ratio:.3f}, momentum_24h={'NaN' if str(momentum_24h) == 'nan' else f'{momentum_24h:.3f}'}"
+        )
 
     # Check final bar
     final_ratio = feats["taker_buy_ratio"]
@@ -40,7 +42,9 @@ def test_maxlen_fix():
 
     print(f"\n✅ Final bar (bar 6):")
     print(f"   taker_buy_ratio: {final_ratio:.3f}")
-    print(f"   taker_buy_ratio_momentum_24h: {'NaN' if str(final_momentum) == 'nan' else f'{final_momentum:.6f}'}")
+    print(
+        f"   taker_buy_ratio_momentum_24h: {'NaN' if str(final_momentum) == 'nan' else f'{final_momentum:.6f}'}"
+    )
 
     # Should NOT be NaN on bar 6 (have 7 bars total, enough for window=6)
     if str(final_momentum) == "nan":
@@ -153,6 +157,7 @@ def main():
     except Exception as e:
         print(f"❌ maxlen test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("maxlen fix", False))
 
@@ -161,6 +166,7 @@ def main():
     except Exception as e:
         print(f"❌ ROC threshold test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         results.append(("ROC threshold fix", False))
 

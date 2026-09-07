@@ -22,10 +22,12 @@ from unittest.mock import Mock, patch
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def alpaca_adapter():
     """Create Alpaca trading hours adapter without API credentials."""
     from adapters.alpaca.trading_hours import AlpacaTradingHoursAdapter
+
     return AlpacaTradingHoursAdapter(config={"use_alpaca_calendar": False})
 
 
@@ -33,6 +35,7 @@ def alpaca_adapter():
 def polygon_adapter():
     """Create Polygon trading hours adapter without API credentials."""
     from adapters.polygon.trading_hours import PolygonTradingHoursAdapter
+
     return PolygonTradingHoursAdapter(config={"api_key": ""})
 
 
@@ -40,6 +43,7 @@ def polygon_adapter():
 def binance_adapter():
     """Create Binance trading hours adapter."""
     from adapters.binance.trading_hours import BinanceTradingHoursAdapter
+
     return BinanceTradingHoursAdapter()
 
 
@@ -47,6 +51,7 @@ def ts_from_et(year: int, month: int, day: int, hour: int, minute: int = 0) -> i
     """Create timestamp from ET time components."""
     try:
         from zoneinfo import ZoneInfo
+
         et = ZoneInfo("America/New_York")
         dt = datetime(year, month, day, hour, minute, tzinfo=et)
         return int(dt.timestamp() * 1000)
@@ -59,6 +64,7 @@ def ts_from_et(year: int, month: int, day: int, hour: int, minute: int = 0) -> i
 # =============================================================================
 # Test Alpaca Trading Hours
 # =============================================================================
+
 
 class TestAlpacaTradingHours:
     """Tests for Alpaca trading hours adapter."""
@@ -114,10 +120,13 @@ class TestAlpacaTradingHours:
     def test_extended_hours_disabled(self):
         """Test extended hours can be disabled."""
         from adapters.alpaca.trading_hours import AlpacaTradingHoursAdapter
-        adapter = AlpacaTradingHoursAdapter(config={
-            "use_alpaca_calendar": False,
-            "allow_extended_hours": False,
-        })
+
+        adapter = AlpacaTradingHoursAdapter(
+            config={
+                "use_alpaca_calendar": False,
+                "allow_extended_hours": False,
+            }
+        )
 
         # Tuesday at 5:00 AM ET (pre-market)
         ts = ts_from_et(2024, 11, 26, 5, 0)
@@ -170,6 +179,7 @@ class TestAlpacaTradingHours:
 # =============================================================================
 # Test Polygon Trading Hours
 # =============================================================================
+
 
 class TestPolygonTradingHours:
     """Tests for Polygon trading hours adapter."""
@@ -224,6 +234,7 @@ class TestPolygonTradingHours:
 # Test Binance 24/7 Trading Hours
 # =============================================================================
 
+
 class TestBinanceTradingHours:
     """Tests for Binance (crypto) trading hours adapter."""
 
@@ -231,10 +242,10 @@ class TestBinanceTradingHours:
         """Test crypto market is always open."""
         # Test various times
         test_times = [
-            ts_from_et(2024, 11, 26, 10, 0),   # Tuesday morning
-            ts_from_et(2024, 11, 23, 3, 0),    # Saturday night
-            ts_from_et(2024, 12, 25, 12, 0),   # Christmas Day
-            ts_from_et(2024, 1, 1, 0, 0),      # New Year's Day
+            ts_from_et(2024, 11, 26, 10, 0),  # Tuesday morning
+            ts_from_et(2024, 11, 23, 3, 0),  # Saturday night
+            ts_from_et(2024, 12, 25, 12, 0),  # Christmas Day
+            ts_from_et(2024, 1, 1, 0, 0),  # New Year's Day
         ]
 
         for ts in test_times:
@@ -286,6 +297,7 @@ class TestBinanceTradingHours:
 # Test Asset Class Comparison
 # =============================================================================
 
+
 class TestAssetClassComparison:
     """Compare trading hours between asset classes."""
 
@@ -323,10 +335,12 @@ class TestAssetClassComparison:
         from adapters.models import SessionType
 
         # Equity adapter without extended hours
-        adapter = AlpacaTradingHoursAdapter(config={
-            "use_alpaca_calendar": False,
-            "allow_extended_hours": False,
-        })
+        adapter = AlpacaTradingHoursAdapter(
+            config={
+                "use_alpaca_calendar": False,
+                "allow_extended_hours": False,
+            }
+        )
 
         # Pre-market time (5 AM)
         ts = ts_from_et(2024, 11, 26, 5, 0)
@@ -342,16 +356,18 @@ class TestAssetClassComparison:
 # Test Trading Hours Enforcement in Config
 # =============================================================================
 
+
 class TestTradingHoursConfig:
     """Test trading hours configuration in configs."""
 
     def test_crypto_session_calendar(self):
         """Test crypto uses 24/7 calendar."""
         import yaml
+
         config_path = "configs/config_train.yaml"
 
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             assert config.get("asset_class") == "crypto"
@@ -362,10 +378,11 @@ class TestTradingHoursConfig:
     def test_equity_session_calendar(self):
         """Test equity uses US market calendar."""
         import yaml
+
         config_path = "configs/config_train_stocks.yaml"
 
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             assert config.get("asset_class") == "equity"
@@ -377,6 +394,7 @@ class TestTradingHoursConfig:
 # =============================================================================
 # Test Session Type Enum
 # =============================================================================
+
 
 class TestSessionType:
     """Test SessionType enum values."""

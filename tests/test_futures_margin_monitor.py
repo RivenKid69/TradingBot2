@@ -475,7 +475,9 @@ class TestMarginLevelTracker:
         assert level_tracker.get_threshold_for_level(MarginLevel.HEALTHY) == DEFAULT_WARNING_RATIO
         assert level_tracker.get_threshold_for_level(MarginLevel.WARNING) == DEFAULT_DANGER_RATIO
         assert level_tracker.get_threshold_for_level(MarginLevel.DANGER) == DEFAULT_CRITICAL_RATIO
-        assert level_tracker.get_threshold_for_level(MarginLevel.CRITICAL) == DEFAULT_LIQUIDATION_RATIO
+        assert (
+            level_tracker.get_threshold_for_level(MarginLevel.CRITICAL) == DEFAULT_LIQUIDATION_RATIO
+        )
 
     def test_get_buffer_to_next_level(self, level_tracker):
         """Test getting buffer to next worse level."""
@@ -1027,10 +1029,7 @@ class TestFactoryFunctions:
         def my_callback(t, l, d):
             callback_calls.append(t)
 
-        monitor = create_margin_monitor(
-            mock_margin_provider,
-            alert_callbacks=[my_callback]
-        )
+        monitor = create_margin_monitor(mock_margin_provider, alert_callbacks=[my_callback])
 
         # Trigger alert
         mock_margin_provider.get_account_equity.return_value = Decimal("7000")
@@ -1078,6 +1077,7 @@ class TestErrorHandling:
 
     def test_callback_error_handling(self, default_config, mock_margin_provider):
         """Test callback errors don't crash monitoring."""
+
         def bad_callback(t, l, d):
             raise Exception("Callback error")
 

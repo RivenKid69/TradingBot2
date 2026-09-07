@@ -76,9 +76,11 @@ POST_EARNINGS_DRIFT_DAYS = 3
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class EarningsCalendarConfig:
     """Configuration for earnings calendar service."""
+
     cache_dir: Path = DEFAULT_CACHE_DIR
     cache_ttl_hours: int = DEFAULT_TTL_HOURS
     blackout_days: int = EARNINGS_BLACKOUT_DAYS
@@ -89,6 +91,7 @@ class EarningsCalendarConfig:
 # =============================================================================
 # Main Service
 # =============================================================================
+
 
 class EarningsCalendarService:
     """
@@ -313,10 +316,7 @@ class EarningsCalendarService:
         """
         earnings = self.get_earnings(symbol, force_refresh=force_refresh)
 
-        future = [
-            e for e in earnings
-            if e.get("report_date", "") > as_of_date
-        ]
+        future = [e for e in earnings if e.get("report_date", "") > as_of_date]
 
         if not future:
             return None
@@ -343,10 +343,7 @@ class EarningsCalendarService:
         """
         earnings = self.get_earnings(symbol, force_refresh=force_refresh)
 
-        past = [
-            e for e in earnings
-            if e.get("report_date", "") <= as_of_date
-        ]
+        past = [e for e in earnings if e.get("report_date", "") <= as_of_date]
 
         if not past:
             return None
@@ -599,15 +596,11 @@ class EarningsCalendarService:
             return df
 
         # Build earnings date lookup
-        earnings_dates = sorted([
-            datetime.fromisoformat(e["report_date"])
-            for e in earnings
-            if "report_date" in e
-        ])
+        earnings_dates = sorted(
+            [datetime.fromisoformat(e["report_date"]) for e in earnings if "report_date" in e]
+        )
         surprise_by_date = {
-            e["report_date"]: e.get("surprise_pct", 0.0)
-            for e in earnings
-            if "report_date" in e
+            e["report_date"]: e.get("surprise_pct", 0.0) for e in earnings if "report_date" in e
         }
 
         # Initialize columns

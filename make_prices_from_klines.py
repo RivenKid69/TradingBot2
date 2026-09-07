@@ -18,10 +18,23 @@ def main():
     p = argparse.ArgumentParser(description="Make normalized prices table from klines parquet.")
     p.add_argument("--in-klines", required=True, help="Входной parquet клайнов (любой интервал)")
     p.add_argument("--symbol", required=True, help="Символ, например BTCUSDT")
-    p.add_argument("--price-col", choices=["close", "hl2", "ohlc4"], default="close", help="Какую цену считать ценой для меток")
+    p.add_argument(
+        "--price-col",
+        choices=["close", "hl2", "ohlc4"],
+        default="close",
+        help="Какую цену считать ценой для меток",
+    )
     p.add_argument("--out", default="data/prices.parquet", help="Куда сохранить prices.parquet")
-    p.add_argument("--include-ohlc", action="store_true", help="Включить OHLC колонки для Yang-Zhang волатильности")
-    p.add_argument("--include-volume", action="store_true", help="Включить volume и taker_buy_base для Taker Buy Ratio")
+    p.add_argument(
+        "--include-ohlc",
+        action="store_true",
+        help="Включить OHLC колонки для Yang-Zhang волатильности",
+    )
+    p.add_argument(
+        "--include-volume",
+        action="store_true",
+        help="Включить volume и taker_buy_base для Taker Buy Ratio",
+    )
     args = p.parse_args()
 
     d = _read_any(args.in_klines)
@@ -36,7 +49,9 @@ def main():
     if args.price_col == "close":
         d["price"] = pd.to_numeric(d["close"], errors="coerce")
     elif args.price_col == "hl2":
-        d["price"] = (pd.to_numeric(d["high"], errors="coerce") + pd.to_numeric(d["low"], errors="coerce")) / 2.0
+        d["price"] = (
+            pd.to_numeric(d["high"], errors="coerce") + pd.to_numeric(d["low"], errors="coerce")
+        ) / 2.0
     elif args.price_col == "ohlc4":
         d["price"] = (
             pd.to_numeric(d["open"], errors="coerce")

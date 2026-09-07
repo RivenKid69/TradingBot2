@@ -77,9 +77,7 @@ def _make_order(symbol: str, target_weight: float, turnover_usd: float) -> Order
     )
 
 
-def _make_economics_order(
-    symbol: str, target_weight: float, turnover_usd: float
-) -> Order:
+def _make_economics_order(symbol: str, target_weight: float, turnover_usd: float) -> Order:
     return Order(
         ts=0,
         symbol=symbol,
@@ -96,9 +94,7 @@ def _make_economics_order(
     )
 
 
-def _make_turnover_rich_order(
-    symbol: str, target_weight: float, turnover_usd: float
-) -> Order:
+def _make_turnover_rich_order(symbol: str, target_weight: float, turnover_usd: float) -> Order:
     return Order(
         ts=0,
         symbol=symbol,
@@ -129,9 +125,7 @@ def _make_turnover_rich_order(
     )
 
 
-def _make_enveloped_order(
-    symbol: str, target_weight: float, turnover_usd: float
-) -> Order:
+def _make_enveloped_order(symbol: str, target_weight: float, turnover_usd: float) -> Order:
     envelope = SpotSignalEnvelope(
         symbol=symbol,
         bar_close_ms=0,
@@ -344,13 +338,10 @@ def test_daily_turnover_scaling_updates_turnover_fields() -> None:
     assert payload["turnover_usd"] == pytest.approx(250.0 * factor)
     assert payload["turnover"] == pytest.approx(250.0 * factor)
 
-
     assert payload["economics"]["turnover_usd"] == pytest.approx(250.0 * factor)
     assert payload["economics"]["notional_usd"] == pytest.approx(250.0 * factor)
     assert payload["decision"]["turnover_usd"] == pytest.approx(250.0 * factor)
-    assert payload["decision"]["economics"]["turnover_usd"] == pytest.approx(
-        250.0 * factor
-    )
+    assert payload["decision"]["economics"]["turnover_usd"] == pytest.approx(250.0 * factor)
 
     expected_norm_factor = normalization["factor"] * factor
     expected_available_delta = normalization["available_delta"] * factor
@@ -359,29 +350,21 @@ def test_daily_turnover_scaling_updates_turnover_fields() -> None:
     assert payload_norm["available_delta"] == pytest.approx(expected_available_delta)
     payload_decision_norm = payload["decision"]["normalization"]
     assert payload_decision_norm["factor"] == pytest.approx(expected_norm_factor)
-    assert payload_decision_norm["available_delta"] == pytest.approx(
-        expected_available_delta
-    )
+    assert payload_decision_norm["available_delta"] == pytest.approx(expected_available_delta)
 
     assert meta["economics"]["turnover_usd"] == pytest.approx(250.0 * factor)
     assert meta["decision"]["turnover_usd"] == pytest.approx(250.0 * factor)
-    assert meta["decision"]["economics"]["turnover_usd"] == pytest.approx(
-        250.0 * factor
-    )
+    assert meta["decision"]["economics"]["turnover_usd"] == pytest.approx(250.0 * factor)
     meta_norm = meta["normalization"]
     assert meta_norm["factor"] == pytest.approx(expected_norm_factor)
     assert meta_norm["available_delta"] == pytest.approx(expected_available_delta)
     meta_decision_norm = meta["decision"]["normalization"]
     assert meta_decision_norm["factor"] == pytest.approx(expected_norm_factor)
-    assert meta_decision_norm["available_delta"] == pytest.approx(
-        expected_available_delta
-    )
+    assert meta_decision_norm["available_delta"] == pytest.approx(expected_available_delta)
 
     pending = worker._pending_weight[id(result)]
     assert pending["factor"] == pytest.approx(expected_norm_factor)
-    assert pending["normalization"]["available_delta"] == pytest.approx(
-        expected_available_delta
-    )
+    assert pending["normalization"]["available_delta"] == pytest.approx(expected_available_delta)
 
 
 def test_daily_turnover_non_finite_request_is_sanitized() -> None:

@@ -144,11 +144,18 @@ def _make_worker(
         signal_dispatcher=_dispatch,
     )
 
-    return worker, logger, publish_calls, executor_calls, {
-        "published": published_metric,
-        "age": age_metric,
-        "skipped": skipped_metric,
-    }, dispatch_calls
+    return (
+        worker,
+        logger,
+        publish_calls,
+        executor_calls,
+        {
+            "published": published_metric,
+            "age": age_metric,
+            "skipped": skipped_metric,
+        },
+        dispatch_calls,
+    )
 
 
 def _make_bar_executor_policy_worker(monkeypatch, executor: BarExecutor) -> _Worker:
@@ -182,9 +189,7 @@ def test_emit_skips_duplicate_idempotency(monkeypatch) -> None:
     assert len(dispatch_calls) == 1
 
     duplicate = _make_order("sig-1", created_ts_ms=4500)
-    assert (
-        worker._emit(duplicate, "BTCUSDT", bar_close_ms, bar_open_ms=bar_open_ms) is False
-    )
+    assert worker._emit(duplicate, "BTCUSDT", bar_close_ms, bar_open_ms=bar_open_ms) is False
     assert len(publish_calls) == 1
     assert metrics["skipped"].count == 1
     assert len(dispatch_calls) == 1
@@ -308,9 +313,7 @@ def test_emit_publishes_with_ttl_disabled(monkeypatch) -> None:
         now_ms=lambda: now_state["ms"],
     )
 
-    worker._pipeline_cfg = PipelineConfig(
-        stages={"ttl": PipelineStageConfig(enabled=False)}
-    )
+    worker._pipeline_cfg = PipelineConfig(stages={"ttl": PipelineStageConfig(enabled=False)})
 
     assert worker._resolve_ttl_timeframe_ms(log_if_invalid=False) == ttl_timeframe
     assert worker._bar_timeframe_ms == actual_timeframe
@@ -429,17 +432,13 @@ def test_bar_queue_order_expires_after_bar_ttl(monkeypatch) -> None:
         _executor_calls,
         metrics,
         _dispatch_calls,
-    ) = _make_worker(
-        monkeypatch, execution_mode="bar", now_ms=_now_ms, throttle_cfg=throttle_cfg
-    )
+    ) = _make_worker(monkeypatch, execution_mode="bar", now_ms=_now_ms, throttle_cfg=throttle_cfg)
 
     absolute_metric = DummyMetric()
     drop_metric = DummyMetric()
 
     monkeypatch.setattr(service_signal_runner.monitoring, "inc_stage", lambda *a, **k: None)
-    monkeypatch.setattr(
-        service_signal_runner.monitoring, "signal_absolute_count", absolute_metric
-    )
+    monkeypatch.setattr(service_signal_runner.monitoring, "signal_absolute_count", absolute_metric)
     monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", drop_metric)
     monkeypatch.setattr(service_signal_runner, "log_drop", lambda *a, **k: None)
 
@@ -575,9 +574,7 @@ def test_dispatch_signal_envelope_executes_bar_order(monkeypatch) -> None:
             decision=[order],
         )
 
-    def _apply_risk(
-        *_args: Any, **_kwargs: Any
-    ) -> service_signal_runner.PipelineResult:
+    def _apply_risk(*_args: Any, **_kwargs: Any) -> service_signal_runner.PipelineResult:
         return service_signal_runner.PipelineResult(
             action="pass",
             stage=service_signal_runner.Stage.RISK,
@@ -610,12 +607,8 @@ def test_dispatch_signal_envelope_executes_bar_order(monkeypatch) -> None:
             None,
         )
 
-    worker._apply_signal_quality_filter = types.MethodType(
-        _allow_signal_quality, worker
-    )
-    worker._extract_features = types.MethodType(
-        lambda self, bar, *, skip_metrics=False: {}, worker
-    )
+    worker._apply_signal_quality_filter = types.MethodType(_allow_signal_quality, worker)
+    worker._extract_features = types.MethodType(lambda self, bar, *, skip_metrics=False: {}, worker)
     worker._evaluate_no_trade_windows = types.MethodType(
         _allow_windows,
         worker,
@@ -759,12 +752,8 @@ def test_worker_propagates_adv_to_executor(monkeypatch) -> None:
             None,
         )
 
-    worker._apply_signal_quality_filter = types.MethodType(
-        _allow_signal_quality, worker
-    )
-    worker._extract_features = types.MethodType(
-        lambda self, bar, *, skip_metrics=False: {}, worker
-    )
+    worker._apply_signal_quality_filter = types.MethodType(_allow_signal_quality, worker)
+    worker._extract_features = types.MethodType(lambda self, bar, *, skip_metrics=False: {}, worker)
     worker._evaluate_no_trade_windows = types.MethodType(
         _allow_windows,
         worker,
@@ -824,7 +813,9 @@ def test_process_uses_true_bar_boundaries(monkeypatch) -> None:
     monkeypatch.setattr(service_signal_runner.monitoring, "signal_error_rate", DummyMetric())
     monkeypatch.setattr(service_signal_runner.monitoring, "ws_dup_skipped_count", DummyMetric())
     monkeypatch.setattr(service_signal_runner.monitoring, "signal_boundary_count", DummyMetric())
-    monkeypatch.setattr(service_signal_runner.monitoring, "ttl_expired_boundary_count", DummyMetric())
+    monkeypatch.setattr(
+        service_signal_runner.monitoring, "ttl_expired_boundary_count", DummyMetric()
+    )
     monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", DummyMetric())
     monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", DummyMetric())
 
@@ -957,4 +948,3 @@ def test_process_uses_true_bar_boundaries(monkeypatch) -> None:
     ]
     assert skip_calls == [("BTCUSDT", bar_ts)]
     assert update_calls == [("BTCUSDT", bar_ts)]
-

@@ -26,7 +26,7 @@ def test_semantic_correctness():
     spec = FeatureSpec(
         lookbacks_prices=[240],  # 4h = 240 минут = 1 бар в 4h таймфрейме
         bar_duration_minutes=240,
-        rsi_period=14
+        rsi_period=14,
     )
 
     print(f"lookbacks_prices (минуты): {spec._lookbacks_prices_minutes}")
@@ -37,14 +37,12 @@ def test_semantic_correctness():
 
     # Бар 0: Цена 100
     feats0 = transformer.update(
-        symbol="TEST", ts_ms=0, close=100.0,
-        open_price=100.0, high=100.0, low=100.0
+        symbol="TEST", ts_ms=0, close=100.0, open_price=100.0, high=100.0, low=100.0
     )
 
     # Бар 1: Цена 110 (рост на 10%)
     feats1 = transformer.update(
-        symbol="TEST", ts_ms=240*60*1000, close=110.0,
-        open_price=110.0, high=110.0, low=110.0
+        symbol="TEST", ts_ms=240 * 60 * 1000, close=110.0, open_price=110.0, high=110.0, low=110.0
     )
 
     print("Бар 0 (цена=100):")
@@ -52,7 +50,7 @@ def test_semantic_correctness():
     print()
 
     print("Бар 1 (цена=110, рост на 10%):")
-    ret_4h = feats1.get('ret_4h', None)
+    ret_4h = feats1.get("ret_4h", None)
     print(f"  ret_4h: {ret_4h}")
 
     if ret_4h is not None:
@@ -80,9 +78,7 @@ def test_indexing_correctness():
     print("=" * 80)
 
     spec = FeatureSpec(
-        lookbacks_prices=[240, 720, 1440],  # 4h, 12h, 24h
-        bar_duration_minutes=240,
-        rsi_period=14
+        lookbacks_prices=[240, 720, 1440], bar_duration_minutes=240, rsi_period=14  # 4h, 12h, 24h
     )
 
     print(f"lookbacks_prices (бары): {spec.lookbacks_prices}")
@@ -98,15 +94,14 @@ def test_indexing_correctness():
             symbol="TEST",
             ts_ms=i * 240 * 60 * 1000,
             close=price,
-            open_price=price, high=price, low=price
+            open_price=price,
+            high=price,
+            low=price,
         )
 
     # Проверяем последний бар (индекс 7, цена 114)
     feats = transformer.update(
-        symbol="TEST",
-        ts_ms=8 * 240 * 60 * 1000,
-        close=116,
-        open_price=116, high=116, low=116
+        symbol="TEST", ts_ms=8 * 240 * 60 * 1000, close=116, open_price=116, high=116, low=116
     )
 
     # Теперь в деке: [100, 102, 104, 106, 108, 110, 112, 114, 116]
@@ -175,9 +170,7 @@ def test_edge_cases():
     print("=" * 80)
 
     spec = FeatureSpec(
-        lookbacks_prices=[240, 720],  # lb=1, lb=3
-        bar_duration_minutes=240,
-        rsi_period=14
+        lookbacks_prices=[240, 720], bar_duration_minutes=240, rsi_period=14  # lb=1, lb=3
     )
 
     transformer = OnlineFeatureTransformer(spec)
@@ -187,8 +180,7 @@ def test_edge_cases():
     # Случай 1: Первый бар (len(seq)=1, lb=1)
     print("\nСлучай 1: Первый бар (len=1, lb=1)")
     feats1 = transformer.update(
-        symbol="TEST", ts_ms=0, close=100.0,
-        open_price=100.0, high=100.0, low=100.0
+        symbol="TEST", ts_ms=0, close=100.0, open_price=100.0, high=100.0, low=100.0
     )
 
     # len(seq)=1, условие: len(seq) > lb → 1 > 1 → False
@@ -202,8 +194,7 @@ def test_edge_cases():
     # Случай 2: Второй бар (len(seq)=2, lb=1)
     print("\nСлучай 2: Второй бар (len=2, lb=1)")
     feats2 = transformer.update(
-        symbol="TEST", ts_ms=240*60*1000, close=110.0,
-        open_price=110.0, high=110.0, low=110.0
+        symbol="TEST", ts_ms=240 * 60 * 1000, close=110.0, open_price=110.0, high=110.0, low=110.0
     )
 
     # len(seq)=2, условие: 2 > 1 → True
@@ -223,8 +214,12 @@ def test_edge_cases():
     # Случай 3: Третий бар (len=3, lb=3)
     print("\nСлучай 3: Третий бар (len=3, lb=3)")
     feats3 = transformer.update(
-        symbol="TEST", ts_ms=2*240*60*1000, close=120.0,
-        open_price=120.0, high=120.0, low=120.0
+        symbol="TEST",
+        ts_ms=2 * 240 * 60 * 1000,
+        close=120.0,
+        open_price=120.0,
+        high=120.0,
+        low=120.0,
     )
 
     # len(seq)=3, условие для ret_12h: 3 > 3 → False
@@ -238,8 +233,12 @@ def test_edge_cases():
     # Случай 4: Четвертый бар (len=4, lb=3)
     print("\nСлучай 4: Четвертый бар (len=4, lb=3)")
     feats4 = transformer.update(
-        symbol="TEST", ts_ms=3*240*60*1000, close=130.0,
-        open_price=130.0, high=130.0, low=130.0
+        symbol="TEST",
+        ts_ms=3 * 240 * 60 * 1000,
+        close=130.0,
+        open_price=130.0,
+        high=130.0,
+        low=130.0,
     )
 
     # len(seq)=4, условие: 4 > 3 → True
@@ -268,9 +267,7 @@ def test_sma_not_broken():
     print("=" * 80)
 
     spec = FeatureSpec(
-        lookbacks_prices=[240, 720],  # 4h, 12h
-        bar_duration_minutes=240,
-        rsi_period=14
+        lookbacks_prices=[240, 720], bar_duration_minutes=240, rsi_period=14  # 4h, 12h
     )
 
     transformer = OnlineFeatureTransformer(spec)
@@ -282,14 +279,13 @@ def test_sma_not_broken():
             symbol="TEST",
             ts_ms=i * 240 * 60 * 1000,
             close=price,
-            open_price=price, high=price, low=price
+            open_price=price,
+            high=price,
+            low=price,
         )
 
     feats = transformer.update(
-        symbol="TEST",
-        ts_ms=5 * 240 * 60 * 1000,
-        close=110,
-        open_price=110, high=110, low=110
+        symbol="TEST", ts_ms=5 * 240 * 60 * 1000, close=110, open_price=110, high=110, low=110
     )
 
     all_passed = True
@@ -354,4 +350,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

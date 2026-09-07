@@ -195,9 +195,11 @@ class TelemetryEvent:
         return cls(
             event_id=UUID(data["event_id"]) if "event_id" in data else uuid4(),
             event_type=EventType(data.get("event_type", "heartbeat")),
-            timestamp=datetime.fromisoformat(data["timestamp"])
-            if "timestamp" in data
-            else datetime.utcnow(),
+            timestamp=(
+                datetime.fromisoformat(data["timestamp"])
+                if "timestamp" in data
+                else datetime.utcnow()
+            ),
             agent_id=data.get("agent_id", ""),
             run_id=data.get("run_id", ""),
             strategy_id=data.get("strategy_id", ""),
@@ -213,9 +215,7 @@ class TelemetryEvent:
         self._check_dict_for_prohibited(self.data, violations, "data")
         return violations
 
-    def _check_dict_for_prohibited(
-        self, obj: Any, violations: List[str], path: str
-    ) -> None:
+    def _check_dict_for_prohibited(self, obj: Any, violations: List[str], path: str) -> None:
         """Recursively check for prohibited fields."""
         if isinstance(obj, dict):
             for key, value in obj.items():

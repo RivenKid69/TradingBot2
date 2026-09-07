@@ -47,19 +47,21 @@ class TestPerQuantileDeepIntegration:
         stored_quantiles_np = predicted_quantiles.cpu().numpy()
 
         # Simulate retrieval during training
-        rollout_data = RolloutDataMock(
-            old_value_quantiles=torch.from_numpy(stored_quantiles_np)
-        )
+        rollout_data = RolloutDataMock(old_value_quantiles=torch.from_numpy(stored_quantiles_np))
 
         # Verify data integrity
-        assert rollout_data.old_value_quantiles is not None, \
-            "old_value_quantiles should be stored"
-        assert rollout_data.old_value_quantiles.shape == (batch_size, num_quantiles), \
-            f"Shape mismatch: {rollout_data.old_value_quantiles.shape} vs {(batch_size, num_quantiles)}"
-        assert torch.allclose(rollout_data.old_value_quantiles, predicted_quantiles), \
-            "Stored quantiles should match predicted quantiles"
+        assert rollout_data.old_value_quantiles is not None, "old_value_quantiles should be stored"
+        assert rollout_data.old_value_quantiles.shape == (
+            batch_size,
+            num_quantiles,
+        ), f"Shape mismatch: {rollout_data.old_value_quantiles.shape} vs {(batch_size, num_quantiles)}"
+        assert torch.allclose(
+            rollout_data.old_value_quantiles, predicted_quantiles
+        ), "Stored quantiles should match predicted quantiles"
 
-        print(f"✓ Rollout buffer stores old_quantiles correctly: shape={rollout_data.old_value_quantiles.shape}")
+        print(
+            f"✓ Rollout buffer stores old_quantiles correctly: shape={rollout_data.old_value_quantiles.shape}"
+        )
 
     def test_per_quantile_requires_old_quantiles(self):
         """
@@ -79,7 +81,9 @@ class TestPerQuantileDeepIntegration:
             raise AssertionError("Should have raised RuntimeError")
         except RuntimeError as e:
             assert "per_quantile" in str(e), "Error message should mention per_quantile"
-            assert "old_value_quantiles" in str(e), "Error message should mention old_value_quantiles"
+            assert "old_value_quantiles" in str(
+                e
+            ), "Error message should mention old_value_quantiles"
             print(f"✓ Correctly raises error when old_value_quantiles is None: {e}")
 
     def test_tensor_shape_compatibility(self):
@@ -101,18 +105,20 @@ class TestPerQuantileDeepIntegration:
 
         # Simulate clipping
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # Verify shapes
-        assert clipped.shape == (batch_size, num_quantiles), \
-            f"Output shape mismatch: {clipped.shape} vs {(batch_size, num_quantiles)}"
+        assert clipped.shape == (
+            batch_size,
+            num_quantiles,
+        ), f"Output shape mismatch: {clipped.shape} vs {(batch_size, num_quantiles)}"
         assert clipped.shape == old_quantiles.shape, "Output shape should match input"
         assert clipped.shape == new_quantiles.shape, "Output shape should match new quantiles"
 
-        print(f"✓ Tensor shapes compatible: old={old_quantiles.shape}, new={new_quantiles.shape}, clipped={clipped.shape}")
+        print(
+            f"✓ Tensor shapes compatible: old={old_quantiles.shape}, new={new_quantiles.shape}, clipped={clipped.shape}"
+        )
 
     def test_shape_mismatch_detection(self):
         """
@@ -125,11 +131,7 @@ class TestPerQuantileDeepIntegration:
 
         try:
             # This should fail due to shape mismatch
-            clipped = old_quantiles + torch.clamp(
-                new_quantiles - old_quantiles,
-                min=-1.0,
-                max=1.0
-            )
+            clipped = old_quantiles + torch.clamp(new_quantiles - old_quantiles, min=-1.0, max=1.0)
             raise AssertionError("Should have raised error for shape mismatch")
         except RuntimeError as e:
             # PyTorch will raise RuntimeError for incompatible shapes
@@ -142,13 +144,11 @@ class TestPerQuantileDeepIntegration:
         If quantiles become NaN, clipping should preserve NaN (or handle gracefully).
         """
         old_quantiles = torch.tensor([[1.0, 2.0, 3.0]])
-        new_quantiles = torch.tensor([[float('nan'), float('nan'), float('nan')]])
+        new_quantiles = torch.tensor([[float("nan"), float("nan"), float("nan")]])
         clip_delta = 1.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # NaN should propagate (or be handled by model's NaN handling)
@@ -164,21 +164,20 @@ class TestPerQuantileDeepIntegration:
         If quantiles become inf/-inf, clipping should handle it.
         """
         old_quantiles = torch.tensor([[1.0, 2.0, 3.0]])
-        new_quantiles = torch.tensor([[float('inf'), 2.0, float('-inf')]])
+        new_quantiles = torch.tensor([[float("inf"), 2.0, float("-inf")]])
         clip_delta = 1.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # Verify clipping bounds still enforced
         # inf - 1.0 = inf, clamped to 1.0, result = 1.0 + 1.0 = 2.0
         # -inf - 3.0 = -inf, clamped to -1.0, result = 3.0 - 1.0 = 2.0
         expected = torch.tensor([[2.0, 2.0, 2.0]])
-        assert torch.allclose(clipped, expected), \
-            f"Inf clipping failed: expected {expected}, got {clipped}"
+        assert torch.allclose(
+            clipped, expected
+        ), f"Inf clipping failed: expected {expected}, got {clipped}"
 
         print(f"Old: {old_quantiles.tolist()}")
         print(f"New (inf): {new_quantiles.tolist()}")
@@ -196,15 +195,14 @@ class TestPerQuantileDeepIntegration:
         clip_delta = 1.5
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # Verify
         expected = torch.tensor([[-3.5, 1.0, 3.5]])
-        assert torch.allclose(clipped, expected), \
-            f"Single sample failed: expected {expected}, got {clipped}"
+        assert torch.allclose(
+            clipped, expected
+        ), f"Single sample failed: expected {expected}, got {clipped}"
 
         print(f"✓ Single sample (batch_size=1) works correctly")
 
@@ -219,14 +217,13 @@ class TestPerQuantileDeepIntegration:
         clip_delta = 2.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         expected = torch.tensor([[7.0], [12.0]])
-        assert torch.allclose(clipped, expected), \
-            f"Single quantile failed: expected {expected}, got {clipped}"
+        assert torch.allclose(
+            clipped, expected
+        ), f"Single quantile failed: expected {expected}, got {clipped}"
 
         print(f"✓ Single quantile (num_quantiles=1) works correctly")
 
@@ -243,16 +240,12 @@ class TestPerQuantileDeepIntegration:
 
         # WRONG: Clip to old_mean
         clipped_wrong = old_mean + torch.clamp(
-            new_quantiles - old_mean,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_mean, min=-clip_delta, max=clip_delta
         )
 
         # CORRECT: Clip to old_quantiles
         clipped_correct = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         print("\n=== QUANTILE CRITIC: per_quantile vs per_mean ===")
@@ -263,15 +256,17 @@ class TestPerQuantileDeepIntegration:
         print(f"CORRECT (to quantiles): {clipped_correct.squeeze().tolist()}")
 
         # Verify they're different
-        assert not torch.allclose(clipped_wrong, clipped_correct), \
-            "per_quantile and per_mean should produce different results"
+        assert not torch.allclose(
+            clipped_wrong, clipped_correct
+        ), "per_quantile and per_mean should produce different results"
 
         # Verify correct version preserves variance
         wrong_var = clipped_wrong.var().item()
         correct_var = clipped_correct.var().item()
         print(f"Variance: wrong={wrong_var:.4f}, correct={correct_var:.4f}")
-        assert correct_var > 10 * wrong_var, \
-            "Correct version should have much larger variance (shape preserved)"
+        assert (
+            correct_var > 10 * wrong_var
+        ), "Correct version should have much larger variance (shape preserved)"
 
         print("✓ Quantile critic correctly uses per_quantile (not per_mean)")
 
@@ -293,9 +288,7 @@ class TestPerQuantileDeepIntegration:
         old_value_broadcast = old_value  # [batch, 1]
 
         clipped_atoms_batch = old_value_broadcast + torch.clamp(
-            atoms_broadcast - old_value_broadcast,
-            min=-clip_delta,
-            max=clip_delta
+            atoms_broadcast - old_value_broadcast, min=-clip_delta, max=clip_delta
         )  # [batch, num_atoms]
 
         print("\n=== CATEGORICAL CRITIC: per_mean clipping ===")
@@ -308,10 +301,12 @@ class TestPerQuantileDeepIntegration:
         for i in range(old_value.shape[0]):
             old_val = old_value[i, 0].item()
             sample_atoms = clipped_atoms_batch[i]
-            assert torch.all(sample_atoms >= old_val - clip_delta - 1e-5), \
-                f"Sample {i}: atoms below lower bound"
-            assert torch.all(sample_atoms <= old_val + clip_delta + 1e-5), \
-                f"Sample {i}: atoms above upper bound"
+            assert torch.all(
+                sample_atoms >= old_val - clip_delta - 1e-5
+            ), f"Sample {i}: atoms below lower bound"
+            assert torch.all(
+                sample_atoms <= old_val + clip_delta + 1e-5
+            ), f"Sample {i}: atoms above upper bound"
 
         print("✓ Categorical critic correctly uses per_mean (atoms are shared)")
 
@@ -341,9 +336,7 @@ class TestPerQuantileDeepIntegration:
 
         # Clip in raw space (CORRECT)
         clipped_raw = old_quantiles_raw + torch.clamp(
-            new_quantiles_raw - old_quantiles_raw,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles_raw - old_quantiles_raw, min=-clip_delta, max=clip_delta
         )
 
         # Convert back to normalized
@@ -362,8 +355,9 @@ class TestPerQuantileDeepIntegration:
         for i in range(old_quantiles_raw.shape[1]):
             old_raw = old_quantiles_raw[0, i].item()
             clipped_raw_val = clipped_raw[0, i].item()
-            assert abs(clipped_raw_val - old_raw) <= clip_delta + 1e-5, \
-                f"Q_{i}: clipping violated in raw space"
+            assert (
+                abs(clipped_raw_val - old_raw) <= clip_delta + 1e-5
+            ), f"Q_{i}: clipping violated in raw space"
 
         print("✓ Clipping correctly happens in raw space with normalize_returns")
 
@@ -382,10 +376,11 @@ class TestPerQuantileDeepIntegration:
             and distributional_vf_clip_mode not in (None, "disable")
         )
 
-        assert not distributional_vf_clip_enabled, \
-            "Default mode should be disabled"
+        assert not distributional_vf_clip_enabled, "Default mode should be disabled"
 
-        print(f"✓ Default distributional_vf_clip_mode is disabled (mode={distributional_vf_clip_mode})")
+        print(
+            f"✓ Default distributional_vf_clip_mode is disabled (mode={distributional_vf_clip_mode})"
+        )
 
     def test_valid_modes_accepted(self):
         """
@@ -395,8 +390,12 @@ class TestPerQuantileDeepIntegration:
 
         for mode in valid_modes:
             mode_lower = mode.lower()
-            assert mode_lower in ["disable", "mean_only", "mean_and_variance", "per_quantile"], \
-                f"Valid mode {mode} should be accepted"
+            assert mode_lower in [
+                "disable",
+                "mean_only",
+                "mean_and_variance",
+                "per_quantile",
+            ], f"Valid mode {mode} should be accepted"
 
         print(f"✓ All valid modes accepted: {valid_modes}")
 
@@ -410,24 +409,26 @@ class TestPerQuantileDeepIntegration:
         num_quantiles = 4
 
         # Different old distributions per sample
-        old_quantiles = torch.tensor([
-            [0.0, 1.0, 2.0, 3.0],
-            [10.0, 11.0, 12.0, 13.0],
-            [20.0, 21.0, 22.0, 23.0],
-        ])
+        old_quantiles = torch.tensor(
+            [
+                [0.0, 1.0, 2.0, 3.0],
+                [10.0, 11.0, 12.0, 13.0],
+                [20.0, 21.0, 22.0, 23.0],
+            ]
+        )
 
-        new_quantiles = torch.tensor([
-            [5.0, 6.0, 7.0, 8.0],
-            [5.0, 6.0, 7.0, 8.0],
-            [5.0, 6.0, 7.0, 8.0],
-        ])
+        new_quantiles = torch.tensor(
+            [
+                [5.0, 6.0, 7.0, 8.0],
+                [5.0, 6.0, 7.0, 8.0],
+                [5.0, 6.0, 7.0, 8.0],
+            ]
+        )
 
         clip_delta = 2.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         print("\n=== BATCH BROADCASTING ===")
@@ -441,8 +442,9 @@ class TestPerQuantileDeepIntegration:
             for j in range(num_quantiles):
                 old_q = old_quantiles[i, j].item()
                 clipped_q = clipped[i, j].item()
-                assert abs(clipped_q - old_q) <= clip_delta + 1e-5, \
-                    f"Sample {i}, Q_{j}: violated clip delta"
+                assert (
+                    abs(clipped_q - old_q) <= clip_delta + 1e-5
+                ), f"Sample {i}, Q_{j}: violated clip delta"
 
         # Verify results are different across samples (proves independence)
         assert not torch.allclose(clipped[0], clipped[1]), "Samples should differ"
@@ -463,14 +465,13 @@ class TestPerQuantileCoverageEdgeCases:
         clip_delta = 2.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         expected = torch.tensor([[7.0, 7.0, 7.0, 7.0, 7.0]])
-        assert torch.allclose(clipped, expected), \
-            f"Zero variance case failed: expected {expected}, got {clipped}"
+        assert torch.allclose(
+            clipped, expected
+        ), f"Zero variance case failed: expected {expected}, got {clipped}"
 
         print("✓ Zero variance distribution handled correctly")
 
@@ -483,17 +484,16 @@ class TestPerQuantileCoverageEdgeCases:
         clip_delta = 5.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # Verify all within bounds
         for i in range(old_quantiles.shape[1]):
             old_q = old_quantiles[0, i].item()
             clipped_q = clipped[0, i].item()
-            assert abs(clipped_q - old_q) <= clip_delta + 1e-5, \
-                f"Negative quantile {i} violated bounds"
+            assert (
+                abs(clipped_q - old_q) <= clip_delta + 1e-5
+            ), f"Negative quantile {i} violated bounds"
 
         print(f"Old (negative): {old_quantiles.squeeze().tolist()}")
         print(f"Clipped: {clipped.squeeze().tolist()}")
@@ -512,13 +512,13 @@ class TestPerQuantileCoverageEdgeCases:
 
         # Should be fast and memory-efficient
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         assert clipped.shape == (batch_size, num_quantiles), "Shape mismatch"
-        print(f"✓ Large batch (batch_size={batch_size}, num_quantiles={num_quantiles}) handled efficiently")
+        print(
+            f"✓ Large batch (batch_size={batch_size}, num_quantiles={num_quantiles}) handled efficiently"
+        )
 
     def test_very_small_clip_delta(self):
         """
@@ -529,15 +529,14 @@ class TestPerQuantileCoverageEdgeCases:
         clip_delta = 0.01  # Very small!
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         # Should be very close to old_quantiles
         expected = torch.tensor([[1.01, 2.01, 3.01]])
-        assert torch.allclose(clipped, expected, atol=1e-5), \
-            f"Small clip_delta failed: expected {expected}, got {clipped}"
+        assert torch.allclose(
+            clipped, expected, atol=1e-5
+        ), f"Small clip_delta failed: expected {expected}, got {clipped}"
 
         print(f"✓ Very small clip_delta (ε={clip_delta}) works correctly")
 
@@ -550,9 +549,7 @@ class TestPerQuantileCoverageEdgeCases:
         clip_delta = 3.0
 
         clipped = old_quantiles + torch.clamp(
-            new_quantiles - old_quantiles,
-            min=-clip_delta,
-            max=clip_delta
+            new_quantiles - old_quantiles, min=-clip_delta, max=clip_delta
         )
 
         print(f"Old (mixed): {old_quantiles.squeeze().tolist()}")
@@ -563,8 +560,9 @@ class TestPerQuantileCoverageEdgeCases:
         for i in range(old_quantiles.shape[1]):
             old_q = old_quantiles[0, i].item()
             clipped_q = clipped[0, i].item()
-            assert abs(clipped_q - old_q) <= clip_delta + 1e-5, \
-                f"Mixed quantile {i} violated bounds"
+            assert (
+                abs(clipped_q - old_q) <= clip_delta + 1e-5
+            ), f"Mixed quantile {i} violated bounds"
 
         print("✓ Mixed positive/negative quantiles handled correctly")
 
@@ -579,21 +577,32 @@ if __name__ == "__main__":
 
     tests = [
         # Integration tests
-        ("Rollout buffer old_quantiles storage", integration_suite.test_rollout_buffer_old_quantiles_storage),
-        ("per_quantile requires old_quantiles", integration_suite.test_per_quantile_requires_old_quantiles),
+        (
+            "Rollout buffer old_quantiles storage",
+            integration_suite.test_rollout_buffer_old_quantiles_storage,
+        ),
+        (
+            "per_quantile requires old_quantiles",
+            integration_suite.test_per_quantile_requires_old_quantiles,
+        ),
         ("Tensor shape compatibility", integration_suite.test_tensor_shape_compatibility),
         ("Shape mismatch detection", integration_suite.test_shape_mismatch_detection),
         ("Edge: all NaN quantiles", integration_suite.test_edge_case_all_nan_quantiles),
         ("Edge: inf quantiles", integration_suite.test_edge_case_inf_quantiles),
         ("Edge: single sample", integration_suite.test_edge_case_single_sample),
         ("Edge: single quantile", integration_suite.test_edge_case_single_quantile),
-        ("Quantile critic: per_quantile vs per_mean", integration_suite.test_per_quantile_vs_per_mean_quantile_critic),
+        (
+            "Quantile critic: per_quantile vs per_mean",
+            integration_suite.test_per_quantile_vs_per_mean_quantile_critic,
+        ),
         ("Categorical critic: per_mean", integration_suite.test_categorical_critic_uses_per_mean),
-        ("normalize_returns: raw space clipping", integration_suite.test_normalize_returns_raw_space_clipping),
+        (
+            "normalize_returns: raw space clipping",
+            integration_suite.test_normalize_returns_raw_space_clipping,
+        ),
         ("Default mode is disabled", integration_suite.test_default_mode_is_disabled),
         ("Valid modes accepted", integration_suite.test_valid_modes_accepted),
         ("Batch dimension broadcasting", integration_suite.test_batch_dimension_broadcasting),
-
         # Edge cases
         ("Edge: zero variance distribution", edge_case_suite.test_zero_variance_distribution),
         ("Edge: negative quantiles", edge_case_suite.test_negative_quantiles),
@@ -621,6 +630,7 @@ if __name__ == "__main__":
             print(f"\n✗ ERROR: {name}")
             print(f"  Error: {e}")
             import traceback
+
             traceback.print_exc()
             failed += 1
 

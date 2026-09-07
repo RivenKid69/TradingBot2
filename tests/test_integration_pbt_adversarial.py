@@ -5,6 +5,7 @@ Tests the full pipeline integration.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 from unittest.mock import MagicMock
 
@@ -68,7 +69,7 @@ class TestPBTAdversarialIntegration:
         state = torch.randn(4, 10)
 
         def loss_fn(s):
-            return (s ** 2).sum()
+            return (s**2).sum()
 
         delta = perturbation_gen.generate_perturbation(state, loss_fn)
 

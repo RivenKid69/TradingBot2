@@ -390,9 +390,7 @@ class TestEvidenceTypes:
         exporter = EvidencePackExporter(config)
 
         now = datetime.utcnow()
-        items = await exporter._collect_telemetry_raw(
-            now - timedelta(days=1), now
-        )
+        items = await exporter._collect_telemetry_raw(now - timedelta(days=1), now)
 
         # Should return empty when include_sensitive is False
         assert len(items) == 0

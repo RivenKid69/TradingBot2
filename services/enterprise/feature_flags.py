@@ -473,10 +473,7 @@ class FeatureFlagService:
 
     def get_client_features(self, client_id: str) -> dict[str, bool]:
         """Get all feature states for a client."""
-        return {
-            flag_id: self.is_enabled(flag_id, client_id)
-            for flag_id in self._flags.keys()
-        }
+        return {flag_id: self.is_enabled(flag_id, client_id) for flag_id in self._flags.keys()}
 
     def get_evaluation_stats(
         self,

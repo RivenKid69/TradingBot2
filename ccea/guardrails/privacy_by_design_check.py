@@ -55,6 +55,7 @@ try:
         PII_FIELD_PATTERNS,
         ORDER_FIELD_PATTERNS,
     )
+
     HAS_INVENTORY = True
 except ImportError:
     HAS_INVENTORY = False
@@ -67,16 +68,19 @@ logger = logging.getLogger(__name__)
 # Constants
 # ============================================================================
 
+
 class CheckSeverity(str, Enum):
     """Severity of check violations."""
-    CRITICAL = "critical"    # Must fix, blocks CI
-    HIGH = "high"            # Should fix, blocks CI
-    MEDIUM = "medium"        # Should fix, warning
-    LOW = "low"              # Informational
+
+    CRITICAL = "critical"  # Must fix, blocks CI
+    HIGH = "high"  # Should fix, blocks CI
+    MEDIUM = "medium"  # Should fix, warning
+    LOW = "low"  # Informational
 
 
 class CheckResult(str, Enum):
     """Result of the privacy check."""
+
     PASS = "pass"
     FAIL = "fail"
     WARN = "warn"
@@ -87,76 +91,95 @@ class CheckResult(str, Enum):
 # Telemetry field patterns
 TELEMETRY_FIELD_PATTERNS: Final[List[Tuple[re.Pattern, str]]] = [
     # Python dictionary keys that look like telemetry
-    (re.compile(r'["\'](\w+)["\']\s*:\s*(?:metrics|telemetry|event)', re.IGNORECASE),
-     "Telemetry field in dict"),
+    (
+        re.compile(r'["\'](\w+)["\']\s*:\s*(?:metrics|telemetry|event)', re.IGNORECASE),
+        "Telemetry field in dict",
+    ),
     # Dataclass or typed dict field
-    (re.compile(r'(\w+)\s*:\s*(?:int|float|str|bool|datetime).*#.*telemetry', re.IGNORECASE),
-     "Telemetry field annotation"),
+    (
+        re.compile(r"(\w+)\s*:\s*(?:int|float|str|bool|datetime).*#.*telemetry", re.IGNORECASE),
+        "Telemetry field annotation",
+    ),
     # Emit/send telemetry calls
-    (re.compile(r'\.(?:emit|send|log)_(?:telemetry|metric|event)\s*\(\s*["\'](\w+)["\']', re.IGNORECASE),
-     "Telemetry emit call"),
+    (
+        re.compile(
+            r'\.(?:emit|send|log)_(?:telemetry|metric|event)\s*\(\s*["\'](\w+)["\']', re.IGNORECASE
+        ),
+        "Telemetry emit call",
+    ),
 ]
 
 # Data store patterns
 DATA_STORE_PATTERNS: Final[List[Tuple[re.Pattern, str]]] = [
     # SQL CREATE TABLE
-    (re.compile(r'CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?', re.IGNORECASE),
-     "SQL CREATE TABLE"),
+    (
+        re.compile(r'CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?', re.IGNORECASE),
+        "SQL CREATE TABLE",
+    ),
     # SQLAlchemy model
-    (re.compile(r'__tablename__\s*=\s*["\'](\w+)["\']'),
-     "SQLAlchemy table"),
+    (re.compile(r'__tablename__\s*=\s*["\'](\w+)["\']'), "SQLAlchemy table"),
     # Redis/cache keys
-    (re.compile(r'(?:redis|cache)\.(?:set|get|hset|hget)\s*\(\s*["\'](\w+)', re.IGNORECASE),
-     "Cache key"),
+    (
+        re.compile(r'(?:redis|cache)\.(?:set|get|hset|hget)\s*\(\s*["\'](\w+)', re.IGNORECASE),
+        "Cache key",
+    ),
     # S3 bucket
-    (re.compile(r'bucket\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE),
-     "S3 bucket"),
+    (re.compile(r'bucket\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE), "S3 bucket"),
     # Collection/table name
-    (re.compile(r'collection\s*=\s*["\'](\w+)["\']', re.IGNORECASE),
-     "Collection name"),
+    (re.compile(r'collection\s*=\s*["\'](\w+)["\']', re.IGNORECASE), "Collection name"),
 ]
 
 # Log stream patterns
 LOG_STREAM_PATTERNS: Final[List[Tuple[re.Pattern, str]]] = [
     # Python logging
-    (re.compile(r'logging\.getLogger\s*\(\s*["\']([^"\']+)["\']'),
-     "Python logger"),
+    (re.compile(r'logging\.getLogger\s*\(\s*["\']([^"\']+)["\']'), "Python logger"),
     # Structured logging
-    (re.compile(r'structlog\.get_logger\s*\(\s*["\']([^"\']+)["\']'),
-     "Structlog logger"),
+    (re.compile(r'structlog\.get_logger\s*\(\s*["\']([^"\']+)["\']'), "Structlog logger"),
     # Log stream name
-    (re.compile(r'log_stream\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE),
-     "Log stream"),
+    (re.compile(r'log_stream\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE), "Log stream"),
     # CloudWatch log group
-    (re.compile(r'log_group\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE),
-     "CloudWatch log group"),
+    (re.compile(r'log_group\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE), "CloudWatch log group"),
 ]
 
 # Files to skip
 SKIP_PATTERNS: Final[List[re.Pattern]] = [
-    re.compile(r'test[_/]'),           # Test files
-    re.compile(r'_test\.py$'),         # Test files
-    re.compile(r'conftest\.py$'),      # Pytest config
-    re.compile(r'__pycache__'),        # Cache
-    re.compile(r'\.pyc$'),             # Compiled
-    re.compile(r'migrations/'),        # DB migrations
-    re.compile(r'\.git/'),             # Git
-    re.compile(r'node_modules/'),      # Node modules
-    re.compile(r'\.venv/'),            # Virtual env
-    re.compile(r'venv/'),              # Virtual env
-    re.compile(r'dist/'),              # Distribution
-    re.compile(r'build/'),             # Build
-    re.compile(r'\.egg-info/'),        # Egg info
+    re.compile(r"test[_/]"),  # Test files
+    re.compile(r"_test\.py$"),  # Test files
+    re.compile(r"conftest\.py$"),  # Pytest config
+    re.compile(r"__pycache__"),  # Cache
+    re.compile(r"\.pyc$"),  # Compiled
+    re.compile(r"migrations/"),  # DB migrations
+    re.compile(r"\.git/"),  # Git
+    re.compile(r"node_modules/"),  # Node modules
+    re.compile(r"\.venv/"),  # Virtual env
+    re.compile(r"venv/"),  # Virtual env
+    re.compile(r"dist/"),  # Distribution
+    re.compile(r"build/"),  # Build
+    re.compile(r"\.egg-info/"),  # Egg info
 ]
 
 # Known safe patterns (pre-registered in inventory)
 KNOWN_SAFE_PATTERNS: Final[Set[str]] = {
     # Core telemetry fields
-    "timestamp", "event_time", "count", "sum", "avg", "min", "max",
-    "cpu_percent", "memory_percent", "latency_ms", "error_count",
-    "strategy_id", "workspace_id", "agent_id", "run_id",
+    "timestamp",
+    "event_time",
+    "count",
+    "sum",
+    "avg",
+    "min",
+    "max",
+    "cpu_percent",
+    "memory_percent",
+    "latency_ms",
+    "error_count",
+    "strategy_id",
+    "workspace_id",
+    "agent_id",
+    "run_id",
     # System logs
-    "__main__", "__name__", "root",
+    "__main__",
+    "__name__",
+    "root",
 }
 
 
@@ -164,15 +187,17 @@ KNOWN_SAFE_PATTERNS: Final[Set[str]] = {
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class DataDeclaration:
     """A detected data declaration in source code."""
-    name: str                          # Field/store name
-    declaration_type: str              # telemetry_field, data_store, log_stream
-    file_path: str                     # Source file
-    line_number: int                   # Line number
-    context: str                       # Code context
-    pattern_matched: str               # Which pattern detected it
+
+    name: str  # Field/store name
+    declaration_type: str  # telemetry_field, data_store, log_stream
+    file_path: str  # Source file
+    line_number: int  # Line number
+    context: str  # Code context
+    pattern_matched: str  # Which pattern detected it
     auto_detected: Dict[str, bool] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -190,6 +215,7 @@ class DataDeclaration:
 @dataclass
 class CheckViolation:
     """A privacy check violation."""
+
     declaration: DataDeclaration
     severity: CheckSeverity
     message: str
@@ -209,6 +235,7 @@ class CheckViolation:
 @dataclass
 class PrivacyCheckReport:
     """Report from privacy-by-design check."""
+
     check_id: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     result: CheckResult = CheckResult.PASS
@@ -225,8 +252,7 @@ class PrivacyCheckReport:
     def should_fail_ci(self) -> bool:
         """Check if this report should fail CI."""
         return any(
-            v.severity in (CheckSeverity.CRITICAL, CheckSeverity.HIGH)
-            for v in self.violations
+            v.severity in (CheckSeverity.CRITICAL, CheckSeverity.HIGH) for v in self.violations
         )
 
     @property
@@ -275,6 +301,7 @@ class PrivacyCheckReport:
 # Scanner
 # ============================================================================
 
+
 class DataDeclarationScanner:
     """
     Scans source files for data declarations.
@@ -297,7 +324,12 @@ class DataDeclarationScanner:
             include_patterns: File glob patterns to include
             exclude_patterns: Regex patterns to exclude
         """
-        self._include_patterns = include_patterns or ["**/*.py", "**/*.sql", "**/*.yaml", "**/*.yml"]
+        self._include_patterns = include_patterns or [
+            "**/*.py",
+            "**/*.sql",
+            "**/*.yaml",
+            "**/*.yml",
+        ]
         self._exclude_patterns = exclude_patterns or SKIP_PATTERNS
 
     def scan_file(self, file_path: Path) -> List[DataDeclaration]:
@@ -333,15 +365,17 @@ class DataDeclarationScanner:
                 for match in matches:
                     name = match if isinstance(match, str) else match[0]
                     if name and name not in KNOWN_SAFE_PATTERNS:
-                        declarations.append(DataDeclaration(
-                            name=name,
-                            declaration_type="telemetry_field",
-                            file_path=str(file_path),
-                            line_number=i,
-                            context=line.strip(),
-                            pattern_matched=pattern_name,
-                            auto_detected=self._auto_detect(name),
-                        ))
+                        declarations.append(
+                            DataDeclaration(
+                                name=name,
+                                declaration_type="telemetry_field",
+                                file_path=str(file_path),
+                                line_number=i,
+                                context=line.strip(),
+                                pattern_matched=pattern_name,
+                                auto_detected=self._auto_detect(name),
+                            )
+                        )
 
         # Scan for data stores
         for pattern, pattern_name in DATA_STORE_PATTERNS:
@@ -350,15 +384,17 @@ class DataDeclarationScanner:
                 for match in matches:
                     name = match if isinstance(match, str) else match[0]
                     if name and name not in KNOWN_SAFE_PATTERNS:
-                        declarations.append(DataDeclaration(
-                            name=name,
-                            declaration_type="data_store",
-                            file_path=str(file_path),
-                            line_number=i,
-                            context=line.strip(),
-                            pattern_matched=pattern_name,
-                            auto_detected=self._auto_detect(name),
-                        ))
+                        declarations.append(
+                            DataDeclaration(
+                                name=name,
+                                declaration_type="data_store",
+                                file_path=str(file_path),
+                                line_number=i,
+                                context=line.strip(),
+                                pattern_matched=pattern_name,
+                                auto_detected=self._auto_detect(name),
+                            )
+                        )
 
         # Scan for log streams
         for pattern, pattern_name in LOG_STREAM_PATTERNS:
@@ -367,15 +403,17 @@ class DataDeclarationScanner:
                 for match in matches:
                     name = match if isinstance(match, str) else match[0]
                     if name and name not in KNOWN_SAFE_PATTERNS:
-                        declarations.append(DataDeclaration(
-                            name=name,
-                            declaration_type="log_stream",
-                            file_path=str(file_path),
-                            line_number=i,
-                            context=line.strip(),
-                            pattern_matched=pattern_name,
-                            auto_detected=self._auto_detect(name),
-                        ))
+                        declarations.append(
+                            DataDeclaration(
+                                name=name,
+                                declaration_type="log_stream",
+                                file_path=str(file_path),
+                                line_number=i,
+                                context=line.strip(),
+                                pattern_matched=pattern_name,
+                                auto_detected=self._auto_detect(name),
+                            )
+                        )
 
         return declarations
 
@@ -478,6 +516,7 @@ class DataDeclarationScanner:
 # Privacy Check
 # ============================================================================
 
+
 class PrivacyByDesignCheck:
     """
     CI Privacy-by-Design Check.
@@ -533,6 +572,7 @@ class PrivacyByDesignCheck:
             PrivacyCheckReport
         """
         import time
+
         start_time = time.time()
 
         report = PrivacyCheckReport(
@@ -576,6 +616,7 @@ class PrivacyByDesignCheck:
             PrivacyCheckReport
         """
         import time
+
         start_time = time.time()
 
         report = PrivacyCheckReport(
@@ -628,9 +669,7 @@ class PrivacyByDesignCheck:
                 check=True,
             )
             changed_files = [
-                repo_path / f.strip()
-                for f in result.stdout.strip().split("\n")
-                if f.strip()
+                repo_path / f.strip() for f in result.stdout.strip().split("\n") if f.strip()
             ]
             return self.run_on_files(changed_files)
         except subprocess.CalledProcessError as e:
@@ -656,60 +695,71 @@ class PrivacyByDesignCheck:
                 report.declarations_registered += 1
 
                 if not result.is_compliant and self._fail_on_non_compliant:
-                    report.violations.append(CheckViolation(
-                        declaration=decl,
-                        severity=CheckSeverity.HIGH,
-                        message=f"Field '{decl.name}' is registered but non-compliant: "
-                                f"{', '.join(result.violations)}",
-                        inventory_result=result.to_dict(),
-                        remediation="Update inventory entry with missing GDPR fields",
-                    ))
+                    report.violations.append(
+                        CheckViolation(
+                            declaration=decl,
+                            severity=CheckSeverity.HIGH,
+                            message=f"Field '{decl.name}' is registered but non-compliant: "
+                            f"{', '.join(result.violations)}",
+                            inventory_result=result.to_dict(),
+                            remediation="Update inventory entry with missing GDPR fields",
+                        )
+                    )
             else:
                 report.declarations_unregistered += 1
 
                 if self._fail_on_unregistered:
-                    severity = CheckSeverity.CRITICAL if (
-                        decl.auto_detected.get("credential") or
-                        decl.auto_detected.get("pii")
-                    ) else CheckSeverity.HIGH
+                    severity = (
+                        CheckSeverity.CRITICAL
+                        if (decl.auto_detected.get("credential") or decl.auto_detected.get("pii"))
+                        else CheckSeverity.HIGH
+                    )
 
-                    report.violations.append(CheckViolation(
-                        declaration=decl,
-                        severity=severity,
-                        message=f"Field '{decl.name}' ({decl.declaration_type}) is not "
-                                f"registered in data inventory",
-                        inventory_result=result.to_dict() if result else None,
-                        remediation=(
-                            f"Register '{decl.name}' in data inventory with: "
-                            "classification, retention, residency, redaction requirements"
-                        ),
-                    ))
+                    report.violations.append(
+                        CheckViolation(
+                            declaration=decl,
+                            severity=severity,
+                            message=f"Field '{decl.name}' ({decl.declaration_type}) is not "
+                            f"registered in data inventory",
+                            inventory_result=result.to_dict() if result else None,
+                            remediation=(
+                                f"Register '{decl.name}' in data inventory with: "
+                                "classification, retention, residency, redaction requirements"
+                            ),
+                        )
+                    )
         else:
             # No registry - check based on auto-detection only
             report.declarations_unregistered += 1
 
             if self._fail_on_unregistered:
                 if decl.auto_detected.get("credential"):
-                    report.violations.append(CheckViolation(
-                        declaration=decl,
-                        severity=CheckSeverity.CRITICAL,
-                        message=f"Field '{decl.name}' appears to be a credential and must be registered",
-                        remediation="Register in data inventory with NEVER_TRANSMIT redaction",
-                    ))
+                    report.violations.append(
+                        CheckViolation(
+                            declaration=decl,
+                            severity=CheckSeverity.CRITICAL,
+                            message=f"Field '{decl.name}' appears to be a credential and must be registered",
+                            remediation="Register in data inventory with NEVER_TRANSMIT redaction",
+                        )
+                    )
                 elif decl.auto_detected.get("pii"):
-                    report.violations.append(CheckViolation(
-                        declaration=decl,
-                        severity=CheckSeverity.HIGH,
-                        message=f"Field '{decl.name}' appears to be PII and must be registered",
-                        remediation="Register in data inventory with MANDATORY redaction",
-                    ))
+                    report.violations.append(
+                        CheckViolation(
+                            declaration=decl,
+                            severity=CheckSeverity.HIGH,
+                            message=f"Field '{decl.name}' appears to be PII and must be registered",
+                            remediation="Register in data inventory with MANDATORY redaction",
+                        )
+                    )
                 elif decl.auto_detected.get("order_field"):
-                    report.violations.append(CheckViolation(
-                        declaration=decl,
-                        severity=CheckSeverity.HIGH,
-                        message=f"Field '{decl.name}' appears to be order-related and must be registered",
-                        remediation="Register in data inventory with RAW_ORDER_EVENTS min_telemetry_level",
-                    ))
+                    report.violations.append(
+                        CheckViolation(
+                            declaration=decl,
+                            severity=CheckSeverity.HIGH,
+                            message=f"Field '{decl.name}' appears to be order-related and must be registered",
+                            remediation="Register in data inventory with RAW_ORDER_EVENTS min_telemetry_level",
+                        )
+                    )
 
         # Warnings for auto-detected issues even if registered
         if self._warn_on_auto_detected:
@@ -720,8 +770,7 @@ class PrivacyByDesignCheck:
                 )
             if decl.auto_detected.get("pii"):
                 report.warnings.append(
-                    f"{decl.file_path}:{decl.line_number} - "
-                    f"'{decl.name}' appears to be PII"
+                    f"{decl.file_path}:{decl.line_number} - " f"'{decl.name}' appears to be PII"
                 )
             if decl.auto_detected.get("order_field"):
                 report.warnings.append(
@@ -733,6 +782,7 @@ class PrivacyByDesignCheck:
 # ============================================================================
 # CLI
 # ============================================================================
+
 
 def format_report(report: PrivacyCheckReport, verbose: bool = False) -> str:
     """Format report for CLI output."""
@@ -804,9 +854,7 @@ def main():
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="GDPR Phase 8: Privacy-by-Design CI Check"
-    )
+    parser = argparse.ArgumentParser(description="GDPR Phase 8: Privacy-by-Design CI Check")
     parser.add_argument(
         "path",
         nargs="?",

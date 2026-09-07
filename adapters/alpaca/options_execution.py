@@ -61,29 +61,33 @@ OPTIONS_CONTRACT_MULTIPLIER = 100
 # Option Enums
 # =============================================================================
 
+
 class OptionType(str, Enum):
     """Option type."""
+
     CALL = "call"
     PUT = "put"
 
 
 class OptionStrategy(str, Enum):
     """Pre-defined option strategies."""
+
     SINGLE = "single"
     COVERED_CALL = "covered_call"
     PROTECTIVE_PUT = "protective_put"
-    VERTICAL_SPREAD = "vertical_spread"      # Bull/Bear call/put spreads
-    CALENDAR_SPREAD = "calendar_spread"       # Same strike, different expiration
-    DIAGONAL_SPREAD = "diagonal_spread"       # Different strike and expiration
-    STRADDLE = "straddle"                     # Same strike call + put
-    STRANGLE = "strangle"                     # Different strike call + put
-    IRON_CONDOR = "iron_condor"               # 4-leg neutral strategy
-    BUTTERFLY = "butterfly"                   # 3-strike spread
-    COLLAR = "collar"                         # Stock + put + short call
+    VERTICAL_SPREAD = "vertical_spread"  # Bull/Bear call/put spreads
+    CALENDAR_SPREAD = "calendar_spread"  # Same strike, different expiration
+    DIAGONAL_SPREAD = "diagonal_spread"  # Different strike and expiration
+    STRADDLE = "straddle"  # Same strike call + put
+    STRANGLE = "strangle"  # Different strike call + put
+    IRON_CONDOR = "iron_condor"  # 4-leg neutral strategy
+    BUTTERFLY = "butterfly"  # 3-strike spread
+    COLLAR = "collar"  # Stock + put + short call
 
 
 class OptionOrderType(str, Enum):
     """Option-specific order types."""
+
     MARKET = "market"
     LIMIT = "limit"
     STOP = "stop"
@@ -93,6 +97,7 @@ class OptionOrderType(str, Enum):
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class OptionContract:
@@ -107,6 +112,7 @@ class OptionContract:
         expiration_date: Expiration date
         multiplier: Contract multiplier (usually 100)
     """
+
     symbol: str
     occ_symbol: str
     option_type: OptionType
@@ -132,9 +138,7 @@ class OptionContract:
         if isinstance(self.option_type, str):
             self.option_type = OptionType(self.option_type.lower())
         if isinstance(self.expiration_date, str):
-            self.expiration_date = datetime.strptime(
-                self.expiration_date, "%Y-%m-%d"
-            ).date()
+            self.expiration_date = datetime.strptime(self.expiration_date, "%Y-%m-%d").date()
 
     @property
     def is_call(self) -> bool:
@@ -174,7 +178,7 @@ class OptionContract:
         occ = occ_symbol.replace(" ", "")
 
         # Find where the date starts (first digit after symbol)
-        match = re.match(r'^([A-Z]+)(\d{6})([CP])(\d{8})$', occ)
+        match = re.match(r"^([A-Z]+)(\d{6})([CP])(\d{8})$", occ)
         if not match:
             raise ValueError(f"Invalid OCC symbol format: {occ_symbol}")
 
@@ -210,6 +214,7 @@ class OptionLeg:
 
     For multi-leg strategies, multiple legs are combined.
     """
+
     contract: OptionContract
     side: Side
     qty: int
@@ -227,6 +232,7 @@ class OptionLeg:
 @dataclass
 class OptionOrderConfig:
     """Configuration for an options order."""
+
     # Primary leg
     symbol: str
     option_type: OptionType
@@ -283,6 +289,7 @@ class OptionOrderConfig:
 @dataclass
 class OptionOrderResult:
     """Result of options order submission."""
+
     success: bool
     order_id: Optional[str] = None
     client_order_id: Optional[str] = None
@@ -303,6 +310,7 @@ class OptionChain:
 
     Groups option contracts by expiration and strike.
     """
+
     symbol: str
     contracts: List[OptionContract] = field(default_factory=list)
     last_updated: Optional[datetime] = None
@@ -341,9 +349,11 @@ class OptionChain:
     ) -> Optional[OptionContract]:
         """Find specific contract by strike, expiration, and type."""
         for c in self.contracts:
-            if (c.strike_price == strike and
-                c.expiration_date == expiration and
-                c.option_type == option_type):
+            if (
+                c.strike_price == strike
+                and c.expiration_date == expiration
+                and c.option_type == option_type
+            ):
                 return c
         return None
 
@@ -358,6 +368,7 @@ class OptionChain:
 # =============================================================================
 # Options Execution Adapter
 # =============================================================================
+
 
 class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
     """
@@ -393,9 +404,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
             try:
                 from alpaca.trading.client import TradingClient
             except ImportError:
-                raise ImportError(
-                    "Alpaca SDK not installed. Install with: pip install alpaca-py"
-                )
+                raise ImportError("Alpaca SDK not installed. Install with: pip install alpaca-py")
 
             api_key = self._config.get("api_key")
             api_secret = self._config.get("api_secret")
@@ -454,8 +463,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
 
             # Placeholder: Return empty chain if options API not available
             logger.warning(
-                f"Options chain retrieval for {symbol} - "
-                "Alpaca options API integration pending"
+                f"Options chain retrieval for {symbol} - " "Alpaca options API integration pending"
             )
 
         except Exception as e:
@@ -526,6 +534,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
 
             if config.order_type == OptionOrderType.MARKET:
                 from alpaca.trading.requests import MarketOrderRequest
+
                 request = MarketOrderRequest(
                     symbol=occ_symbol,
                     qty=config.qty,
@@ -535,6 +544,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
                 )
             else:  # LIMIT
                 from alpaca.trading.requests import LimitOrderRequest
+
                 request = LimitOrderRequest(
                     symbol=occ_symbol,
                     qty=config.qty,
@@ -552,8 +562,9 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
                 client_order_id=str(alpaca_order.client_order_id),
                 status=str(alpaca_order.status.value),
                 filled_qty=int(alpaca_order.filled_qty or 0),
-                filled_price=float(alpaca_order.filled_avg_price)
-                if alpaca_order.filled_avg_price else None,
+                filled_price=(
+                    float(alpaca_order.filled_avg_price) if alpaca_order.filled_avg_price else None
+                ),
                 fee=fee,
                 raw_response={"id": str(alpaca_order.id), "occ_symbol": occ_symbol},
             )
@@ -778,18 +789,20 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
                 if len(symbol) > 10 and symbol[-9:-8] in ("C", "P"):
                     try:
                         contract = OptionContract.from_occ_symbol(symbol)
-                        option_positions.append({
-                            "occ_symbol": symbol,
-                            "underlying": contract.symbol,
-                            "option_type": contract.option_type.value,
-                            "strike": contract.strike_price,
-                            "expiration": str(contract.expiration_date),
-                            "qty": int(p.qty),
-                            "market_value": float(p.market_value),
-                            "cost_basis": float(p.cost_basis),
-                            "unrealized_pl": float(p.unrealized_pl),
-                            "current_price": float(p.current_price),
-                        })
+                        option_positions.append(
+                            {
+                                "occ_symbol": symbol,
+                                "underlying": contract.symbol,
+                                "option_type": contract.option_type.value,
+                                "strike": contract.strike_price,
+                                "expiration": str(contract.expiration_date),
+                                "qty": int(p.qty),
+                                "market_value": float(p.market_value),
+                                "cost_basis": float(p.cost_basis),
+                                "unrealized_pl": float(p.unrealized_pl),
+                                "current_price": float(p.current_price),
+                            }
+                        )
                     except ValueError:
                         # Not a valid OCC symbol
                         pass
@@ -908,11 +921,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
             import time
 
             side = Side.BUY if str(alpaca_order.side) == "buy" else Side.SELL
-            order_type = (
-                OrderType.MARKET
-                if str(alpaca_order.type) == "market"
-                else OrderType.LIMIT
-            )
+            order_type = OrderType.MARKET if str(alpaca_order.type) == "market" else OrderType.LIMIT
 
             status_map = {
                 "new": ExecStatus.NEW,
@@ -969,23 +978,21 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
                 from core_models import TimeInForce
 
                 side = Side.BUY if str(o.side) == "buy" else Side.SELL
-                order_type = (
-                    OrderType.MARKET
-                    if str(o.type) == "market"
-                    else OrderType.LIMIT
-                )
+                order_type = OrderType.MARKET if str(o.type) == "market" else OrderType.LIMIT
 
-                orders.append(Order(
-                    ts=int(o.created_at.timestamp() * 1000),
-                    symbol=o.symbol,
-                    side=side,
-                    order_type=order_type,
-                    quantity=Decimal(str(o.qty)),
-                    price=Decimal(str(o.limit_price)) if o.limit_price else None,
-                    time_in_force=TimeInForce.GTC,
-                    client_order_id=str(o.client_order_id),
-                    meta={"alpaca_id": str(o.id)},
-                ))
+                orders.append(
+                    Order(
+                        ts=int(o.created_at.timestamp() * 1000),
+                        symbol=o.symbol,
+                        side=side,
+                        order_type=order_type,
+                        quantity=Decimal(str(o.qty)),
+                        price=Decimal(str(o.limit_price)) if o.limit_price else None,
+                        time_in_force=TimeInForce.GTC,
+                        client_order_id=str(o.client_order_id),
+                        meta={"alpaca_id": str(o.id)},
+                    )
+                )
 
             return orders
 
@@ -1034,6 +1041,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
         except Exception as e:
             logger.error(f"Failed to get account info: {e}")
             from adapters.models import AccountInfo
+
             return AccountInfo(
                 vendor=self._vendor,
                 raw_data={"error": str(e)},
@@ -1043,6 +1051,7 @@ class AlpacaOptionsExecutionAdapter(OrderExecutionAdapter):
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_options_adapter(
     config: Optional[Mapping[str, Any]] = None,

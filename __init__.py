@@ -21,11 +21,13 @@ try:
         POVExecutor,
         MidOffsetLimitExecutor,
     )
+
     try:
         from .latency import LatencyModel
     except ModuleNotFoundError:  # pragma: no cover - optional dependency
         LatencyModel = None  # type: ignore[assignment]
     from .risk import RiskManager, RiskConfig, RiskEvent
+
     try:
         from .sim_logging import LogWriter, LogConfig
     except Exception:  # pragma: no cover - optional dependency

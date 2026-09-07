@@ -47,9 +47,7 @@ def _check_schema_and_order(df: pd.DataFrame) -> None:
     cols = list(df.columns)
     need = REQUIRED_PREFIX
     if len(cols) < len(need):
-        _fail(
-            f"Columns too few: have={len(cols)}, need at least {len(need)}; cols={cols}"
-        )
+        _fail(f"Columns too few: have={len(cols)}, need at least {len(need)}; cols={cols}")
     # порядок первых N должен совпадать точь-в-точь
     if cols[: len(need)] != need:
         _fail(f"Prefix/order mismatch.\nGot:   {cols[:len(need)]}\nWant:  {need}")
@@ -60,9 +58,9 @@ def _check_types_and_ranges(df: pd.DataFrame) -> None:
     if not np.issubdtype(df["timestamp"].dtype, np.integer):
         _fail(f"'timestamp' must be integer seconds, got dtype={df['timestamp'].dtype}")
     # symbol — строковый
-    if not pd.api.types.is_object_dtype(
+    if not pd.api.types.is_object_dtype(df["symbol"].dtype) and not pd.api.types.is_string_dtype(
         df["symbol"].dtype
-    ) and not pd.api.types.is_string_dtype(df["symbol"].dtype):
+    ):
         _fail(f"'symbol' must be string dtype, got dtype={df['symbol'].dtype}")
     # Числовые колонки и диапазоны
     for c in NUMERIC_KEY_COLS:
@@ -103,9 +101,7 @@ def _check_for_nulls(df: pd.DataFrame) -> None:
 
 
 def _check_ohlc(df: pd.DataFrame) -> None:
-    bad_high = df["high"] < df[["open", "close", "low"]].max(
-        axis=1
-    )  # high ≥ {open,close,low}
+    bad_high = df["high"] < df[["open", "close", "low"]].max(axis=1)  # high ≥ {open,close,low}
     bad_low = df["low"] > df[["open", "close"]].min(axis=1)  # low ≤ {open,close}
     if bad_high.any():
         idx = int(bad_high.idxmax())
@@ -128,7 +124,9 @@ def _check_sorted_unique_ts(df: pd.DataFrame) -> None:
         )
 
 
-def _check_ts_continuity(df: pd.DataFrame, step_sec: int = 14400) -> None:  # Changed from 3600 (1h) to 14400 (4h)
+def _check_ts_continuity(
+    df: pd.DataFrame, step_sec: int = 14400
+) -> None:  # Changed from 3600 (1h) to 14400 (4h)
     ts = df["timestamp"].to_numpy()
     diffs = ts[1:] - ts[:-1]
     if not (np.all(diffs == step_sec)):
@@ -144,10 +142,14 @@ def _check_utc_alignment(df: pd.DataFrame) -> None:
     mis = ts % 14400  # Changed from 3600 (1h) to 14400 (4h) for 4-hour alignment
     if (mis != 0).any():
         bad_idx = int(np.where(mis != 0)[0][0])
-        _fail(f"UTC alignment failed at index {bad_idx}: ts%14400={int(mis[bad_idx])}")  # Updated error message
+        _fail(
+            f"UTC alignment failed at index {bad_idx}: ts%14400={int(mis[bad_idx])}"
+        )  # Updated error message
 
 
-def _check_freshness(df: pd.DataFrame, max_age_sec: int = 14400) -> None:  # Changed from 3600 (1h) to 14400 (4h)
+def _check_freshness(
+    df: pd.DataFrame, max_age_sec: int = 14400
+) -> None:  # Changed from 3600 (1h) to 14400 (4h)
     if len(df) == 0:
         _fail("Empty dataframe")
     last_ts = int(df["timestamp"].iloc[-1])

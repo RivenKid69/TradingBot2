@@ -9,8 +9,10 @@ Tests cover:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
+
 gymnasium = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -55,14 +57,14 @@ class TestTwinCriticsIntegration:
     def test_twin_critics_training_quantile(self, env):
         """Test that PPO can train with twin critics enabled (quantile mode)."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'huber_kappa': 1.0,
-                'use_twin_critics': True,  # Enable twin critics
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "huber_kappa": 1.0,
+                "use_twin_critics": True,  # Enable twin critics
+            },
         }
 
         model = DistributionalPPO(
@@ -100,13 +102,13 @@ class TestTwinCriticsIntegration:
     def test_twin_critics_training_categorical(self, env):
         """Test that PPO can train with twin critics enabled (categorical mode)."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'num_atoms': 21,
-            'critic': {
-                'distributional': False,
-                'use_twin_critics': True,  # Enable twin critics
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "num_atoms": 21,
+            "critic": {
+                "distributional": False,
+                "use_twin_critics": True,  # Enable twin critics
+            },
         }
 
         model = DistributionalPPO(
@@ -144,23 +146,23 @@ class TestTwinCriticsIntegration:
     def test_twin_critics_vs_single_critic(self, env):
         """Compare training with and without twin critics."""
         arch_params_single = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': False,  # Single critic
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": False,  # Single critic
+            },
         }
 
         arch_params_twin = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,  # Twin critics
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,  # Twin critics
+            },
         }
 
         # Train single critic model
@@ -205,20 +207,20 @@ class TestTwinCriticsIntegration:
     def test_twin_critics_with_vgs(self, env):
         """Test Twin Critics compatibility with Variance Gradient Scaling."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         vgs_config = {
-            'enabled': True,
-            'beta': 0.99,
-            'alpha': 0.1,
-            'warmup_steps': 10,
+            "enabled": True,
+            "beta": 0.99,
+            "alpha": 0.1,
+            "warmup_steps": 10,
         }
 
         model = DistributionalPPO(
@@ -238,18 +240,18 @@ class TestTwinCriticsIntegration:
 
         # Check that both features are active
         assert model.policy._use_twin_critics is True
-        assert hasattr(model, '_vgs') and model._vgs is not None
+        assert hasattr(model, "_vgs") and model._vgs is not None
 
     def test_backward_compatibility(self, env):
         """Test that explicitly disabling twin critics maintains backward compatibility."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': False,  # Explicitly disable for backward compatibility
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": False,  # Explicitly disable for backward compatibility
+            },
         }
 
         model = DistributionalPPO(
@@ -277,13 +279,13 @@ class TestTwinCriticsIntegration:
     def test_default_enables_twin_critics(self, env):
         """Test that twin critics are enabled by default."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
                 # use_twin_critics NOT specified - should default to True
-            }
+            },
         }
 
         model = DistributionalPPO(
@@ -320,13 +322,13 @@ class TestTwinCriticsOptimization:
     def test_both_critics_in_optimizer(self, env):
         """Test that both critics' parameters are in the optimizer."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -341,25 +343,31 @@ class TestTwinCriticsOptimization:
         )
 
         # Get optimizer parameter ids
-        optimizer_param_ids = {id(p) for group in model.policy.optimizer.param_groups for p in group['params']}
+        optimizer_param_ids = {
+            id(p) for group in model.policy.optimizer.param_groups for p in group["params"]
+        }
 
         # Check that both critics' parameters are in optimizer
         critic_1_param_ids = {id(p) for p in model.policy.quantile_head.parameters()}
         critic_2_param_ids = {id(p) for p in model.policy.quantile_head_2.parameters()}
 
-        assert critic_1_param_ids.issubset(optimizer_param_ids), "First critic params not in optimizer"
-        assert critic_2_param_ids.issubset(optimizer_param_ids), "Second critic params not in optimizer"
+        assert critic_1_param_ids.issubset(
+            optimizer_param_ids
+        ), "First critic params not in optimizer"
+        assert critic_2_param_ids.issubset(
+            optimizer_param_ids
+        ), "Second critic params not in optimizer"
 
     def test_gradients_flow_to_both_critics(self, env):
         """Test that gradients flow to both critics during training."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -384,10 +392,12 @@ class TestTwinCriticsOptimization:
         final_weight_1 = model.policy.quantile_head.linear.weight
         final_weight_2 = model.policy.quantile_head_2.linear.weight
 
-        assert not torch.allclose(initial_weight_1, final_weight_1, atol=1e-7), \
-            "First critic weights did not update"
-        assert not torch.allclose(initial_weight_2, final_weight_2, atol=1e-7), \
-            "Second critic weights did not update"
+        assert not torch.allclose(
+            initial_weight_1, final_weight_1, atol=1e-7
+        ), "First critic weights did not update"
+        assert not torch.allclose(
+            initial_weight_2, final_weight_2, atol=1e-7
+        ), "Second critic weights did not update"
 
 
 if __name__ == "__main__":

@@ -44,9 +44,9 @@ class TestPhase0DocumentExistence:
 
     def test_gdpr_implementation_plan_exists(self):
         """GDPR_CCEA_IMPLEMENTATION_PLAN.md must exist."""
-        assert GDPR_IMPLEMENTATION_PLAN_PATH.exists(), (
-            f"GDPR_CCEA_IMPLEMENTATION_PLAN.md not found at {GDPR_IMPLEMENTATION_PLAN_PATH}"
-        )
+        assert (
+            GDPR_IMPLEMENTATION_PLAN_PATH.exists()
+        ), f"GDPR_CCEA_IMPLEMENTATION_PLAN.md not found at {GDPR_IMPLEMENTATION_PLAN_PATH}"
 
     def test_gdpr_scope_memo_not_empty(self):
         """GDPR_RISK_SCOPE_MEMO.md must have substantial content."""
@@ -68,50 +68,52 @@ class TestGDPRScopeMemoStructure:
 
     def test_has_executive_summary(self, memo_content: str):
         """Document must have an executive summary section."""
-        assert "Executive Summary" in memo_content or "executive summary" in memo_content.lower(), (
-            "Missing Executive Summary section"
-        )
+        assert (
+            "Executive Summary" in memo_content or "executive summary" in memo_content.lower()
+        ), "Missing Executive Summary section"
 
     def test_has_platform_zones_section(self, memo_content: str):
         """Document must describe Cloud and Agent zones."""
-        assert "CLOUD ZONE" in memo_content or "Cloud Zone" in memo_content, (
-            "Missing Cloud Zone description"
-        )
-        assert "AGENT ZONE" in memo_content or "Agent Zone" in memo_content, (
-            "Missing Agent Zone description"
-        )
+        assert (
+            "CLOUD ZONE" in memo_content or "Cloud Zone" in memo_content
+        ), "Missing Cloud Zone description"
+        assert (
+            "AGENT ZONE" in memo_content or "Agent Zone" in memo_content
+        ), "Missing Agent Zone description"
 
     def test_has_controller_processor_section(self, memo_content: str):
         """Document must define Controller vs Processor roles."""
-        assert "Controller" in memo_content and "Processor" in memo_content, (
-            "Missing Controller vs Processor role definitions"
-        )
+        assert (
+            "Controller" in memo_content and "Processor" in memo_content
+        ), "Missing Controller vs Processor role definitions"
 
     def test_has_data_flow_diagram(self, memo_content: str):
         """Document must contain a data flow diagram (ASCII art or reference)."""
         # Check for ASCII diagram indicators
-        has_diagram = any([
-            "Cloud↔Agent" in memo_content,
-            "Cloud→Agent" in memo_content,
-            "Agent→Cloud" in memo_content,
-            "┌" in memo_content,  # ASCII box drawing
-            "├" in memo_content,
-            "│" in memo_content,
-            "Data Flow" in memo_content,
-        ])
+        has_diagram = any(
+            [
+                "Cloud↔Agent" in memo_content,
+                "Cloud→Agent" in memo_content,
+                "Agent→Cloud" in memo_content,
+                "┌" in memo_content,  # ASCII box drawing
+                "├" in memo_content,
+                "│" in memo_content,
+                "Data Flow" in memo_content,
+            ]
+        )
         assert has_diagram, "Missing Cloud<->Agent data flow diagram"
 
     def test_has_ropa_table(self, memo_content: str):
         """Document must contain a RoPA-lite table."""
-        assert "RoPA" in memo_content or "Records of Processing" in memo_content, (
-            "Missing RoPA (Records of Processing Activities) section"
-        )
+        assert (
+            "RoPA" in memo_content or "Records of Processing" in memo_content
+        ), "Missing RoPA (Records of Processing Activities) section"
 
     def test_has_subprocessor_section(self, memo_content: str):
         """Document must list subprocessors."""
-        assert "Subprocessor" in memo_content or "subprocessor" in memo_content, (
-            "Missing Subprocessor register section"
-        )
+        assert (
+            "Subprocessor" in memo_content or "subprocessor" in memo_content
+        ), "Missing Subprocessor register section"
 
 
 class TestRoPATableCompleteness:
@@ -125,57 +127,57 @@ class TestRoPATableCompleteness:
     def test_ropa_has_system_column(self, memo_content: str):
         """RoPA table must have 'System' column."""
         # Check for table header with System
-        assert re.search(r"\|\s*System\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'System' column"
-        )
+        assert re.search(
+            r"\|\s*System\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'System' column"
 
     def test_ropa_has_data_category_column(self, memo_content: str):
         """RoPA table must have 'Data Category' column."""
-        assert re.search(r"\|\s*Data\s*Category\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Data Category' column"
-        )
+        assert re.search(
+            r"\|\s*Data\s*Category\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Data Category' column"
 
     def test_ropa_has_purpose_column(self, memo_content: str):
         """RoPA table must have 'Purpose' column."""
-        assert re.search(r"\|\s*Purpose\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Purpose' column"
-        )
+        assert re.search(
+            r"\|\s*Purpose\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Purpose' column"
 
     def test_ropa_has_lawful_basis_column(self, memo_content: str):
         """RoPA table must have 'Lawful Basis' column."""
-        assert re.search(r"\|\s*Lawful\s*Basis\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Lawful Basis' column"
-        )
+        assert re.search(
+            r"\|\s*Lawful\s*Basis\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Lawful Basis' column"
 
     def test_ropa_has_retention_column(self, memo_content: str):
         """RoPA table must have 'Retention' column."""
-        assert re.search(r"\|\s*Retention\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Retention' column"
-        )
+        assert re.search(
+            r"\|\s*Retention\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Retention' column"
 
     def test_ropa_has_residency_column(self, memo_content: str):
         """RoPA table must have 'Residency' column."""
-        assert re.search(r"\|\s*Residency\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Residency' column"
-        )
+        assert re.search(
+            r"\|\s*Residency\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Residency' column"
 
     def test_ropa_has_access_roles_column(self, memo_content: str):
         """RoPA table must have 'Access Roles' column."""
-        assert re.search(r"\|\s*Access\s*Roles\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Access Roles' column"
-        )
+        assert re.search(
+            r"\|\s*Access\s*Roles\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Access Roles' column"
 
     def test_ropa_has_subprocessors_column(self, memo_content: str):
         """RoPA table must have 'Subprocessors' column."""
-        assert re.search(r"\|\s*Subprocessors\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Subprocessors' column"
-        )
+        assert re.search(
+            r"\|\s*Subprocessors\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Subprocessors' column"
 
     def test_ropa_has_owner_column(self, memo_content: str):
         """RoPA table must have 'Owner' column per DoD requirement."""
-        assert re.search(r"\|\s*Owner\s*\|", memo_content, re.IGNORECASE), (
-            "RoPA table missing 'Owner' column (required by Phase 0 DoD)"
-        )
+        assert re.search(
+            r"\|\s*Owner\s*\|", memo_content, re.IGNORECASE
+        ), "RoPA table missing 'Owner' column (required by Phase 0 DoD)"
 
 
 class TestTelemetryLevelsDocumentation:
@@ -188,67 +190,69 @@ class TestTelemetryLevelsDocumentation:
 
     def test_aggregated_level_documented(self, memo_content: str):
         """AGGREGATED telemetry level must be documented."""
-        assert "AGGREGATED" in memo_content, (
-            "Missing documentation for AGGREGATED telemetry level"
-        )
+        assert "AGGREGATED" in memo_content, "Missing documentation for AGGREGATED telemetry level"
 
     def test_detailed_non_sensitive_level_documented(self, memo_content: str):
         """DETAILED_NON_SENSITIVE telemetry level must be documented."""
-        assert "DETAILED_NON_SENSITIVE" in memo_content, (
-            "Missing documentation for DETAILED_NON_SENSITIVE telemetry level"
-        )
+        assert (
+            "DETAILED_NON_SENSITIVE" in memo_content
+        ), "Missing documentation for DETAILED_NON_SENSITIVE telemetry level"
 
     def test_raw_order_events_level_documented(self, memo_content: str):
         """RAW_ORDER_EVENTS telemetry level must be documented."""
-        assert "RAW_ORDER_EVENTS" in memo_content, (
-            "Missing documentation for RAW_ORDER_EVENTS telemetry level"
-        )
+        assert (
+            "RAW_ORDER_EVENTS" in memo_content
+        ), "Missing documentation for RAW_ORDER_EVENTS telemetry level"
 
     def test_aggregated_is_default(self, memo_content: str):
         """AGGREGATED must be marked as default level."""
         # Check for indicators that AGGREGATED is default
-        has_default_indicator = any([
-            "AGGREGATED (Default" in memo_content,
-            "AGGREGATED (default" in memo_content,
-            "default: AGGREGATED" in memo_content.lower(),
-            "Default for all tiers" in memo_content,
-        ])
-        assert has_default_indicator, (
-            "AGGREGATED telemetry level must be marked as default"
+        has_default_indicator = any(
+            [
+                "AGGREGATED (Default" in memo_content,
+                "AGGREGATED (default" in memo_content,
+                "default: AGGREGATED" in memo_content.lower(),
+                "Default for all tiers" in memo_content,
+            ]
         )
+        assert has_default_indicator, "AGGREGATED telemetry level must be marked as default"
 
     def test_raw_enterprise_only(self, memo_content: str):
         """RAW_ORDER_EVENTS must be marked as enterprise-only."""
         # Check for enterprise-only indicators near RAW_ORDER_EVENTS
-        has_enterprise_indicator = any([
-            "RAW_ORDER_EVENTS" in memo_content and "enterprise" in memo_content.lower(),
-            "Enterprise-only" in memo_content,
-            "enterprise-only" in memo_content,
-        ])
-        assert has_enterprise_indicator, (
-            "RAW_ORDER_EVENTS must be marked as enterprise-only"
+        has_enterprise_indicator = any(
+            [
+                "RAW_ORDER_EVENTS" in memo_content and "enterprise" in memo_content.lower(),
+                "Enterprise-only" in memo_content,
+                "enterprise-only" in memo_content,
+            ]
         )
+        assert has_enterprise_indicator, "RAW_ORDER_EVENTS must be marked as enterprise-only"
 
     def test_raw_explicit_opt_in_required(self, memo_content: str):
         """RAW_ORDER_EVENTS must require explicit opt-in."""
-        has_opt_in_indicator = any([
-            "explicit opt-in" in memo_content.lower(),
-            "explicit per-workspace opt-in" in memo_content,
-        ])
-        assert has_opt_in_indicator, (
-            "RAW_ORDER_EVENTS must require explicit opt-in (GDPR consent requirement)"
+        has_opt_in_indicator = any(
+            [
+                "explicit opt-in" in memo_content.lower(),
+                "explicit per-workspace opt-in" in memo_content,
+            ]
         )
+        assert (
+            has_opt_in_indicator
+        ), "RAW_ORDER_EVENTS must require explicit opt-in (GDPR consent requirement)"
 
     def test_telemetry_stays_local_option(self, memo_content: str):
         """Enterprise 'telemetry stays local' option must be documented."""
-        has_local_option = any([
-            "telemetry stays local" in memo_content.lower(),
-            "local-only mode" in memo_content.lower(),
-            "local export" in memo_content.lower(),
-        ])
-        assert has_local_option, (
-            "Missing documentation for enterprise 'telemetry stays local' option"
+        has_local_option = any(
+            [
+                "telemetry stays local" in memo_content.lower(),
+                "local-only mode" in memo_content.lower(),
+                "local export" in memo_content.lower(),
+            ]
         )
+        assert (
+            has_local_option
+        ), "Missing documentation for enterprise 'telemetry stays local' option"
 
 
 class TestEUDataResidency:
@@ -261,13 +265,15 @@ class TestEUDataResidency:
 
     def test_eu_only_residency_stated(self, memo_content: str):
         """EU-only data residency must be explicitly stated."""
-        has_eu_only = any([
-            "EU-only" in memo_content,
-            "eu-only" in memo_content,
-            "EU (eu-central-1)" in memo_content,
-            "eu-central-1" in memo_content,
-            "eu-west-1" in memo_content,
-        ])
+        has_eu_only = any(
+            [
+                "EU-only" in memo_content,
+                "eu-only" in memo_content,
+                "EU (eu-central-1)" in memo_content,
+                "eu-central-1" in memo_content,
+                "eu-west-1" in memo_content,
+            ]
+        )
         assert has_eu_only, "EU-only data residency must be explicitly stated"
 
     def test_all_residency_values_are_eu(self, memo_content: str):
@@ -289,16 +295,22 @@ class TestEUDataResidency:
     def test_subprocessors_eu_only(self, memo_content: str):
         """All subprocessors must be in EU regions."""
         # Check that subprocessor section mentions EU regions
-        subprocessor_section = memo_content[memo_content.find("Subprocessor"):] if "Subprocessor" in memo_content else ""
+        subprocessor_section = (
+            memo_content[memo_content.find("Subprocessor") :]
+            if "Subprocessor" in memo_content
+            else ""
+        )
 
         # Should mention EU regions
-        has_eu_regions = any([
-            "eu-central-1" in subprocessor_section.lower(),
-            "eu-west-1" in subprocessor_section.lower(),
-            "EU (Germany)" in subprocessor_section,
-            "EU (Ireland)" in subprocessor_section,
-            "(EU)" in subprocessor_section,
-        ])
+        has_eu_regions = any(
+            [
+                "eu-central-1" in subprocessor_section.lower(),
+                "eu-west-1" in subprocessor_section.lower(),
+                "EU (Germany)" in subprocessor_section,
+                "EU (Ireland)" in subprocessor_section,
+                "(EU)" in subprocessor_section,
+            ]
+        )
         assert has_eu_regions, "Subprocessors must be documented with EU regions"
 
 
@@ -313,18 +325,18 @@ class TestDataStoreCompleteness:
     def _extract_ropa_rows(self, content: str) -> List[str]:
         """Extract RoPA table rows from content."""
         # Find markdown table rows (lines starting with |)
-        lines = content.split('\n')
+        lines = content.split("\n")
         table_rows = []
         in_table = False
 
         for line in lines:
             stripped = line.strip()
-            if stripped.startswith('|') and '---' not in stripped:
+            if stripped.startswith("|") and "---" not in stripped:
                 # Skip header separator rows
-                if not re.match(r'\|\s*[-:]+\s*\|', stripped):
+                if not re.match(r"\|\s*[-:]+\s*\|", stripped):
                     table_rows.append(stripped)
                     in_table = True
-            elif in_table and not stripped.startswith('|'):
+            elif in_table and not stripped.startswith("|"):
                 # End of table
                 in_table = False
 
@@ -335,9 +347,13 @@ class TestDataStoreCompleteness:
         rows = self._extract_ropa_rows(memo_content)
 
         # Skip header row
-        data_rows = [r for r in rows if not any(h in r.lower() for h in ['system', 'data category', 'purpose'])]
+        data_rows = [
+            r
+            for r in rows
+            if not any(h in r.lower() for h in ["system", "data category", "purpose"])
+        ]
 
-        empty_cell_pattern = r'\|\s*\|'
+        empty_cell_pattern = r"\|\s*\|"
         rows_with_empty = []
 
         for row in data_rows:
@@ -366,8 +382,7 @@ class TestDataStoreCompleteness:
 
         # Count retention mentions
         retention_mentions = sum(
-            len(re.findall(pattern, memo_content))
-            for pattern in retention_patterns
+            len(re.findall(pattern, memo_content)) for pattern in retention_patterns
         )
 
         # Should have at least as many retention mentions as data stores
@@ -387,43 +402,52 @@ class TestControllerProcessorRoles:
 
     def test_has_role_determination_framework(self, memo_content: str):
         """Document must explain how roles are determined."""
-        has_framework = any([
-            "Role Determination" in memo_content,
-            "Art. 4(7)" in memo_content,  # Controller definition
-            "Art. 4(8)" in memo_content,  # Processor definition
-        ])
-        assert has_framework, (
-            "Missing Controller/Processor role determination framework"
+        has_framework = any(
+            [
+                "Role Determination" in memo_content,
+                "Art. 4(7)" in memo_content,  # Controller definition
+                "Art. 4(8)" in memo_content,  # Processor definition
+            ]
         )
+        assert has_framework, "Missing Controller/Processor role determination framework"
 
     def test_user_data_role_defined(self, memo_content: str):
         """User account data role (Controller/Processor) must be defined."""
-        has_user_role = any([
-            "User Account Data" in memo_content and "Controller" in memo_content,
-            "User Identity" in memo_content,
-        ])
+        has_user_role = any(
+            [
+                "User Account Data" in memo_content and "Controller" in memo_content,
+                "User Identity" in memo_content,
+            ]
+        )
         assert has_user_role, "User account data role not defined"
 
     def test_telemetry_data_role_defined(self, memo_content: str):
         """Telemetry data role must be defined."""
-        has_telemetry_role = any([
-            "Telemetry" in memo_content and ("Processor" in memo_content or "Controller" in memo_content),
-        ])
+        has_telemetry_role = any(
+            [
+                "Telemetry" in memo_content
+                and ("Processor" in memo_content or "Controller" in memo_content),
+            ]
+        )
         assert has_telemetry_role, "Telemetry data role not defined"
 
     def test_strategy_data_role_defined(self, memo_content: str):
         """Strategy/model data role must be defined."""
-        has_strategy_role = any([
-            "Strategy" in memo_content and "Processor" in memo_content,
-            "Strategy Assets" in memo_content,
-        ])
+        has_strategy_role = any(
+            [
+                "Strategy" in memo_content and "Processor" in memo_content,
+                "Strategy Assets" in memo_content,
+            ]
+        )
         assert has_strategy_role, "Strategy data role not defined"
 
     def test_audit_log_role_defined(self, memo_content: str):
         """Audit log data role must be defined."""
-        has_audit_role = any([
-            "Audit" in memo_content and "Controller" in memo_content,
-        ])
+        has_audit_role = any(
+            [
+                "Audit" in memo_content and "Controller" in memo_content,
+            ]
+        )
         assert has_audit_role, "Audit log data role not defined"
 
 
@@ -437,36 +461,43 @@ class TestArchitecturalInvariants:
 
     def test_cloud_never_receives_secrets(self, memo_content: str):
         """Document must state Cloud never receives secrets."""
-        has_secrets_invariant = any([
-            "Cloud never receives" in memo_content and "secret" in memo_content.lower(),
-            "Cloud NEVER receives" in memo_content,
-            "never receives" in memo_content.lower() and "API key" in memo_content,
-        ])
-        assert has_secrets_invariant, (
-            "Missing invariant: Cloud never receives broker credentials/API keys"
+        has_secrets_invariant = any(
+            [
+                "Cloud never receives" in memo_content and "secret" in memo_content.lower(),
+                "Cloud NEVER receives" in memo_content,
+                "never receives" in memo_content.lower() and "API key" in memo_content,
+            ]
         )
+        assert (
+            has_secrets_invariant
+        ), "Missing invariant: Cloud never receives broker credentials/API keys"
 
     def test_no_order_payloads_in_commands(self, memo_content: str):
         """Document must state no order-like payloads in Cloud->Agent commands."""
-        has_no_order_invariant = any([
-            "order-like payloads" in memo_content.lower(),
-            "side/qty/price" in memo_content.lower() or "side, quantity, price" in memo_content.lower(),
-            "FORBIDDEN COMMAND" in memo_content,
-        ])
-        assert has_no_order_invariant, (
-            "Missing invariant: No order-like payloads in Cloud->Agent commands"
+        has_no_order_invariant = any(
+            [
+                "order-like payloads" in memo_content.lower(),
+                "side/qty/price" in memo_content.lower()
+                or "side, quantity, price" in memo_content.lower(),
+                "FORBIDDEN COMMAND" in memo_content,
+            ]
         )
+        assert (
+            has_no_order_invariant
+        ), "Missing invariant: No order-like payloads in Cloud->Agent commands"
 
     def test_mandatory_redaction(self, memo_content: str):
         """Document must state redaction is mandatory and cannot be disabled."""
-        has_redaction_invariant = any([
-            "mandatory redaction" in memo_content.lower(),
-            "cannot be disabled" in memo_content.lower(),
-            "MANDATORY REDACTION" in memo_content,
-        ])
-        assert has_redaction_invariant, (
-            "Missing invariant: Redaction is mandatory and cannot be disabled"
+        has_redaction_invariant = any(
+            [
+                "mandatory redaction" in memo_content.lower(),
+                "cannot be disabled" in memo_content.lower(),
+                "MANDATORY REDACTION" in memo_content,
+            ]
         )
+        assert (
+            has_redaction_invariant
+        ), "Missing invariant: Redaction is mandatory and cannot be disabled"
 
 
 class TestCommandProtocolDocumentation:
@@ -509,24 +540,26 @@ class TestDSARBoundaries:
 
     def test_dsar_scope_documented(self, memo_content: str):
         """DSAR scope must be documented."""
-        has_dsar_scope = any([
-            "DSAR" in memo_content,
-            "Data Subject" in memo_content,
-            "Art. 15" in memo_content or "Art. 17" in memo_content,
-        ])
+        has_dsar_scope = any(
+            [
+                "DSAR" in memo_content,
+                "Data Subject" in memo_content,
+                "Art. 15" in memo_content or "Art. 17" in memo_content,
+            ]
+        )
         assert has_dsar_scope, "DSAR scope not documented"
 
     def test_cloud_vs_agent_dsar_boundary(self, memo_content: str):
         """Cloud vs Agent data boundary for DSAR must be clear."""
-        has_boundary = any([
-            "Cloud-controlled" in memo_content,
-            "Agent-controlled" in memo_content,
-            "OUT OF SCOPE" in memo_content,
-            "IN SCOPE" in memo_content,
-        ])
-        assert has_boundary, (
-            "Cloud vs Agent data boundary for DSAR not clearly defined"
+        has_boundary = any(
+            [
+                "Cloud-controlled" in memo_content,
+                "Agent-controlled" in memo_content,
+                "OUT OF SCOPE" in memo_content,
+                "IN SCOPE" in memo_content,
+            ]
         )
+        assert has_boundary, "Cloud vs Agent data boundary for DSAR not clearly defined"
 
 
 class TestGDPRArticleReferences:
@@ -539,47 +572,47 @@ class TestGDPRArticleReferences:
 
     def test_references_art_5_principles(self, memo_content: str):
         """Article 5 (Data Protection Principles) must be referenced."""
-        assert "Art. 5" in memo_content or "Article 5" in memo_content, (
-            "Missing reference to GDPR Article 5 (Principles)"
-        )
+        assert (
+            "Art. 5" in memo_content or "Article 5" in memo_content
+        ), "Missing reference to GDPR Article 5 (Principles)"
 
     def test_references_art_6_lawful_basis(self, memo_content: str):
         """Article 6 (Lawful Basis) must be referenced."""
-        assert "Art. 6" in memo_content or "Article 6" in memo_content, (
-            "Missing reference to GDPR Article 6 (Lawful Basis)"
-        )
+        assert (
+            "Art. 6" in memo_content or "Article 6" in memo_content
+        ), "Missing reference to GDPR Article 6 (Lawful Basis)"
 
     def test_references_art_25_privacy_by_design(self, memo_content: str):
         """Article 25 (Privacy by Design) must be referenced."""
-        has_art_25 = any([
-            "Art. 25" in memo_content,
-            "Article 25" in memo_content,
-            "Privacy by Design" in memo_content,
-        ])
-        assert has_art_25, (
-            "Missing reference to GDPR Article 25 (Privacy by Design)"
+        has_art_25 = any(
+            [
+                "Art. 25" in memo_content,
+                "Article 25" in memo_content,
+                "Privacy by Design" in memo_content,
+            ]
         )
+        assert has_art_25, "Missing reference to GDPR Article 25 (Privacy by Design)"
 
     def test_references_art_30_ropa(self, memo_content: str):
         """Article 30 (Records of Processing Activities) must be referenced."""
-        has_art_30 = any([
-            "Art. 30" in memo_content,
-            "Article 30" in memo_content,
-            "Records of Processing" in memo_content,
-        ])
-        assert has_art_30, (
-            "Missing reference to GDPR Article 30 (Records of Processing Activities)"
+        has_art_30 = any(
+            [
+                "Art. 30" in memo_content,
+                "Article 30" in memo_content,
+                "Records of Processing" in memo_content,
+            ]
         )
+        assert has_art_30, "Missing reference to GDPR Article 30 (Records of Processing Activities)"
 
     def test_references_art_32_security(self, memo_content: str):
         """Article 32 (Security) must be referenced."""
-        has_art_32 = any([
-            "Art. 32" in memo_content,
-            "Article 32" in memo_content,
-        ])
-        assert has_art_32, (
-            "Missing reference to GDPR Article 32 (Security of Processing)"
+        has_art_32 = any(
+            [
+                "Art. 32" in memo_content,
+                "Article 32" in memo_content,
+            ]
         )
+        assert has_art_32, "Missing reference to GDPR Article 32 (Security of Processing)"
 
 
 class TestPhase0ChecklistCompleteness:
@@ -592,17 +625,23 @@ class TestPhase0ChecklistCompleteness:
 
     def test_dod_checklist_exists(self, memo_content: str):
         """Compliance checklist section must exist."""
-        has_checklist = any([
-            "Compliance Checklist" in memo_content,
-            "Phase 0 DoD" in memo_content,
-            "Definition of Done" in memo_content,
-        ])
+        has_checklist = any(
+            [
+                "Compliance Checklist" in memo_content,
+                "Phase 0 DoD" in memo_content,
+                "Definition of Done" in memo_content,
+            ]
+        )
         assert has_checklist, "Missing Phase 0 DoD compliance checklist section"
 
     def test_all_dod_items_marked_complete(self, memo_content: str):
         """All DoD items should be marked as complete (checkmark)."""
         # Count checkmarks in checklist section
-        checklist_section = memo_content[memo_content.find("Checklist"):] if "Checklist" in memo_content else memo_content
+        checklist_section = (
+            memo_content[memo_content.find("Checklist") :]
+            if "Checklist" in memo_content
+            else memo_content
+        )
 
         # Count completion indicators
         checkmarks = len(re.findall(r"[✅✓]", checklist_section))
@@ -622,29 +661,35 @@ class TestDataCategoryDefinitions:
 
     def test_has_data_category_appendix(self, memo_content: str):
         """Document should have a data category definitions appendix."""
-        has_appendix = any([
-            "Data Category Definitions" in memo_content,
-            "Appendix A" in memo_content,
-            "Category ID" in memo_content,
-        ])
+        has_appendix = any(
+            [
+                "Data Category Definitions" in memo_content,
+                "Appendix A" in memo_content,
+                "Category ID" in memo_content,
+            ]
+        )
         assert has_appendix, "Missing data category definitions (Appendix)"
 
     def test_has_lawful_basis_reference(self, memo_content: str):
         """Document should have lawful basis reference table."""
-        has_lb_reference = any([
-            "Lawful Basis Reference" in memo_content,
-            "Appendix B" in memo_content,
-            "LB-CONTRACT" in memo_content,
-        ])
+        has_lb_reference = any(
+            [
+                "Lawful Basis Reference" in memo_content,
+                "Appendix B" in memo_content,
+                "LB-CONTRACT" in memo_content,
+            ]
+        )
         assert has_lb_reference, "Missing lawful basis reference (Appendix)"
 
     def test_has_retention_reference(self, memo_content: str):
         """Document should have retention period reference table."""
-        has_ret_reference = any([
-            "Retention Period Reference" in memo_content,
-            "Retention Code" in memo_content,
-            "RET-" in memo_content,
-        ])
+        has_ret_reference = any(
+            [
+                "Retention Period Reference" in memo_content,
+                "Retention Code" in memo_content,
+                "RET-" in memo_content,
+            ]
+        )
         assert has_ret_reference, "Missing retention period reference (Appendix)"
 
 
@@ -658,20 +703,24 @@ class TestRiskAssessment:
 
     def test_has_risk_assessment_section(self, memo_content: str):
         """Document should include privacy risk assessment."""
-        has_risk = any([
-            "Risk Assessment" in memo_content,
-            "Risk Matrix" in memo_content,
-            "Privacy Risk" in memo_content,
-        ])
+        has_risk = any(
+            [
+                "Risk Assessment" in memo_content,
+                "Risk Matrix" in memo_content,
+                "Privacy Risk" in memo_content,
+            ]
+        )
         assert has_risk, "Missing risk assessment section"
 
     def test_has_dpia_reference(self, memo_content: str):
         """Document should reference DPIA requirement assessment."""
-        has_dpia = any([
-            "DPIA" in memo_content,
-            "Data Protection Impact Assessment" in memo_content,
-            "Article 35" in memo_content,
-        ])
+        has_dpia = any(
+            [
+                "DPIA" in memo_content,
+                "Data Protection Impact Assessment" in memo_content,
+                "Article 35" in memo_content,
+            ]
+        )
         assert has_dpia, "Missing DPIA requirement assessment"
 
 
@@ -685,11 +734,13 @@ class TestIntegrationWithDesignDoc:
 
     def test_references_design_doc(self, memo_content: str):
         """Document must reference the CCEA Design Doc."""
-        has_design_doc_ref = any([
-            "Design_Doc_CCEA_Cloud" in memo_content,
-            "CCEA_CLOUD" in memo_content,
-            "Design Doc" in memo_content,
-        ])
+        has_design_doc_ref = any(
+            [
+                "Design_Doc_CCEA_Cloud" in memo_content,
+                "CCEA_CLOUD" in memo_content,
+                "Design Doc" in memo_content,
+            ]
+        )
         assert has_design_doc_ref, (
             "Missing reference to CCEA Design Doc "
             "(docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)"
@@ -702,9 +753,9 @@ class TestIntegrationWithDesignDoc:
         # Or section references
         has_section_refs = re.search(r"§\d+|Section \d+|\d+\.\d+", memo_content) is not None
 
-        assert has_line_refs or has_section_refs, (
-            "Document should include specific Design Doc references (line numbers or sections)"
-        )
+        assert (
+            has_line_refs or has_section_refs
+        ), "Document should include specific Design Doc references (line numbers or sections)"
 
 
 # Validation helper class for programmatic checks
@@ -721,12 +772,15 @@ class Phase0Validator:
             "document_exists": self.memo_path.exists(),
             "has_ropa_table": "RoPA" in self.content,
             "has_data_flow_diagram": "Data Flow" in self.content or "┌" in self.content,
-            "has_controller_processor_roles": "Controller" in self.content and "Processor" in self.content,
-            "has_telemetry_levels": all([
-                "AGGREGATED" in self.content,
-                "DETAILED_NON_SENSITIVE" in self.content,
-                "RAW_ORDER_EVENTS" in self.content,
-            ]),
+            "has_controller_processor_roles": "Controller" in self.content
+            and "Processor" in self.content,
+            "has_telemetry_levels": all(
+                [
+                    "AGGREGATED" in self.content,
+                    "DETAILED_NON_SENSITIVE" in self.content,
+                    "RAW_ORDER_EVENTS" in self.content,
+                ]
+            ),
             "has_eu_residency": "EU" in self.content and "eu-central-1" in self.content,
             "has_subprocessors": "Subprocessor" in self.content,
         }

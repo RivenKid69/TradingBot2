@@ -33,7 +33,9 @@ def _estimate_bar_interval_ms(df: pd.DataFrame, ts_col: str, symbol_col: Optiona
     ts = pd.to_numeric(df[ts_col], errors="coerce")
     if symbol_col and (symbol_col in df.columns):
         medians: List[float] = []
-        for _, g in df[[symbol_col, ts_col]].dropna().sort_values([symbol_col, ts_col]).groupby(symbol_col):
+        for _, g in (
+            df[[symbol_col, ts_col]].dropna().sort_values([symbol_col, ts_col]).groupby(symbol_col)
+        ):
             d = g[ts_col].diff().dropna()
             if not d.empty:
                 medians.append(float(d.median()))
@@ -86,11 +88,11 @@ def make_walkforward_splits(
     ts_col: str = "ts_ms",
     symbol_col: Optional[str] = "symbol",
     interval_ms: Optional[int] = None,
-    train_span_bars: int = 7 * 6,           # 7 дней @ 4h = 42 бара (changed from 7*24*60 @ 1m)
-    val_span_bars: int = 1 * 6,             # 1 день @ 4h = 6 баров (changed from 1*24*60 @ 1m)
-    step_bars: int = 1 * 6,                 # шаг окна 1 день @ 4h = 6 баров (changed from 1*24*60 @ 1m)
-    horizon_bars: int = 15,                 # горизонт таргета ~2.5 дня @ 4h (changed from 60 @ 1m)
-    embargo_bars: int = 2,                  # буфер между train и val @ 4h (changed from 5 @ 1m)
+    train_span_bars: int = 7 * 6,  # 7 дней @ 4h = 42 бара (changed from 7*24*60 @ 1m)
+    val_span_bars: int = 1 * 6,  # 1 день @ 4h = 6 баров (changed from 1*24*60 @ 1m)
+    step_bars: int = 1 * 6,  # шаг окна 1 день @ 4h = 6 баров (changed from 1*24*60 @ 1m)
+    horizon_bars: int = 15,  # горизонт таргета ~2.5 дня @ 4h (changed from 60 @ 1m)
+    embargo_bars: int = 2,  # буфер между train и val @ 4h (changed from 5 @ 1m)
 ) -> Tuple[pd.DataFrame, List[WFSplit]]:
     """
     Возвращает (df_out, manifest), где:
@@ -135,7 +137,9 @@ def make_walkforward_splits(
         embargo_ms=embargo_ms,
     )
     if not windows:
-        raise ValueError("Не удалось построить окна walk-forward (возможно, слишком большие train/val/step).")
+        raise ValueError(
+            "Не удалось построить окна walk-forward (возможно, слишком большие train/val/step)."
+        )
 
     # подготовим колонки результата
     out = df.copy()
@@ -165,18 +169,20 @@ def make_walkforward_splits(
         tr_cnt = int(assign_train.sum())
         va_cnt = int(assign_val.sum())
 
-        manifest.append(WFSplit(
-            fold_id=fid,
-            train_start_ts=int(tr_s),
-            train_end_ts_raw=int(tr_s + train_span_ms),
-            train_end_ts_effective=int(tr_e_eff),
-            val_start_ts=int(va_s),
-            val_end_ts=int(va_e),
-            horizon_bars=int(horizon_bars),
-            embargo_bars=int(embargo_bars),
-            interval_ms=int(interval_ms),
-            train_count=tr_cnt,
-            val_count=va_cnt,
-        ))
+        manifest.append(
+            WFSplit(
+                fold_id=fid,
+                train_start_ts=int(tr_s),
+                train_end_ts_raw=int(tr_s + train_span_ms),
+                train_end_ts_effective=int(tr_e_eff),
+                val_start_ts=int(va_s),
+                val_end_ts=int(va_e),
+                horizon_bars=int(horizon_bars),
+                embargo_bars=int(embargo_bars),
+                interval_ms=int(interval_ms),
+                train_count=tr_cnt,
+                val_count=va_cnt,
+            )
+        )
 
     return out, manifest

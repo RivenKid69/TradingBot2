@@ -7,7 +7,8 @@ import pandas as pd
 import pytest
 
 from services.index_membership_loader import (
-    build_index_membership_universe, changes_to_baseline_and_events,
+    build_index_membership_universe,
+    changes_to_baseline_and_events,
     load_membership_changes,
 )
 
@@ -38,36 +39,45 @@ def test_pit_constituents_add(tmp_path):
     uni = build_index_membership_universe(DEMO, index="SP500_DEMO")
     before = uni.constituents(_ms("2020-01-01"))
     after = uni.constituents(_ms("2021-01-01"))
-    assert "TSLA" not in before          # до добавления — нет (PIT)
-    assert "TSLA" in after               # после 2020-12-21 — есть
+    assert "TSLA" not in before  # до добавления — нет (PIT)
+    assert "TSLA" in after  # после 2020-12-21 — есть
     assert "AAPL" in before and "AAPL" in after
     assert uni.survivorship_biased is False
 
 
 def test_pit_constituents_remove(tmp_path):
     p = tmp_path / "changes.csv"
-    pd.DataFrame({
-        "date": ["2020-01-01", "2020-01-01", "2021-06-01", "2022-01-01"],
-        "ticker": ["AAA", "BBB", "CCC", "BBB"],
-        "action": ["add", "add", "add", "remove"],
-    }).to_csv(p, index=False)
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-01-01", "2021-06-01", "2022-01-01"],
+            "ticker": ["AAA", "BBB", "CCC", "BBB"],
+            "action": ["add", "add", "add", "remove"],
+        }
+    ).to_csv(p, index=False)
     uni = build_index_membership_universe(str(p), index="T")
     assert set(uni.constituents(_ms("2020-03-01"))) == {"AAA", "BBB"}
     assert set(uni.constituents(_ms("2021-07-01"))) == {"AAA", "BBB", "CCC"}
     after_remove = set(uni.constituents(_ms("2022-02-01")))
-    assert "BBB" not in after_remove     # удалён 2022-01-01 (PIT)
+    assert "BBB" not in after_remove  # удалён 2022-01-01 (PIT)
     assert after_remove == {"AAA", "CCC"}
 
 
 def test_build_universe_wiring():
     import yaml
     from service_xs_pipeline import XSConfig, build_universe
-    cfg = XSConfig.model_validate({
-        "mode": "cross_sectional", "asset_class": "equity",
-        "data": {"source": "synthetic", "symbols": ["AAPL", "MSFT"]},
-        "universe": {"type": "index_membership", "index": "SP500_DEMO",
-                     "membership_path": DEMO},
-    })
+
+    cfg = XSConfig.model_validate(
+        {
+            "mode": "cross_sectional",
+            "asset_class": "equity",
+            "data": {"source": "synthetic", "symbols": ["AAPL", "MSFT"]},
+            "universe": {
+                "type": "index_membership",
+                "index": "SP500_DEMO",
+                "membership_path": DEMO,
+            },
+        }
+    )
     uni = build_universe(cfg)
     # должен быть survivorship-free IndexMembershipUniverse, а не StaticUniverse
     assert getattr(uni, "survivorship_biased", True) is False

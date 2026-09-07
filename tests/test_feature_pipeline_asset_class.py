@@ -40,15 +40,17 @@ def sample_ohlcv_df():
     base_price = 100.0
     prices = base_price + np.cumsum(np.random.randn(n) * 0.5)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": ["AAPL"] * n,
-        "open": prices + np.random.randn(n) * 0.1,
-        "high": prices + abs(np.random.randn(n) * 0.3),
-        "low": prices - abs(np.random.randn(n) * 0.3),
-        "close": prices,
-        "volume": np.random.randint(1000, 10000, n).astype(float),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": ["AAPL"] * n,
+            "open": prices + np.random.randn(n) * 0.1,
+            "high": prices + abs(np.random.randn(n) * 0.3),
+            "low": prices - abs(np.random.randn(n) * 0.3),
+            "close": prices,
+            "volume": np.random.randint(1000, 10000, n).astype(float),
+        }
+    )
 
     return df
 
@@ -63,15 +65,17 @@ def sample_crypto_df():
     base_price = 50000.0
     prices = base_price + np.cumsum(np.random.randn(n) * 100)
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": ["BTCUSDT"] * n,
-        "open": prices + np.random.randn(n) * 10,
-        "high": prices + abs(np.random.randn(n) * 30),
-        "low": prices - abs(np.random.randn(n) * 30),
-        "close": prices,
-        "volume": np.random.randint(100, 1000, n).astype(float),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": ["BTCUSDT"] * n,
+            "open": prices + np.random.randn(n) * 10,
+            "high": prices + abs(np.random.randn(n) * 30),
+            "low": prices - abs(np.random.randn(n) * 30),
+            "close": prices,
+            "volume": np.random.randint(100, 1000, n).astype(float),
+        }
+    )
 
     return df
 
@@ -82,12 +86,14 @@ def fitted_pipeline():
     np.random.seed(42)
     n = 50
 
-    df = pd.DataFrame({
-        "timestamp": range(n),
-        "symbol": ["TEST"] * n,
-        "close": 100.0 + np.random.randn(n),
-        "volume": 1000.0 + np.random.randn(n) * 100,
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": range(n),
+            "symbol": ["TEST"] * n,
+            "close": 100.0 + np.random.randn(n),
+            "volume": 1000.0 + np.random.randn(n) * 100,
+        }
+    )
 
     pipe = FeaturePipeline()
     pipe.fit({"TEST": df})
@@ -215,11 +221,17 @@ class TestSaveLoadPersistence:
     def test_save_preserves_asset_class(self, fitted_pipeline):
         """Save should preserve asset_class in config."""
         pipe = FeaturePipeline(asset_class="equity")
-        pipe.fit({"TEST": pd.DataFrame({
-            "timestamp": range(10),
-            "symbol": ["TEST"] * 10,
-            "close": [100.0] * 10,
-        })})
+        pipe.fit(
+            {
+                "TEST": pd.DataFrame(
+                    {
+                        "timestamp": range(10),
+                        "symbol": ["TEST"] * 10,
+                        "close": [100.0] * 10,
+                    }
+                )
+            }
+        )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             path = f.name
@@ -240,11 +252,17 @@ class TestSaveLoadPersistence:
         """Load should restore asset_class from config."""
         # Create and save pipeline
         pipe = FeaturePipeline(asset_class="equity", auto_stock_features=False)
-        pipe.fit({"TEST": pd.DataFrame({
-            "timestamp": range(10),
-            "symbol": ["TEST"] * 10,
-            "close": [100.0] * 10,
-        })})
+        pipe.fit(
+            {
+                "TEST": pd.DataFrame(
+                    {
+                        "timestamp": range(10),
+                        "symbol": ["TEST"] * 10,
+                        "close": [100.0] * 10,
+                    }
+                )
+            }
+        )
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             path = f.name
@@ -272,7 +290,7 @@ class TestSaveLoadPersistence:
                 "strict_idempotency": True,
                 "preserve_close_orig": True,
                 # Note: no asset_class or auto_stock_features
-            }
+            },
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -352,21 +370,25 @@ class TestEdgeCases:
         # Create minimal stats for transform
         pipe.stats = {"close": {"mean": 100.0, "std": 1.0}}
 
-        empty_df = pd.DataFrame(columns=["timestamp", "symbol", "close", "open", "high", "low", "volume"])
+        empty_df = pd.DataFrame(
+            columns=["timestamp", "symbol", "close", "open", "high", "low", "volume"]
+        )
 
         result = pipe.transform_df(empty_df)
         assert len(result) == 0
 
     def test_missing_symbol_column(self):
         """DataFrame without symbol column should still work."""
-        df = pd.DataFrame({
-            "timestamp": range(10),
-            "close": [100.0] * 10,
-            "open": [100.0] * 10,
-            "high": [100.0] * 10,
-            "low": [100.0] * 10,
-            "volume": [1000.0] * 10,
-        })
+        df = pd.DataFrame(
+            {
+                "timestamp": range(10),
+                "close": [100.0] * 10,
+                "open": [100.0] * 10,
+                "high": [100.0] * 10,
+                "low": [100.0] * 10,
+                "volume": [1000.0] * 10,
+            }
+        )
 
         pipe = FeaturePipeline(asset_class="equity")
         pipe.fit({"TEST": df})

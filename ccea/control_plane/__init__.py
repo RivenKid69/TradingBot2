@@ -41,7 +41,7 @@ warnings.warn(
     "ccea.control_plane is deprecated. Use packages.cloud.control_plane instead. "
     "See packages/cloud/control_plane/ for canonical implementation.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 from ccea.control_plane.enrollment import (

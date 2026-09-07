@@ -38,7 +38,9 @@ def test_validate_ffill_gaps_enforces_span_limits_and_preserves_decision_delay()
     # Decision timestamps should remain consistent with the configured delay.
     expected_decision = df_with_decision["ts_ms"].astype("int64") + 500
     pd.testing.assert_series_equal(
-        validated["decision_ts"].astype("int64"), expected_decision.astype("int64"), check_names=False
+        validated["decision_ts"].astype("int64"),
+        expected_decision.astype("int64"),
+        check_names=False,
     )
 
     # Original ordering must be preserved to avoid altering downstream expectations.

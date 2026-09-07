@@ -16,8 +16,10 @@ Tests check for:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
+
 gym = pytest.importorskip("gymnasium")
 import numpy as np
 from pathlib import Path
@@ -40,20 +42,11 @@ class TestUPGDWithVarianceScaling:
     def test_upgd_vgs_basic_integration(self):
         """Test basic integration of UPGD with VGS."""
         # Create simple model
-        model = nn.Sequential(
-            nn.Linear(4, 64),
-            nn.ReLU(),
-            nn.Linear(64, 2)
-        )
+        model = nn.Sequential(nn.Linear(4, 64), nn.ReLU(), nn.Linear(64, 2))
 
         # Setup optimizer and VGS
         optimizer = AdaptiveUPGD(model.parameters(), lr=1e-3)
-        vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=True,
-            alpha=0.1,
-            warmup_steps=10
-        )
+        vgs = VarianceGradientScaler(model.parameters(), enabled=True, alpha=0.1, warmup_steps=10)
 
         # Simulate training step
         x = torch.randn(32, 4)
@@ -79,19 +72,11 @@ class TestUPGDWithVarianceScaling:
 
     def test_upgd_vgs_numerical_stability(self):
         """Test numerical stability with UPGD + VGS over many steps."""
-        model = nn.Sequential(
-            nn.Linear(4, 32),
-            nn.ReLU(),
-            nn.Linear(32, 2)
-        )
+        model = nn.Sequential(nn.Linear(4, 32), nn.ReLU(), nn.Linear(32, 2))
 
         optimizer = AdaptiveUPGD(model.parameters(), lr=3e-4, sigma=0.01)
         vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=True,
-            beta=0.99,
-            alpha=0.1,
-            warmup_steps=50
+            model.parameters(), enabled=True, beta=0.99, alpha=0.1, warmup_steps=50
         )
 
         # Train for many steps
@@ -116,18 +101,16 @@ class TestUPGDWithVarianceScaling:
             if vgs._grad_mean_ema is not None:
                 assert np.isfinite(vgs._grad_mean_ema), f"VGS mean NaN at step {step}"
                 assert np.isfinite(vgs._grad_var_ema), f"VGS var NaN at step {step}"
-                assert np.isfinite(vgs.get_normalized_variance()), f"VGS normalized_var NaN at step {step}"
+                assert np.isfinite(
+                    vgs.get_normalized_variance()
+                ), f"VGS normalized_var NaN at step {step}"
 
     def test_vgs_warmup_behavior(self):
         """Test that VGS warmup correctly transitions to active scaling."""
         model = nn.Linear(4, 2)
 
         optimizer = UPGD(model.parameters(), lr=1e-3)
-        vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=True,
-            warmup_steps=10
-        )
+        vgs = VarianceGradientScaler(model.parameters(), enabled=True, warmup_steps=10)
 
         scaling_factors = []
 
@@ -159,10 +142,7 @@ class TestUPGDWithVarianceScaling:
         model = nn.Linear(4, 2)
 
         optimizer = UPGD(model.parameters(), lr=1e-3)
-        vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=False  # Disabled
-        )
+        vgs = VarianceGradientScaler(model.parameters(), enabled=False)  # Disabled
 
         x = torch.randn(8, 4)
         target = torch.randint(0, 2, (8,))
@@ -188,11 +168,7 @@ class TestUPGDWithVarianceScaling:
         """Test VGS state dict save/load."""
         model = nn.Linear(4, 2)
         vgs = VarianceGradientScaler(
-            model.parameters(),
-            enabled=True,
-            beta=0.95,
-            alpha=0.2,
-            warmup_steps=100
+            model.parameters(), enabled=True, beta=0.95, alpha=0.2, warmup_steps=100
         )
 
         # Train for a few steps to accumulate state
@@ -242,11 +218,11 @@ class TestUPGDWithTwinCritics:
             optimizer_class="adaptive_upgd",
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -256,9 +232,9 @@ class TestUPGDWithTwinCritics:
         )
 
         # Check Twin Critics is active
-        use_twin = getattr(model.policy, '_use_twin_critics', False)
+        use_twin = getattr(model.policy, "_use_twin_critics", False)
         assert use_twin is True, "Twin Critics should be enabled"
-        assert hasattr(model.policy, 'quantile_head_2'), "Second critic head should exist"
+        assert hasattr(model.policy, "quantile_head_2"), "Second critic head should exist"
 
         # Train
         model.learn(total_timesteps=256)
@@ -282,11 +258,11 @@ class TestUPGDWithTwinCritics:
             optimizer_class="adaptive_upgd",
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -305,11 +281,11 @@ class TestUPGDWithTwinCritics:
         # Check optimizer state was created for critic parameters
         critic_params_with_state = 0
         for param_group in optimizer.param_groups:
-            for p in param_group['params']:
+            for p in param_group["params"]:
                 if p in optimizer.state:
                     state = optimizer.state[p]
                     # Should have UPGD state
-                    if 'avg_utility' in state:
+                    if "avg_utility" in state:
                         critic_params_with_state += 1
 
         assert critic_params_with_state > 0, "Twin Critics params should have UPGD state"
@@ -329,11 +305,11 @@ class TestUPGDWithTwinCritics:
             optimizer_kwargs={"lr": 3e-4, "sigma": 0.01},
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -353,7 +329,7 @@ class TestUPGDWithTwinCritics:
         optimizer = model.policy.optimizer
         for p in optimizer.state:
             state = optimizer.state[p]
-            for key in ['avg_utility', 'first_moment', 'sec_moment']:
+            for key in ["avg_utility", "first_moment", "sec_moment"]:
                 if key in state:
                     assert torch.all(torch.isfinite(state[key])), f"{key} should be finite"
 
@@ -398,8 +374,16 @@ class TestUPGDWithPBT:
         for member in population:
             assert "lr" in member.hyperparams
             assert "sigma" in member.hyperparams
-            assert config.hyperparams[0].min_value <= member.hyperparams["lr"] <= config.hyperparams[0].max_value
-            assert config.hyperparams[1].min_value <= member.hyperparams["sigma"] <= config.hyperparams[1].max_value
+            assert (
+                config.hyperparams[0].min_value
+                <= member.hyperparams["lr"]
+                <= config.hyperparams[0].max_value
+            )
+            assert (
+                config.hyperparams[1].min_value
+                <= member.hyperparams["sigma"]
+                <= config.hyperparams[1].max_value
+            )
 
     def test_pbt_exploit_and_explore_with_upgd(self):
         """Test PBT exploit and explore operations with UPGD hyperparameters."""
@@ -520,11 +504,11 @@ class TestFullIntegration:
             vgs_warmup_steps=50,
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -563,11 +547,11 @@ class TestFullIntegration:
             vgs_warmup_steps=30,
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -591,7 +575,9 @@ class TestFullIntegration:
             state = optimizer.state[p]
             for key, value in state.items():
                 if isinstance(value, torch.Tensor):
-                    assert torch.all(torch.isfinite(value)), f"Optimizer state {key} contains NaN/Inf"
+                    assert torch.all(
+                        torch.isfinite(value)
+                    ), f"Optimizer state {key} contains NaN/Inf"
 
         env.close()
 
@@ -610,11 +596,11 @@ class TestFullIntegration:
             variance_gradient_scaling=True,
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -659,11 +645,11 @@ class TestFullIntegration:
             variance_gradient_scaling=True,
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -756,11 +742,11 @@ class TestEdgeCasesAndFailureModes:
             variance_gradient_scaling=True,
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -802,11 +788,7 @@ class TestEdgeCasesAndFailureModes:
 
     def test_parameter_groups_with_different_lrs(self):
         """Test UPGD with different learning rates for different parameter groups."""
-        model = nn.Sequential(
-            nn.Linear(4, 32),
-            nn.ReLU(),
-            nn.Linear(32, 2)
-        )
+        model = nn.Sequential(nn.Linear(4, 32), nn.ReLU(), nn.Linear(32, 2))
 
         # Create parameter groups with different LRs
         param_groups = [
@@ -833,9 +815,9 @@ class TestEdgeCasesAndFailureModes:
 
         # Check both groups have state
         for group in optimizer.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 if p.requires_grad:
-                    assert p in optimizer.state or optimizer.state[p]['step'] >= 0
+                    assert p in optimizer.state or optimizer.state[p]["step"] >= 0
 
 
 class TestPerformanceAndConvergence:
@@ -881,11 +863,11 @@ class TestPerformanceAndConvergence:
             variance_gradient_scaling=True,
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -902,7 +884,9 @@ class TestPerformanceAndConvergence:
         num_params = sum(1 for _ in model.policy.parameters())
         num_states = len(model.policy.optimizer.state)
 
-        assert num_states <= num_params, "Optimizer state shouldn't grow beyond number of parameters"
+        assert (
+            num_states <= num_params
+        ), "Optimizer state shouldn't grow beyond number of parameters"
 
         env.close()
 
@@ -965,11 +949,11 @@ class TestCrossComponentInteractions:
             optimizer_kwargs={"lr": initial_lr, "sigma": initial_sigma},
             # Twin Critics via policy_kwargs (CORRECT API)
             policy_kwargs={
-                'arch_params': {
-                    'critic': {
-                        'distributional': True,
-                        'num_quantiles': 32,
-                        'use_twin_critics': True,
+                "arch_params": {
+                    "critic": {
+                        "distributional": True,
+                        "num_quantiles": 32,
+                        "use_twin_critics": True,
                     }
                 }
             },
@@ -987,12 +971,12 @@ class TestCrossComponentInteractions:
 
         # Update optimizer hyperparameters
         for param_group in model.policy.optimizer.param_groups:
-            param_group['lr'] = new_lr
-            param_group['sigma'] = new_sigma
+            param_group["lr"] = new_lr
+            param_group["sigma"] = new_sigma
 
         # Check hyperparameters were updated immediately after setting
-        assert model.policy.optimizer.param_groups[0]['lr'] == new_lr
-        assert model.policy.optimizer.param_groups[0]['sigma'] == new_sigma
+        assert model.policy.optimizer.param_groups[0]["lr"] == new_lr
+        assert model.policy.optimizer.param_groups[0]["sigma"] == new_sigma
 
         # Continue training with new hyperparameters
         model.learn(total_timesteps=128)

@@ -72,7 +72,9 @@ def run(cfg: SlippageCalibrateConfig) -> Dict[str, float]:
     # ------------------------------------------------------------------
     # Derive default spread and minimal half spread from the data
     # ------------------------------------------------------------------
-    spread_series = df["spread_bps"].dropna() if "spread_bps" in df.columns else pd.Series(dtype=float)
+    spread_series = (
+        df["spread_bps"].dropna() if "spread_bps" in df.columns else pd.Series(dtype=float)
+    )
     if not spread_series.empty:
         mode = str(cfg.default_spread_mode).lower()
         if mode == "mean":
@@ -142,4 +144,3 @@ __all__ = [
     "run",
     "from_config",
 ]
-

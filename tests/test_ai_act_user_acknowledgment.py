@@ -106,7 +106,7 @@ class TestUserAcknowledgment:
         ack = UserAcknowledgment.create(
             user_id="user1",
             ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            text_content="Test text"
+            text_content="Test text",
         )
         assert ack.user_id == "user1"
         assert ack.acknowledgment_type == AcknowledgmentType.AI_SYSTEM_AWARENESS
@@ -121,7 +121,7 @@ class TestUserAcknowledgment:
             ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS,
             text_content="Test",
             ip_address="192.168.1.1",
-            user_agent="Mozilla/5.0"
+            user_agent="Mozilla/5.0",
         )
         assert ack.ip_address == "192.168.1.1"
         assert ack.user_agent == "Mozilla/5.0"
@@ -129,9 +129,7 @@ class TestUserAcknowledgment:
     def test_acknowledgment_to_dict(self):
         """Test acknowledgment serialization."""
         ack = UserAcknowledgment.create(
-            user_id="user1",
-            ack_type=AcknowledgmentType.RISK_UNDERSTANDING,
-            text_content="Test"
+            user_id="user1", ack_type=AcknowledgmentType.RISK_UNDERSTANDING, text_content="Test"
         )
         data = ack.to_dict()
         assert data["user_id"] == "user1"
@@ -142,9 +140,7 @@ class TestUserAcknowledgment:
     def test_acknowledgment_from_dict(self):
         """Test acknowledgment deserialization."""
         ack = UserAcknowledgment.create(
-            user_id="user1",
-            ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            text_content="Test"
+            user_id="user1", ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS, text_content="Test"
         )
         data = ack.to_dict()
         restored = UserAcknowledgment.from_dict(data)
@@ -155,9 +151,7 @@ class TestUserAcknowledgment:
     def test_acknowledgment_is_valid(self):
         """Test is_valid method."""
         ack = UserAcknowledgment.create(
-            user_id="user1",
-            ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            text_content="Test"
+            user_id="user1", ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS, text_content="Test"
         )
         assert ack.is_valid() is True
 
@@ -256,8 +250,7 @@ class TestUserAcknowledgmentManager:
     def test_record_acknowledgment(self, manager):
         """Test recording acknowledgment."""
         ack = manager.record_acknowledgment(
-            user_id="user1",
-            ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS
+            user_id="user1", ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS
         )
         assert ack is not None
         assert ack.user_id == "user1"
@@ -269,7 +262,7 @@ class TestUserAcknowledgmentManager:
             user_id="user1",
             ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS,
             ip_address="10.0.0.1",
-            user_agent="TestClient/1.0"
+            user_agent="TestClient/1.0",
         )
         assert ack.ip_address == "10.0.0.1"
         assert ack.user_agent == "TestClient/1.0"
@@ -338,8 +331,7 @@ class TestUserAcknowledgmentManager:
         manager.record_acknowledgment("user1", AcknowledgmentType.RISK_UNDERSTANDING)
 
         acks = manager.get_user_acknowledgments(
-            "user1",
-            ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS
+            "user1", ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS
         )
         assert len(acks) == 1
         assert acks[0].acknowledgment_type == AcknowledgmentType.AI_SYSTEM_AWARENESS
@@ -349,9 +341,7 @@ class TestUserAcknowledgmentManager:
         manager.record_acknowledgment("user1", AcknowledgmentType.AI_SYSTEM_AWARENESS)
 
         result = manager.revoke_acknowledgment(
-            "user1",
-            AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            "User requested revocation"
+            "user1", AcknowledgmentType.AI_SYSTEM_AWARENESS, "User requested revocation"
         )
         assert result is True
 
@@ -362,9 +352,7 @@ class TestUserAcknowledgmentManager:
     def test_revoke_nonexistent(self, manager):
         """Test revoking nonexistent acknowledgment."""
         result = manager.revoke_acknowledgment(
-            "user1",
-            AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            "Test"
+            "user1", AcknowledgmentType.AI_SYSTEM_AWARENESS, "Test"
         )
         assert result is False
 
@@ -457,9 +445,7 @@ class TestFactoryFunctions:
     def test_validate_acknowledgment(self):
         """Test acknowledgment validation."""
         ack = UserAcknowledgment.create(
-            user_id="user1",
-            ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            text_content="Test"
+            user_id="user1", ack_type=AcknowledgmentType.AI_SYSTEM_AWARENESS, text_content="Test"
         )
         result = validate_acknowledgment(ack)
         assert result["has_id"] is True
@@ -621,9 +607,7 @@ class TestEdgeCases:
         """Test revoking wrong acknowledgment type."""
         manager.record_acknowledgment("user1", AcknowledgmentType.AI_SYSTEM_AWARENESS)
         result = manager.revoke_acknowledgment(
-            "user1",
-            AcknowledgmentType.RISK_UNDERSTANDING,  # Not recorded
-            "Test"
+            "user1", AcknowledgmentType.RISK_UNDERSTANDING, "Test"  # Not recorded
         )
         assert result is False
 
@@ -651,9 +635,7 @@ class TestLanguageSupport:
     def test_record_acknowledgment_with_language(self, manager):
         """Test recording acknowledgment specifies language."""
         ack = manager.record_acknowledgment(
-            "user1",
-            AcknowledgmentType.AI_SYSTEM_AWARENESS,
-            language="ru"
+            "user1", AcknowledgmentType.AI_SYSTEM_AWARENESS, language="ru"
         )
         # Text hash should be based on Russian text
         assert ack.text_hash != ""

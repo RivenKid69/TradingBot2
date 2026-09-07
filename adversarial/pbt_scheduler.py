@@ -46,6 +46,7 @@ class HyperparamConfig:
         resample_probability: Probability of resampling instead of perturbing (default: 0.25)
         is_log_scale: Whether to use log scale for perturbations (default: False)
     """
+
     name: str
     min_value: Optional[float] = None
     max_value: Optional[float] = None
@@ -57,10 +58,18 @@ class HyperparamConfig:
     def __post_init__(self) -> None:
         """Validate configuration."""
         if self.values is None and (self.min_value is None or self.max_value is None):
-            raise ValueError(f"Either 'values' or 'min_value'/'max_value' must be specified for {self.name}")
+            raise ValueError(
+                f"Either 'values' or 'min_value'/'max_value' must be specified for {self.name}"
+            )
         if self.values is not None and (self.min_value is not None or self.max_value is not None):
-            raise ValueError(f"Cannot specify both 'values' and 'min_value'/'max_value' for {self.name}")
-        if self.min_value is not None and self.max_value is not None and self.min_value >= self.max_value:
+            raise ValueError(
+                f"Cannot specify both 'values' and 'min_value'/'max_value' for {self.name}"
+            )
+        if (
+            self.min_value is not None
+            and self.max_value is not None
+            and self.min_value >= self.max_value
+        ):
             raise ValueError(f"min_value must be < max_value for {self.name}")
         if not 0.0 <= self.resample_probability <= 1.0:
             raise ValueError(f"resample_probability must be in [0, 1] for {self.name}")
@@ -98,6 +107,7 @@ class PBTConfig:
                                     - 'reset': Reset optimizer state after exploit (recommended)
                                     - 'copy': Copy optimizer state from source agent (advanced)
     """
+
     population_size: int = 10
     perturbation_interval: int = 5
     hyperparams: List[HyperparamConfig] = field(default_factory=list)
@@ -117,11 +127,17 @@ class PBTConfig:
         if self.population_size < 2:
             raise ValueError(f"population_size must be >= 2, got {self.population_size}")
         if self.perturbation_interval < 1:
-            raise ValueError(f"perturbation_interval must be >= 1, got {self.perturbation_interval}")
+            raise ValueError(
+                f"perturbation_interval must be >= 1, got {self.perturbation_interval}"
+            )
         if self.exploit_method not in ("truncation", "binary_tournament"):
-            raise ValueError(f"exploit_method must be 'truncation' or 'binary_tournament', got {self.exploit_method}")
+            raise ValueError(
+                f"exploit_method must be 'truncation' or 'binary_tournament', got {self.exploit_method}"
+            )
         if self.explore_method not in ("perturb", "resample", "both"):
-            raise ValueError(f"explore_method must be 'perturb', 'resample', or 'both', got {self.explore_method}")
+            raise ValueError(
+                f"explore_method must be 'perturb', 'resample', or 'both', got {self.explore_method}"
+            )
         if not 0.0 < self.truncation_ratio < 1.0:
             raise ValueError(f"truncation_ratio must be in (0, 1), got {self.truncation_ratio}")
         if self.metric_mode not in ("max", "min"):
@@ -129,7 +145,9 @@ class PBTConfig:
         if not 0.0 < self.ready_percentage <= 1.0:
             raise ValueError(f"ready_percentage must be in (0, 1], got {self.ready_percentage}")
         if self.min_ready_members < 2:
-            raise ValueError(f"min_ready_members must be >= 2 (minimum viable population), got {self.min_ready_members}")
+            raise ValueError(
+                f"min_ready_members must be >= 2 (minimum viable population), got {self.min_ready_members}"
+            )
         if self.ready_check_max_wait < 1:
             raise ValueError(f"ready_check_max_wait must be >= 1, got {self.ready_check_max_wait}")
         if self.optimizer_exploit_strategy not in ("reset", "copy"):
@@ -150,6 +168,7 @@ class PopulationMember:
         checkpoint_path: Path to saved checkpoint
         history: History of hyperparameter changes and performance
     """
+
     member_id: int
     hyperparams: Dict[str, Any]
     performance: Optional[float] = None
@@ -167,11 +186,13 @@ class PopulationMember:
         """
         self.step = step
         self.performance = performance
-        self.history.append({
-            "step": step,
-            "performance": performance,
-            "hyperparams": copy.deepcopy(hyperparams),
-        })
+        self.history.append(
+            {
+                "step": step,
+                "performance": performance,
+                "hyperparams": copy.deepcopy(hyperparams),
+            }
+        )
 
 
 class PBTScheduler:
@@ -191,7 +212,9 @@ class PBTScheduler:
         self.population: List[PopulationMember] = []
         self._exploitation_count = 0
         self._exploration_count = 0
-        self._failed_ready_checks = 0  # Track consecutive failed ready checks for deadlock prevention
+        self._failed_ready_checks = (
+            0  # Track consecutive failed ready checks for deadlock prevention
+        )
 
         # Set random seed
         if seed is not None:
@@ -310,7 +333,10 @@ class PBTScheduler:
             self._failed_ready_checks += 1
 
             # Fallback mechanism: if we've waited too long and have minimum viable population
-            if self._failed_ready_checks >= self.config.ready_check_max_wait and ready_count >= min_count:
+            if (
+                self._failed_ready_checks >= self.config.ready_check_max_wait
+                and ready_count >= min_count
+            ):
                 logger.warning(
                     f"PBT deadlock prevention: {self._failed_ready_checks} consecutive failed ready checks. "
                     f"Proceeding with fallback: ready_count={ready_count} >= min_ready_members={min_count}. "
@@ -361,22 +387,22 @@ class PBTScheduler:
                 checkpoint = None
                 try:
                     checkpoint = torch.load(
-                        source_member.checkpoint_path,
-                        map_location="cpu",
-                        weights_only=True
+                        source_member.checkpoint_path, map_location="cpu", weights_only=True
                     )
                 except Exception as secure_load_error:
                     # Secure loading failed - check if unsafe fallback is allowed
-                    if os.environ.get("ALLOW_UNSAFE_MODEL_LOAD", "").lower() in ("1", "true", "yes"):
+                    if os.environ.get("ALLOW_UNSAFE_MODEL_LOAD", "").lower() in (
+                        "1",
+                        "true",
+                        "yes",
+                    ):
                         logger.warning(
                             f"Member {member.member_id}: Secure loading failed ({type(secure_load_error).__name__}). "
                             f"Using unsafe fallback (ALLOW_UNSAFE_MODEL_LOAD=1). "
                             f"SECURITY METRIC: pbt_unsafe_load_count=1"
                         )
                         checkpoint = torch.load(
-                            source_member.checkpoint_path,
-                            map_location="cpu",
-                            weights_only=False
+                            source_member.checkpoint_path, map_location="cpu", weights_only=False
                         )
                     else:
                         logger.error(
@@ -397,8 +423,16 @@ class PBTScheduler:
                     new_parameters = checkpoint["data"]
 
                     if checkpoint_format == "v2_full_parameters":
-                        has_vgs = "vgs_state" in new_parameters if isinstance(new_parameters, dict) else False
-                        has_optimizer = "optimizer_state" in new_parameters if isinstance(new_parameters, dict) else False
+                        has_vgs = (
+                            "vgs_state" in new_parameters
+                            if isinstance(new_parameters, dict)
+                            else False
+                        )
+                        has_optimizer = (
+                            "optimizer_state" in new_parameters
+                            if isinstance(new_parameters, dict)
+                            else False
+                        )
                         logger.info(
                             f"Member {member.member_id}: Loaded v2 checkpoint "
                             f"(VGS: {has_vgs}, Optimizer: {has_optimizer})"
@@ -478,16 +512,19 @@ class PBTScheduler:
 
         if checkpoint_data is not None:
             checkpoint_path = os.path.join(
-                self.config.checkpoint_dir,
-                f"member_{member.member_id}_step_{step}.pt"
+                self.config.checkpoint_dir, f"member_{member.member_id}_step_{step}.pt"
             )
 
             # Add metadata to distinguish checkpoint format
-            has_vgs = 'vgs_state' in checkpoint_data if isinstance(checkpoint_data, dict) else False
-            has_optimizer = 'optimizer_state' in checkpoint_data if isinstance(checkpoint_data, dict) else False
+            has_vgs = "vgs_state" in checkpoint_data if isinstance(checkpoint_data, dict) else False
+            has_optimizer = (
+                "optimizer_state" in checkpoint_data if isinstance(checkpoint_data, dict) else False
+            )
 
             checkpoint_to_save = {
-                "format_version": "v2_full_parameters" if model_parameters is not None else "v1_policy_only",
+                "format_version": (
+                    "v2_full_parameters" if model_parameters is not None else "v1_policy_only"
+                ),
                 "data": checkpoint_data,
                 "step": step,
                 "performance": performance,
@@ -553,11 +590,15 @@ class PBTScheduler:
         if self.config.exploit_method == "truncation":
             # Check if member is in bottom truncation_ratio
             truncation_threshold = int(len(ranked_members) * self.config.truncation_ratio)
-            member_rank = next(i for i, m in enumerate(ranked_members) if m.member_id == member.member_id)
+            member_rank = next(
+                i for i, m in enumerate(ranked_members) if m.member_id == member.member_id
+            )
             return member_rank >= len(ranked_members) - truncation_threshold
         elif self.config.exploit_method == "binary_tournament":
             # Randomly select another member and compare
-            other_member = random.choice([m for m in self.population if m.member_id != member.member_id])
+            other_member = random.choice(
+                [m for m in self.population if m.member_id != member.member_id]
+            )
             if other_member.performance is None:
                 return False
             if self.config.metric_mode == "max":
@@ -587,7 +628,9 @@ class PBTScheduler:
             return random.choice(top_members) if top_members else None
         elif self.config.exploit_method == "binary_tournament":
             # Select the better performer from binary tournament
-            other_member = random.choice([m for m in self.population if m.member_id != member.member_id])
+            other_member = random.choice(
+                [m for m in self.population if m.member_id != member.member_id]
+            )
             if other_member.performance is None:
                 return None
             if self.config.metric_mode == "max":

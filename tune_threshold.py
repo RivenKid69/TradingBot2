@@ -33,10 +33,7 @@ def _write_table(df: pd.DataFrame, path: str) -> None:
 
 def main():
     ap = argparse.ArgumentParser(
-        description=(
-            "Подбор порога под целевую частоту сигналов "
-            "с учётом кулдауна и no-trade."
-        )
+        description=("Подбор порога под целевую частоту сигналов " "с учётом кулдауна и no-trade.")
     )
     ap.add_argument("--config", help="Путь к YAML-файлу конфигурации.")
     ap.add_argument(
@@ -46,12 +43,8 @@ def main():
             "Должны быть колонки ts_ms,symbol,score и y или eff_ret."
         ),
     )
-    ap.add_argument(
-        "--score_col", default="score", help="Имя колонки со скором/вероятностью."
-    )
-    ap.add_argument(
-        "--y_col", default="", help="Колонка бинарной метки 0/1 (для классификации)."
-    )
+    ap.add_argument("--score_col", default="score", help="Имя колонки со скором/вероятностью.")
+    ap.add_argument("--y_col", default="", help="Колонка бинарной метки 0/1 (для классификации).")
     ap.add_argument(
         "--ret_col",
         default="",
@@ -71,16 +64,13 @@ def main():
         default=1.5,
         help="Желаемая частота сигналов в день.",
     )
-    ap.add_argument(
-        "--tolerance", type=float, default=0.5, help="Допустимое отклонение частоты."
-    )
+    ap.add_argument("--tolerance", type=float, default=0.5, help="Допустимое отклонение частоты.")
     ap.add_argument(
         "--min_signal_gap_s",
         type=int,
         default=None,
         help=(
-            "Кулдаун между сигналами (сек). Если не задан — "
-            "пробуем прочитать из realtime.yaml."
+            "Кулдаун между сигналами (сек). Если не задан — " "пробуем прочитать из realtime.yaml."
         ),
     )
     ap.add_argument(
@@ -98,12 +88,8 @@ def main():
         action="store_true",
         help="Фильтровать no-trade окна (по legacy_sandbox.yaml).",
     )
-    ap.add_argument(
-        "--min_thr", type=float, default=0.50, help="Минимальный порог сетки."
-    )
-    ap.add_argument(
-        "--max_thr", type=float, default=0.99, help="Максимальный порог сетки."
-    )
+    ap.add_argument("--min_thr", type=float, default=0.50, help="Минимальный порог сетки.")
+    ap.add_argument("--max_thr", type=float, default=0.99, help="Максимальный порог сетки.")
     ap.add_argument("--steps", type=int, default=50, help="Число порогов в сетке.")
     ap.add_argument(
         "--optimize_for",
@@ -114,10 +100,7 @@ def main():
     ap.add_argument(
         "--out_csv",
         default="",
-        help=(
-            "Куда сохранить таблицу результатов (если пусто — "
-            "рядом, суффикс _thrscan.csv)."
-        ),
+        help=("Куда сохранить таблицу результатов (если пусто — " "рядом, суффикс _thrscan.csv)."),
     )
     args = ap.parse_args()
 
@@ -130,6 +113,7 @@ def main():
     if args.config:
         try:
             import yaml
+
             with open(args.config, "r", encoding="utf-8") as f:
                 cfg_data = yaml.safe_load(f) or {}
             cfg_data_section = cfg_data.get("data", {})

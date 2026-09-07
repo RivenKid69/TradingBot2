@@ -9,6 +9,7 @@ Tests verify:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 import yaml
@@ -80,17 +81,16 @@ def test_problem1_vf_clipping_warmup_configured():
         warmup_updates = config.get("model", {}).get("params", {}).get("vf_clip_warmup_updates")
 
         assert warmup_updates is not None, (
-            f"{config_path}: vf_clip_warmup_updates is missing. "
-            "Expected configured warmup."
+            f"{config_path}: vf_clip_warmup_updates is missing. " "Expected configured warmup."
         )
 
-        assert isinstance(warmup_updates, int), (
-            f"{config_path}: vf_clip_warmup_updates has invalid type {type(warmup_updates)}."
-        )
+        assert isinstance(
+            warmup_updates, int
+        ), f"{config_path}: vf_clip_warmup_updates has invalid type {type(warmup_updates)}."
 
-        assert warmup_updates >= 0, (
-            f"{config_path}: vf_clip_warmup_updates={warmup_updates} is negative."
-        )
+        assert (
+            warmup_updates >= 0
+        ), f"{config_path}: vf_clip_warmup_updates={warmup_updates} is negative."
 
         # Recommended: 10-20 updates for gradual warmup
         if warmup_updates > 0:
@@ -168,13 +168,13 @@ def test_problem2_cvar_tail_warning_threshold():
 
     # Find MIN_TAIL_SAMPLES = <value>
     import re
-    match = re.search(r'MIN_TAIL_SAMPLES\s*=\s*(\d+)', content)
+
+    match = re.search(r"MIN_TAIL_SAMPLES\s*=\s*(\d+)", content)
     assert match, "MIN_TAIL_SAMPLES not found in distributional_ppo.py"
 
     min_tail_samples = int(match.group(1))
     assert min_tail_samples == 10, (
-        f"MIN_TAIL_SAMPLES={min_tail_samples} has changed. "
-        "Test assumptions may need update."
+        f"MIN_TAIL_SAMPLES={min_tail_samples} has changed. " "Test assumptions may need update."
     )
 
 
@@ -250,8 +250,7 @@ def test_problem3_ev_fallback_warning_renamed():
 
     # New metric SHOULD exist
     assert '"info/ev_primary_vs_fallback_delta"' in content, (
-        'New metric "info/ev_primary_vs_fallback_delta" not found. '
-        "Problem #3 fix incomplete."
+        'New metric "info/ev_primary_vs_fallback_delta" not found. ' "Problem #3 fix incomplete."
     )
 
 
@@ -337,8 +336,7 @@ def test_problem3_ev_fallback_control_functional():
     # - allow_fallback=True → fallback should compute valid EV
     # - allow_fallback=False → should return None
     assert ev_without_fallback is None, (
-        "allow_fallback=False did not prevent fallback. "
-        "Expected None when primary EV fails."
+        "allow_fallback=False did not prevent fallback. " "Expected None when primary EV fails."
     )
 
     # Note: ev_with_fallback might still be None if fallback also fails
@@ -357,7 +355,8 @@ def test_problem3_strict_evaluation_uses_allow_fallback_false():
     # Search for the primary-only evaluation call
     # Should have: allow_fallback=False
     import re
-    pattern = r'_compute_explained_variance_metric\([^)]*allow_fallback=False[^)]*\)'
+
+    pattern = r"_compute_explained_variance_metric\([^)]*allow_fallback=False[^)]*\)"
     matches = re.findall(pattern, content, re.DOTALL)
 
     assert len(matches) >= 1, (
@@ -383,14 +382,14 @@ def test_problem4_documented_as_not_a_bug():
 
     # Check that Problem #4 is marked as FALSE ALARM
     assert "Problem #4" in content, "Problem #4 section not found in analysis report"
-    assert "FALSE ALARM" in content or "NOT A BUG" in content, (
-        "Problem #4 should be documented as FALSE ALARM or NOT A BUG"
-    )
+    assert (
+        "FALSE ALARM" in content or "NOT A BUG" in content
+    ), "Problem #4 should be documented as FALSE ALARM or NOT A BUG"
 
     # Check that explanation mentions equivalence
-    assert "close_time" in content and "open_time" in content, (
-        "Problem #4 explanation should mention close_time/open_time equivalence"
-    )
+    assert (
+        "close_time" in content and "open_time" in content
+    ), "Problem #4 explanation should mention close_time/open_time equivalence"
 
 
 def test_problem4_timestamp_convention_is_correct():
@@ -412,9 +411,9 @@ def test_problem4_timestamp_convention_is_correct():
     with open(prepare_and_run_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    assert 'df["timestamp"] = (df["close_time"]' in content, (
-        "prepare_and_run.py should use close_time for timestamp computation"
-    )
+    assert (
+        'df["timestamp"] = (df["close_time"]' in content
+    ), "prepare_and_run.py should use close_time for timestamp computation"
 
     # Verify features_pipeline.py does 1-bar shift
     features_pipeline_path = Path(__file__).parent.parent / "features_pipeline.py"
@@ -425,9 +424,9 @@ def test_problem4_timestamp_convention_is_correct():
         content = f.read()
 
     # Look for shift(1) or similar
-    assert "shift" in content.lower() or "shift(1)" in content, (
-        "features_pipeline.py should perform 1-bar shift for lookahead prevention"
-    )
+    assert (
+        "shift" in content.lower() or "shift(1)" in content
+    ), "features_pipeline.py should perform 1-bar shift for lookahead prevention"
 
 
 # ============================================================================
@@ -453,11 +452,13 @@ def test_all_problems_fixes_integrated():
 def test_no_regression_twin_critics_tests():
     """Verify that existing Twin Critics tests still pass (no regression from Problem #1 fix)."""
     # Run existing Twin Critics VF clipping tests
-    pytest.main([
-        "tests/test_twin_critics_vf_clipping_correctness.py",
-        "-v",
-        "--tb=short",
-    ])
+    pytest.main(
+        [
+            "tests/test_twin_critics_vf_clipping_correctness.py",
+            "-v",
+            "--tb=short",
+        ]
+    )
 
 
 def test_no_regression_cvar_tests():
@@ -469,9 +470,9 @@ def test_no_regression_cvar_tests():
 
 def test_fixes_summary():
     """Print summary of all fixes for documentation."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FOUR PROBLEMS FIXES SUMMARY (2025-11-24)")
-    print("="*80)
+    print("=" * 80)
     print("\n✅ Problem #1: VF Clipping Enabled")
     print("   - Config: clip_range_vf = 0.7 (was: null)")
     print("   - Config: vf_clip_warmup_updates = 10")
@@ -497,9 +498,9 @@ def test_fixes_summary():
     print("   - Impact: No code changes required")
     print("   - Status: DOCUMENTED")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("All fixes verified and integrated.")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
 
 if __name__ == "__main__":

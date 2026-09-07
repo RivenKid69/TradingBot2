@@ -11,6 +11,7 @@ These tests validate hypotheses about root causes.
 import math
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from typing import Tuple, Optional
@@ -21,6 +22,7 @@ from unittest.mock import MagicMock, patch
 # HYPOTHESIS 1: Target Distribution Outside Support Bounds
 # If targets frequently fall outside [v_min, v_max], C51 loses information
 # ============================================================================
+
 
 class TestTargetDistributionBounds:
     """Test if target clamping causes information loss."""
@@ -121,7 +123,7 @@ class TestTargetDistributionBounds:
 
         # Actual training data statistics (different regime)
         actual_mean = 0.005  # Market regime changed
-        actual_std = 0.02    # Volatility doubled
+        actual_std = 0.02  # Volatility doubled
 
         # Raw returns from actual distribution
         n_samples = 1000
@@ -147,6 +149,7 @@ class TestTargetDistributionBounds:
 # HYPOTHESIS 2: Twin Critics Loss Growth Due to Non-Stationary Targets
 # ============================================================================
 
+
 class TestTwinCriticsLossGrowth:
     """Test if non-stationary targets cause loss growth."""
 
@@ -161,11 +164,7 @@ class TestTwinCriticsLossGrowth:
         torch.manual_seed(42)
 
         # Simple critic network
-        critic = nn.Sequential(
-            nn.Linear(10, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1)
-        )
+        critic = nn.Sequential(nn.Linear(10, 32), nn.ReLU(), nn.Linear(32, 1))
         optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
 
         losses = []
@@ -250,6 +249,7 @@ class TestTwinCriticsLossGrowth:
 # HYPOTHESIS 3: CVaR Constraint Violation Pattern
 # ============================================================================
 
+
 class TestCVaRConstraint:
     """Test CVaR constraint behavior."""
 
@@ -331,6 +331,7 @@ class TestCVaRConstraint:
 # HYPOTHESIS 4: Gradient Norm Collapse
 # ============================================================================
 
+
 class TestGradientNormCollapse:
     """Test gradient flow and potential vanishing gradients."""
 
@@ -382,11 +383,7 @@ class TestGradientNormCollapse:
 
         # Simple network
         model = nn.Sequential(
-            nn.Linear(10, 64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(10, 64), nn.ReLU(), nn.Linear(64, 64), nn.ReLU(), nn.Linear(64, 1)
         )
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
@@ -409,7 +406,7 @@ class TestGradientNormCollapse:
             for p in model.parameters():
                 if p.grad is not None:
                     total_norm += p.grad.data.norm(2).item() ** 2
-            total_norm = total_norm ** 0.5
+            total_norm = total_norm**0.5
 
             grad_norms.append(total_norm)
             losses.append(loss.item())
@@ -435,6 +432,7 @@ class TestGradientNormCollapse:
 # ============================================================================
 # HYPOTHESIS 5: EV ≈ 0 Due to Mismatch Between Predictions and Targets
 # ============================================================================
+
 
 class TestExplainedVarianceDiagnostics:
     """Diagnose why EV ≈ 0."""
@@ -532,6 +530,7 @@ class TestExplainedVarianceDiagnostics:
 # COMPREHENSIVE DIAGNOSTIC TEST
 # ============================================================================
 
+
 class TestComprehensiveDiagnostics:
     """Run all diagnostics together."""
 
@@ -553,9 +552,9 @@ class TestComprehensiveDiagnostics:
         # 3. CVaR Lambda +260,000% → From 0.00001 to 0.033, still in [0,1]
         # 4. Gradient norm -82% → Could be convergence or vanishing
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("DIAGNOSTIC ANALYSIS")
-        print("="*60)
+        print("=" * 60)
 
         print("\n1. EXPLAINED VARIANCE ~ 0")
         print("-" * 40)
@@ -585,11 +584,12 @@ class TestComprehensiveDiagnostics:
         print("  d) True vanishing gradients (bad)")
         print("NEED: Check if loss is still decreasing")
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("RECOMMENDATIONS")
-        print("="*60)
+        print("=" * 60)
 
-        print("""
+        print(
+            """
 1. CHECK VALUE FUNCTION PREDICTIONS:
    - Are predictions nearly constant?
    - Plot histogram of predictions vs targets
@@ -610,12 +610,14 @@ class TestComprehensiveDiagnostics:
    - Learning rate might be too high/low
    - VF coefficient might need adjustment
    - clip_range_vf might be too restrictive
-        """)
+        """
+        )
 
 
 # ============================================================================
 # SPECIFIC BUG HUNT TESTS
 # ============================================================================
+
 
 class TestSpecificBugHunts:
     """Tests for specific potential bugs."""
@@ -676,9 +678,9 @@ class TestSpecificBugHunts:
         reconstructed = lower_weight * lower_atom + upper_weight * upper_atom
 
         # Should be close to original
-        assert abs(reconstructed - target_value) < delta_z, (
-            f"Projection error: {abs(reconstructed - target_value):.4f} > {delta_z:.4f}"
-        )
+        assert (
+            abs(reconstructed - target_value) < delta_z
+        ), f"Projection error: {abs(reconstructed - target_value):.4f} > {delta_z:.4f}"
 
     def test_twin_critics_independent_clipping(self):
         """
@@ -700,29 +702,21 @@ class TestSpecificBugHunts:
         clip_delta = 0.1
 
         # CORRECT: Independent clipping
-        q1_clipped_correct = old_q1 + torch.clamp(
-            current_q1 - old_q1, -clip_delta, clip_delta
-        )
-        q2_clipped_correct = old_q2 + torch.clamp(
-            current_q2 - old_q2, -clip_delta, clip_delta
-        )
+        q1_clipped_correct = old_q1 + torch.clamp(current_q1 - old_q1, -clip_delta, clip_delta)
+        q2_clipped_correct = old_q2 + torch.clamp(current_q2 - old_q2, -clip_delta, clip_delta)
 
         # WRONG: Clipping relative to min(Q1, Q2)
         old_min = torch.min(old_q1, old_q2)
-        q1_clipped_wrong = old_min + torch.clamp(
-            current_q1 - old_min, -clip_delta, clip_delta
-        )
-        q2_clipped_wrong = old_min + torch.clamp(
-            current_q2 - old_min, -clip_delta, clip_delta
-        )
+        q1_clipped_wrong = old_min + torch.clamp(current_q1 - old_min, -clip_delta, clip_delta)
+        q2_clipped_wrong = old_min + torch.clamp(current_q2 - old_min, -clip_delta, clip_delta)
 
         # Verify they're different
         diff_q1 = (q1_clipped_correct - q1_clipped_wrong).abs().mean()
         diff_q2 = (q2_clipped_correct - q2_clipped_wrong).abs().mean()
 
-        assert diff_q1 > 0.01 or diff_q2 > 0.01, (
-            "Independent clipping should differ from shared clipping"
-        )
+        assert (
+            diff_q1 > 0.01 or diff_q2 > 0.01
+        ), "Independent clipping should differ from shared clipping"
 
 
 if __name__ == "__main__":

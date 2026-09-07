@@ -57,6 +57,7 @@ class CloudBuildConfig:
 
     Design Doc 8.1: OCI as primary format with ZIP fallback for dev.
     """
+
     # Source
     source_dir: Path
     entrypoint_module: str
@@ -107,6 +108,7 @@ class CloudBuildResult:
 
     Contains both OCI and ZIP results if both were generated.
     """
+
     success: bool
     artifact_id: str
     version: str

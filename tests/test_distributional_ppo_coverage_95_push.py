@@ -2,6 +2,7 @@
 Additional coverage tests targeting specific uncovered branches in distributional_ppo.py.
 Focuses on edge cases in helper methods and internal functions.
 """
+
 from __future__ import annotations
 
 import copy
@@ -50,12 +51,8 @@ class MinimalTestingEnv(gymnasium.Env):
 
     def __init__(self, seed: int = 42, max_steps: int = 8):
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
         self._max_steps = max_steps

@@ -55,7 +55,9 @@ class RegistryEntry:
             "updated_at": self.updated_at.isoformat(),
             "deprecated_at": self.deprecated_at.isoformat() if self.deprecated_at else None,
             "deployment_count": self.deployment_count,
-            "last_deployed_at": self.last_deployed_at.isoformat() if self.last_deployed_at else None,
+            "last_deployed_at": (
+                self.last_deployed_at.isoformat() if self.last_deployed_at else None
+            ),
         }
 
 

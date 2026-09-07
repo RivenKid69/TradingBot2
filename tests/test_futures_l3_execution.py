@@ -29,6 +29,7 @@ References:
 import math
 import time
 import pytest
+
 pytest.importorskip("sortedcontainers")
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
@@ -153,11 +154,41 @@ def sample_order() -> Order:
 def sample_positions() -> List[Dict[str, Any]]:
     """Create sample positions for ADL testing."""
     return [
-        {"account_id": "acc_1", "qty": Decimal("10"), "entry_price": Decimal("40000"), "leverage": 10, "margin": Decimal("4000")},
-        {"account_id": "acc_2", "qty": Decimal("5"), "entry_price": Decimal("42000"), "leverage": 20, "margin": Decimal("1050")},
-        {"account_id": "acc_3", "qty": Decimal("20"), "entry_price": Decimal("38000"), "leverage": 5, "margin": Decimal("15200")},
-        {"account_id": "acc_4", "qty": Decimal("8"), "entry_price": Decimal("44000"), "leverage": 25, "margin": Decimal("1408")},
-        {"account_id": "acc_5", "qty": Decimal("15"), "entry_price": Decimal("41000"), "leverage": 15, "margin": Decimal("4100")},
+        {
+            "account_id": "acc_1",
+            "qty": Decimal("10"),
+            "entry_price": Decimal("40000"),
+            "leverage": 10,
+            "margin": Decimal("4000"),
+        },
+        {
+            "account_id": "acc_2",
+            "qty": Decimal("5"),
+            "entry_price": Decimal("42000"),
+            "leverage": 20,
+            "margin": Decimal("1050"),
+        },
+        {
+            "account_id": "acc_3",
+            "qty": Decimal("20"),
+            "entry_price": Decimal("38000"),
+            "leverage": 5,
+            "margin": Decimal("15200"),
+        },
+        {
+            "account_id": "acc_4",
+            "qty": Decimal("8"),
+            "entry_price": Decimal("44000"),
+            "leverage": 25,
+            "margin": Decimal("1408"),
+        },
+        {
+            "account_id": "acc_5",
+            "qty": Decimal("15"),
+            "entry_price": Decimal("41000"),
+            "leverage": 15,
+            "margin": Decimal("4100"),
+        },
     ]
 
 
@@ -384,9 +415,15 @@ class TestLiquidationOrderStream:
         """Test time-based filtering."""
         stream = LiquidationOrderStream()
         events = [
-            LiquidationOrderInfo("BTC", "SELL", Decimal("1"), Decimal("50000"), Decimal("50000"), 1000),
-            LiquidationOrderInfo("BTC", "SELL", Decimal("2"), Decimal("49000"), Decimal("49000"), 2000),
-            LiquidationOrderInfo("BTC", "SELL", Decimal("3"), Decimal("48000"), Decimal("48000"), 3000),
+            LiquidationOrderInfo(
+                "BTC", "SELL", Decimal("1"), Decimal("50000"), Decimal("50000"), 1000
+            ),
+            LiquidationOrderInfo(
+                "BTC", "SELL", Decimal("2"), Decimal("49000"), Decimal("49000"), 2000
+            ),
+            LiquidationOrderInfo(
+                "BTC", "SELL", Decimal("3"), Decimal("48000"), Decimal("48000"), 3000
+            ),
         ]
         stream.add_events(events)
 
@@ -413,7 +450,13 @@ class TestLiquidationOrderStream:
         stream = LiquidationOrderStream()
         data = [
             {"symbol": "BTCUSDT", "side": "SELL", "qty": "1.5", "price": "45000", "time": 1000},
-            {"symbol": "ETHUSDT", "side": "BUY", "qty": "10", "price": "2000", "timestamp_ms": 2000},
+            {
+                "symbol": "ETHUSDT",
+                "side": "BUY",
+                "qty": "10",
+                "price": "2000",
+                "timestamp_ms": 2000,
+            },
         ]
         stream.add_historical_data(data)
         assert stream.pending_count == 2
@@ -1064,7 +1107,7 @@ class TestFuturesL3ExecutionProvider:
         )
 
         assert fill is not None
-        assert fill.metadata.get('symbol') == sample_order.symbol
+        assert fill.metadata.get("symbol") == sample_order.symbol
 
     def test_execute_with_funding(self, sample_order, sample_market_state, sample_bar_data):
         """Test execution with funding rate."""
@@ -1086,7 +1129,13 @@ class TestFuturesL3ExecutionProvider:
         provider = create_futures_l3_execution_provider()
 
         data = [
-            {"symbol": "BTCUSDT", "side": "SELL", "qty": "1", "price": "45000", "timestamp_ms": 1000},
+            {
+                "symbol": "BTCUSDT",
+                "side": "SELL",
+                "qty": "1",
+                "price": "45000",
+                "timestamp_ms": 1000,
+            },
         ]
         provider.load_liquidation_data(data)
 
@@ -1136,9 +1185,7 @@ class TestFuturesL3ExecutionProvider:
         provider = create_futures_l3_execution_provider()
 
         # Manually set cascade
-        provider._active_cascade = CascadeResult(
-            initial_event=sample_liquidation_info
-        )
+        provider._active_cascade = CascadeResult(initial_event=sample_liquidation_info)
 
         provider.clear_cascade()
 
@@ -1368,14 +1415,16 @@ class TestEdgeCases:
 
         # Add more than buffer size
         for i in range(20):
-            stream.add_event(LiquidationOrderInfo(
-                symbol="BTC",
-                side="SELL",
-                qty=Decimal("1"),
-                bankruptcy_price=Decimal("50000"),
-                mark_price=Decimal("50000"),
-                timestamp_ms=i * 1000,
-            ))
+            stream.add_event(
+                LiquidationOrderInfo(
+                    symbol="BTC",
+                    side="SELL",
+                    qty=Decimal("1"),
+                    bankruptcy_price=Decimal("50000"),
+                    mark_price=Decimal("50000"),
+                    timestamp_ms=i * 1000,
+                )
+            )
 
         # Should only keep max_buffer_size
         assert stream.pending_count <= 10

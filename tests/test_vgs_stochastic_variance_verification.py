@@ -12,6 +12,7 @@ This test will demonstrate that the CURRENT implementation is MATHEMATICALLY COR
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from variance_gradient_scaler import VarianceGradientScaler
@@ -31,9 +32,9 @@ def test_stochastic_variance_definition():
     This is DIFFERENT from:
         E_t[mean(grad_t^2)] - (E_t[mean(grad_t)])^2  (which is NOT stochastic variance)
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 1: Verify stochastic variance computation is CORRECT")
-    print("="*80)
+    print("=" * 80)
 
     # Create a simple parameter with known gradients
     param = torch.nn.Parameter(torch.zeros(3))
@@ -45,7 +46,7 @@ def test_stochastic_variance_definition():
         enabled=True,
         beta=0.01,  # Very small beta - nearly uniform average
         alpha=0.1,
-        warmup_steps=0
+        warmup_steps=0,
     )
 
     # Simulate gradient updates with VARYING gradient means
@@ -67,12 +68,12 @@ def test_stochastic_variance_definition():
 
         g_mean = grad.mean().item()
         grad_means.append(g_mean)
-        grad_means_sq.append(g_mean ** 2)
+        grad_means_sq.append(g_mean**2)
 
     # Compute expected stochastic variance MANUALLY
     expected_mean = np.mean(grad_means)  # E[μ_t]
     expected_mean_sq = np.mean(grad_means_sq)  # E[μ_t^2]
-    expected_variance = expected_mean_sq - expected_mean ** 2  # Var[μ] = E[μ^2] - E[μ]^2
+    expected_variance = expected_mean_sq - expected_mean**2  # Var[μ] = E[μ^2] - E[μ]^2
 
     print(f"\nGradient means: {grad_means}")
     print(f"Gradient means squared: {grad_means_sq}")
@@ -85,7 +86,7 @@ def test_stochastic_variance_definition():
     bias_correction = 1.0 - 0.01 ** len(gradients)
     mean_corrected = vgs._param_grad_mean_ema[0].item() / bias_correction
     sq_corrected = vgs._param_grad_sq_ema[0].item() / bias_correction
-    vgs_variance = sq_corrected - mean_corrected ** 2
+    vgs_variance = sq_corrected - mean_corrected**2
 
     print(f"\nVGS _param_grad_mean_ema (corrected) = {mean_corrected:.4f}")
     print(f"VGS _param_grad_sq_ema (corrected) = {sq_corrected:.4f}")
@@ -112,9 +113,9 @@ def test_claimed_bug_is_false():
 
     Does NOT equal zero unless μ is constant over time.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 2: Verify claimed bug 'variance always zero' is FALSE")
-    print("="*80)
+    print("=" * 80)
 
     # Simulate the exact scenario described in the bug report
     # Current implementation (claimed to be wrong):
@@ -132,14 +133,14 @@ def test_claimed_bug_is_false():
 
     for grad in timesteps:
         grad_mean = grad.mean().item()
-        grad_sq = grad_mean ** 2  # Current implementation
+        grad_sq = grad_mean**2  # Current implementation
         means.append(grad_mean)
         means_squared.append(grad_sq)
 
     # Compute variance using current formula
     E_mean = np.mean(means)  # E[μ]
     E_mean_sq = np.mean(means_squared)  # E[μ^2]
-    variance = E_mean_sq - E_mean ** 2  # Var[μ] = E[μ^2] - E[μ]^2
+    variance = E_mean_sq - E_mean**2  # Var[μ] = E[μ^2] - E[μ]^2
 
     print(f"\nTimestep 1: grad_mean = {means[0]:.2f}, grad_mean^2 = {means_squared[0]:.2f}")
     print(f"Timestep 2: grad_mean = {means[1]:.2f}, grad_mean^2 = {means_squared[1]:.2f}")
@@ -166,9 +167,9 @@ def test_proposed_fix_is_incorrect():
     This is NOT the stochastic variance of the gradient estimate!
     It mixes spatial and temporal statistics incorrectly.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 3: Verify proposed 'fix' computes WRONG metric")
-    print("="*80)
+    print("=" * 80)
 
     # Example with spatially heterogeneous gradients
     timesteps = [
@@ -188,11 +189,11 @@ def test_proposed_fix_is_incorrect():
         # Current
         grad_mean = grad.mean().item()
         current_means.append(grad_mean)
-        current_means_sq.append(grad_mean ** 2)
+        current_means_sq.append(grad_mean**2)
 
         # Proposed
         proposed_means.append(grad_mean)  # Same as current
-        proposed_means_sq.append((grad ** 2).mean().item())  # Different!
+        proposed_means_sq.append((grad**2).mean().item())  # Different!
 
     # Current stochastic variance
     current_var = np.mean(current_means_sq) - np.mean(current_means) ** 2
@@ -238,17 +239,13 @@ def test_vgs_with_constant_gradient():
     This is the CRITICAL test: if gradients don't change over time,
     stochastic variance MUST be zero.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 4: Verify zero variance for constant gradients")
-    print("="*80)
+    print("=" * 80)
 
     param = torch.nn.Parameter(torch.zeros(5))
     vgs = VarianceGradientScaler(
-        parameters=[param],
-        enabled=True,
-        beta=0.9,
-        alpha=0.1,
-        warmup_steps=0
+        parameters=[param], enabled=True, beta=0.9, alpha=0.1, warmup_steps=0
     )
 
     # Constant gradient over time
@@ -279,9 +276,9 @@ def test_mathematical_formula():
     This test demonstrates that the formula is ALWAYS VALID and
     does NOT equal zero unless X is constant.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 5: Mathematical verification of variance formula")
-    print("="*80)
+    print("=" * 80)
 
     # Example random variable X with different values
     X_samples = [1.0, 2.0, 3.0, 4.0, 5.0]
@@ -293,7 +290,7 @@ def test_mathematical_formula():
     E_X_sq = np.mean([x**2 for x in X_samples])
 
     # Compute Var[X] = E[X^2] - E[X]^2
-    Var_X = E_X_sq - E_X ** 2
+    Var_X = E_X_sq - E_X**2
 
     print(f"\nRandom variable X: {X_samples}")
     print(f"E[X] = {E_X:.2f}")
@@ -314,9 +311,9 @@ def test_mathematical_formula():
 
 
 if __name__ == "__main__":
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("VGS STOCHASTIC VARIANCE VERIFICATION")
-    print("="*80)
+    print("=" * 80)
     print("\nThis test suite verifies that the current VGS implementation is CORRECT")
     print("and the claimed bug is FALSE.\n")
 
@@ -326,9 +323,9 @@ if __name__ == "__main__":
     test_vgs_with_constant_gradient()
     test_mathematical_formula()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("[SUCCESS] ALL TESTS PASSED")
-    print("="*80)
+    print("=" * 80)
     print("\nCONCLUSION:")
     print("1. [OK] VGS correctly computes stochastic variance")
     print("2. [OK] The formula Var[mu] = E[mu^2] - E[mu]^2 is CORRECT")
@@ -336,4 +333,4 @@ if __name__ == "__main__":
     print("4. [OK] Proposed 'fix' would BREAK the algorithm")
     print("5. [OK] Current implementation matches mathematical definition")
     print("\nNO CODE CHANGES NEEDED - Algorithm is CORRECT!")
-    print("="*80)
+    print("=" * 80)

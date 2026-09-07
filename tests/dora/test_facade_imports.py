@@ -32,11 +32,13 @@ class TestFacadeVersion:
     def test_facade_version(self) -> None:
         """Verify facade version is 2.1.0."""
         from services.dora import __version__
+
         assert __version__ == "2.1.0"
 
     def test_facade_compliance_phase(self) -> None:
         """Verify facade compliance phase is 8."""
         from services.dora import __dora_compliance_phase__
+
         assert __dora_compliance_phase__ == 8
 
 
@@ -102,7 +104,9 @@ class TestFacadeIncidentInterfaceReExports:
     def test_incident_classification_reexport(self) -> None:
         """Test DORAIncidentClassification is re-exported."""
         from services.dora import DORAIncidentClassification
-        from services.dora_integration.incident_interface import DORAIncidentClassification as Direct
+        from services.dora_integration.incident_interface import (
+            DORAIncidentClassification as Direct,
+        )
 
         assert DORAIncidentClassification is Direct
 
@@ -116,7 +120,9 @@ class TestFacadeIncidentInterfaceReExports:
     def test_cyber_threat_notification_reexport(self) -> None:
         """Test CyberThreatNotificationService is re-exported."""
         from services.dora import CyberThreatNotificationService
-        from services.dora_integration.incident_interface import CyberThreatNotificationService as Direct
+        from services.dora_integration.incident_interface import (
+            CyberThreatNotificationService as Direct,
+        )
 
         assert CyberThreatNotificationService is Direct
 
@@ -258,28 +264,36 @@ class TestFacadeArchivedFEModulesReExports:
     def test_function_classifier_reexport(self) -> None:
         """Test FunctionClassifier is re-exported from archive."""
         from services.dora import FunctionClassifier
-        from services.archive.dora_financial_entity.function_classification import FunctionClassifier as Direct
+        from services.archive.dora_financial_entity.function_classification import (
+            FunctionClassifier as Direct,
+        )
 
         assert FunctionClassifier is Direct
 
     def test_governance_framework_reexport(self) -> None:
         """Test DORAGovernanceFramework is re-exported from archive."""
         from services.dora import DORAGovernanceFramework
-        from services.archive.dora_financial_entity.governance import DORAGovernanceFramework as Direct
+        from services.archive.dora_financial_entity.governance import (
+            DORAGovernanceFramework as Direct,
+        )
 
         assert DORAGovernanceFramework is Direct
 
     def test_proportionality_assessor_reexport(self) -> None:
         """Test ProportionalityAssessor is re-exported from archive."""
         from services.dora import ProportionalityAssessor
-        from services.archive.dora_financial_entity.proportionality import ProportionalityAssessor as Direct
+        from services.archive.dora_financial_entity.proportionality import (
+            ProportionalityAssessor as Direct,
+        )
 
         assert ProportionalityAssessor is Direct
 
     def test_regulation_integration_reexport(self) -> None:
         """Test DORARegulationIntegration is re-exported from archive."""
         from services.dora import DORARegulationIntegration
-        from services.archive.dora_financial_entity.cross_regulation import DORARegulationIntegration as Direct
+        from services.archive.dora_financial_entity.cross_regulation import (
+            DORARegulationIntegration as Direct,
+        )
 
         assert DORARegulationIntegration is Direct
 
@@ -301,6 +315,7 @@ class TestFacadeAllExportsAccessible:
     def test_all_exports_count(self) -> None:
         """Verify __all__ has substantial exports."""
         from services.dora import __all__
+
         # Should have 250+ exports (integration layer + archived FE modules)
         assert len(__all__) >= 250, f"Expected 250+ exports, got {len(__all__)}"
 
@@ -311,31 +326,37 @@ class TestFacadeFactoryFunctions:
     def test_audit_readiness_factory(self) -> None:
         """Test create_audit_readiness factory."""
         from services.dora import create_audit_readiness
+
         assert callable(create_audit_readiness)
 
     def test_incident_classification_factory(self) -> None:
         """Test create_incident_classification factory."""
         from services.dora import create_incident_classification
+
         assert callable(create_incident_classification)
 
     def test_contractual_requirements_factory(self) -> None:
         """Test create_contractual_requirements factory."""
         from services.dora import create_contractual_requirements
+
         assert callable(create_contractual_requirements)
 
     def test_information_sharing_factory(self) -> None:
         """Test create_information_sharing factory."""
         from services.dora import create_information_sharing
+
         assert callable(create_information_sharing)
 
     def test_scope_verifier_factory(self) -> None:
         """Test create_scope_verifier factory (archived)."""
         from services.dora import create_scope_verifier
+
         assert callable(create_scope_verifier)
 
     def test_governance_framework_factory(self) -> None:
         """Test create_governance_framework factory (archived)."""
         from services.dora import create_governance_framework
+
         assert callable(create_governance_framework)
 
 
@@ -346,27 +367,27 @@ class TestFacadeEnumsReExport:
         """Test AuditType enum members."""
         from services.dora import AuditType
 
-        assert hasattr(AuditType, 'CLIENT_OPERATIONAL')
-        assert hasattr(AuditType, 'NCA_INSPECTION')
-        assert hasattr(AuditType, 'CERTIFICATION')
+        assert hasattr(AuditType, "CLIENT_OPERATIONAL")
+        assert hasattr(AuditType, "NCA_INSPECTION")
+        assert hasattr(AuditType, "CERTIFICATION")
 
     def test_incident_severity_enum(self) -> None:
         """Test IncidentSeverity enum members."""
         from services.dora import IncidentSeverity
 
-        assert hasattr(IncidentSeverity, 'CRITICAL')
-        assert hasattr(IncidentSeverity, 'HIGH')
-        assert hasattr(IncidentSeverity, 'MEDIUM')
-        assert hasattr(IncidentSeverity, 'LOW')
+        assert hasattr(IncidentSeverity, "CRITICAL")
+        assert hasattr(IncidentSeverity, "HIGH")
+        assert hasattr(IncidentSeverity, "MEDIUM")
+        assert hasattr(IncidentSeverity, "LOW")
 
     def test_sla_tier_enum(self) -> None:
         """Test SLATier enum members."""
         from services.dora import SLATier
 
-        assert hasattr(SLATier, 'STANDARD')
-        assert hasattr(SLATier, 'PROFESSIONAL')
-        assert hasattr(SLATier, 'ENTERPRISE')
-        assert hasattr(SLATier, 'CRITICAL')
+        assert hasattr(SLATier, "STANDARD")
+        assert hasattr(SLATier, "PROFESSIONAL")
+        assert hasattr(SLATier, "ENTERPRISE")
+        assert hasattr(SLATier, "CRITICAL")
 
 
 class TestFacadeBackwardCompatibility:
@@ -375,28 +396,33 @@ class TestFacadeBackwardCompatibility:
     def test_old_import_pattern_1(self) -> None:
         """Test: from services.dora import DORAScope, FunctionClassifier."""
         from services.dora import DORAScope, FunctionClassifier
+
         assert DORAScope is not None
         assert FunctionClassifier is not None
 
     def test_old_import_pattern_2(self) -> None:
         """Test: from services.dora import DORAuditReadiness."""
         from services.dora import DORAuditReadiness
+
         assert DORAuditReadiness is not None
 
     def test_old_import_pattern_3(self) -> None:
         """Test: from services.dora import DORAIncidentClassification."""
         from services.dora import DORAIncidentClassification
+
         assert DORAIncidentClassification is not None
 
     def test_module_access_pattern(self) -> None:
         """Test: import services.dora; services.dora.DORAScope."""
         import services.dora
+
         assert services.dora.DORAScope is not None
         assert services.dora.FunctionClassifier is not None
 
     def test_alias_backward_compat(self) -> None:
         """Test aliased exports for backward compatibility."""
         from services.dora import ProviderInfoPackageGenerator, DORAProviderInfoPackage
+
         # Should be same class
         assert ProviderInfoPackageGenerator is DORAProviderInfoPackage
 

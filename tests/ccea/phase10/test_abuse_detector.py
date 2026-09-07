@@ -202,7 +202,9 @@ class TestAbuseDetector:
             alerts = detector.process_metrics(metrics)
 
         # Should have mining alert after duration threshold
-        mining_alerts = [a for a in detector.get_alerts() if a.abuse_type == AbuseType.CRYPTOCURRENCY_MINING]
+        mining_alerts = [
+            a for a in detector.get_alerts() if a.abuse_type == AbuseType.CRYPTOCURRENCY_MINING
+        ]
         # Alert may or may not be generated depending on timing
         assert len(mining_alerts) >= 0
 

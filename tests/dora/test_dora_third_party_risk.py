@@ -55,6 +55,7 @@ from services.dora_integration.third_party import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def config():
     """Create test configuration."""
@@ -104,6 +105,7 @@ def sample_provider(manager, sample_service):
 # =============================================================================
 # Enumeration Tests
 # =============================================================================
+
 
 class TestEnumerations:
     """Test all enumeration classes."""
@@ -174,6 +176,7 @@ class TestEnumerations:
 # =============================================================================
 # Data Structure Tests
 # =============================================================================
+
 
 class TestICTService:
     """Test ICTService data structure."""
@@ -290,7 +293,7 @@ class TestThirdPartyRiskAssessment:
                 "high": 2,
                 "medium": 3,
                 "low": 4,
-            }
+            },
         )
         assert assessment.risk_count_by_level["critical"] == 1
         assert assessment.risk_count_by_level["high"] == 2
@@ -329,6 +332,7 @@ class TestProviderRelationshipEvent:
 # Configuration Tests
 # =============================================================================
 
+
 class TestThirdPartyRiskConfig:
     """Test ThirdPartyRiskConfig."""
 
@@ -355,6 +359,7 @@ class TestThirdPartyRiskConfig:
 # =============================================================================
 # Provider Management Tests
 # =============================================================================
+
 
 class TestProviderManagement:
     """Test provider management functionality."""
@@ -490,6 +495,7 @@ class TestProviderManagement:
 # Service Management Tests
 # =============================================================================
 
+
 class TestServiceManagement:
     """Test service management functionality."""
 
@@ -523,6 +529,7 @@ class TestServiceManagement:
 # =============================================================================
 # Risk Management Tests
 # =============================================================================
+
 
 class TestRiskManagement:
     """Test risk management functionality."""
@@ -625,6 +632,7 @@ class TestRiskManagement:
 # Risk Assessment Tests
 # =============================================================================
 
+
 class TestRiskAssessment:
     """Test risk assessment functionality."""
 
@@ -689,6 +697,7 @@ class TestRiskAssessment:
 # =============================================================================
 # Due Diligence Tests
 # =============================================================================
+
 
 class TestDueDiligence:
     """Test due diligence functionality."""
@@ -757,6 +766,7 @@ class TestDueDiligence:
 # Control and Oversight Tests
 # =============================================================================
 
+
 class TestControlAndOversight:
     """Test control and oversight functionality."""
 
@@ -777,6 +787,7 @@ class TestControlAndOversight:
 # =============================================================================
 # Status and Reporting Tests
 # =============================================================================
+
 
 class TestStatusAndReporting:
     """Test status and reporting functionality."""
@@ -802,6 +813,7 @@ class TestStatusAndReporting:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory functions."""
@@ -840,6 +852,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Thread Safety Tests
 # =============================================================================
+
 
 class TestThreadSafety:
     """Test thread safety of manager operations."""
@@ -909,6 +922,7 @@ class TestThreadSafety:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for complete workflows."""

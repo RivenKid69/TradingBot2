@@ -37,6 +37,7 @@ def _flush_worker() -> None:
         except Exception:
             logger.exception("Periodic flush failed")
 
+
 def init(
     *,
     enabled: bool = False,
@@ -64,6 +65,7 @@ def init(
         _flush_stop.clear()
         _flush_thread = threading.Thread(target=_flush_worker, daemon=True)
         _flush_thread.start()
+
 
 def load_state(path: str | Path | None = None) -> None:
     """Load state dictionary from JSON file if it exists.
@@ -107,6 +109,7 @@ def load_state(path: str | Path | None = None) -> None:
             pass
     logger.info("Loaded %d symbols from %s", len(STATE), p)
 
+
 def should_skip(symbol: str, close_ms: int) -> bool:
     """Return True if ``close_ms`` is not newer than stored value for ``symbol``."""
     if not ENABLED:
@@ -115,10 +118,12 @@ def should_skip(symbol: str, close_ms: int) -> bool:
         prev = STATE.get(symbol)
     return prev is not None and close_ms <= prev
 
+
 def _atomic_write(path: Path) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(STATE, separators=(",", ":")))
     tmp.replace(path)
+
 
 def flush(path: str | Path | None = None) -> None:
     """Persist current state to disk using atomic replace."""
@@ -162,4 +167,3 @@ def shutdown() -> None:
         flush()
     except Exception:
         logger.exception("Failed to flush state on shutdown")
-

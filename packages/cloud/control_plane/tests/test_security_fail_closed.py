@@ -39,7 +39,7 @@ class TestJWTSecretFailClosed:
         because the check happens at module import time.
         """
         # Create a test script that tries to import dependencies in production mode
-        test_script = '''
+        test_script = """
 import os
 import sys
 
@@ -68,14 +68,21 @@ except RuntimeError as e:
 except Exception as e:
     print(f"FAIL: Unexpected error: {type(e).__name__}: {e}")
     sys.exit(1)
-'''
+"""
         # Run the test script in a subprocess to get clean import state
         result = subprocess.run(
             [sys.executable, "-c", test_script],
             capture_output=True,
             text=True,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
-            env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))},
+            cwd=os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            ),
+            env={
+                **os.environ,
+                "PYTHONPATH": os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                ),
+            },
         )
 
         # Check output
@@ -91,7 +98,7 @@ except Exception as e:
 
         This test verifies that setting a proper JWT secret allows the module to load.
         """
-        test_script = '''
+        test_script = """
 import os
 import sys
 
@@ -114,19 +121,24 @@ try:
 except Exception as e:
     print(f"FAIL: Import failed: {type(e).__name__}: {e}")
     sys.exit(1)
-'''
+"""
         result = subprocess.run(
             [sys.executable, "-c", test_script],
             capture_output=True,
             text=True,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
-            env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))},
+            cwd=os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            ),
+            env={
+                **os.environ,
+                "PYTHONPATH": os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                ),
+            },
         )
 
         assert "PASS" in result.stdout or result.returncode == 0, (
-            f"Custom secret test failed.\n"
-            f"stdout: {result.stdout}\n"
-            f"stderr: {result.stderr}"
+            f"Custom secret test failed.\n" f"stdout: {result.stdout}\n" f"stderr: {result.stderr}"
         )
 
 
@@ -141,7 +153,9 @@ class TestMFAFailClosed:
             from ..routers.auth import _verify_totp
 
             # Force the import error path by patching __import__
-            original_import = __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+            original_import = (
+                __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+            )
 
             def mock_import(name, *args, **kwargs):
                 if name == "pyotp":
@@ -160,6 +174,6 @@ class TestSignatureVerificationFailClosed:
     def test_signature_bypass_env_var_not_set_by_default(self) -> None:
         """CCEA_SKIP_SIGNATURE_VERIFICATION should not be set by default."""
         # This env var should never be set in CI or production
-        assert os.environ.get("CCEA_SKIP_SIGNATURE_VERIFICATION") != "DEVELOPMENT_ONLY", (
-            "CCEA_SKIP_SIGNATURE_VERIFICATION should not be set in test environment"
-        )
+        assert (
+            os.environ.get("CCEA_SKIP_SIGNATURE_VERIFICATION") != "DEVELOPMENT_ONLY"
+        ), "CCEA_SKIP_SIGNATURE_VERIFICATION should not be set in test environment"

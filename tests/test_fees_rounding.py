@@ -44,12 +44,16 @@ def test_rounding_nested_options_normalized():
     rounding_payload = fees.model_payload.get("rounding") or {}
     assert rounding_payload.get("mode") == "step"
     assert rounding_payload.get("step") == pytest.approx(0.0005)
-    assert rounding_payload.get("per_symbol", {}).get("BTCUSDT", {}).get("step") == pytest.approx(0.001)
+    assert rounding_payload.get("per_symbol", {}).get("BTCUSDT", {}).get("step") == pytest.approx(
+        0.001
+    )
 
     rounding_meta = fees.metadata.get("rounding") or {}
     assert rounding_meta.get("enabled") is True
     assert rounding_meta.get("step") == pytest.approx(0.0005)
-    assert rounding_meta.get("per_symbol", {}).get("BTCUSDT", {}).get("step") == pytest.approx(0.001)
+    assert rounding_meta.get("per_symbol", {}).get("BTCUSDT", {}).get("step") == pytest.approx(
+        0.001
+    )
     assert rounding_meta.get("per_symbol", {}).get("ETHUSDT", {}).get("enabled") is False
 
     expected_rounding = fees.expected_payload.get("rounding") or {}
@@ -59,7 +63,9 @@ def test_rounding_nested_options_normalized():
     assert model is not None
     assert model.fee_rounding_step == pytest.approx(0.0005)
     assert model.rounding.get("step") == pytest.approx(0.0005)
-    assert model.rounding.get("per_symbol", {}).get("BTCUSDT", {}).get("step") == pytest.approx(0.001)
+    assert model.rounding.get("per_symbol", {}).get("BTCUSDT", {}).get("step") == pytest.approx(
+        0.001
+    )
 
 
 def test_rounding_disabled_drops_fee_step():
@@ -281,4 +287,3 @@ def test_decimal_rounding_uses_half_up():
     )
 
     assert fee == pytest.approx(0.03)
-

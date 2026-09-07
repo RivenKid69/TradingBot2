@@ -55,13 +55,7 @@ class TestConfigHelpers:
 
     def test_flatten_dict_nested(self):
         """Test flattening nested dict."""
-        d = {
-            "level1": {
-                "level2": {
-                    "value": 123
-                }
-            }
-        }
+        d = {"level1": {"level2": {"value": 123}}}
         flat = _flatten_dict(d)
 
         assert flat == {"level1.level2.value": 123}

@@ -1,7 +1,10 @@
 import pytest
+
 pytest.importorskip("torch")
 
-from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensures RL stubs are installed
+from tests import (
+    test_distributional_ppo_raw_outliers,
+)  # noqa: F401  # ensures RL stubs are installed
 
 from distributional_ppo import DistributionalPPO
 
@@ -19,7 +22,9 @@ def test_record_raw_policy_metrics_logs_expected_keys() -> None:
     algo._logger = _CaptureLogger()
     algo._last_rollout_entropy_raw = 0.0
 
-    algo._record_raw_policy_metrics(avg_policy_entropy_raw=0.42, entropy_raw_count=8, kl_raw_sum=0.12, kl_raw_count=6)
+    algo._record_raw_policy_metrics(
+        avg_policy_entropy_raw=0.42, entropy_raw_count=8, kl_raw_sum=0.12, kl_raw_count=6
+    )
 
     assert algo.logger.records["train/policy_entropy_raw"] == pytest.approx(0.42)
     assert algo.logger.records["train/approx_kl_raw"] == pytest.approx(0.12 / 6)

@@ -6,6 +6,7 @@ raw std without epsilon protection when std >= 1e-8.
 
 See ADVANTAGE_NORMALIZATION_EPSILON_BUG_REPORT.md for details.
 """
+
 import numpy as np
 import pytest
 
@@ -272,22 +273,22 @@ class TestAdvantageNormalizationEpsilonFix:
 
         # Test multiple std values
         std_values = [
-            0,          # Constant
-            1e-9,       # Ultra-low
+            0,  # Constant
+            1e-9,  # Ultra-low
             5e-9,
-            1e-8,       # Floor
-            2e-8,       # Vulnerability start
+            1e-8,  # Floor
+            2e-8,  # Vulnerability start
             5e-8,
-            1e-7,       # Vulnerability middle
+            1e-7,  # Vulnerability middle
             2e-7,
             5e-7,
-            1e-6,       # Vulnerability end
+            1e-6,  # Vulnerability end
             1e-5,
-            1e-4,       # Normal start
+            1e-4,  # Normal start
             1e-3,
-            0.01,       # Typical
+            0.01,  # Typical
             0.1,
-            1.0,        # High variance
+            1.0,  # High variance
         ]
 
         for target_std in std_values:

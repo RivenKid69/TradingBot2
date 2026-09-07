@@ -24,6 +24,7 @@ from uuid import UUID
 
 class WidgetType(str, Enum):
     """Widget types."""
+
     METRIC = "metric"
     CHART = "chart"
     TABLE = "table"
@@ -36,6 +37,7 @@ class WidgetType(str, Enum):
 
 class ChartType(str, Enum):
     """Chart visualization types."""
+
     LINE = "line"
     BAR = "bar"
     AREA = "area"
@@ -52,6 +54,7 @@ class ChartType(str, Enum):
 @dataclass
 class Widget:
     """Base widget class."""
+
     widget_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     widget_type: WidgetType = WidgetType.METRIC
     title: str = ""
@@ -102,6 +105,7 @@ class MetricWidget(Widget):
 
     Shows a single value with optional trend indicator.
     """
+
     widget_type: WidgetType = field(default=WidgetType.METRIC, init=False)
 
     # Display options
@@ -120,18 +124,20 @@ class MetricWidget(Widget):
 
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
-        base.update({
-            "unit": self.unit,
-            "precision": self.precision,
-            "show_trend": self.show_trend,
-            "trend_period": self.trend_period,
-            "thresholds": {
-                "warning": self.warning_threshold,
-                "critical": self.critical_threshold,
-                "direction": self.threshold_direction,
-            },
-            "format_type": self.format_type,
-        })
+        base.update(
+            {
+                "unit": self.unit,
+                "precision": self.precision,
+                "show_trend": self.show_trend,
+                "trend_period": self.trend_period,
+                "thresholds": {
+                    "warning": self.warning_threshold,
+                    "critical": self.critical_threshold,
+                    "direction": self.threshold_direction,
+                },
+                "format_type": self.format_type,
+            }
+        )
         return base
 
 
@@ -142,6 +148,7 @@ class ChartWidget(Widget):
 
     Supports line, bar, area, pie charts.
     """
+
     widget_type: WidgetType = field(default=WidgetType.CHART, init=False)
 
     # Chart options
@@ -163,21 +170,23 @@ class ChartWidget(Widget):
 
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
-        base.update({
-            "chart_type": self.chart_type.value,
-            "metrics": self.metrics,
-            "time_range": self.time_range,
-            "aggregation": self.aggregation,
-            "y_axis": {
-                "label": self.y_axis_label,
-                "min": self.y_axis_min,
-                "max": self.y_axis_max,
-            },
-            "show_legend": self.show_legend,
-            "show_grid": self.show_grid,
-            "colors": self.colors,
-            "fill_opacity": self.fill_opacity,
-        })
+        base.update(
+            {
+                "chart_type": self.chart_type.value,
+                "metrics": self.metrics,
+                "time_range": self.time_range,
+                "aggregation": self.aggregation,
+                "y_axis": {
+                    "label": self.y_axis_label,
+                    "min": self.y_axis_min,
+                    "max": self.y_axis_max,
+                },
+                "show_legend": self.show_legend,
+                "show_grid": self.show_grid,
+                "colors": self.colors,
+                "fill_opacity": self.fill_opacity,
+            }
+        )
         return base
 
 
@@ -188,6 +197,7 @@ class TableWidget(Widget):
 
     Shows lists of items with sorting and filtering.
     """
+
     widget_type: WidgetType = field(default=WidgetType.TABLE, init=False)
 
     # Column definitions
@@ -206,17 +216,19 @@ class TableWidget(Widget):
 
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
-        base.update({
-            "columns": self.columns,
-            "page_size": self.page_size,
-            "sortable": self.sortable,
-            "filterable": self.filterable,
-            "show_pagination": self.show_pagination,
-            "row_highlight": {
-                "field": self.row_highlight_field,
-                "rules": self.row_highlight_rules,
-            },
-        })
+        base.update(
+            {
+                "columns": self.columns,
+                "page_size": self.page_size,
+                "sortable": self.sortable,
+                "filterable": self.filterable,
+                "show_pagination": self.show_pagination,
+                "row_highlight": {
+                    "field": self.row_highlight_field,
+                    "rules": self.row_highlight_rules,
+                },
+            }
+        )
         return base
 
 
@@ -227,6 +239,7 @@ class AlertWidget(Widget):
 
     Shows recent alerts with filtering by severity.
     """
+
     widget_type: WidgetType = field(default=WidgetType.ALERT, init=False)
 
     # Filter options
@@ -241,14 +254,16 @@ class AlertWidget(Widget):
 
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
-        base.update({
-            "severity_filter": self.severity_filter,
-            "max_items": self.max_items,
-            "show_resolved": self.show_resolved,
-            "show_timestamp": self.show_timestamp,
-            "show_source": self.show_source,
-            "compact_mode": self.compact_mode,
-        })
+        base.update(
+            {
+                "severity_filter": self.severity_filter,
+                "max_items": self.max_items,
+                "show_resolved": self.show_resolved,
+                "show_timestamp": self.show_timestamp,
+                "show_source": self.show_source,
+                "compact_mode": self.compact_mode,
+            }
+        )
         return base
 
 
@@ -264,6 +279,7 @@ class DashboardLayout:
 
     Defines grid-based widget arrangement.
     """
+
     layout_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str = "Default Layout"
 
@@ -276,12 +292,14 @@ class DashboardLayout:
     widgets: List[Widget] = field(default_factory=list)
 
     # Breakpoints for responsive design
-    breakpoints: Dict[str, int] = field(default_factory=lambda: {
-        "lg": 1200,
-        "md": 996,
-        "sm": 768,
-        "xs": 480,
-    })
+    breakpoints: Dict[str, int] = field(
+        default_factory=lambda: {
+            "lg": 1200,
+            "md": 996,
+            "sm": 768,
+            "xs": 480,
+        }
+    )
 
     def add_widget(self, widget: Widget) -> None:
         """Add widget to layout."""
@@ -321,60 +339,95 @@ class DashboardLayout:
         layout = cls(name="Default Layout")
 
         # Add default widgets
-        layout.add_widget(MetricWidget(
-            title="Total PnL Today",
-            metric_name="pnl_today",
-            x=0, y=0, width=3, height=2,
-            format_type="currency",
-            warning_threshold=-1000,
-            critical_threshold=-5000,
-            threshold_direction="below",
-        ))
+        layout.add_widget(
+            MetricWidget(
+                title="Total PnL Today",
+                metric_name="pnl_today",
+                x=0,
+                y=0,
+                width=3,
+                height=2,
+                format_type="currency",
+                warning_threshold=-1000,
+                critical_threshold=-5000,
+                threshold_direction="below",
+            )
+        )
 
-        layout.add_widget(MetricWidget(
-            title="Active Runs",
-            metric_name="active_runs",
-            x=3, y=0, width=3, height=2,
-        ))
+        layout.add_widget(
+            MetricWidget(
+                title="Active Runs",
+                metric_name="active_runs",
+                x=3,
+                y=0,
+                width=3,
+                height=2,
+            )
+        )
 
-        layout.add_widget(MetricWidget(
-            title="Online Agents",
-            metric_name="online_agents",
-            x=6, y=0, width=3, height=2,
-        ))
+        layout.add_widget(
+            MetricWidget(
+                title="Online Agents",
+                metric_name="online_agents",
+                x=6,
+                y=0,
+                width=3,
+                height=2,
+            )
+        )
 
-        layout.add_widget(MetricWidget(
-            title="Trades Today",
-            metric_name="trades_today",
-            x=9, y=0, width=3, height=2,
-        ))
+        layout.add_widget(
+            MetricWidget(
+                title="Trades Today",
+                metric_name="trades_today",
+                x=9,
+                y=0,
+                width=3,
+                height=2,
+            )
+        )
 
-        layout.add_widget(ChartWidget(
-            title="PnL Over Time",
-            metrics=["pnl"],
-            chart_type=ChartType.LINE,
-            x=0, y=2, width=8, height=4,
-            time_range="24h",
-            aggregation="1h",
-        ))
+        layout.add_widget(
+            ChartWidget(
+                title="PnL Over Time",
+                metrics=["pnl"],
+                chart_type=ChartType.LINE,
+                x=0,
+                y=2,
+                width=8,
+                height=4,
+                time_range="24h",
+                aggregation="1h",
+            )
+        )
 
-        layout.add_widget(AlertWidget(
-            title="Recent Alerts",
-            x=8, y=2, width=4, height=4,
-            max_items=5,
-        ))
+        layout.add_widget(
+            AlertWidget(
+                title="Recent Alerts",
+                x=8,
+                y=2,
+                width=4,
+                height=4,
+                max_items=5,
+            )
+        )
 
-        layout.add_widget(TableWidget(
-            title="Active Runs",
-            query="runs",
-            x=0, y=6, width=12, height=4,
-            columns=[
-                {"key": "strategy_name", "label": "Strategy", "sortable": True},
-                {"key": "agent_id", "label": "Agent", "sortable": True},
-                {"key": "status", "label": "Status", "sortable": True},
-                {"key": "pnl_today", "label": "PnL Today", "sortable": True},
-                {"key": "trade_count_today", "label": "Trades", "sortable": True},
-            ],
-        ))
+        layout.add_widget(
+            TableWidget(
+                title="Active Runs",
+                query="runs",
+                x=0,
+                y=6,
+                width=12,
+                height=4,
+                columns=[
+                    {"key": "strategy_name", "label": "Strategy", "sortable": True},
+                    {"key": "agent_id", "label": "Agent", "sortable": True},
+                    {"key": "status", "label": "Status", "sortable": True},
+                    {"key": "pnl_today", "label": "PnL Today", "sortable": True},
+                    {"key": "trade_count_today", "label": "Trades", "sortable": True},
+                ],
+            )
+        )
 
         return layout

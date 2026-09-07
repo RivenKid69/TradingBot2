@@ -27,6 +27,7 @@ from services.ai_act.accuracy_metrics import (
 # MetricType Enum Tests
 # ============================================================================
 
+
 class TestMetricType:
     """Tests for MetricType enum."""
 
@@ -65,6 +66,7 @@ class TestMetricType:
 # MetricStatus Enum Tests
 # ============================================================================
 
+
 class TestMetricStatus:
     """Tests for MetricStatus enum."""
 
@@ -81,6 +83,7 @@ class TestMetricStatus:
 # ============================================================================
 # AccuracyMetric Tests
 # ============================================================================
+
 
 class TestAccuracyMetric:
     """Tests for AccuracyMetric dataclass."""
@@ -243,6 +246,7 @@ class TestAccuracyMetric:
 # MetricMeasurement Tests
 # ============================================================================
 
+
 class TestMetricMeasurement:
     """Tests for MetricMeasurement dataclass."""
 
@@ -281,6 +285,7 @@ class TestMetricMeasurement:
 # ============================================================================
 # DeclaredAccuracyMetrics Tests
 # ============================================================================
+
 
 class TestDeclaredAccuracyMetrics:
     """Tests for DeclaredAccuracyMetrics dataclass."""
@@ -382,6 +387,7 @@ class TestDeclaredAccuracyMetrics:
 # ============================================================================
 # AccuracyMonitor Tests
 # ============================================================================
+
 
 class TestAccuracyMonitor:
     """Tests for AccuracyMonitor class."""
@@ -755,6 +761,7 @@ class TestAccuracyMonitor:
 # get_default_trading_metrics Tests
 # ============================================================================
 
+
 class TestGetDefaultTradingMetrics:
     """Tests for get_default_trading_metrics function."""
 
@@ -827,6 +834,7 @@ class TestGetDefaultTradingMetrics:
 # Thread Safety Tests
 # ============================================================================
 
+
 class TestThreadSafety:
     """Test thread safety of AccuracyMonitor."""
 
@@ -847,10 +855,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=record_measurements, args=(i,))
-            for i in range(5)
-        ]
+        threads = [threading.Thread(target=record_measurements, args=(i,)) for i in range(5)]
 
         for t in threads:
             t.start()
@@ -902,6 +907,7 @@ class TestThreadSafety:
 # ============================================================================
 # Edge Cases
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""

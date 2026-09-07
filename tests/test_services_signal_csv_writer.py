@@ -1,4 +1,5 @@
 """Comprehensive tests for services.signal_csv_writer module."""
+
 import csv
 import os
 import time
@@ -83,7 +84,7 @@ class TestSignalCSVWriterWrite:
         writer.close()
 
         # Read and verify
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
@@ -109,7 +110,7 @@ class TestSignalCSVWriterWrite:
 
         writer.close()
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
@@ -128,7 +129,7 @@ class TestSignalCSVWriterWrite:
         writer.write(row)
         writer.close()
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
@@ -194,7 +195,7 @@ class TestSignalCSVWriterRotation:
         writer.close()
 
         # All rows should be in main file
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
@@ -291,7 +292,7 @@ class TestSignalCSVWriterReopen:
 
         writer.close()
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
@@ -369,7 +370,7 @@ class TestSignalCSVWriterClose:
         writer.write({"ts_ms": 1234567890000, "symbol": "BTCUSDT"})
         writer.close()
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             content = f.read()
 
         assert "BTCUSDT" in content
@@ -386,13 +387,13 @@ class TestSignalCSVWriterEdgeCases:
         row = {
             "ts_ms": 1234567890000,
             "symbol": "BTC,USDT",  # Contains comma
-            "features_hash": "hash\"with\"quotes",
+            "features_hash": 'hash"with"quotes',
         }
 
         writer.write(row)
         writer.close()
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 

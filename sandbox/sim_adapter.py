@@ -327,12 +327,7 @@ class _VolEstimator:
                 ):
                     range_ratio = max(0.0, ratio_candidate)
 
-        if (
-            prev_close is not None
-            and hi is not None
-            and lo is not None
-            and prev_close > 0.0
-        ):
+        if prev_close is not None and hi is not None and lo is not None and prev_close > 0.0:
             tr = max(hi - lo, abs(hi - prev_close), abs(lo - prev_close))
             if prev_close != 0.0:
                 tr_pct = tr / prev_close
@@ -351,8 +346,10 @@ class _VolEstimator:
         elif self._metric in {"atr", "atr_pct", "atr/price"}:
             value = atr_val if atr_val is not None else sigma_val
         elif self._metric in {"range", "range_ratio"}:
-            value = range_val if range_val is not None else (
-                sigma_val if sigma_val is not None else atr_val
+            value = (
+                range_val
+                if range_val is not None
+                else (sigma_val if sigma_val is not None else atr_val)
             )
         elif self._metric == "range_ratio_bps":
             if range_val is not None:
@@ -397,6 +394,7 @@ class _VolEstimator:
             return None
         return self._last_value.get(sym)
 
+
 _TF_MS = {
     "1s": 1_000,
     "5s": 5_000,
@@ -429,14 +427,17 @@ def _timeframe_to_ms(tf: str) -> int:
     tf = _ensure_timeframe(tf)
     return _TF_MS[tf]
 
+
 class OrdersProvider(Protocol):
     def on_bar(self, bar: Bar) -> Sequence[Order]: ...
+
 
 class SimAdapter:
     """
     Тонкий мост: превращает решения стратегии в список экшенов симулятора.
     Требуется ExecutionSimulator с публичным методом run_step(...) (ниже добавим в execution_sim.py).
     """
+
     def __init__(
         self,
         sim: ExecutionSimulator,
@@ -499,9 +500,7 @@ class SimAdapter:
                 except Exception:
                     continue
 
-        latency_cfg = (
-            getattr(run_config, "latency", None) if run_config is not None else None
-        )
+        latency_cfg = getattr(run_config, "latency", None) if run_config is not None else None
         metric = "sigma"
         window = 120
         dyn_metric: Optional[Any] = None
@@ -550,11 +549,9 @@ class SimAdapter:
             vol_metric=self._vol_metric, vol_window=self._vol_window
         )
 
-
     @property
     def vol_estimator(self) -> _VolEstimator:
         return self._vol_estimator
-
 
     def _to_actions(self, orders: Sequence[Order]) -> List[Tuple[ActionType, ActionProto]]:
         actions: List[Tuple[ActionType, ActionProto]] = []
@@ -566,20 +563,22 @@ class SimAdapter:
             actions.append((ActionType.MARKET, proto))
         return actions
 
-    def step(self,
-             *,
-             ts_ms: int,
-             ref_price: Optional[float],
-             bid: Optional[float],
-             ask: Optional[float],
-             vol_factor: Optional[float],
-             liquidity: Optional[float],
-             orders: Sequence[Order],
-             bar_open: Optional[float] = None,
-             bar_high: Optional[float] = None,
-             bar_low: Optional[float] = None,
-             bar_close: Optional[float] = None,
-             bar_timeframe_ms: Optional[int] = None) -> Dict[str, Any]:
+    def step(
+        self,
+        *,
+        ts_ms: int,
+        ref_price: Optional[float],
+        bid: Optional[float],
+        ask: Optional[float],
+        vol_factor: Optional[float],
+        liquidity: Optional[float],
+        orders: Sequence[Order],
+        bar_open: Optional[float] = None,
+        bar_high: Optional[float] = None,
+        bar_low: Optional[float] = None,
+        bar_close: Optional[float] = None,
+        bar_timeframe_ms: Optional[int] = None,
+    ) -> Dict[str, Any]:
         actions = self._to_actions(orders)
         sigma_last = self._vol_estimator.last(self.symbol, metric="sigma")
         atr_last = self._vol_estimator.last(self.symbol, metric="atr_pct")
@@ -704,7 +703,7 @@ class SimAdapter:
 
                 rep["symbol"] = bar.symbol
                 rep["ts_ms"] = int(bar.ts)
-                rep["core_orders"] = ([as_dict(o) for o in orders] or [])
+                rep["core_orders"] = [as_dict(o) for o in orders] or []
 
                 yield rep
         except ValueError as e:
@@ -719,15 +718,11 @@ class SimAdapter:
         if hasattr(self.sim, "register_market_regime_listener"):
             return self.sim
         candidate = getattr(self, "_sim", None)
-        if candidate is not None and hasattr(
-            candidate, "register_market_regime_listener"
-        ):
+        if candidate is not None and hasattr(candidate, "register_market_regime_listener"):
             return candidate
         return None
 
-    def register_market_regime_listener(
-        self, callback: Callable[[Any], None]
-    ) -> None:
+    def register_market_regime_listener(self, callback: Callable[[Any], None]) -> None:
         """Proxy registration to the simulator if it supports regime hooks."""
 
         owner = self._market_regime_owner()

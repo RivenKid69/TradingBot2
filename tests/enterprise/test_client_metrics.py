@@ -726,8 +726,12 @@ class TestClientMetricsService:
         service = ClientMetricsService()
         metric = service.create_metric("client-1", MetricType.LATENCY, "Latency", "Latency", "ms")
         rule = service.create_alert_rule(
-            metric.metric_id, "High Latency", "Test",
-            AlertThreshold.ABOVE, 100.0, severity="critical"
+            metric.metric_id,
+            "High Latency",
+            "Test",
+            AlertThreshold.ABOVE,
+            100.0,
+            severity="critical",
         )
 
         # Trigger alert by recording high value
@@ -741,10 +745,11 @@ class TestClientMetricsService:
     def test_resolve_alert(self) -> None:
         """Test resolving an alert."""
         service = ClientMetricsService()
-        metric = service.create_metric("client-1", MetricType.ERROR_RATE, "Errors", "Errors", "percent")
+        metric = service.create_metric(
+            "client-1", MetricType.ERROR_RATE, "Errors", "Errors", "percent"
+        )
         rule = service.create_alert_rule(
-            metric.metric_id, "High Errors", "Test",
-            AlertThreshold.ABOVE, 1.0, severity="critical"
+            metric.metric_id, "High Errors", "Test", AlertThreshold.ABOVE, 1.0, severity="critical"
         )
 
         # Trigger alert
@@ -858,7 +863,9 @@ class TestClientMetricsService:
         # Create and populate metrics
         uptime = service.create_metric("client-1", MetricType.UPTIME, "Uptime", "Uptime", "percent")
         latency = service.create_metric("client-1", MetricType.LATENCY, "Latency", "Latency", "ms")
-        errors = service.create_metric("client-1", MetricType.ERROR_RATE, "Errors", "Errors", "percent")
+        errors = service.create_metric(
+            "client-1", MetricType.ERROR_RATE, "Errors", "Errors", "percent"
+        )
 
         # Record good values
         service.record_metric(uptime.metric_id, 99.95)

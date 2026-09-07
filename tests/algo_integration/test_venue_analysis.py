@@ -319,7 +319,9 @@ class TestVenueAnalyzer:
         return [
             ExecutionVenue(mic="XLON", name="LSE", venue_type=VenueType.REGULATED_MARKET),
             ExecutionVenue(mic="XETR", name="Xetra", venue_type=VenueType.REGULATED_MARKET),
-            ExecutionVenue(mic="XPAR", name="Euronext Paris", venue_type=VenueType.REGULATED_MARKET),
+            ExecutionVenue(
+                mic="XPAR", name="Euronext Paris", venue_type=VenueType.REGULATED_MARKET
+            ),
         ]
 
     @pytest.fixture
@@ -444,9 +446,7 @@ class TestVenueAnalyzer:
 
         now = datetime.utcnow()
         metrics = analyzer.get_venue_metrics(
-            "XETR",
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=1)
+            "XETR", start_time=now - timedelta(hours=1), end_time=now + timedelta(hours=1)
         )
 
         assert metrics.total_orders == 1
@@ -657,8 +657,7 @@ class TestSmartOrderRouter:
         }
 
         decision = router.select_venue(
-            order, market_data,
-            explicit_venue="XLON"  # But client wants XLON
+            order, market_data, explicit_venue="XLON"  # But client wants XLON
         )
 
         assert decision.selected_venue == "XLON"
@@ -677,8 +676,7 @@ class TestSmartOrderRouter:
         }
 
         decision = router.select_venue(
-            order, market_data,
-            explicit_venue="XXXX"  # Not in market_data
+            order, market_data, explicit_venue="XXXX"  # Not in market_data
         )
 
         # Should fall back to best available
@@ -772,8 +770,7 @@ class TestSmartOrderRouter:
 
         now = datetime.utcnow()
         decisions = router.get_decisions(
-            start_time=now - timedelta(hours=1),
-            end_time=now + timedelta(hours=1)
+            start_time=now - timedelta(hours=1), end_time=now + timedelta(hours=1)
         )
 
         assert len(decisions) == 1

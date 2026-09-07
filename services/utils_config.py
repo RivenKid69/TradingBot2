@@ -11,6 +11,7 @@ import shutil
 import time
 from typing import Optional
 
+
 def snapshot_config(config_path: str, artifacts_dir: str) -> Optional[str]:
     """
     Копирует файл конфига в папку артефактов под именем artifact_config_<ts>.yaml.

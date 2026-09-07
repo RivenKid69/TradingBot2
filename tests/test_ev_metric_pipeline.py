@@ -12,6 +12,7 @@ from typing import Any, Optional, Sequence
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 
 
@@ -376,9 +377,7 @@ def test_compute_explained_variance_metric_basic_path() -> None:
 
     ev, true_eval, pred_eval, metrics = _call_compute_ev(y_true=y_true, y_pred=y_pred)
 
-    expected = MODULE.safe_explained_variance(
-        y_true.detach().numpy(), y_pred.detach().numpy()
-    )
+    expected = MODULE.safe_explained_variance(y_true.detach().numpy(), y_pred.detach().numpy())
 
     assert ev == pytest.approx(expected)
     assert true_eval is not None and torch.allclose(true_eval, y_true)

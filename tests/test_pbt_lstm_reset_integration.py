@@ -11,6 +11,7 @@ See: LSTM_STATE_RESET_AFTER_PBT_ANALYSIS.md for full analysis
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import pytest
@@ -38,6 +39,7 @@ RNNStates = namedtuple("RNNStates", ["pi", "vf"])
 
 class MockRecurrentPolicy(nn.Module):
     """Mock recurrent policy for testing."""
+
     def __init__(self, obs_dim: int = 10, action_dim: int = 4, lstm_hidden_size: int = 64):
         super().__init__()
         self.obs_dim = obs_dim
@@ -65,7 +67,7 @@ class MockRecurrentPolicy(nn.Module):
         self,
         obs: torch.Tensor,
         lstm_states: RNNStates,
-        episode_starts: Optional[torch.Tensor] = None
+        episode_starts: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, RNNStates]:
         """Forward pass with LSTM."""
         batch_size = obs.shape[0]
@@ -95,7 +97,10 @@ class MockRecurrentPolicy(nn.Module):
 
 class MockDistributionalPPO:
     """Mock DistributionalPPO for testing."""
-    def __init__(self, policy: MockRecurrentPolicy, learning_rate: float = 1e-4, device: str = "cpu"):
+
+    def __init__(
+        self, policy: MockRecurrentPolicy, learning_rate: float = 1e-4, device: str = "cpu"
+    ):
         self.policy = policy
         self.device = torch.device(device)
         self.optimizer = torch.optim.Adam(policy.parameters(), lr=learning_rate)
@@ -103,9 +108,7 @@ class MockDistributionalPPO:
         self._variance_gradient_scaler = None  # Mock VGS
 
     def _clone_states_to_device(
-        self,
-        states: Optional[RNNStates],
-        device: torch.device
+        self, states: Optional[RNNStates], device: torch.device
     ) -> Optional[RNNStates]:
         """Clone states to device."""
         if states is None:
@@ -179,9 +182,9 @@ class TestPBTLSTMResetIntegration:
         # Verify LSTM states were reset to zero
         lstm_states_after = model._last_lstm_states.pi[0]
         init_states = policy.recurrent_initial_state
-        assert torch.allclose(lstm_states_after, init_states.pi[0]), (
-            "LSTM states should be reset to zero after apply_exploited_parameters()"
-        )
+        assert torch.allclose(
+            lstm_states_after, init_states.pi[0]
+        ), "LSTM states should be reset to zero after apply_exploited_parameters()"
 
     def test_apply_exploited_parameters_loads_policy_weights(self):
         """Verify that policy weights are loaded correctly."""
@@ -222,8 +225,7 @@ class TestPBTLSTMResetIntegration:
         # Verify weights match
         for key in source_weights.keys():
             assert torch.allclose(
-                target_policy.state_dict()[key],
-                source_weights[key]
+                target_policy.state_dict()[key], source_weights[key]
             ), f"Weight {key} should match after apply_exploited_parameters()"
 
     def test_apply_exploited_parameters_resets_optimizer(self):
@@ -301,10 +303,7 @@ class TestPBTLSTMResetIntegration:
             # Save checkpoint
             performance = 0.5 + i * 0.2  # 0.5, 0.7, 0.9
             coordinator.on_member_update_end(
-                member,
-                performance=performance,
-                step=5,
-                model_state_dict=model.policy.state_dict()
+                member, performance=performance, step=5, model_state_dict=model.policy.state_dict()
             )
 
         # Trigger PBT exploit for worst performer
@@ -319,7 +318,7 @@ class TestPBTLSTMResetIntegration:
             worst_member,
             performance=0.4,  # Still worst
             step=10,
-            model_state_dict=worst_model.policy.state_dict()
+            model_state_dict=worst_model.policy.state_dict(),
         )
 
         # Apply exploited parameters (CRITICAL: this should reset LSTM states)
@@ -330,13 +329,13 @@ class TestPBTLSTMResetIntegration:
             lstm_states_after_exploit = worst_model._last_lstm_states.pi[0]
             init_states = worst_model.policy.recurrent_initial_state
 
-            assert torch.allclose(lstm_states_after_exploit, init_states.pi[0]), (
-                "LSTM states should be reset to zero after PBT exploit + apply_exploited_parameters()"
-            )
+            assert torch.allclose(
+                lstm_states_after_exploit, init_states.pi[0]
+            ), "LSTM states should be reset to zero after PBT exploit + apply_exploited_parameters()"
 
-            assert not torch.allclose(lstm_states_after_exploit, lstm_states_before_exploit), (
-                "LSTM states should be different after reset (not same as before exploit)"
-            )
+            assert not torch.allclose(
+                lstm_states_after_exploit, lstm_states_before_exploit
+            ), "LSTM states should be different after reset (not same as before exploit)"
 
     def test_value_loss_stability_after_pbt_exploit_with_lstm_reset(self):
         """
@@ -372,10 +371,7 @@ class TestPBTLSTMResetIntegration:
         test_returns = torch.randn(16, 1)
 
         with torch.no_grad():
-            _, baseline_values, _ = target_policy(
-                test_obs,
-                target_policy.recurrent_initial_state
-            )
+            _, baseline_values, _ = target_policy(test_obs, target_policy.recurrent_initial_state)
             baseline_loss = torch.nn.functional.mse_loss(baseline_values, test_returns).item()
 
         # Simulate PBT exploit WITH reset
@@ -396,8 +392,7 @@ class TestPBTLSTMResetIntegration:
         # Measure value loss after exploit with reset
         with torch.no_grad():
             _, after_values, _ = target_policy(
-                test_obs,
-                target_model._last_lstm_states  # Use current (reset) states
+                test_obs, target_model._last_lstm_states  # Use current (reset) states
             )
             after_loss = torch.nn.functional.mse_loss(after_values, test_returns).item()
 
@@ -486,18 +481,12 @@ class TestBackwardCompatibility:
 
         # Save checkpoint
         coordinator.on_member_update_end(
-            population[0],
-            performance=0.8,
-            step=5,
-            model_state_dict=model.policy.state_dict()
+            population[0], performance=0.8, step=5, model_state_dict=model.policy.state_dict()
         )
 
         # Simulate old code: direct load_state_dict (without apply_exploited_parameters)
         new_params, _, _ = coordinator.on_member_update_end(
-            population[0],
-            performance=0.7,
-            step=10,
-            model_state_dict=model.policy.state_dict()
+            population[0], performance=0.7, step=10, model_state_dict=model.policy.state_dict()
         )
 
         if new_params is not None:

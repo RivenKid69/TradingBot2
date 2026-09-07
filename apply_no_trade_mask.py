@@ -92,10 +92,22 @@ def _blocked_durations(
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Применить no_trade-маску к датасету: удалить запрещённые строки или пометить weight=0.")
-    ap.add_argument("--data", required=True, help="Входной датасет (CSV/Parquet) с колонкой ts_ms (UTC, миллисекунды).")
-    ap.add_argument("--out", default="", help="Выходной файл. По умолчанию рядом, с суффиксом _masked.")
-    ap.add_argument("--sandbox_config", default="configs/legacy_sandbox.yaml", help="Путь к legacy_sandbox.yaml (раздел no_trade).")
+    ap = argparse.ArgumentParser(
+        description="Применить no_trade-маску к датасету: удалить запрещённые строки или пометить weight=0."
+    )
+    ap.add_argument(
+        "--data",
+        required=True,
+        help="Входной датасет (CSV/Parquet) с колонкой ts_ms (UTC, миллисекунды).",
+    )
+    ap.add_argument(
+        "--out", default="", help="Выходной файл. По умолчанию рядом, с суффиксом _masked."
+    )
+    ap.add_argument(
+        "--sandbox_config",
+        default="configs/legacy_sandbox.yaml",
+        help="Путь к legacy_sandbox.yaml (раздел no_trade).",
+    )
     ap.add_argument(
         "--no-trade-config",
         default="",
@@ -114,8 +126,17 @@ def main():
         help="Добавить колонку no_trade_reason с перечислением причин (подразумевает --with-reasons).",
     )
     ap.add_argument("--ts_col", default="ts_ms", help="Колонка метки времени в мс UTC.")
-    ap.add_argument("--mode", choices=["drop", "weight"], default="drop", help="drop — удалить строки; weight — оставить и добавить train_weight=0.")
-    ap.add_argument("--mask-only", action="store_true", help="Сохранить только колонку no_trade_block для всех строк.")
+    ap.add_argument(
+        "--mode",
+        choices=["drop", "weight"],
+        default="drop",
+        help="drop — удалить строки; weight — оставить и добавить train_weight=0.",
+    )
+    ap.add_argument(
+        "--mask-only",
+        action="store_true",
+        help="Сохранить только колонку no_trade_block для всех строк.",
+    )
     ap.add_argument("--timeframe", required=True, help="Баровый таймфрейм, например 1m или 1h.")
     ap.add_argument(
         "--close-lag-ms",
@@ -172,9 +193,7 @@ def main():
     reason_columns["bar_not_closed"] = ~closed_series
     reason_export = pd.concat(
         [
-            pd.DataFrame(
-                {"no_trade_block": mask_block.astype(bool)}, index=df.index
-            ),
+            pd.DataFrame({"no_trade_block": mask_block.astype(bool)}, index=df.index),
             reason_columns,
         ],
         axis=1,
@@ -199,9 +218,7 @@ def main():
                 labels = [label_map.get(col, col) for col, val in row.items() if bool(val)]
                 return ";".join(labels)
 
-            reason_export["no_trade_reason"] = reason_columns.apply(
-                _join_labels, axis=1
-            )
+            reason_export["no_trade_reason"] = reason_columns.apply(_join_labels, axis=1)
 
     total = int(len(df))
     blocked = int(mask_block.sum())
@@ -228,9 +245,7 @@ def main():
         missing = dyn_meta.get("missing") or []
         if missing:
             missing_text = ", ".join(str(m) for m in missing)
-            dyn_message = (
-                f"Динамический guard пропущен: нет данных ({missing_text})."
-            )
+            dyn_message = f"Динамический guard пропущен: нет данных ({missing_text})."
         else:
             dyn_message = "Динамический guard пропущен: нет входных данных."
 
@@ -260,7 +275,10 @@ def main():
 
     if args.mask_only:
         base, ext = os.path.splitext(args.data)
-        out_path = args.out.strip() or f"{base}_mask{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
+        out_path = (
+            args.out.strip()
+            or f"{base}_mask{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
+        )
         if include_reasons:
             mask_to_write = reason_export
         else:
@@ -290,7 +308,10 @@ def main():
         out_df.loc[mask_block, "train_weight"] = 0.0
 
     base, ext = os.path.splitext(args.data)
-    out_path = args.out.strip() or f"{base}_masked{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
+    out_path = (
+        args.out.strip()
+        or f"{base}_masked{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
+    )
     _write_table(out_df, out_path)
 
     kept = int(len(out_df))
@@ -299,7 +320,7 @@ def main():
     )
     print(f"NoTradeConfig: {cfg.dict()}")
     if args.mode == "weight":
-        z = int((out_df.get('train_weight', pd.Series(dtype=float)) == 0.0).sum())
+        z = int((out_df.get("train_weight", pd.Series(dtype=float)) == 0.0).sum())
         print(f"Режим weight: назначено train_weight=0 для {z} строк.")
     _emit_summary_lines()
     _maybe_emit_histogram(mask_block)

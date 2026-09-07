@@ -22,6 +22,7 @@ class TestParkinsonFormulaCorrectness(unittest.TestCase):
     def setUp(self):
         """Импортируем функцию для каждого теста."""
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_formula_uses_valid_bars_not_n(self):
@@ -36,8 +37,8 @@ class TestParkinsonFormulaCorrectness(unittest.TestCase):
         ohlc_bars = [
             {"high": 110.0, "low": 100.0},  # ln(1.1)² ≈ 0.00905
             {"high": 120.0, "low": 110.0},  # ln(1.091)² ≈ 0.00765
-            {"high": 0.0, "low": 0.0},      # Невалидный
-            {"high": 0.0, "low": 0.0},      # Невалидный
+            {"high": 0.0, "low": 0.0},  # Невалидный
+            {"high": 0.0, "low": 0.0},  # Невалидный
             {"high": 130.0, "low": 120.0},  # ln(1.083)² ≈ 0.00638
         ]
 
@@ -49,17 +50,19 @@ class TestParkinsonFormulaCorrectness(unittest.TestCase):
 
         # Вычисляем вручную с ПРАВИЛЬНОЙ формулой (valid_bars)
         sum_sq = (
-            math.log(110.0 / 100.0) ** 2 +
-            math.log(120.0 / 110.0) ** 2 +
-            math.log(130.0 / 120.0) ** 2
+            math.log(110.0 / 100.0) ** 2
+            + math.log(120.0 / 110.0) ** 2
+            + math.log(130.0 / 120.0) ** 2
         )
         expected_var_correct = sum_sq / (4 * valid_bars_count * math.log(2))
         expected_vol_correct = math.sqrt(expected_var_correct)
 
         # Проверяем что результат соответствует ПРАВИЛЬНОЙ формуле
         self.assertAlmostEqual(
-            result, expected_vol_correct, places=6,
-            msg=f"Формула должна использовать valid_bars={valid_bars_count}, а не n={n}"
+            result,
+            expected_vol_correct,
+            places=6,
+            msg=f"Формула должна использовать valid_bars={valid_bars_count}, а не n={n}",
         )
 
         # Вычисляем что было бы с НЕПРАВИЛЬНОЙ формулой (n)
@@ -68,13 +71,17 @@ class TestParkinsonFormulaCorrectness(unittest.TestCase):
 
         # Убеждаемся что результат НЕ соответствует неправильной формуле
         self.assertNotAlmostEqual(
-            result, expected_vol_wrong, places=6,
-            msg="Формула НЕ должна использовать n (размер окна)"
+            result,
+            expected_vol_wrong,
+            places=6,
+            msg="Формула НЕ должна использовать n (размер окна)",
         )
 
         # Показываем разницу
         diff_pct = ((expected_vol_wrong - expected_vol_correct) / expected_vol_correct) * 100
-        print(f"\n  ✓ Правильная формула (valid_bars={valid_bars_count}): {expected_vol_correct:.6f}")
+        print(
+            f"\n  ✓ Правильная формула (valid_bars={valid_bars_count}): {expected_vol_correct:.6f}"
+        )
         print(f"  ✗ Неправильная формула (n={n}): {expected_vol_wrong:.6f}")
         print(f"  Δ Разница: {diff_pct:.2f}% (неправильная занижает)")
 
@@ -94,16 +101,15 @@ class TestParkinsonFormulaCorrectness(unittest.TestCase):
         expected_var = sum_sq / (4 * 3 * math.log(2))
         expected_vol = math.sqrt(expected_var)
 
-        self.assertAlmostEqual(result, expected_vol, places=10,
-                              msg="Численная точность должна быть высокой")
+        self.assertAlmostEqual(
+            result, expected_vol, places=10, msg="Численная точность должна быть высокой"
+        )
 
         print(f"\n  ✓ Численная точность: {result:.10f} ≈ {expected_vol:.10f}")
 
     def test_all_valid_bars_equals_n(self):
         """Когда все бары валидны (valid_bars = n), формулы эквивалентны."""
-        ohlc_bars = [
-            {"high": 101.0, "low": 100.0} for _ in range(10)
-        ]
+        ohlc_bars = [{"high": 101.0, "low": 100.0} for _ in range(10)]
 
         result = self.calc_parkinson(ohlc_bars, 10)
 
@@ -120,6 +126,7 @@ class TestParkinsonThreshold(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_exactly_80_percent_valid(self):
@@ -147,12 +154,12 @@ class TestParkinsonThreshold(unittest.TestCase):
     def test_threshold_various_window_sizes(self):
         """Проверка порога для различных размеров окон."""
         test_cases = [
-            (5, 4),   # n=5: требуется max(2, 4) = 4 бара
+            (5, 4),  # n=5: требуется max(2, 4) = 4 бара
             (10, 8),  # n=10: требуется max(2, 8) = 8 баров
             (12, 9),  # n=12: требуется max(2, 9) = 9 баров
-            (50, 40), # n=50: требуется max(2, 40) = 40 баров
-            (2, 2),   # n=2: требуется max(2, 1) = 2 бара (минимум)
-            (3, 2),   # n=3: требуется max(2, 2) = 2 бара (минимум)
+            (50, 40),  # n=50: требуется max(2, 40) = 40 баров
+            (2, 2),  # n=2: требуется max(2, 1) = 2 бара (минимум)
+            (3, 2),  # n=3: требуется max(2, 2) = 2 бара (минимум)
         ]
 
         print("\n  Проверка порогов:")
@@ -163,15 +170,18 @@ class TestParkinsonThreshold(unittest.TestCase):
             ohlc_bars = valid_data + invalid_data
 
             result = self.calc_parkinson(ohlc_bars, n)
-            self.assertIsNotNone(result,
-                f"При n={n} должно работать с {min_required} валидными барами")
+            self.assertIsNotNone(
+                result, f"При n={n} должно работать с {min_required} валидными барами"
+            )
 
             # Проверяем что с одним меньше не работает
             if min_required > 2:  # Только если можем убрать бар
                 ohlc_bars_minus1 = valid_data[:-1] + invalid_data + [{"high": 0.0, "low": 0.0}]
                 result_minus1 = self.calc_parkinson(ohlc_bars_minus1, n)
-                self.assertIsNone(result_minus1,
-                    f"При n={n} НЕ должно работать с {min_required-1} валидными барами")
+                self.assertIsNone(
+                    result_minus1,
+                    f"При n={n} НЕ должно работать с {min_required-1} валидными барами",
+                )
 
             print(f"    n={n:2d}: требуется ≥{min_required:2d} баров ({min_required/n*100:.0f}%) ✓")
 
@@ -201,6 +211,7 @@ class TestParkinsonEdgeCases(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_empty_bars(self):
@@ -231,13 +242,12 @@ class TestParkinsonEdgeCases(unittest.TestCase):
 
     def test_zero_volatility(self):
         """Нулевая волатильность (high = low для всех баров)."""
-        ohlc_bars = [
-            {"high": 100.0, "low": 100.0} for _ in range(10)
-        ]
+        ohlc_bars = [{"high": 100.0, "low": 100.0} for _ in range(10)]
         result = self.calc_parkinson(ohlc_bars, 10)
         self.assertIsNotNone(result)
-        self.assertAlmostEqual(result, 0.0, places=10,
-                              msg="При high=low волатильность должна быть 0")
+        self.assertAlmostEqual(
+            result, 0.0, places=10, msg="При high=low волатильность должна быть 0"
+        )
         print(f"\n  ✓ Нулевая волатильность: {result:.10f}")
 
     def test_high_less_than_low(self):
@@ -268,9 +278,7 @@ class TestParkinsonEdgeCases(unittest.TestCase):
 
     def test_very_small_range(self):
         """Очень маленький диапазон (почти нулевая волатильность)."""
-        ohlc_bars = [
-            {"high": 100.00001, "low": 100.0} for _ in range(10)
-        ]
+        ohlc_bars = [{"high": 100.00001, "low": 100.0} for _ in range(10)]
         result = self.calc_parkinson(ohlc_bars, 10)
         self.assertIsNotNone(result)
         self.assertGreater(result, 0.0)
@@ -279,9 +287,7 @@ class TestParkinsonEdgeCases(unittest.TestCase):
 
     def test_very_large_range(self):
         """Очень большой диапазон (высокая волатильность)."""
-        ohlc_bars = [
-            {"high": 200.0, "low": 100.0} for _ in range(10)
-        ]
+        ohlc_bars = [{"high": 200.0, "low": 100.0} for _ in range(10)]
         result = self.calc_parkinson(ohlc_bars, 10)
         self.assertIsNotNone(result)
         self.assertGreater(result, 0.1, "Волатильность должна быть высокой")
@@ -295,7 +301,9 @@ class TestParkinsonEdgeCases(unittest.TestCase):
             # Паттерн 2: невалидные в конце
             [{"high": 101.0, "low": 100.0}] * 8 + [{"high": 0.0, "low": 0.0}] * 2,
             # Паттерн 3: невалидные в середине
-            [{"high": 101.0, "low": 100.0}] * 4 + [{"high": 0.0, "low": 0.0}] * 2 + [{"high": 101.0, "low": 100.0}] * 4,
+            [{"high": 101.0, "low": 100.0}] * 4
+            + [{"high": 0.0, "low": 0.0}] * 2
+            + [{"high": 101.0, "low": 100.0}] * 4,
             # Паттерн 4: чередование
             [{"high": 101.0, "low": 100.0}, {"high": 0.0, "low": 0.0}] * 5,
         ]
@@ -317,6 +325,7 @@ class TestParkinsonRealWorldScenarios(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_weekend_gaps(self):
@@ -335,7 +344,7 @@ class TestParkinsonRealWorldScenarios(unittest.TestCase):
 
     def test_crypto_24_7_no_gaps(self):
         """Криптовалюты - торговля 24/7, нет пропусков."""
-        ohlc_bars = [{"high": 101.0 + i*0.1, "low": 100.0 + i*0.1} for i in range(168)]
+        ohlc_bars = [{"high": 101.0 + i * 0.1, "low": 100.0 + i * 0.1} for i in range(168)]
         result = self.calc_parkinson(ohlc_bars, 168)  # 7 дней * 24 часа
         self.assertIsNotNone(result, "24/7 торговля без пропусков")
         print(f"\n  ✓ 24/7 криптовалюта (168h): {result:.6f}")
@@ -387,7 +396,7 @@ class TestParkinsonRealWorldScenarios(unittest.TestCase):
         base_price = 100.0
         for i in range(50):
             high = base_price * (1 + 0.01)  # +1% дневной рост
-            low = base_price * (1 - 0.005)   # -0.5% внутридневной минимум
+            low = base_price * (1 - 0.005)  # -0.5% внутридневной минимум
             ohlc_bars.append({"high": high, "low": low})
             base_price *= 1.005  # рост базовой цены
 
@@ -402,6 +411,7 @@ class TestParkinsonStatisticalProperties(unittest.TestCase):
 
     def setUp(self):
         from transformers import calculate_parkinson_volatility
+
         self.calc_parkinson = calculate_parkinson_volatility
 
     def test_volatility_increases_with_range(self):
@@ -416,8 +426,9 @@ class TestParkinsonStatisticalProperties(unittest.TestCase):
 
         # Проверяем монотонность
         for i in range(len(volatilities) - 1):
-            self.assertLess(volatilities[i], volatilities[i+1],
-                           f"Волатильность должна расти с диапазоном")
+            self.assertLess(
+                volatilities[i], volatilities[i + 1], f"Волатильность должна расти с диапазоном"
+            )
 
         print(f"\n  Волатильность vs диапазон:")
         for r, vol in zip(ranges, volatilities):
@@ -433,9 +444,7 @@ class TestParkinsonStatisticalProperties(unittest.TestCase):
 
         for price_level in price_levels:
             ohlc_bars = [
-                {"high": price_level * (1 + relative_range),
-                 "low": price_level}
-                for _ in range(10)
+                {"high": price_level * (1 + relative_range), "low": price_level} for _ in range(10)
             ]
             vol = self.calc_parkinson(ohlc_bars, 10)
             volatilities.append(vol)
@@ -443,8 +452,9 @@ class TestParkinsonStatisticalProperties(unittest.TestCase):
         # Все волатильности должны быть примерно одинаковыми
         reference_vol = volatilities[0]
         for vol in volatilities[1:]:
-            self.assertAlmostEqual(vol, reference_vol, places=8,
-                                  msg="Волатильность должна быть масштабно инвариантной")
+            self.assertAlmostEqual(
+                vol, reference_vol, places=8, msg="Волатильность должна быть масштабно инвариантной"
+            )
 
         print(f"\n  ✓ Масштабная инвариантность (5% диапазон):")
         for price, vol in zip(price_levels, volatilities):
@@ -466,8 +476,9 @@ class TestParkinsonStatisticalProperties(unittest.TestCase):
         reference_vol = volatilities[-1]  # самое большое окно = лучшая оценка
         for vol in volatilities:
             relative_diff = abs(vol - reference_vol) / reference_vol
-            self.assertLess(relative_diff, 0.01,  # < 1% отклонения
-                           "Оценки при разных окнах должны быть близки")
+            self.assertLess(
+                relative_diff, 0.01, "Оценки при разных окнах должны быть близки"  # < 1% отклонения
+            )
 
         print(f"\n  Размер окна vs волатильность (одинаковые данные):")
         for window, vol in zip(window_sizes, volatilities):
@@ -518,10 +529,12 @@ class TestParkinsonIntegration(unittest.TestCase):
         parkinson_48h = feats["parkinson_48h"]
         parkinson_7d = feats["parkinson_7d"]
 
-        self.assertFalse(math.isnan(parkinson_48h),
-                        "parkinson_48h должен быть валиден после 50 баров")
-        self.assertFalse(math.isnan(parkinson_7d),
-                        "parkinson_7d должен быть валиден после 50 баров")
+        self.assertFalse(
+            math.isnan(parkinson_48h), "parkinson_48h должен быть валиден после 50 баров"
+        )
+        self.assertFalse(
+            math.isnan(parkinson_7d), "parkinson_7d должен быть валиден после 50 баров"
+        )
 
         self.assertGreater(parkinson_48h, 0.0)
         self.assertGreater(parkinson_7d, 0.0)
@@ -571,8 +584,7 @@ class TestParkinsonIntegration(unittest.TestCase):
 
         parkinson_24h = feats.get("parkinson_24h")
         self.assertIsNotNone(parkinson_24h, "Признак должен существовать")
-        self.assertFalse(math.isnan(parkinson_24h),
-                        "Должен быть валиден при 80% данных (24/30)")
+        self.assertFalse(math.isnan(parkinson_24h), "Должен быть валиден при 80% данных (24/30)")
 
         print(f"\n  ✓ Обработка пропусков OHLC: {parkinson_24h:.6f}")
 

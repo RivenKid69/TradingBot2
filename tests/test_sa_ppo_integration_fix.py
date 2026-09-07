@@ -9,9 +9,11 @@ was NEVER called, making adversarial training completely inactive.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import MagicMock, patch, call
+
 gym = pytest.importorskip("gymnasium")
 
 from adversarial import (
@@ -168,9 +170,7 @@ class TestSAPPOIntegration:
         actions = torch.randn(16, 2)
 
         # Compute penalty
-        penalty, info = wrapper.compute_robust_kl_penalty(
-            states_clean, states_adv, actions
-        )
+        penalty, info = wrapper.compute_robust_kl_penalty(states_clean, states_adv, actions)
 
         # Should be zero
         assert penalty == 0.0
@@ -196,9 +196,7 @@ class TestSAPPOIntegration:
         actions = torch.randn(16, 2)
 
         # Compute penalty
-        penalty, info = wrapper.compute_robust_kl_penalty(
-            states_clean, states_adv, actions
-        )
+        penalty, info = wrapper.compute_robust_kl_penalty(states_clean, states_adv, actions)
 
         # Should be non-zero
         assert isinstance(penalty, float)

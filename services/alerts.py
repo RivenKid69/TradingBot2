@@ -10,6 +10,7 @@ Supports multiple delivery channels:
 Configuration via settings dict or environment variables.
 See AlertManager docstring for details.
 """
+
 import logging
 import os
 import time
@@ -93,12 +94,8 @@ def send_telegram(text: str, config: Any | None = None) -> bool:
     """
     token_env = _get_cfg_value(config, "bot_token_env", "TELEGRAM_BOT_TOKEN")
     chat_id_env = _get_cfg_value(config, "chat_id_env", "TELEGRAM_CHAT_ID")
-    token = _get_cfg_value(config, "bot_token") or (
-        os.getenv(token_env) if token_env else None
-    )
-    chat_id = _get_cfg_value(config, "chat_id") or (
-        os.getenv(chat_id_env) if chat_id_env else None
-    )
+    token = _get_cfg_value(config, "bot_token") or (os.getenv(token_env) if token_env else None)
+    chat_id = _get_cfg_value(config, "chat_id") or (os.getenv(chat_id_env) if chat_id_env else None)
     if not token or not chat_id:
         raise EnvironmentError("TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set")
 

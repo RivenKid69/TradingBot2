@@ -11,6 +11,7 @@ This script tests whether these formulas are equivalent.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -32,7 +33,9 @@ def current_implementation(loss_c1_unclipped, loss_c2_unclipped, loss_c1_clipped
     return critic_loss
 
 
-def mathematically_correct_implementation(loss_c1_unclipped, loss_c2_unclipped, loss_c1_clipped, loss_c2_clipped):
+def mathematically_correct_implementation(
+    loss_c1_unclipped, loss_c2_unclipped, loss_c1_clipped, loss_c2_clipped
+):
     """
     Mathematically correct implementation (claimed by user).
 
@@ -111,8 +114,12 @@ def test_case_3_mixed():
     current = current_implementation(loss_c1_uc, loss_c2_uc, loss_c1_c, loss_c2_c)
     correct = mathematically_correct_implementation(loss_c1_uc, loss_c2_uc, loss_c1_c, loss_c2_c)
 
-    print(f"Critic 1: Unclipped={loss_c1_uc.item():.1f}, Clipped={loss_c1_c.item():.1f} -> max={max(loss_c1_uc.item(), loss_c1_c.item()):.1f}")
-    print(f"Critic 2: Unclipped={loss_c2_uc.item():.1f}, Clipped={loss_c2_c.item():.1f} -> max={max(loss_c2_uc.item(), loss_c2_c.item()):.1f}")
+    print(
+        f"Critic 1: Unclipped={loss_c1_uc.item():.1f}, Clipped={loss_c1_c.item():.1f} -> max={max(loss_c1_uc.item(), loss_c1_c.item()):.1f}"
+    )
+    print(
+        f"Critic 2: Unclipped={loss_c2_uc.item():.1f}, Clipped={loss_c2_c.item():.1f} -> max={max(loss_c2_uc.item(), loss_c2_c.item()):.1f}"
+    )
     print()
     print(f"Current implementation:  {current:.4f}")
     print(f"  -> max(avg_uc, avg_c) = max((10+5)/2, (5+10)/2) = max(7.5, 7.5) = 7.5")
@@ -174,9 +181,9 @@ def analyze_ppo_semantics():
     NOT:
         L_total = max(avg(V1, V2) - target)^2, avg(V1_clip, V2_clip) - target)^2)
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ANALYSIS: PPO VF Clipping Semantics")
-    print("="*80)
+    print("=" * 80)
     print()
     print("PPO VF clipping prevents value function from making too large updates.")
     print("Standard formula: L_VF = max((V - V_target)^2, (V_clip - V_target)^2)")
@@ -199,9 +206,9 @@ def analyze_ppo_semantics():
 
 
 def main():
-    print("="*80)
+    print("=" * 80)
     print("Twin Critics Loss Aggregation Verification")
-    print("="*80)
+    print("=" * 80)
 
     analyze_ppo_semantics()
 
@@ -213,9 +220,9 @@ def main():
     results.append(("Batch mixed", test_case_4_batch_mixed()))
 
     # Summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print()
 
     for name, passed in results:

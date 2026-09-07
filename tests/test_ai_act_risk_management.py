@@ -40,6 +40,7 @@ from services.ai_act import (
 # Risk Enums Tests
 # =============================================================================
 
+
 class TestRiskEnums:
     """Tests for risk enumeration types."""
 
@@ -90,6 +91,7 @@ class TestRiskEnums:
 # Risk Identification Tests
 # =============================================================================
 
+
 class TestRiskIdentification:
     """Tests for RiskIdentification dataclass."""
 
@@ -139,6 +141,7 @@ class TestRiskIdentification:
 # =============================================================================
 # Risk Assessment Tests
 # =============================================================================
+
 
 class TestRiskAssessment:
     """Tests for RiskAssessment dataclass."""
@@ -221,6 +224,7 @@ class TestRiskAssessment:
 # Risk Mitigation Tests
 # =============================================================================
 
+
 class TestRiskMitigation:
     """Tests for RiskMitigation dataclass."""
 
@@ -275,6 +279,7 @@ class TestRiskMitigation:
 # AIActRiskConfig Tests
 # =============================================================================
 
+
 class TestAIActRiskConfig:
     """Tests for AIActRiskConfig."""
 
@@ -302,6 +307,7 @@ class TestAIActRiskConfig:
 # =============================================================================
 # AIActRiskManager Tests
 # =============================================================================
+
 
 class TestAIActRiskManager:
     """Tests for AIActRiskManager."""
@@ -414,6 +420,7 @@ class TestAIActRiskManager:
 # RiskStatus Tests
 # =============================================================================
 
+
 class TestRiskStatus:
     """Tests for RiskStatus enum."""
 
@@ -433,6 +440,7 @@ class TestRiskStatus:
 # =============================================================================
 # RiskEntry Tests
 # =============================================================================
+
 
 class TestRiskEntry:
     """Tests for RiskEntry dataclass."""
@@ -595,6 +603,7 @@ class TestRiskEntry:
 # RiskRegistry Tests
 # =============================================================================
 
+
 class TestRiskRegistry:
     """Tests for RiskRegistry."""
 
@@ -691,6 +700,7 @@ class TestRiskRegistry:
 # Default Trading Risks Tests
 # =============================================================================
 
+
 class TestDefaultTradingRisks:
     """Tests for default trading risks."""
 
@@ -736,6 +746,7 @@ class TestDefaultTradingRisks:
 # Thread Safety Tests
 # =============================================================================
 
+
 class TestThreadSafety:
     """Tests for thread safety."""
 
@@ -755,10 +766,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=add_risks, args=(i,))
-            for i in range(5)
-        ]
+        threads = [threading.Thread(target=add_risks, args=(i,)) for i in range(5)]
 
         for t in threads:
             t.start()
@@ -787,10 +795,7 @@ class TestThreadSafety:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=add_risks, args=(i,))
-            for i in range(5)
-        ]
+        threads = [threading.Thread(target=add_risks, args=(i,)) for i in range(5)]
 
         for t in threads:
             t.start()
@@ -803,6 +808,7 @@ class TestThreadSafety:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Tests for factory functions."""
@@ -836,6 +842,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestIntegration:
     """Integration tests for risk management."""
@@ -987,6 +994,7 @@ class TestRiskManagerReassessment:
     def test_needs_reassessment_time_based(self, manager):
         """Test time-based reassessment trigger."""
         import time
+
         # Set last assessment time to be old enough to trigger reassessment
         # 0.001 hours = 3.6 seconds, so set last time to 10 seconds ago
         manager._last_assessment_time = time.time() - 10
@@ -1208,6 +1216,7 @@ class TestRiskManagerEscalation:
     @pytest.fixture
     def manager_with_escalation(self, tmp_path):
         self.escalation_calls = []
+
         def escalation_callback(risk_id, data):
             self.escalation_calls.append((risk_id, data))
 
@@ -1234,6 +1243,7 @@ class TestRiskManagerEscalation:
 
     def test_escalation_callback_failure_handled(self, tmp_path):
         """Test that failing escalation callback is handled gracefully."""
+
         def failing_callback(risk_id, data):
             raise RuntimeError("Callback failed")
 
@@ -1459,6 +1469,7 @@ class TestRiskRegistryCallbacks:
 
     def test_callback_error_handling(self, registry, high_risk_entry):
         """Test that callback errors are handled gracefully."""
+
         def faulty_callback(entry):
             raise ValueError("Intentional error")
 
@@ -1468,6 +1479,7 @@ class TestRiskRegistryCallbacks:
 
     def test_critical_callback_error_handling(self, registry, high_risk_entry):
         """Test that critical callback errors are handled gracefully."""
+
         def faulty_callback(entry):
             raise RuntimeError("Intentional error")
 
@@ -1602,6 +1614,7 @@ class TestRiskRegistryFiltering:
             # Force a risk to require review by setting review_date in past (timezone-aware)
             risk = risks[0]
             from datetime import datetime, timedelta, timezone
+
             risk.review_date = datetime.now(timezone.utc) - timedelta(days=1)
 
         requiring_review = registry_with_various_risks.get_risks_requiring_review()

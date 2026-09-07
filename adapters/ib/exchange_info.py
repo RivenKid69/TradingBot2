@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 # Try to import ib_insync
 try:
     from ib_insync import IB, Future, ContFuture
+
     IB_INSYNC_AVAILABLE = True
 except ImportError:
     IB_INSYNC_AVAILABLE = False
@@ -363,6 +364,7 @@ CONTRACT_SPECS: Dict[str, Dict[str, Any]] = {
 # IB Exchange Info Adapter
 # =========================
 
+
 class IBExchangeInfoAdapter(ExchangeInfoAdapter):
     """
     Interactive Brokers exchange info adapter.
@@ -405,8 +407,7 @@ class IBExchangeInfoAdapter(ExchangeInfoAdapter):
         """Connect to TWS/Gateway."""
         if not IB_INSYNC_AVAILABLE:
             raise ImportError(
-                "ib_insync is required for IB adapters. "
-                "Install with: pip install ib_insync"
+                "ib_insync is required for IB adapters. " "Install with: pip install ib_insync"
             )
 
         self._ib = IB()
@@ -501,12 +502,18 @@ class IBExchangeInfoAdapter(ExchangeInfoAdapter):
             base_asset=c.symbol,
             quote_asset="USD",
             margin_asset="USD",
-            settlement_type=SettlementType.CASH if symbol in ["ES", "NQ", "YM", "RTY"] else SettlementType.PHYSICAL,
+            settlement_type=(
+                SettlementType.CASH
+                if symbol in ["ES", "NQ", "YM", "RTY"]
+                else SettlementType.PHYSICAL
+            ),
             multiplier=Decimal(str(c.multiplier)) if c.multiplier else Decimal("1"),
             tick_size=Decimal(str(details.minTick)),
             min_qty=Decimal("1"),
             max_qty=Decimal("10000"),
-            expiry_date=c.lastTradeDateOrContractMonth[:10] if c.lastTradeDateOrContractMonth else None,
+            expiry_date=(
+                c.lastTradeDateOrContractMonth[:10] if c.lastTradeDateOrContractMonth else None
+            ),
         )
 
     def _create_spec_from_hardcoded(self, symbol: str) -> FuturesContractSpec:
@@ -521,7 +528,11 @@ class IBExchangeInfoAdapter(ExchangeInfoAdapter):
             base_asset=symbol,
             quote_asset="USD",
             margin_asset="USD",
-            settlement_type=SettlementType.CASH if symbol in ["ES", "NQ", "YM", "RTY"] else SettlementType.PHYSICAL,
+            settlement_type=(
+                SettlementType.CASH
+                if symbol in ["ES", "NQ", "YM", "RTY"]
+                else SettlementType.PHYSICAL
+            ),
             multiplier=data["multiplier"],
             tick_size=data["tick_size"],
             min_qty=Decimal("1"),

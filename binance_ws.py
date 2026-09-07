@@ -41,9 +41,7 @@ def _format_utc(ts_ms: int | None) -> str | None:
     if ts_ms is None:
         return None
     return (
-        datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z")
+        datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
     )
 
 
@@ -126,9 +124,7 @@ class BinanceWS:
         )
         if self._ws_dedup_enabled:
             try:
-                signal_bus.init(
-                    enabled=True, persist_path=self._ws_dedup_persist_path
-                )
+                signal_bus.init(enabled=True, persist_path=self._ws_dedup_persist_path)
                 logger.info("WS_DEDUP_INIT size=%d", len(signal_bus.STATE))
             except Exception:
                 pass
@@ -139,9 +135,7 @@ class BinanceWS:
         self._subscribe_book_ticker = bool(subscribe_book_ticker)
         self._kline_streams = [f"{s.lower()}@kline_{self.interval}" for s in self.symbols]
         self._book_streams = (
-            [f"{s.lower()}@bookTicker" for s in self.symbols]
-            if self._subscribe_book_ticker
-            else []
+            [f"{s.lower()}@bookTicker" for s in self.symbols] if self._subscribe_book_ticker else []
         )
         self._streams = self._kline_streams + self._book_streams
         self.ws_url = f"{self.base_url}/ws"
@@ -341,12 +335,8 @@ class BinanceWS:
                                 try:
                                     bid_raw = data.get("b")
                                     ask_raw = data.get("a")
-                                    bid_val = (
-                                        Decimal(str(bid_raw)) if bid_raw is not None else None
-                                    )
-                                    ask_val = (
-                                        Decimal(str(ask_raw)) if ask_raw is not None else None
-                                    )
+                                    bid_val = Decimal(str(bid_raw)) if bid_raw is not None else None
+                                    ask_val = Decimal(str(ask_raw)) if ask_raw is not None else None
                                     spread_bps = None
                                     mid: Decimal | None = None
                                     if (
@@ -357,19 +347,25 @@ class BinanceWS:
                                     ):
                                         mid = (bid_val + ask_val) / Decimal("2")
                                         if mid > 0:
-                                            spread_bps = (ask_val - bid_val) / mid * Decimal("10000")
+                                            spread_bps = (
+                                                (ask_val - bid_val) / mid * Decimal("10000")
+                                            )
                                     tick = Tick(
                                         ts=int(data.get("E") or data.get("T") or now_ms()),
                                         symbol=str(data.get("s", "")).upper(),
                                         price=mid,
                                         bid=bid_val,
                                         ask=ask_val,
-                                        bid_qty=Decimal(str(data.get("B")))
-                                        if data.get("B") is not None
-                                        else None,
-                                        ask_qty=Decimal(str(data.get("A")))
-                                        if data.get("A") is not None
-                                        else None,
+                                        bid_qty=(
+                                            Decimal(str(data.get("B")))
+                                            if data.get("B") is not None
+                                            else None
+                                        ),
+                                        ask_qty=(
+                                            Decimal(str(data.get("A")))
+                                            if data.get("A") is not None
+                                            else None
+                                        ),
                                         is_final=True,
                                         spread_bps=spread_bps,
                                     )
@@ -395,7 +391,9 @@ class BinanceWS:
                                         close=Decimal(k.get("c", 0.0)),
                                         volume_base=Decimal(k.get("v", 0.0)),
                                         trades=int(k.get("n", 0)),
-                                        taker_buy_base=Decimal(k.get("V", 0.0)) if "V" in k else None,
+                                        taker_buy_base=(
+                                            Decimal(k.get("V", 0.0)) if "V" in k else None
+                                        ),
                                         is_final=bool(k.get("x", False)),
                                     )
                                 except Exception:
@@ -406,10 +404,15 @@ class BinanceWS:
                                     self._dd_drop += 1
                                     continue
 
-                                if prev_bar is not None and self._rng.random() < self.data_degradation.stale_prob:
+                                if (
+                                    prev_bar is not None
+                                    and self._rng.random() < self.data_degradation.stale_prob
+                                ):
                                     self._dd_stale += 1
                                     if self._rng.random() < self.data_degradation.dropout_prob:
-                                        delay_ms = self._rng.randint(0, self.data_degradation.max_delay_ms)
+                                        delay_ms = self._rng.randint(
+                                            0, self.data_degradation.max_delay_ms
+                                        )
                                         if delay_ms > 0:
                                             self._dd_delay += 1
                                             await asyncio.sleep(delay_ms / 1000.0)
@@ -417,7 +420,9 @@ class BinanceWS:
                                     continue
 
                                 if self._rng.random() < self.data_degradation.dropout_prob:
-                                    delay_ms = self._rng.randint(0, self.data_degradation.max_delay_ms)
+                                    delay_ms = self._rng.randint(
+                                        0, self.data_degradation.max_delay_ms
+                                    )
                                     if delay_ms > 0:
                                         self._dd_delay += 1
                                         await asyncio.sleep(delay_ms / 1000.0)
@@ -428,10 +433,7 @@ class BinanceWS:
                                     delta = bar_open_ms - prev_open
                                     if delta <= 0:
                                         duplicate_ts = True
-                                    elif (
-                                        self._interval_ms > 0
-                                        and delta > self._interval_ms
-                                    ):
+                                    elif self._interval_ms > 0 and delta > self._interval_ms:
                                         gap_ms = delta
                                 if prev_open is None or bar_open_ms >= prev_open:
                                     self._last_open_ts[bar.symbol] = bar_open_ms
@@ -470,7 +472,9 @@ class BinanceWS:
                                                 except Exception:
                                                     pass
                                             try:
-                                                monitoring.ws_dup_skipped_count.labels(bar.symbol).inc()
+                                                monitoring.ws_dup_skipped_count.labels(
+                                                    bar.symbol
+                                                ).inc()
                                                 monitoring.report_ws_failure(bar.symbol)
                                             except Exception:
                                                 pass
@@ -505,9 +509,7 @@ class BinanceWS:
                     self.consecutive_ws_failures += 1
                     if self._monitoring is not None:
                         try:
-                            self._monitoring.record_ws(
-                                "failure", self.consecutive_ws_failures
-                            )
+                            self._monitoring.record_ws("failure", self.consecutive_ws_failures)
                         except Exception:
                             pass
                     continue

@@ -152,9 +152,17 @@ class ManifestValidator:
 
     # Prohibited fields in manifest (order-like)
     PROHIBITED_FIELDS = {
-        "side", "quantity", "qty", "price", "order_type",
-        "target_position", "execute_order", "place_order",
-        "submit_order", "intent", "signal"
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "target_position",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "intent",
+        "signal",
     }
 
     def __init__(self, min_schema_version: str = "1.0.0"):
@@ -265,16 +273,9 @@ class ManifestValidator:
             for key, value in data.items():
                 if key in self.PROHIBITED_FIELDS:
                     found.append(f"{path}.{key}" if path else key)
-                found.extend(
-                    self._find_prohibited_fields(
-                        value,
-                        f"{path}.{key}" if path else key
-                    )
-                )
+                found.extend(self._find_prohibited_fields(value, f"{path}.{key}" if path else key))
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                found.extend(
-                    self._find_prohibited_fields(item, f"{path}[{i}]")
-                )
+                found.extend(self._find_prohibited_fields(item, f"{path}[{i}]"))
 
         return found

@@ -90,7 +90,7 @@ def run_tests():
 
     # Test 3: NaN raises
     try:
-        validate_critical_price(float('nan'))
+        validate_critical_price(float("nan"))
         print("✗ Test 3 FAILED: NaN should raise ValueError")
         failed += 1
     except ValueError:
@@ -99,7 +99,7 @@ def run_tests():
 
     # Test 4: Positive Inf raises
     try:
-        validate_critical_price(float('inf'))
+        validate_critical_price(float("inf"))
         print("✗ Test 4 FAILED: Positive Inf should raise ValueError")
         failed += 1
     except ValueError:
@@ -108,7 +108,7 @@ def run_tests():
 
     # Test 5: Negative Inf raises
     try:
-        validate_critical_price(float('-inf'))
+        validate_critical_price(float("-inf"))
         print("✗ Test 5 FAILED: Negative Inf should raise ValueError")
         failed += 1
     except ValueError:
@@ -192,4 +192,5 @@ def run_tests():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(run_tests())

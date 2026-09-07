@@ -44,8 +44,10 @@ router = APIRouter(prefix="/enterprise", tags=["enterprise"])
 
 # --- Evidence Pack Models ---
 
+
 class EvidenceTypeEnum(str, Enum):
     """Types of evidence that can be exported."""
+
     ARTIFACT_DIGESTS = "artifact_digests"
     ARTIFACT_SIGNATURES = "artifact_signatures"
     ARTIFACT_SBOM = "artifact_sbom"
@@ -69,6 +71,7 @@ class EvidenceTypeEnum(str, Enum):
 
 class ExportDestinationEnum(str, Enum):
     """Export destination types."""
+
     LOCAL = "local"
     S3 = "s3"
     GCS = "gcs"
@@ -77,6 +80,7 @@ class ExportDestinationEnum(str, Enum):
 
 class EvidencePackCreateRequest(BaseModel):
     """Request to create evidence pack export."""
+
     description: str = Field(default="", max_length=500)
     evidence_types: List[EvidenceTypeEnum] = Field(
         default_factory=lambda: [
@@ -99,6 +103,7 @@ class EvidencePackCreateRequest(BaseModel):
 
 class EvidencePackResponse(BaseModel):
     """Response for evidence pack operations."""
+
     id: UUID
     status: str
     created_at: datetime
@@ -116,6 +121,7 @@ class EvidencePackResponse(BaseModel):
 
 class EvidencePackListResponse(BaseModel):
     """Response for listing evidence packs."""
+
     packs: List[EvidencePackResponse]
     total: int
     page: int
@@ -124,8 +130,10 @@ class EvidencePackListResponse(BaseModel):
 
 # --- Agent Updates Models ---
 
+
 class UpdateChannelEnum(str, Enum):
     """Update channel for agent updates."""
+
     STABLE = "stable"
     BETA = "beta"
     CANARY = "canary"
@@ -134,6 +142,7 @@ class UpdateChannelEnum(str, Enum):
 
 class UpdatePriorityEnum(str, Enum):
     """Update priority level."""
+
     CRITICAL = "critical"
     HIGH = "high"
     NORMAL = "normal"
@@ -142,6 +151,7 @@ class UpdatePriorityEnum(str, Enum):
 
 class AgentUpdateCreateRequest(BaseModel):
     """Request to create agent update."""
+
     version: str = Field(..., pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$")
     channel: UpdateChannelEnum = Field(default=UpdateChannelEnum.STABLE)
     title: str = Field(..., max_length=200)
@@ -161,6 +171,7 @@ class AgentUpdateCreateRequest(BaseModel):
 
 class AgentUpdateResponse(BaseModel):
     """Response for agent update operations."""
+
     id: UUID
     version: str
     channel: str
@@ -183,14 +194,17 @@ class AgentUpdateResponse(BaseModel):
 
 class AgentUpdateListResponse(BaseModel):
     """Response for listing agent updates."""
+
     updates: List[AgentUpdateResponse]
     total: int
 
 
 # --- Version Pinning Models ---
 
+
 class VersionConstraintTypeEnum(str, Enum):
     """Version constraint types."""
+
     EXACT = "exact"
     MAJOR = "major"
     MINOR = "minor"
@@ -200,6 +214,7 @@ class VersionConstraintTypeEnum(str, Enum):
 
 class VersionPinScopeEnum(str, Enum):
     """Scope for version pinning."""
+
     GLOBAL = "global"
     ORGANIZATION = "organization"
     WORKSPACE = "workspace"
@@ -208,6 +223,7 @@ class VersionPinScopeEnum(str, Enum):
 
 class ChangeWindowTypeEnum(str, Enum):
     """Change window types."""
+
     MAINTENANCE = "maintenance"
     EMERGENCY = "emergency"
     BLACKOUT = "blackout"
@@ -215,6 +231,7 @@ class ChangeWindowTypeEnum(str, Enum):
 
 class VersionPinCreateRequest(BaseModel):
     """Request to create version pin."""
+
     scope: VersionPinScopeEnum
     scope_id: Optional[UUID] = None
     constraint_type: VersionConstraintTypeEnum
@@ -236,6 +253,7 @@ class VersionPinCreateRequest(BaseModel):
 
 class VersionPinResponse(BaseModel):
     """Response for version pin operations."""
+
     id: UUID
     scope: str
     scope_id: Optional[UUID]
@@ -252,14 +270,17 @@ class VersionPinResponse(BaseModel):
 
 # --- Staged Rollout Models ---
 
+
 class RolloutProgressRequest(BaseModel):
     """Request to progress rollout."""
+
     target_stage: Optional[str] = None
     target_percentage: Optional[float] = Field(default=None, ge=0, le=100)
 
 
 class RolloutStatusResponse(BaseModel):
     """Response for rollout status."""
+
     update_id: UUID
     version: str
     current_stage: str
@@ -272,8 +293,10 @@ class RolloutStatusResponse(BaseModel):
 
 # --- Break-glass Access Models ---
 
+
 class BreakGlassReasonEnum(str, Enum):
     """Pre-defined break-glass reasons."""
+
     INCIDENT_RESPONSE = "incident_response"
     SECURITY_INVESTIGATION = "security_investigation"
     COMPLIANCE_AUDIT = "compliance_audit"
@@ -285,6 +308,7 @@ class BreakGlassReasonEnum(str, Enum):
 
 class BreakGlassScopeEnum(str, Enum):
     """Scope of break-glass access."""
+
     TELEMETRY_READ = "telemetry_read"
     AUDIT_READ = "audit_read"
     CONFIG_READ = "config_read"
@@ -294,6 +318,7 @@ class BreakGlassScopeEnum(str, Enum):
 
 class BreakGlassCreateRequest(BaseModel):
     """Request to create break-glass access."""
+
     reason: str = Field(..., min_length=20, max_length=2000)
     reason_type: BreakGlassReasonEnum
     workspace_id: UUID
@@ -308,6 +333,7 @@ class BreakGlassCreateRequest(BaseModel):
 
 class BreakGlassResponse(BaseModel):
     """Response for break-glass operations."""
+
     id: UUID
     requester_id: str
     requester_email: str
@@ -329,6 +355,7 @@ class BreakGlassResponse(BaseModel):
 
 class BreakGlassApproveRequest(BaseModel):
     """Request to approve break-glass access."""
+
     notes: str = Field(default="", max_length=1000)
 
 
@@ -347,6 +374,7 @@ _break_glass_tokens: Dict[str, UUID] = {}
 # =============================================================================
 # Evidence Pack Endpoints
 # =============================================================================
+
 
 @router.post(
     "/evidence-packs",
@@ -431,9 +459,7 @@ async def _export_evidence_pack(pack_id: UUID) -> None:
         )
 
         # Map enum values
-        evidence_types = [
-            EvidenceType(et) for et in pack["evidence_types"]
-        ]
+        evidence_types = [EvidenceType(et) for et in pack["evidence_types"]]
 
         config = EvidencePackConfig(
             evidence_types=evidence_types,
@@ -551,6 +577,7 @@ async def get_evidence_pack(pack_id: UUID) -> EvidencePackResponse:
 # Agent Updates Endpoints
 # =============================================================================
 
+
 @router.post(
     "/agent-updates",
     response_model=AgentUpdateResponse,
@@ -625,6 +652,7 @@ async def sign_agent_update(update_id: UUID) -> AgentUpdateResponse:
 
         # Generate ephemeral key for demo (production uses HSM/KMS)
         import secrets
+
         signing_key = secrets.token_bytes(32)
 
         success = await manager.sign_update(
@@ -739,10 +767,7 @@ async def get_rollout_status(update_id: UUID) -> RolloutStatusResponse:
     ]
 
     current_stage = update["rollout_stage"] or "pending"
-    current_idx = next(
-        (i for i, s in enumerate(stages) if s["name"] == current_stage),
-        -1
-    )
+    current_idx = next((i for i, s in enumerate(stages) if s["name"] == current_stage), -1)
 
     next_stage = stages[current_idx + 1]["name"] if current_idx < len(stages) - 1 else None
     can_progress = current_idx < len(stages) - 1 and update.get("released_at") is not None
@@ -816,6 +841,7 @@ async def progress_rollout(
 # =============================================================================
 # Version Pinning Endpoints
 # =============================================================================
+
 
 @router.post(
     "/version-pins",
@@ -895,6 +921,7 @@ async def delete_version_pin(pin_id: UUID) -> None:
 # =============================================================================
 # Break-glass Access Endpoints
 # =============================================================================
+
 
 @router.post(
     "/break-glass",
@@ -990,8 +1017,7 @@ async def approve_break_glass_request(
     bg_request["expires_at"] = now + timedelta(hours=bg_request["duration_hours"])
 
     logger.info(
-        f"Break-glass request approved: {request_id}, "
-        f"expires_at={bg_request['expires_at']}"
+        f"Break-glass request approved: {request_id}, " f"expires_at={bg_request['expires_at']}"
     )
 
     response = BreakGlassResponse(**bg_request)
@@ -1018,9 +1044,7 @@ async def revoke_break_glass_request(
     bg_request["revoked_at"] = now
 
     # Invalidate tokens
-    tokens_to_remove = [
-        t for t, r in _break_glass_tokens.items() if r == request_id
-    ]
+    tokens_to_remove = [t for t, r in _break_glass_tokens.items() if r == request_id]
     for token in tokens_to_remove:
         del _break_glass_tokens[token]
 
@@ -1047,7 +1071,8 @@ async def list_break_glass_requests(
     if active_only:
         now = datetime.now(timezone.utc)
         requests = [
-            r for r in requests
+            r
+            for r in requests
             if r["approved"]
             and not r["revoked_at"]
             and r.get("expires_at")
@@ -1087,43 +1112,51 @@ async def get_break_glass_audit(request_id: UUID) -> List[Dict[str, Any]]:
     # Build audit trail
     audit_events = []
 
-    audit_events.append({
-        "action": "request_created",
-        "timestamp": bg_request["created_at"].isoformat(),
-        "actor": bg_request["requester_id"],
-        "details": {
-            "reason_type": bg_request["reason_type"],
-            "scope": bg_request["scope"],
-            "evidence_hash": bg_request["evidence_hash"],
-        },
-    })
+    audit_events.append(
+        {
+            "action": "request_created",
+            "timestamp": bg_request["created_at"].isoformat(),
+            "actor": bg_request["requester_id"],
+            "details": {
+                "reason_type": bg_request["reason_type"],
+                "scope": bg_request["scope"],
+                "evidence_hash": bg_request["evidence_hash"],
+            },
+        }
+    )
 
     if bg_request["approved"]:
-        audit_events.append({
-            "action": "request_approved",
-            "timestamp": bg_request["approved_at"].isoformat(),
-            "actor": bg_request["approved_by"],
-            "details": {
-                "expires_at": bg_request["expires_at"].isoformat(),
-            },
-        })
+        audit_events.append(
+            {
+                "action": "request_approved",
+                "timestamp": bg_request["approved_at"].isoformat(),
+                "actor": bg_request["approved_by"],
+                "details": {
+                    "expires_at": bg_request["expires_at"].isoformat(),
+                },
+            }
+        )
 
     if bg_request["revoked_at"]:
-        audit_events.append({
-            "action": "request_revoked",
-            "timestamp": bg_request["revoked_at"].isoformat(),
-            "actor": "admin",
-            "details": {},
-        })
+        audit_events.append(
+            {
+                "action": "request_revoked",
+                "timestamp": bg_request["revoked_at"].isoformat(),
+                "actor": "admin",
+                "details": {},
+            }
+        )
 
     if bg_request["access_count"] > 0:
-        audit_events.append({
-            "action": "access_used",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "details": {
-                "total_accesses": bg_request["access_count"],
-            },
-        })
+        audit_events.append(
+            {
+                "action": "access_used",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "details": {
+                    "total_accesses": bg_request["access_count"],
+                },
+            }
+        )
 
     return audit_events
 
@@ -1131,6 +1164,7 @@ async def get_break_glass_audit(request_id: UUID) -> List[Dict[str, Any]]:
 # =============================================================================
 # Statistics Endpoint
 # =============================================================================
+
 
 @router.get(
     "/statistics",
@@ -1178,17 +1212,17 @@ async def get_enterprise_statistics() -> Dict[str, Any]:
         "total": len(bg_requests),
         "pending": sum(1 for r in bg_requests if not r["approved"] and not r["revoked_at"]),
         "active": sum(
-            1 for r in bg_requests
+            1
+            for r in bg_requests
             if r["approved"]
             and not r["revoked_at"]
             and r.get("expires_at")
             and r["expires_at"] > now
         ),
         "expired": sum(
-            1 for r in bg_requests
-            if r["approved"]
-            and r.get("expires_at")
-            and r["expires_at"] <= now
+            1
+            for r in bg_requests
+            if r["approved"] and r.get("expires_at") and r["expires_at"] <= now
         ),
         "revoked": sum(1 for r in bg_requests if r["revoked_at"]),
     }

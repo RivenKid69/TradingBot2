@@ -249,9 +249,7 @@ class ArtifactListResponse(BaseModel):
 async def _get_version_count(session, strategy_id: UUID) -> int:
     """Get the count of versions for a strategy."""
     result = await session.execute(
-        select(func.count(StrategyVersion.id)).where(
-            StrategyVersion.strategy_id == strategy_id
-        )
+        select(func.count(StrategyVersion.id)).where(StrategyVersion.strategy_id == strategy_id)
     )
     return result.scalar() or 0
 
@@ -287,9 +285,7 @@ async def _get_artifact_count(session, build_id: UUID) -> int:
 async def _get_next_build_number(session, version_id: UUID) -> int:
     """Get the next build number for a version."""
     result = await session.execute(
-        select(func.max(Build.build_number)).where(
-            Build.strategy_version_id == version_id
-        )
+        select(func.max(Build.build_number)).where(Build.strategy_version_id == version_id)
     )
     max_num = result.scalar()
     return (max_num or 0) + 1
@@ -371,7 +367,11 @@ def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
         signature_ref=artifact.signature_ref,
         sbom_ref=artifact.sbom_ref,
         provenance=artifact.provenance or {},
-        change_class=artifact.change_class.value if hasattr(artifact.change_class, 'value') else artifact.change_class,
+        change_class=(
+            artifact.change_class.value
+            if hasattr(artifact.change_class, "value")
+            else artifact.change_class
+        ),
         is_signed=artifact.is_signed,
         metadata=artifact.extra_metadata or {},
         created_at=artifact.created_at,
@@ -420,9 +420,7 @@ async def list_strategies(
                     page_size=pagination.page_size,
                 )
             query = query.where(Strategy.workspace_id == current_user.workspace_id)
-            count_query = count_query.where(
-                Strategy.workspace_id == current_user.workspace_id
-            )
+            count_query = count_query.where(Strategy.workspace_id == current_user.workspace_id)
 
         # Get total count
         total_result = await session.execute(count_query)
@@ -536,9 +534,7 @@ async def get_strategy(
 ) -> StrategyResponse:
     """Get strategy by ID."""
     async with get_session() as session:
-        result = await session.execute(
-            select(Strategy).where(Strategy.id == strategy_id)
-        )
+        result = await session.execute(select(Strategy).where(Strategy.id == strategy_id))
         strategy = result.scalar_one_or_none()
 
         if strategy is None:
@@ -574,9 +570,7 @@ async def update_strategy(
 ) -> StrategyResponse:
     """Update strategy."""
     async with get_session() as session:
-        result = await session.execute(
-            select(Strategy).where(Strategy.id == strategy_id)
-        )
+        result = await session.execute(select(Strategy).where(Strategy.id == strategy_id))
         strategy = result.scalar_one_or_none()
 
         if strategy is None:
@@ -649,9 +643,7 @@ async def delete_strategy(
 ) -> None:
     """Soft delete strategy."""
     async with get_session() as session:
-        result = await session.execute(
-            select(Strategy).where(Strategy.id == strategy_id)
-        )
+        result = await session.execute(select(Strategy).where(Strategy.id == strategy_id))
         strategy = result.scalar_one_or_none()
 
         if strategy is None:
@@ -698,9 +690,7 @@ async def list_strategy_versions(
     """List versions for a strategy."""
     async with get_session() as session:
         # Verify strategy exists and access
-        strat_result = await session.execute(
-            select(Strategy).where(Strategy.id == strategy_id)
-        )
+        strat_result = await session.execute(select(Strategy).where(Strategy.id == strategy_id))
         strategy = strat_result.scalar_one_or_none()
 
         if strategy is None:
@@ -717,9 +707,7 @@ async def list_strategy_versions(
                 )
 
         # Build query
-        query = select(StrategyVersion).where(
-            StrategyVersion.strategy_id == strategy_id
-        )
+        query = select(StrategyVersion).where(StrategyVersion.strategy_id == strategy_id)
         count_query = select(func.count(StrategyVersion.id)).where(
             StrategyVersion.strategy_id == strategy_id
         )
@@ -811,8 +799,7 @@ async def create_strategy_version(
 
         # Set previous latest to not latest
         await session.execute(
-            select(StrategyVersion)
-            .where(
+            select(StrategyVersion).where(
                 StrategyVersion.strategy_id == strategy_id,
                 StrategyVersion.is_latest == True,
             )
@@ -986,9 +973,7 @@ async def list_builds(
 
         # Build query
         query = select(Build).where(Build.strategy_version_id == version_id)
-        count_query = select(func.count(Build.id)).where(
-            Build.strategy_version_id == version_id
-        )
+        count_query = select(func.count(Build.id)).where(Build.strategy_version_id == version_id)
 
         if status_filter:
             query = query.where(Build.status == status_filter)
@@ -1232,9 +1217,7 @@ async def list_artifacts(
 
         # Build query
         query = select(Artifact).where(Artifact.build_id == build_id)
-        count_query = select(func.count(Artifact.id)).where(
-            Artifact.build_id == build_id
-        )
+        count_query = select(func.count(Artifact.id)).where(Artifact.build_id == build_id)
 
         # Get total
         total_result = await session.execute(count_query)

@@ -9,6 +9,7 @@ Agent's intention is now available in info["signal_pos_requested"].
 NOTE: These tests use mock approach to avoid Cython dependencies.
 Full integration tests are in test_signal_pos_next_close_to_open_consistency.py.
 """
+
 import math
 
 import numpy as np
@@ -24,8 +25,10 @@ from action_proto import ActionProto, ActionType
 # Minimal stub classes for testing without Cython dependencies
 # ============================================================================
 
+
 class _EnvState:
     """Minimal state stub for testing."""
+
     def __init__(self):
         self.cash = 1000.0
         self.units = 0.0
@@ -66,7 +69,7 @@ class _MediatorStub:
         obs = self._build_observation(
             row=self._env.df.iloc[state.step_idx] if len(self._env.df) > state.step_idx else None,
             state=state,
-            mark_price=100.0
+            mark_price=100.0,
         )
         state.step_idx += 1
         return obs, 0.0, False, False, {}
@@ -97,7 +100,7 @@ def _setup_mock_env(df, decision_mode=None, signal_only=True):
     if decision_mode is None:
         decision_mode = DecisionTiming.CLOSE_TO_OPEN
 
-    with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+    with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
         env = TradingEnv.__new__(TradingEnv)
         env.df = df.copy()
         env.initial_cash = 1000.0
@@ -157,12 +160,12 @@ def test_signal_only_close_to_open_delay_behavior() -> None:
     next_signal_pos = executed_signal_pos  # 0.0, not 0.75!
 
     # Verify signal_pos_next should be 0.0 (actual), not 0.75 (requested)
-    assert next_signal_pos == pytest.approx(0.0), (
-        f"In CLOSE_TO_OPEN, first step executes HOLD. next_signal_pos should be 0.0, got {next_signal_pos}"
-    )
-    assert agent_signal_pos == pytest.approx(0.75), (
-        f"Agent requested 75%. agent_signal_pos should be 0.75, got {agent_signal_pos}"
-    )
+    assert next_signal_pos == pytest.approx(
+        0.0
+    ), f"In CLOSE_TO_OPEN, first step executes HOLD. next_signal_pos should be 0.0, got {next_signal_pos}"
+    assert agent_signal_pos == pytest.approx(
+        0.75
+    ), f"Agent requested 75%. agent_signal_pos should be 0.75, got {agent_signal_pos}"
 
     # Update state for next step
     env._pending_action = agent_action
@@ -173,9 +176,9 @@ def test_signal_only_close_to_open_delay_behavior() -> None:
     proto_1 = env._pending_action  # MARKET(0.75) from Step 0
     executed_signal_pos_1 = env._signal_position_from_proto(proto_1, env._last_signal_position)
 
-    assert executed_signal_pos_1 == pytest.approx(0.75), (
-        f"Step 1 should execute the 75% from Step 0. Got {executed_signal_pos_1}"
-    )
+    assert executed_signal_pos_1 == pytest.approx(
+        0.75
+    ), f"Step 1 should execute the 75% from Step 0. Got {executed_signal_pos_1}"
 
 
 def test_signal_only_info_fields_semantics() -> None:
@@ -207,12 +210,12 @@ def test_signal_only_info_fields_semantics() -> None:
     info["signal_pos_requested"] = float(agent_signal_pos)  # Agent's intention
 
     assert info["signal_pos"] == pytest.approx(0.0)
-    assert info["signal_pos_next"] == pytest.approx(0.0), (
-        "signal_pos_next should show 0.0 (delayed), not 0.5 (requested)"
-    )
-    assert info["signal_pos_requested"] == pytest.approx(0.5), (
-        "signal_pos_requested should show 0.5 (agent's intention)"
-    )
+    assert info["signal_pos_next"] == pytest.approx(
+        0.0
+    ), "signal_pos_next should show 0.0 (delayed), not 0.5 (requested)"
+    assert info["signal_pos_requested"] == pytest.approx(
+        0.5
+    ), "signal_pos_requested should show 0.5 (agent's intention)"
 
 
 def test_signal_only_reward_uses_prev_position() -> None:
@@ -230,9 +233,9 @@ def test_signal_only_reward_uses_prev_position() -> None:
 
     # Reward = log_return * prev_signal_pos = log_return * 0.0 = 0
     expected_reward_0 = log_return * prev_signal_pos
-    assert expected_reward_0 == pytest.approx(0.0), (
-        "Step 0: reward should be 0 because prev_signal_pos=0"
-    )
+    assert expected_reward_0 == pytest.approx(
+        0.0
+    ), "Step 0: reward should be 0 because prev_signal_pos=0"
 
     # After Step 0: _last_signal_position = 0.0 (HOLD executed)
     # After Step 1: _last_signal_position = 1.0 (100% from Step 0)
@@ -242,6 +245,6 @@ def test_signal_only_reward_uses_prev_position() -> None:
     log_return_2 = math.log(df.loc[2, "close"] / df.loc[1, "close"])
     expected_reward_2 = log_return_2 * prev_signal_pos_2
 
-    assert expected_reward_2 != pytest.approx(0.0), (
-        f"Step 2: reward should be non-zero. Expected {expected_reward_2}"
-    )
+    assert expected_reward_2 != pytest.approx(
+        0.0
+    ), f"Step 2: reward should be non-zero. Expected {expected_reward_2}"

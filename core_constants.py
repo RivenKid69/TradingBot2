@@ -16,11 +16,13 @@ from enum import IntEnum
 # ВНИМАНИЕ: это значение должно совпадать с core_constants.pxd и core_constants.h
 PRICE_SCALE: int = 100  # шаг цены = 1/PRICE_SCALE
 
+
 class MarketRegime(IntEnum):
     NORMAL = 0
     CHOPPY_FLAT = 1
     STRONG_TREND = 2
     ILLIQUID = 3
+
 
 # Лимиты для симуляции (Python-only)
 DEFAULT_MAX_TRADES_PER_STEP: int = 10000

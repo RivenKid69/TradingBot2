@@ -148,15 +148,9 @@ class MakerTakerShareSettings:
         enabled = bool(data.get("enabled", False))
         mode = cls._normalise_mode(data.get("mode"))
         maker_share_default = cls._normalise_share(data.get("maker_share_default"))
-        spread_cost_maker_bps = cls._coerce_float(
-            data.get("spread_cost_maker_bps"), 0.0
-        )
-        spread_cost_taker_bps = cls._coerce_float(
-            data.get("spread_cost_taker_bps"), 0.0
-        )
-        taker_fee_override_bps = cls._coerce_optional_float(
-            data.get("taker_fee_override_bps")
-        )
+        spread_cost_maker_bps = cls._coerce_float(data.get("spread_cost_maker_bps"), 0.0)
+        spread_cost_taker_bps = cls._coerce_float(data.get("spread_cost_taker_bps"), 0.0)
+        taker_fee_override_bps = cls._coerce_optional_float(data.get("taker_fee_override_bps"))
         model_block_raw = data.get("model")
         model_block = model_block_raw if isinstance(model_block_raw, Mapping) else None
         distance_raw = data.get("distance_to_mid")
@@ -276,10 +270,7 @@ class MakerTakerShareSettings:
                 float(self.distance_to_mid) if self.distance_to_mid is not None else None
             ),
             "latency": float(self.latency) if self.latency is not None else None,
-            "coefficients": {
-                str(key): float(value)
-                for key, value in self.coefficients.items()
-            },
+            "coefficients": {str(key): float(value) for key, value in self.coefficients.items()},
         }
 
     def effective_maker_fee_bps(self, maker_fee_bps: float) -> float:
@@ -307,9 +298,7 @@ class MakerTakerShareSettings:
             "expected_fee_bps": expected_fee,
         }
 
-    def to_sim_payload(
-        self, maker_fee_bps: float, taker_fee_bps: float
-    ) -> Dict[str, Any]:
+    def to_sim_payload(self, maker_fee_bps: float, taker_fee_bps: float) -> Dict[str, Any]:
         breakdown = self.expected_fee_breakdown(maker_fee_bps, taker_fee_bps)
         payload: Dict[str, Any] = {
             "enabled": bool(self.enabled),
@@ -330,10 +319,7 @@ class MakerTakerShareSettings:
                 float(self.distance_to_mid) if self.distance_to_mid is not None else None
             ),
             "latency": float(self.latency) if self.latency is not None else None,
-            "coefficients": {
-                str(key): float(value)
-                for key, value in self.coefficients.items()
-            },
+            "coefficients": {str(key): float(value) for key, value in self.coefficients.items()},
         }
         return payload
 

@@ -20,9 +20,9 @@ def test_code_review_vf_clipping():
     # Check 1: No target clipping code should exist
     print("✓ Check 1: Verify target clipping code was removed")
     bad_patterns = [
-        r'target_returns_raw_clipped\s*=\s*torch\.clamp\(\s*target_returns_raw',
-        r'target_returns_norm_clipped\s*=.*target_returns_raw_clipped',
-        r'target_distribution_clipped\s*=\s*self\._build_support_distribution\(\s*target_returns_norm_clipped',
+        r"target_returns_raw_clipped\s*=\s*torch\.clamp\(\s*target_returns_raw",
+        r"target_returns_norm_clipped\s*=.*target_returns_raw_clipped",
+        r"target_distribution_clipped\s*=\s*self\._build_support_distribution\(\s*target_returns_norm_clipped",
     ]
 
     for pattern in bad_patterns:
@@ -37,9 +37,9 @@ def test_code_review_vf_clipping():
     # Check 2: Predictions should be clipped
     print("\n✓ Check 2: Verify predictions are clipped")
     good_patterns = [
-        r'value_pred_raw_clipped\s*=\s*torch\.clamp',
-        r'quantiles_norm_clipped\s*=',
-        r'mean_values_.*_clipped\s*=\s*torch\.clamp',
+        r"value_pred_raw_clipped\s*=\s*torch\.clamp",
+        r"quantiles_norm_clipped\s*=",
+        r"mean_values_.*_clipped\s*=\s*torch\.clamp",
     ]
 
     for pattern in good_patterns:
@@ -53,7 +53,7 @@ def test_code_review_vf_clipping():
     print("\n✓ Check 3: Verify loss uses unclipped targets")
 
     # Quantile loss
-    quantile_loss_pattern = r'critic_loss_clipped\s*=\s*self\._quantile_huber_loss\(\s*quantiles_norm_clipped_for_loss,\s*targets_norm_for_loss'
+    quantile_loss_pattern = r"critic_loss_clipped\s*=\s*self\._quantile_huber_loss\(\s*quantiles_norm_clipped_for_loss,\s*targets_norm_for_loss"
     if re.search(quantile_loss_pattern, code):
         print("  ✓ Quantile loss uses unclipped targets (targets_norm_for_loss)")
     else:
@@ -61,7 +61,7 @@ def test_code_review_vf_clipping():
         return False
 
     # Distributional loss
-    dist_loss_pattern = r'target_distribution_selected\s*\*\s*log_predictions_clipped_selected'
+    dist_loss_pattern = r"target_distribution_selected\s*\*\s*log_predictions_clipped_selected"
     if re.search(dist_loss_pattern, code):
         print("  ✓ Distributional loss uses unclipped target distribution")
     else:
@@ -70,9 +70,9 @@ def test_code_review_vf_clipping():
     # Check 4: Comments indicating the fix
     print("\n✓ Check 4: Verify fix is documented in comments")
     fix_comments = [
-        r'CRITICAL FIX.*clip predictions.*not targets',
-        r'PPO VF clipping.*max\(loss\(pred, target\)',
-        r'target.*must remain unchanged',
+        r"CRITICAL FIX.*clip predictions.*not targets",
+        r"PPO VF clipping.*max\(loss\(pred, target\)",
+        r"target.*must remain unchanged",
     ]
 
     for pattern in fix_comments:
@@ -84,23 +84,23 @@ def test_code_review_vf_clipping():
     # Check 5: Verify old buggy code was removed
     print("\n✓ Check 5: Verify old buggy variables were removed")
     old_vars = [
-        'target_returns_norm_clipped_selected',
-        'targets_norm_clipped_for_loss',
-        'target_distribution_clipped_selected',
+        "target_returns_norm_clipped_selected",
+        "targets_norm_clipped_for_loss",
+        "target_distribution_clipped_selected",
     ]
 
     for var in old_vars:
         # Should not be assigned (but might be referenced in old code paths)
-        assign_pattern = f'{var}\\s*='
+        assign_pattern = f"{var}\\s*="
         matches = list(re.finditer(assign_pattern, code))
 
         # Filter out comment lines
         non_comment_matches = []
         for match in matches:
-            line_start = code.rfind('\n', 0, match.start()) + 1
-            line_end = code.find('\n', match.end())
+            line_start = code.rfind("\n", 0, match.start()) + 1
+            line_end = code.find("\n", match.end())
             line = code[line_start:line_end].strip()
-            if not line.startswith('#'):
+            if not line.startswith("#"):
                 non_comment_matches.append(line)
 
         if non_comment_matches:
@@ -135,7 +135,7 @@ def test_trace_vf_clipping_flow():
 
     # 1. Find where predictions are clipped
     for i, line in enumerate(lines):
-        if 'value_pred_raw_clipped = torch.clamp' in line and '# CRITICAL' not in line:
+        if "value_pred_raw_clipped = torch.clamp" in line and "# CRITICAL" not in line:
             context_start = max(0, i - 2)
             context_end = min(len(lines), i + 8)
             print(f"\n1. Prediction clipping (line {i+1}):")
@@ -146,14 +146,14 @@ def test_trace_vf_clipping_flow():
 
     # 2. Find where quantile loss is computed
     for i, line in enumerate(lines):
-        if 'critic_loss_clipped = self._quantile_huber_loss' in line:
+        if "critic_loss_clipped = self._quantile_huber_loss" in line:
             context_start = max(0, i - 3)
             context_end = min(len(lines), i + 3)
             print(f"\n2. Quantile loss computation (line {i+1}):")
             for j in range(context_start, context_end):
                 prefix = ">>>" if j == i else "   "
                 line_str = lines[j].rstrip()
-                if 'targets_norm_for_loss' in line_str and 'UNCLIPPED' in line_str:
+                if "targets_norm_for_loss" in line_str and "UNCLIPPED" in line_str:
                     print(f"{prefix} {line_str} ✓✓✓")
                 else:
                     print(f"{prefix} {line_str}")
@@ -161,14 +161,14 @@ def test_trace_vf_clipping_flow():
 
     # 3. Find where distributional loss is computed
     for i, line in enumerate(lines):
-        if 'target_distribution_selected * log_predictions_clipped_selected' in line:
+        if "target_distribution_selected * log_predictions_clipped_selected" in line:
             context_start = max(0, i - 3)
             context_end = min(len(lines), i + 2)
             print(f"\n3. Distributional loss computation (line {i+1}):")
             for j in range(context_start, context_end):
                 prefix = ">>>" if j == i else "   "
                 line_str = lines[j].rstrip()
-                if 'UNCLIPPED' in line_str:
+                if "UNCLIPPED" in line_str:
                     print(f"{prefix} {line_str} ✓✓✓")
                 else:
                     print(f"{prefix} {line_str}")
@@ -216,28 +216,32 @@ def test_compare_losses():
     final_loss_wrong = max(loss_unclipped_wrong, loss_clipped_wrong)
     print(f"  loss_unclipped = ({prediction} - {target_clipped})² = {loss_unclipped_wrong}")
     print(f"  loss_clipped   = ({pred_clipped} - {target_clipped})² = {loss_clipped_wrong}")
-    print(f"  final_loss     = max({loss_unclipped_wrong}, {loss_clipped_wrong}) = {final_loss_wrong}")
+    print(
+        f"  final_loss     = max({loss_unclipped_wrong}, {loss_clipped_wrong}) = {final_loss_wrong}"
+    )
 
     print(f"\nDifference:")
     print(f"  Correct loss:   {final_loss} (proper learning signal)")
     print(f"  Incorrect loss: {final_loss_wrong} (artificially reduced!)")
     print(f"  Ratio:          {final_loss / final_loss_wrong:.2f}x difference")
-    print(f"\n  ⚠️ The buggy implementation underestimated the loss by {(1 - final_loss_wrong/final_loss)*100:.1f}%!")
+    print(
+        f"\n  ⚠️ The buggy implementation underestimated the loss by {(1 - final_loss_wrong/final_loss)*100:.1f}%!"
+    )
 
     return True
 
 
 if __name__ == "__main__":
-    print("="*70)
+    print("=" * 70)
     print("VF CLIPPING FIX - CODE REVIEW TEST")
-    print("="*70)
+    print("=" * 70)
 
     success = True
     success = test_code_review_vf_clipping() and success
     success = test_trace_vf_clipping_flow() and success
     success = test_compare_losses() and success
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     if success:
         print("✅ ALL TESTS PASSED")
         print("\nThe VF clipping fix is correctly implemented!")
@@ -245,4 +249,4 @@ if __name__ == "__main__":
     else:
         print("❌ SOME TESTS FAILED")
         print("\nPlease review the implementation.")
-    print("="*70)
+    print("=" * 70)

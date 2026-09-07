@@ -40,6 +40,7 @@ from ccea.guardrails.redaction_enforcement_check import (
 # Test Artifact Digest Check
 # ============================================================================
 
+
 class TestDigestValidation:
     """Tests for digest validation."""
 
@@ -236,6 +237,7 @@ class TestValidateDigest:
 # Test Redaction Enforcement
 # ============================================================================
 
+
 class TestRedactionEnforcer:
     """Tests for RedactionEnforcer."""
 
@@ -279,6 +281,7 @@ class TestRedactionEnforcer:
 # Integration Tests
 # ============================================================================
 
+
 class TestGuardrailsIntegration:
     """Integration tests for guardrails."""
 
@@ -319,6 +322,7 @@ class TestGuardrailsIntegration:
 # ============================================================================
 # Test Protocol Review Check Structures
 # ============================================================================
+
 
 class TestProtocolReviewStructures:
     """Tests for protocol review check data structures."""
@@ -376,6 +380,7 @@ class TestProtocolReviewStructures:
 # Test Edge Cases
 # ============================================================================
 
+
 class TestEdgeCases:
     """Tests for edge cases."""
 
@@ -396,17 +401,7 @@ class TestEdgeCases:
         """Test deeply nested forbidden field is caught."""
         from packages.cloud.governance.telemetry_contract import validate_telemetry_contract
 
-        payload = {
-            "level1": {
-                "level2": {
-                    "level3": {
-                        "level4": {
-                            "api_key": "secret"
-                        }
-                    }
-                }
-            }
-        }
+        payload = {"level1": {"level2": {"level3": {"level4": {"api_key": "secret"}}}}}
 
         result = validate_telemetry_contract(
             payload,
@@ -466,7 +461,7 @@ class TestEdgeCases:
         payload = {
             "timestamp": "2025-12-16T10:00:00Z",
             "message": "Error: <script>alert('xss')</script>",
-            "path": "/path/with spaces/and\"quotes",
+            "path": '/path/with spaces/and"quotes',
         }
 
         result = validate_telemetry_contract(

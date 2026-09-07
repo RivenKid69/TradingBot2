@@ -34,8 +34,14 @@ class TestCorporateActionType:
     def test_all_action_types_exist(self):
         """Verify all expected action types are defined."""
         expected = {
-            "dividend", "stock_dividend", "split", "merger",
-            "spinoff", "rights", "symbol_change", "delisting"
+            "dividend",
+            "stock_dividend",
+            "split",
+            "merger",
+            "spinoff",
+            "rights",
+            "symbol_change",
+            "delisting",
         }
         actual = {t.value for t in CorporateActionType}
         assert actual == expected

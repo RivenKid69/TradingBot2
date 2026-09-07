@@ -28,6 +28,7 @@ import math
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def crypto_spot_config() -> Dict[str, Any]:
     """Standard crypto spot configuration."""
@@ -89,6 +90,7 @@ def forex_config() -> Dict[str, Any]:
 @pytest.fixture
 def mock_market_state():
     """Create mock market state for testing."""
+
     class MockMarketState:
         def __init__(
             self,
@@ -126,6 +128,7 @@ def mock_market_state():
 @pytest.fixture
 def mock_bar_data():
     """Create mock bar data for testing."""
+
     class MockBarData:
         def __init__(
             self,
@@ -149,6 +152,7 @@ def mock_bar_data():
 # Test Class: Crypto Spot Backward Compatibility
 # =============================================================================
 
+
 class TestCryptoSpotBackwardCompatibility:
     """
     Ensure crypto spot functionality remains unchanged after futures integration.
@@ -159,9 +163,10 @@ class TestCryptoSpotBackwardCompatibility:
         """Verify CryptoParametricSlippageProvider still exists and works."""
         try:
             from execution_providers import CryptoParametricSlippageProvider
+
             provider = CryptoParametricSlippageProvider()
             assert provider is not None
-            assert hasattr(provider, 'compute_slippage_bps')
+            assert hasattr(provider, "compute_slippage_bps")
         except ImportError:
             pytest.skip("CryptoParametricSlippageProvider not available")
 
@@ -169,9 +174,10 @@ class TestCryptoSpotBackwardCompatibility:
         """Verify CryptoFeeProvider still exists and works."""
         try:
             from execution_providers import CryptoFeeProvider
+
             provider = CryptoFeeProvider()
             assert provider is not None
-            assert hasattr(provider, 'compute_fee')
+            assert hasattr(provider, "compute_fee")
         except ImportError:
             pytest.skip("CryptoFeeProvider not available")
 
@@ -179,6 +185,7 @@ class TestCryptoSpotBackwardCompatibility:
         """Verify create_execution_provider works for crypto spot."""
         try:
             from execution_providers import create_execution_provider, AssetClass
+
             provider = create_execution_provider(AssetClass.CRYPTO, level="L2")
             assert provider is not None
         except ImportError:
@@ -263,7 +270,7 @@ class TestCryptoSpotBackwardCompatibility:
             returns_high = [0.05, -0.06, 0.04, -0.05] * 5
 
             # Method should exist and return valid regime
-            if hasattr(provider, '_detect_volatility_regime'):
+            if hasattr(provider, "_detect_volatility_regime"):
                 regime_low = provider._detect_volatility_regime(returns_low)
                 regime_high = provider._detect_volatility_regime(returns_high)
                 assert regime_low in [VolatilityRegime.LOW, VolatilityRegime.NORMAL]
@@ -280,7 +287,7 @@ class TestCryptoSpotBackwardCompatibility:
             config = provider.config
 
             # Whale threshold should be configurable
-            assert hasattr(config, 'whale_threshold')
+            assert hasattr(config, "whale_threshold")
             assert config.whale_threshold > 0
         except (ImportError, AttributeError):
             pytest.skip("Whale detection not available")
@@ -294,7 +301,7 @@ class TestCryptoSpotBackwardCompatibility:
             config = provider.config
 
             # TOD curve should have 24 entries
-            assert hasattr(config, 'tod_curve')
+            assert hasattr(config, "tod_curve")
             assert len(config.tod_curve) == 24
         except (ImportError, AttributeError):
             pytest.skip("TOD curve not available")
@@ -308,7 +315,7 @@ class TestCryptoSpotBackwardCompatibility:
             config = provider.config
 
             # Imbalance penalty should be configurable
-            assert hasattr(config, 'imbalance_penalty_max')
+            assert hasattr(config, "imbalance_penalty_max")
             assert 0 < config.imbalance_penalty_max < 1.0
         except (ImportError, AttributeError):
             pytest.skip("Imbalance penalty not available")
@@ -317,6 +324,7 @@ class TestCryptoSpotBackwardCompatibility:
 # =============================================================================
 # Test Class: Equity Backward Compatibility
 # =============================================================================
+
 
 class TestEquityBackwardCompatibility:
     """
@@ -328,9 +336,10 @@ class TestEquityBackwardCompatibility:
         """Verify EquityParametricSlippageProvider still exists."""
         try:
             from execution_providers import EquityParametricSlippageProvider
+
             provider = EquityParametricSlippageProvider()
             assert provider is not None
-            assert hasattr(provider, 'compute_slippage_bps')
+            assert hasattr(provider, "compute_slippage_bps")
         except ImportError:
             pytest.skip("EquityParametricSlippageProvider not available")
 
@@ -338,9 +347,10 @@ class TestEquityBackwardCompatibility:
         """Verify EquityFeeProvider still exists."""
         try:
             from execution_providers import EquityFeeProvider
+
             provider = EquityFeeProvider()
             assert provider is not None
-            assert hasattr(provider, 'compute_fee')
+            assert hasattr(provider, "compute_fee")
         except ImportError:
             pytest.skip("EquityFeeProvider not available")
 
@@ -348,6 +358,7 @@ class TestEquityBackwardCompatibility:
         """Verify create_execution_provider works for equity."""
         try:
             from execution_providers import create_execution_provider, AssetClass
+
             provider = create_execution_provider(AssetClass.EQUITY, level="L2")
             assert provider is not None
         except ImportError:
@@ -410,7 +421,7 @@ class TestEquityBackwardCompatibility:
             config = provider.config
 
             # U-curve should have entries for trading hours
-            assert hasattr(config, 'intraday_curve')
+            assert hasattr(config, "intraday_curve")
             assert len(config.intraday_curve) > 0
         except (ImportError, AttributeError):
             pytest.skip("Intraday U-curve not available")
@@ -424,8 +435,8 @@ class TestEquityBackwardCompatibility:
             config = provider.config
 
             # Auction parameters should exist
-            assert hasattr(config, 'auction_decay_minutes')
-            assert hasattr(config, 'auction_premium')
+            assert hasattr(config, "auction_decay_minutes")
+            assert hasattr(config, "auction_premium")
         except (ImportError, AttributeError):
             pytest.skip("Auction proximity not available")
 
@@ -438,7 +449,7 @@ class TestEquityBackwardCompatibility:
             config = provider.config
 
             # Beta stress sensitivity should exist
-            assert hasattr(config, 'beta_stress_sensitivity')
+            assert hasattr(config, "beta_stress_sensitivity")
             assert config.beta_stress_sensitivity > 0
         except (ImportError, AttributeError):
             pytest.skip("Beta stress not available")
@@ -452,8 +463,8 @@ class TestEquityBackwardCompatibility:
             config = provider.config
 
             # Short interest parameters should exist
-            assert hasattr(config, 'short_interest_max_penalty')
-            assert hasattr(config, 'short_interest_threshold')
+            assert hasattr(config, "short_interest_max_penalty")
+            assert hasattr(config, "short_interest_threshold")
         except (ImportError, AttributeError):
             pytest.skip("Short squeeze factor not available")
 
@@ -466,7 +477,7 @@ class TestEquityBackwardCompatibility:
             config = provider.config
 
             # Earnings multiplier should exist
-            assert hasattr(config, 'earnings_event_multiplier')
+            assert hasattr(config, "earnings_event_multiplier")
             assert config.earnings_event_multiplier >= 1.0
         except (ImportError, AttributeError):
             pytest.skip("Earnings event factor not available")
@@ -488,6 +499,7 @@ class TestEquityBackwardCompatibility:
 # Test Class: Forex Backward Compatibility
 # =============================================================================
 
+
 class TestForexBackwardCompatibility:
     """
     Ensure forex functionality remains unchanged after futures integration.
@@ -498,9 +510,10 @@ class TestForexBackwardCompatibility:
         """Verify ForexParametricSlippageProvider still exists."""
         try:
             from execution_providers import ForexParametricSlippageProvider
+
             provider = ForexParametricSlippageProvider()
             assert provider is not None
-            assert hasattr(provider, 'compute_slippage_bps')
+            assert hasattr(provider, "compute_slippage_bps")
         except ImportError:
             pytest.skip("ForexParametricSlippageProvider not available")
 
@@ -508,6 +521,7 @@ class TestForexBackwardCompatibility:
         """Verify ForexFeeProvider still exists (spread-based)."""
         try:
             from execution_providers import ForexFeeProvider
+
             provider = ForexFeeProvider()
             assert provider is not None
         except ImportError:
@@ -517,6 +531,7 @@ class TestForexBackwardCompatibility:
         """Verify create_execution_provider works for forex."""
         try:
             from execution_providers import create_execution_provider, AssetClass
+
             provider = create_execution_provider(AssetClass.FOREX, level="L2")
             assert provider is not None
         except ImportError:
@@ -587,6 +602,7 @@ class TestForexBackwardCompatibility:
 # Test Class: L3 LOB Backward Compatibility
 # =============================================================================
 
+
 class TestL3LOBBackwardCompatibility:
     """
     Ensure L3 LOB simulation for non-futures asset classes remains unchanged.
@@ -596,6 +612,7 @@ class TestL3LOBBackwardCompatibility:
         """Verify matching engine still exists."""
         try:
             from lob.matching_engine import MatchingEngine
+
             engine = MatchingEngine()
             assert engine is not None
         except ImportError:
@@ -694,6 +711,7 @@ class TestL3LOBBackwardCompatibility:
 # Test Class: Risk Management Backward Compatibility
 # =============================================================================
 
+
 class TestRiskManagementBackwardCompatibility:
     """
     Ensure risk management for non-futures asset classes remains unchanged.
@@ -747,6 +765,7 @@ class TestRiskManagementBackwardCompatibility:
 # Test Class: Trading Environment Backward Compatibility
 # =============================================================================
 
+
 class TestTradingEnvBackwardCompatibility:
     """
     Ensure trading environment for non-futures asset classes remains unchanged.
@@ -795,6 +814,7 @@ class TestTradingEnvBackwardCompatibility:
 # =============================================================================
 # Test Class: Adapter Backward Compatibility
 # =============================================================================
+
 
 class TestAdapterBackwardCompatibility:
     """
@@ -860,6 +880,7 @@ class TestAdapterBackwardCompatibility:
 # Test Class: Feature Pipeline Backward Compatibility
 # =============================================================================
 
+
 class TestFeaturePipelineBackwardCompatibility:
     """
     Ensure feature pipeline for non-futures asset classes remains unchanged.
@@ -907,6 +928,7 @@ class TestFeaturePipelineBackwardCompatibility:
 # Test Class: Model and Training Backward Compatibility
 # =============================================================================
 
+
 class TestModelTrainingBackwardCompatibility:
     """
     Ensure model and training infrastructure for non-futures remains unchanged.
@@ -952,6 +974,7 @@ class TestModelTrainingBackwardCompatibility:
 # =============================================================================
 # Test Class: Configuration Backward Compatibility
 # =============================================================================
+
 
 class TestConfigurationBackwardCompatibility:
     """
@@ -1011,6 +1034,7 @@ class TestConfigurationBackwardCompatibility:
 # Integration Tests
 # =============================================================================
 
+
 class TestCrossAssetClassIntegration:
     """
     Integration tests ensuring futures don't break cross-asset functionality.
@@ -1047,7 +1071,7 @@ class TestCrossAssetClassIntegration:
             assert AssetClass.EQUITY is not None
 
             # Futures may be added but shouldn't break
-            assert hasattr(AssetClass, 'FUTURES') or True
+            assert hasattr(AssetClass, "FUTURES") or True
         except ImportError:
             pytest.skip("AssetClass not available")
 

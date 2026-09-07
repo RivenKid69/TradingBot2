@@ -30,6 +30,7 @@ import uuid
 
 class ContinuityStatus(Enum):
     """Business continuity status."""
+
     NORMAL = "normal"
     DEGRADED = "degraded"
     DISRUPTED = "disrupted"
@@ -40,6 +41,7 @@ class ContinuityStatus(Enum):
 
 class CriticalityLevel(Enum):
     """Criticality levels for business functions and systems."""
+
     MISSION_CRITICAL = "mission_critical"
     BUSINESS_CRITICAL = "business_critical"
     IMPORTANT = "important"
@@ -49,6 +51,7 @@ class CriticalityLevel(Enum):
 
 class ImpactCategory(Enum):
     """Categories of business impact."""
+
     FINANCIAL = "financial"
     OPERATIONAL = "operational"
     REPUTATIONAL = "reputational"
@@ -60,6 +63,7 @@ class ImpactCategory(Enum):
 
 class ImpactSeverity(Enum):
     """Severity levels of business impact."""
+
     CATASTROPHIC = "catastrophic"
     CRITICAL = "critical"
     MAJOR = "major"
@@ -70,6 +74,7 @@ class ImpactSeverity(Enum):
 
 class TestType(Enum):
     """Types of continuity tests."""
+
     TABLETOP = "tabletop"
     WALKTHROUGH = "walkthrough"
     SIMULATION = "simulation"
@@ -81,6 +86,7 @@ class TestType(Enum):
 
 class TestResult(Enum):
     """Results of continuity tests."""
+
     PASSED = "passed"
     PASSED_WITH_ISSUES = "passed_with_issues"
     FAILED = "failed"
@@ -90,6 +96,7 @@ class TestResult(Enum):
 
 class ScenarioType(Enum):
     """Types of disruption scenarios."""
+
     DATA_CENTER_FAILURE = "data_center_failure"
     NETWORK_OUTAGE = "network_outage"
     CYBER_ATTACK = "cyber_attack"
@@ -104,6 +111,7 @@ class ScenarioType(Enum):
 
 class RecoveryStrategy(Enum):
     """Recovery strategies."""
+
     HOT_SITE = "hot_site"
     WARM_SITE = "warm_site"
     COLD_SITE = "cold_site"
@@ -122,6 +130,7 @@ class ICTBusinessContinuityPolicy:
     Defines the overarching continuity policy including scope,
     objectives, governance, and requirements.
     """
+
     policy_id: str
     name: str
     version: str
@@ -154,6 +163,7 @@ class BusinessFunction:
 
     Represents a business function with its continuity requirements.
     """
+
     function_id: str
     name: str
     description: str
@@ -185,6 +195,7 @@ class BusinessImpactAssessment:
 
     Documents comprehensive BIA for business functions.
     """
+
     bia_id: str
     function_id: str
     assessment_date: datetime
@@ -220,6 +231,7 @@ class RecoveryObjective:
 
     Defines RTO, RPO, and other recovery metrics.
     """
+
     objective_id: str
     name: str
     description: str
@@ -251,6 +263,7 @@ class ContinuityPlan:
 
     Detailed plan for maintaining or recovering ICT services.
     """
+
     plan_id: str
     name: str
     version: str
@@ -291,6 +304,7 @@ class DisruptionScenario:
 
     Defines specific disruption scenarios for analysis.
     """
+
     scenario_id: str
     name: str
     description: str
@@ -324,6 +338,7 @@ class ContinuityTest:
 
     Documents testing of continuity plans and capabilities.
     """
+
     test_id: str
     name: str
     description: str
@@ -364,6 +379,7 @@ class CrisisEvent:
 
     Tracks actual crisis events and response.
     """
+
     event_id: str
     name: str
     description: str
@@ -403,6 +419,7 @@ class AlternativeArrangement:
 
     Defines alternative processing capabilities and workarounds.
     """
+
     arrangement_id: str
     name: str
     description: str
@@ -500,7 +517,7 @@ class DORAICTBusinessContinuity:
         event = {
             "timestamp": datetime.now().isoformat(),
             "event_type": event_type,
-            "details": details
+            "details": details,
         }
         self._event_log.append(event)
 
@@ -524,7 +541,7 @@ class DORAICTBusinessContinuity:
         training_requirements: list[str],
         review_frequency_months: int,
         regulatory_references: list[str],
-        **kwargs
+        **kwargs,
     ) -> ICTBusinessContinuityPolicy:
         """
         Create ICT business continuity policy per Article 15(1).
@@ -568,16 +585,14 @@ class DORAICTBusinessContinuity:
                 training_requirements=training_requirements,
                 review_frequency_months=review_frequency_months,
                 regulatory_references=regulatory_references,
-                **kwargs
+                **kwargs,
             )
 
             self._policy = policy
 
-            self._log_event("policy_created", {
-                "policy_id": policy_id,
-                "name": name,
-                "version": version
-            })
+            self._log_event(
+                "policy_created", {"policy_id": policy_id, "name": name, "version": version}
+            )
 
             return policy
 
@@ -597,10 +612,9 @@ class DORAICTBusinessContinuity:
             self._policy.status = "approved"
             self._policy.updated_at = datetime.now()
 
-            self._log_event("policy_approved", {
-                "policy_id": self._policy.policy_id,
-                "approved_by": approved_by
-            })
+            self._log_event(
+                "policy_approved", {"policy_id": self._policy.policy_id, "approved_by": approved_by}
+            )
 
             return True
 
@@ -614,11 +628,10 @@ class DORAICTBusinessContinuity:
             self._policy.status = "draft"  # Needs re-approval
             self._policy.updated_at = datetime.now()
 
-            self._log_event("policy_version_updated", {
-                "policy_id": self._policy.policy_id,
-                "new_version": version,
-                "changes": changes
-            })
+            self._log_event(
+                "policy_version_updated",
+                {"policy_id": self._policy.policy_id, "new_version": version, "changes": changes},
+            )
 
             return True
 
@@ -642,7 +655,7 @@ class DORAICTBusinessContinuity:
         minimum_staff_required: int,
         minimum_resources: list[str],
         workaround_available: bool,
-        **kwargs
+        **kwargs,
     ) -> BusinessFunction:
         """
         Register business function for BIA.
@@ -686,16 +699,15 @@ class DORAICTBusinessContinuity:
                 minimum_staff_required=minimum_staff_required,
                 minimum_resources=minimum_resources,
                 workaround_available=workaround_available,
-                **kwargs
+                **kwargs,
             )
 
             self._functions[function_id] = function
 
-            self._log_event("function_registered", {
-                "function_id": function_id,
-                "name": name,
-                "criticality": criticality.value
-            })
+            self._log_event(
+                "function_registered",
+                {"function_id": function_id, "name": name, "criticality": criticality.value},
+            )
 
             return function
 
@@ -704,25 +716,18 @@ class DORAICTBusinessContinuity:
         with self._lock:
             return self._functions.get(function_id)
 
-    def get_functions_by_criticality(
-        self,
-        criticality: CriticalityLevel
-    ) -> list[BusinessFunction]:
+    def get_functions_by_criticality(self, criticality: CriticalityLevel) -> list[BusinessFunction]:
         """Get functions by criticality level."""
         with self._lock:
             return [
-                f for f in self._functions.values()
-                if f.criticality == criticality and f.active
+                f for f in self._functions.values() if f.criticality == criticality and f.active
             ]
 
     def get_critical_functions(self) -> list[BusinessFunction]:
         """Get mission critical and business critical functions."""
         critical = {CriticalityLevel.MISSION_CRITICAL, CriticalityLevel.BUSINESS_CRITICAL}
         with self._lock:
-            return [
-                f for f in self._functions.values()
-                if f.criticality in critical and f.active
-            ]
+            return [f for f in self._functions.values() if f.criticality in critical and f.active]
 
     # =========================================================================
     # Business Impact Assessment (Article 15(2))
@@ -744,7 +749,7 @@ class DORAICTBusinessContinuity:
         critical_records: list[str],
         minimum_recovery_configuration: dict,
         recovery_sequence: list[dict],
-        **kwargs
+        **kwargs,
     ) -> BusinessImpactAssessment:
         """
         Create business impact assessment per Article 15(2).
@@ -789,16 +794,19 @@ class DORAICTBusinessContinuity:
                 critical_records=critical_records,
                 minimum_recovery_configuration=minimum_recovery_configuration,
                 recovery_sequence=recovery_sequence,
-                **kwargs
+                **kwargs,
             )
 
             self._bias[bia_id] = bia
 
-            self._log_event("bia_created", {
-                "bia_id": bia_id,
-                "function_id": function_id,
-                "financial_impact_per_day": financial_impact_per_day
-            })
+            self._log_event(
+                "bia_created",
+                {
+                    "bia_id": bia_id,
+                    "function_id": function_id,
+                    "financial_impact_per_day": financial_impact_per_day,
+                },
+            )
 
             return bia
 
@@ -810,10 +818,7 @@ class DORAICTBusinessContinuity:
     def get_bia_for_function(self, function_id: str) -> BusinessImpactAssessment | None:
         """Get most recent BIA for function."""
         with self._lock:
-            function_bias = [
-                b for b in self._bias.values()
-                if b.function_id == function_id
-            ]
+            function_bias = [b for b in self._bias.values() if b.function_id == function_id]
             if not function_bias:
                 return None
             return max(function_bias, key=lambda x: x.assessment_date)
@@ -850,7 +855,7 @@ class DORAICTBusinessContinuity:
         validation_criteria: list[str],
         function_id: str | None = None,
         system_id: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> RecoveryObjective:
         """
         Define recovery objective per Article 15(3).
@@ -890,17 +895,20 @@ class DORAICTBusinessContinuity:
                 recovery_capabilities=recovery_capabilities,
                 dependencies_for_recovery=dependencies_for_recovery,
                 validation_criteria=validation_criteria,
-                **kwargs
+                **kwargs,
             )
 
             self._objectives[objective_id] = objective
 
-            self._log_event("recovery_objective_defined", {
-                "objective_id": objective_id,
-                "name": name,
-                "rto_hours": rto_target_hours,
-                "rpo_hours": rpo_target_hours
-            })
+            self._log_event(
+                "recovery_objective_defined",
+                {
+                    "objective_id": objective_id,
+                    "name": name,
+                    "rto_hours": rto_target_hours,
+                    "rpo_hours": rpo_target_hours,
+                },
+            )
 
             return objective
 
@@ -910,11 +918,7 @@ class DORAICTBusinessContinuity:
             return self._objectives.get(objective_id)
 
     def validate_recovery_objective(
-        self,
-        objective_id: str,
-        achieved_rto_hours: int,
-        achieved_rpo_hours: int,
-        result: str
+        self, objective_id: str, achieved_rto_hours: int, achieved_rpo_hours: int, result: str
     ) -> bool:
         """Record validation of recovery objective."""
         with self._lock:
@@ -928,12 +932,15 @@ class DORAICTBusinessContinuity:
             objective.validation_result = result
             objective.updated_at = datetime.now()
 
-            self._log_event("recovery_objective_validated", {
-                "objective_id": objective_id,
-                "achieved_rto": achieved_rto_hours,
-                "achieved_rpo": achieved_rpo_hours,
-                "result": result
-            })
+            self._log_event(
+                "recovery_objective_validated",
+                {
+                    "objective_id": objective_id,
+                    "achieved_rto": achieved_rto_hours,
+                    "achieved_rpo": achieved_rpo_hours,
+                    "result": result,
+                },
+            )
 
             return True
 
@@ -962,7 +969,7 @@ class DORAICTBusinessContinuity:
         communication_plan: dict,
         escalation_matrix: list[dict],
         alternate_site_details: dict | None = None,
-        **kwargs
+        **kwargs,
     ) -> ContinuityPlan:
         """
         Create continuity plan per Article 15(4).
@@ -1016,16 +1023,14 @@ class DORAICTBusinessContinuity:
                 alternate_site_details=alternate_site_details,
                 communication_plan=communication_plan,
                 escalation_matrix=escalation_matrix,
-                **kwargs
+                **kwargs,
             )
 
             self._plans[plan_id] = plan
 
-            self._log_event("continuity_plan_created", {
-                "plan_id": plan_id,
-                "name": name,
-                "version": version
-            })
+            self._log_event(
+                "continuity_plan_created", {"plan_id": plan_id, "name": name, "version": version}
+            )
 
             return plan
 
@@ -1034,16 +1039,13 @@ class DORAICTBusinessContinuity:
         with self._lock:
             return self._plans.get(plan_id)
 
-    def get_applicable_plans(
-        self,
-        scenario_type: ScenarioType
-    ) -> list[ContinuityPlan]:
+    def get_applicable_plans(self, scenario_type: ScenarioType) -> list[ContinuityPlan]:
         """Get plans applicable to scenario type."""
         with self._lock:
             return [
-                p for p in self._plans.values()
-                if scenario_type in p.applicable_scenarios
-                and p.status == "approved"
+                p
+                for p in self._plans.values()
+                if scenario_type in p.applicable_scenarios and p.status == "approved"
             ]
 
     def approve_plan(self, plan_id: str, approved_by: str) -> bool:
@@ -1058,10 +1060,9 @@ class DORAICTBusinessContinuity:
             plan.status = "approved"
             plan.updated_at = datetime.now()
 
-            self._log_event("continuity_plan_approved", {
-                "plan_id": plan_id,
-                "approved_by": approved_by
-            })
+            self._log_event(
+                "continuity_plan_approved", {"plan_id": plan_id, "approved_by": approved_by}
+            )
 
             return True
 
@@ -1087,7 +1088,7 @@ class DORAICTBusinessContinuity:
         estimated_recovery_time_hours: int,
         resource_requirements: list[str],
         dependencies: list[str],
-        **kwargs
+        **kwargs,
     ) -> DisruptionScenario:
         """
         Create disruption scenario per Article 15(5).
@@ -1135,16 +1136,15 @@ class DORAICTBusinessContinuity:
                 estimated_recovery_time_hours=estimated_recovery_time_hours,
                 resource_requirements=resource_requirements,
                 dependencies=dependencies,
-                **kwargs
+                **kwargs,
             )
 
             self._scenarios[scenario_id] = scenario
 
-            self._log_event("scenario_created", {
-                "scenario_id": scenario_id,
-                "name": name,
-                "scenario_type": scenario_type.value
-            })
+            self._log_event(
+                "scenario_created",
+                {"scenario_id": scenario_id, "name": name, "scenario_type": scenario_type.value},
+            )
 
             return scenario
 
@@ -1153,14 +1153,12 @@ class DORAICTBusinessContinuity:
         with self._lock:
             return self._scenarios.get(scenario_id)
 
-    def get_scenarios_by_type(
-        self,
-        scenario_type: ScenarioType
-    ) -> list[DisruptionScenario]:
+    def get_scenarios_by_type(self, scenario_type: ScenarioType) -> list[DisruptionScenario]:
         """Get scenarios by type."""
         with self._lock:
             return [
-                s for s in self._scenarios.values()
+                s
+                for s in self._scenarios.values()
                 if s.scenario_type == scenario_type and s.status == "active"
             ]
 
@@ -1198,7 +1196,7 @@ class DORAICTBusinessContinuity:
         expected_outcomes: list[str],
         plan_id: str | None = None,
         scenario_id: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ContinuityTest:
         """
         Schedule continuity test per Article 15(6).
@@ -1240,17 +1238,20 @@ class DORAICTBusinessContinuity:
                 test_script=test_script,
                 inject_scenarios=inject_scenarios,
                 expected_outcomes=expected_outcomes,
-                **kwargs
+                **kwargs,
             )
 
             self._tests[test_id] = test
 
-            self._log_event("test_scheduled", {
-                "test_id": test_id,
-                "name": name,
-                "test_type": test_type.value,
-                "scheduled_date": scheduled_date.isoformat()
-            })
+            self._log_event(
+                "test_scheduled",
+                {
+                    "test_id": test_id,
+                    "name": name,
+                    "test_type": test_type.value,
+                    "scheduled_date": scheduled_date.isoformat(),
+                },
+            )
 
             return test
 
@@ -1285,7 +1286,7 @@ class DORAICTBusinessContinuity:
         result: TestResult,
         lessons_learned: list[str],
         recommendations: list[str],
-        action_items: list[dict]
+        action_items: list[dict],
     ) -> bool:
         """
         Complete continuity test with results.
@@ -1329,29 +1330,26 @@ class DORAICTBusinessContinuity:
             if test.plan_id and test.plan_id in self._plans:
                 self._plans[test.plan_id].last_tested = datetime.now()
 
-            self._log_event("test_completed", {
-                "test_id": test_id,
-                "result": result.value,
-                "recovery_successful": recovery_successful
-            })
+            self._log_event(
+                "test_completed",
+                {
+                    "test_id": test_id,
+                    "result": result.value,
+                    "recovery_successful": recovery_successful,
+                },
+            )
 
             return True
 
     def get_scheduled_tests(self) -> list[ContinuityTest]:
         """Get scheduled tests."""
         with self._lock:
-            return [
-                t for t in self._tests.values()
-                if t.status == "scheduled"
-            ]
+            return [t for t in self._tests.values() if t.status == "scheduled"]
 
     def get_test_history(self, plan_id: str) -> list[ContinuityTest]:
         """Get test history for plan."""
         with self._lock:
-            return [
-                t for t in self._tests.values()
-                if t.plan_id == plan_id
-            ]
+            return [t for t in self._tests.values() if t.plan_id == plan_id]
 
     # =========================================================================
     # Crisis Management (Article 15(7))
@@ -1369,7 +1367,7 @@ class DORAICTBusinessContinuity:
         affected_locations: list[str],
         impact_summary: str,
         detection_time: datetime | None = None,
-        **kwargs
+        **kwargs,
     ) -> CrisisEvent:
         """
         Declare crisis event per Article 15(7).
@@ -1409,18 +1407,21 @@ class DORAICTBusinessContinuity:
                 affected_functions=affected_functions,
                 affected_locations=affected_locations,
                 impact_summary=impact_summary,
-                **kwargs
+                **kwargs,
             )
 
             self._crisis_events[event_id] = event
             self._current_status = ContinuityStatus.CRISIS
 
-            self._log_event("crisis_declared", {
-                "event_id": event_id,
-                "name": name,
-                "severity": severity.value,
-                "declared_by": declared_by
-            })
+            self._log_event(
+                "crisis_declared",
+                {
+                    "event_id": event_id,
+                    "name": name,
+                    "severity": severity.value,
+                    "declared_by": declared_by,
+                },
+            )
 
             # Trigger crisis callbacks
             for callback in self._crisis_callbacks:
@@ -1449,19 +1450,11 @@ class DORAICTBusinessContinuity:
                 event.activated_plans.append(plan_id)
                 event.updated_at = datetime.now()
 
-            self._log_event("plan_activated_for_crisis", {
-                "event_id": event_id,
-                "plan_id": plan_id
-            })
+            self._log_event("plan_activated_for_crisis", {"event_id": event_id, "plan_id": plan_id})
 
             return True
 
-    def add_crisis_action(
-        self,
-        event_id: str,
-        action_type: str,
-        action: dict
-    ) -> bool:
+    def add_crisis_action(self, event_id: str, action_type: str, action: dict) -> bool:
         """Add action to crisis event."""
         with self._lock:
             if event_id not in self._crisis_events:
@@ -1482,11 +1475,7 @@ class DORAICTBusinessContinuity:
             event.updated_at = datetime.now()
             return True
 
-    def update_crisis_status(
-        self,
-        event_id: str,
-        status: ContinuityStatus
-    ) -> bool:
+    def update_crisis_status(self, event_id: str, status: ContinuityStatus) -> bool:
         """Update crisis status."""
         with self._lock:
             if event_id not in self._crisis_events:
@@ -1497,17 +1486,11 @@ class DORAICTBusinessContinuity:
             event.updated_at = datetime.now()
 
             # Update overall status if this is the only active crisis
-            active_crises = [
-                e for e in self._crisis_events.values()
-                if e.status == "active"
-            ]
+            active_crises = [e for e in self._crisis_events.values() if e.status == "active"]
             if len(active_crises) <= 1:
                 self._current_status = status
 
-            self._log_event("crisis_status_updated", {
-                "event_id": event_id,
-                "status": status.value
-            })
+            self._log_event("crisis_status_updated", {"event_id": event_id, "status": status.value})
 
             return True
 
@@ -1516,7 +1499,7 @@ class DORAICTBusinessContinuity:
         event_id: str,
         resolution_summary: str,
         root_cause: str | None = None,
-        financial_impact: float | None = None
+        financial_impact: float | None = None,
     ) -> bool:
         """Resolve crisis event."""
         with self._lock:
@@ -1539,17 +1522,14 @@ class DORAICTBusinessContinuity:
                 ).total_seconds() / 3600
 
             # Check if any active crises remain
-            active_crises = [
-                e for e in self._crisis_events.values()
-                if e.status == "active"
-            ]
+            active_crises = [e for e in self._crisis_events.values() if e.status == "active"]
             if not active_crises:
                 self._current_status = ContinuityStatus.NORMAL
 
-            self._log_event("crisis_resolved", {
-                "event_id": event_id,
-                "total_downtime_hours": event.total_downtime_hours
-            })
+            self._log_event(
+                "crisis_resolved",
+                {"event_id": event_id, "total_downtime_hours": event.total_downtime_hours},
+            )
 
             return True
 
@@ -1565,10 +1545,7 @@ class DORAICTBusinessContinuity:
     def get_active_crises(self) -> list[CrisisEvent]:
         """Get active crisis events."""
         with self._lock:
-            return [
-                e for e in self._crisis_events.values()
-                if e.status == "active"
-            ]
+            return [e for e in self._crisis_events.values() if e.status == "active"]
 
     # =========================================================================
     # Alternative Arrangements (Article 15(8))
@@ -1593,7 +1570,7 @@ class DORAICTBusinessContinuity:
         deactivation_procedures: list[str],
         limitations: list[str],
         costs: dict,
-        **kwargs
+        **kwargs,
     ) -> AlternativeArrangement:
         """
         Create alternative arrangement per Article 15(8).
@@ -1643,44 +1620,35 @@ class DORAICTBusinessContinuity:
                 deactivation_procedures=deactivation_procedures,
                 limitations=limitations,
                 costs=costs,
-                **kwargs
+                **kwargs,
             )
 
             self._arrangements[arrangement_id] = arrangement
 
-            self._log_event("alternative_arrangement_created", {
-                "arrangement_id": arrangement_id,
-                "name": name,
-                "type": arrangement_type
-            })
+            self._log_event(
+                "alternative_arrangement_created",
+                {"arrangement_id": arrangement_id, "name": name, "type": arrangement_type},
+            )
 
             return arrangement
 
-    def get_alternative_arrangement(
-        self,
-        arrangement_id: str
-    ) -> AlternativeArrangement | None:
+    def get_alternative_arrangement(self, arrangement_id: str) -> AlternativeArrangement | None:
         """Get alternative arrangement by ID."""
         with self._lock:
             return self._arrangements.get(arrangement_id)
 
     def get_arrangements_for_scenario(
-        self,
-        scenario_type: ScenarioType
+        self, scenario_type: ScenarioType
     ) -> list[AlternativeArrangement]:
         """Get arrangements applicable to scenario."""
         with self._lock:
             return [
-                a for a in self._arrangements.values()
-                if scenario_type in a.applicable_scenarios
-                and a.status == "active"
+                a
+                for a in self._arrangements.values()
+                if scenario_type in a.applicable_scenarios and a.status == "active"
             ]
 
-    def verify_arrangement(
-        self,
-        arrangement_id: str,
-        verification_result: str
-    ) -> bool:
+    def verify_arrangement(self, arrangement_id: str, verification_result: str) -> bool:
         """Record verification of alternative arrangement."""
         with self._lock:
             if arrangement_id not in self._arrangements:
@@ -1707,27 +1675,21 @@ class DORAICTBusinessContinuity:
                     self._functions.values(), "criticality"
                 ),
                 "total_bias": len(self._bias),
-                "approved_bias": len(
-                    [b for b in self._bias.values() if b.status == "approved"]
-                ),
+                "approved_bias": len([b for b in self._bias.values() if b.status == "approved"]),
                 "total_recovery_objectives": len(self._objectives),
                 "validated_objectives": len(
                     [o for o in self._objectives.values() if o.last_validated]
                 ),
                 "total_plans": len(self._plans),
-                "approved_plans": len(
-                    [p for p in self._plans.values() if p.status == "approved"]
-                ),
+                "approved_plans": len([p for p in self._plans.values() if p.status == "approved"]),
                 "total_scenarios": len(self._scenarios),
-                "scenarios_by_type": self._count_by_enum(
-                    self._scenarios.values(), "scenario_type"
-                ),
+                "scenarios_by_type": self._count_by_enum(self._scenarios.values(), "scenario_type"),
                 "total_tests": len(self._tests),
                 "tests_by_result": self._count_test_results(),
                 "total_crisis_events": len(self._crisis_events),
                 "active_crises": len(self.get_active_crises()),
                 "total_arrangements": len(self._arrangements),
-                "current_status": self._current_status.value
+                "current_status": self._current_status.value,
             }
 
     def _count_by_enum(self, items: Any, attr: str) -> dict[str, int]:
@@ -1763,82 +1725,81 @@ class DORAICTBusinessContinuity:
                 "policy": {
                     "status": self._policy.status if self._policy else "not_defined",
                     "version": self._policy.version if self._policy else None,
-                    "last_approved": self._policy.approval_date.isoformat()
-                    if self._policy and self._policy.approval_date else None
+                    "last_approved": (
+                        self._policy.approval_date.isoformat()
+                        if self._policy and self._policy.approval_date
+                        else None
+                    ),
                 },
                 "business_functions": {
                     "total": len(self._functions),
                     "critical": len(critical_functions),
-                    "by_criticality": self._count_by_enum(
-                        self._functions.values(), "criticality"
-                    )
+                    "by_criticality": self._count_by_enum(self._functions.values(), "criticality"),
                 },
                 "recovery_objectives": {
                     "total": len(self._objectives),
                     "rto_compliance_rate": rto_compliance,
-                    "rpo_compliance_rate": rpo_compliance
+                    "rpo_compliance_rate": rpo_compliance,
                 },
                 "continuity_plans": {
                     "total": len(self._plans),
                     "approved": len([p for p in self._plans.values() if p.status == "approved"]),
-                    "plans_needing_test": len([
-                        p for p in self._plans.values()
-                        if not p.last_tested or
-                        (datetime.now() - p.last_tested).days > 365
-                    ])
+                    "plans_needing_test": len(
+                        [
+                            p
+                            for p in self._plans.values()
+                            if not p.last_tested or (datetime.now() - p.last_tested).days > 365
+                        ]
+                    ),
                 },
                 "testing": {
                     "total_tests": len(self._tests),
-                    "tests_this_year": len([
-                        t for t in self._tests.values()
-                        if t.scheduled_date.year == datetime.now().year
-                    ]),
-                    "pass_rate": self._calculate_test_pass_rate()
+                    "tests_this_year": len(
+                        [
+                            t
+                            for t in self._tests.values()
+                            if t.scheduled_date.year == datetime.now().year
+                        ]
+                    ),
+                    "pass_rate": self._calculate_test_pass_rate(),
                 },
                 "crisis_events": {
                     "total": len(self._crisis_events),
-                    "this_year": len([
-                        e for e in self._crisis_events.values()
-                        if e.start_time.year == datetime.now().year
-                    ]),
-                    "average_resolution_hours": self._calculate_avg_resolution_time()
+                    "this_year": len(
+                        [
+                            e
+                            for e in self._crisis_events.values()
+                            if e.start_time.year == datetime.now().year
+                        ]
+                    ),
+                    "average_resolution_hours": self._calculate_avg_resolution_time(),
                 },
                 "alternative_arrangements": {
                     "total": len(self._arrangements),
-                    "verified_last_year": len([
-                        a for a in self._arrangements.values()
-                        if a.last_verified and
-                        (datetime.now() - a.last_verified).days <= 365
-                    ])
-                }
+                    "verified_last_year": len(
+                        [
+                            a
+                            for a in self._arrangements.values()
+                            if a.last_verified and (datetime.now() - a.last_verified).days <= 365
+                        ]
+                    ),
+                },
             }
 
     def _calculate_rto_compliance(self) -> float:
         """Calculate RTO compliance rate."""
-        validated = [
-            o for o in self._objectives.values()
-            if o.rto_achieved_hours is not None
-        ]
+        validated = [o for o in self._objectives.values() if o.rto_achieved_hours is not None]
         if not validated:
             return 0.0
-        compliant = len([
-            o for o in validated
-            if o.rto_achieved_hours <= o.rto_target_hours
-        ])
+        compliant = len([o for o in validated if o.rto_achieved_hours <= o.rto_target_hours])
         return compliant / len(validated)
 
     def _calculate_rpo_compliance(self) -> float:
         """Calculate RPO compliance rate."""
-        validated = [
-            o for o in self._objectives.values()
-            if o.rpo_achieved_hours is not None
-        ]
+        validated = [o for o in self._objectives.values() if o.rpo_achieved_hours is not None]
         if not validated:
             return 0.0
-        compliant = len([
-            o for o in validated
-            if o.rpo_achieved_hours <= o.rpo_target_hours
-        ])
+        compliant = len([o for o in validated if o.rpo_achieved_hours <= o.rpo_target_hours])
         return compliant / len(validated)
 
     def _calculate_test_pass_rate(self) -> float:
@@ -1846,18 +1807,14 @@ class DORAICTBusinessContinuity:
         completed = [t for t in self._tests.values() if t.result]
         if not completed:
             return 0.0
-        passed = len([
-            t for t in completed
-            if t.result in {TestResult.PASSED, TestResult.PASSED_WITH_ISSUES}
-        ])
+        passed = len(
+            [t for t in completed if t.result in {TestResult.PASSED, TestResult.PASSED_WITH_ISSUES}]
+        )
         return passed / len(completed)
 
     def _calculate_avg_resolution_time(self) -> float:
         """Calculate average crisis resolution time."""
-        resolved = [
-            e for e in self._crisis_events.values()
-            if e.total_downtime_hours is not None
-        ]
+        resolved = [e for e in self._crisis_events.values() if e.total_downtime_hours is not None]
         if not resolved:
             return 0.0
         return sum(e.total_downtime_hours for e in resolved) / len(resolved)
@@ -1886,9 +1843,8 @@ class DORAICTBusinessContinuity:
 # Factory Function
 # =============================================================================
 
-def create_dora_ict_business_continuity(
-    config: dict | None = None
-) -> DORAICTBusinessContinuity:
+
+def create_dora_ict_business_continuity(config: dict | None = None) -> DORAICTBusinessContinuity:
     """
     Factory function to create DORA ICT Business Continuity Framework.
 

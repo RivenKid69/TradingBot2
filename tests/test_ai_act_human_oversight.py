@@ -48,6 +48,7 @@ from services.ai_act.human_oversight import (
 # Test Enums
 # =============================================================================
 
+
 class TestOversightLevel:
     """Tests for OversightLevel enum."""
 
@@ -112,6 +113,7 @@ class TestAlertSeverity:
 # =============================================================================
 # Test Dataclasses
 # =============================================================================
+
 
 class TestOversightAction:
     """Tests for OversightAction dataclass."""
@@ -250,6 +252,7 @@ class TestHumanOversightConfig:
 # Test AnomalyDetector
 # =============================================================================
 
+
 class TestAnomalyDetector:
     """Tests for AnomalyDetector class."""
 
@@ -333,6 +336,7 @@ class TestAnomalyDetector:
 # =============================================================================
 # Test ManualOverrideController
 # =============================================================================
+
 
 class TestManualOverrideController:
     """Tests for ManualOverrideController class."""
@@ -431,6 +435,7 @@ class TestManualOverrideController:
 # Test AutomationBiasMonitor
 # =============================================================================
 
+
 class TestAutomationBiasMonitor:
     """Tests for AutomationBiasMonitor class."""
 
@@ -521,6 +526,7 @@ class TestAutomationBiasMonitor:
 # =============================================================================
 # Test HumanOversightSystem
 # =============================================================================
+
 
 class TestHumanOversightSystem:
     """Tests for HumanOversightSystem class."""
@@ -797,6 +803,7 @@ class TestHumanOversightSystem:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -824,6 +831,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Tests for thread safety."""
@@ -923,6 +931,7 @@ class TestThreadSafety:
 # =============================================================================
 # Test Integration Scenarios
 # =============================================================================
+
 
 class TestIntegrationScenarios:
     """Integration tests for realistic scenarios."""
@@ -1032,6 +1041,7 @@ class TestIntegrationScenarios:
 # =============================================================================
 # Test Capability Restrictions
 # =============================================================================
+
 
 class TestCapabilityRestrictions:
     """Test capability enable/disable."""

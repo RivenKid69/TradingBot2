@@ -262,10 +262,7 @@ class TestMetricsThreadSafety:
                 with lock:
                     errors.append(str(e))
 
-        threads = [
-            threading.Thread(target=increment, args=(i,))
-            for i in range(100)
-        ]
+        threads = [threading.Thread(target=increment, args=(i,)) for i in range(100)]
 
         for t in threads:
             t.start()
@@ -286,10 +283,7 @@ class TestMetricsThreadSafety:
                 with lock:
                     errors.append(str(e))
 
-        threads = [
-            threading.Thread(target=set_gauge, args=(i,))
-            for i in range(100)
-        ]
+        threads = [threading.Thread(target=set_gauge, args=(i,)) for i in range(100)]
 
         for t in threads:
             t.start()
@@ -315,10 +309,7 @@ class TestMetricsThreadSafety:
                 with lock:
                     errors.append(str(e))
 
-        threads = [
-            threading.Thread(target=observe, args=(i,))
-            for i in range(100)
-        ]
+        threads = [threading.Thread(target=observe, args=(i,)) for i in range(100)]
 
         for t in threads:
             t.start()
@@ -444,6 +435,7 @@ class TestMetricsIntegration:
 
         # Request should be auto-approved
         from packages.agent.approval.manager import ApprovalStatus
+
         assert request.status == ApprovalStatus.APPROVED
 
 

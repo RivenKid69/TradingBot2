@@ -21,10 +21,11 @@ Security:
 from __future__ import annotations
 
 import warnings as _warnings
+
 _warnings.warn(
     "ccea.agent.approval is deprecated. Use packages.agent.approval instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 import hashlib
@@ -45,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 class ApprovalStatus(str, Enum):
     """Approval status."""
+
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -59,6 +61,7 @@ class ApprovalRequest:
 
     Contains all information needed for user to make decision.
     """
+
     request_id: str
     command_id: str
     command_type: str
@@ -101,6 +104,7 @@ class ApprovalRequest:
 @dataclass
 class ApprovalResult:
     """Result of approval decision."""
+
     request_id: str
     command_id: str
     approved: bool
@@ -114,6 +118,7 @@ class ApprovalResult:
 # Auto-Approval Policy
 # ============================================================================
 
+
 @dataclass
 class AutoApprovalPolicy:
     """
@@ -122,6 +127,7 @@ class AutoApprovalPolicy:
     IMPORTANT: Cloud CANNOT set or modify this policy.
     Only local configuration can enable auto-approval.
     """
+
     enabled: bool = False
     # Allowed command types for auto-approval
     allowed_command_types: Set[str] = field(default_factory=set)
@@ -233,7 +239,7 @@ class ApprovalManager:
 
             logger.info(
                 "Command auto-approved by local policy",
-                extra={"command_id": command_id, "command_type": command_type}
+                extra={"command_id": command_id, "command_type": command_type},
             )
         else:
             with self._lock:
@@ -248,7 +254,7 @@ class ApprovalManager:
 
             logger.info(
                 "Approval request created",
-                extra={"request_id": request_id, "command_type": command_type}
+                extra={"request_id": request_id, "command_type": command_type},
             )
 
         return request
@@ -304,10 +310,7 @@ class ApprovalManager:
             if request.artifact_digest and self.auto_policy.require_previous_approval:
                 self.auto_policy.approved_artifacts.add(request.artifact_digest)
 
-        logger.info(
-            "Request approved",
-            extra={"request_id": request_id, "approver": approver}
-        )
+        logger.info("Request approved", extra={"request_id": request_id, "approver": approver})
 
         return result
 
@@ -354,10 +357,7 @@ class ApprovalManager:
             self._history.append(result)
             del self._pending[request_id]
 
-        logger.info(
-            "Request rejected",
-            extra={"request_id": request_id, "reason": reason}
-        )
+        logger.info("Request rejected", extra={"request_id": request_id, "reason": reason})
 
         return result
 
@@ -365,10 +365,7 @@ class ApprovalManager:
         """Get all pending approval requests."""
         with self._lock:
             # Check for expired
-            expired = [
-                r for r in self._pending.values()
-                if r.is_expired()
-            ]
+            expired = [r for r in self._pending.values() if r.is_expired()]
             for r in expired:
                 r.status = ApprovalStatus.TIMEOUT
                 del self._pending[r.request_id]
@@ -391,13 +388,17 @@ class ApprovalManager:
             return False
 
         # Check command type
-        if (self.auto_policy.allowed_command_types and
-                request.command_type not in self.auto_policy.allowed_command_types):
+        if (
+            self.auto_policy.allowed_command_types
+            and request.command_type not in self.auto_policy.allowed_command_types
+        ):
             return False
 
         # Check deployment
-        if (self.auto_policy.allowed_deployments and
-                request.deployment_id not in self.auto_policy.allowed_deployments):
+        if (
+            self.auto_policy.allowed_deployments
+            and request.deployment_id not in self.auto_policy.allowed_deployments
+        ):
             return False
 
         # Check if artifact was previously approved
@@ -426,6 +427,7 @@ class ApprovalManager:
 # ============================================================================
 # CLI Approval Interface
 # ============================================================================
+
 
 class CLIApprovalInterface:
     """
@@ -490,13 +492,13 @@ class CLIApprovalInterface:
             print(f"Request not found: {request_id}")
             return False
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("APPROVAL REQUIRED")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
         self._print_request(req)
 
-        print("\n" + "-"*60)
+        print("\n" + "-" * 60)
         response = input("Approve this command? [y/N]: ").strip().lower()
 
         if response in ("y", "yes"):

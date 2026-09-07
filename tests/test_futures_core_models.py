@@ -59,6 +59,7 @@ from core_futures import (
 # ENUM TESTS
 # ============================================================================
 
+
 class TestFuturesTypeEnum:
     """Tests for FuturesType enum."""
 
@@ -249,6 +250,7 @@ class TestExchangeEnum:
 # ============================================================================
 # DATACLASS TESTS
 # ============================================================================
+
 
 class TestLeverageBracket:
     """Tests for LeverageBracket dataclass."""
@@ -1013,6 +1015,7 @@ class TestContractRollover:
 # FACTORY FUNCTION TESTS
 # ============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory functions."""
 
@@ -1058,6 +1061,7 @@ class TestFactoryFunctions:
 # ============================================================================
 # EDGE CASES AND VALIDATION
 # ============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and validation."""

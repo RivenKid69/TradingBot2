@@ -21,20 +21,23 @@ from typing import Dict, Final, FrozenSet, List, Optional, Set
 # ============================================================================
 
 # Allowed command types from protocol_messages.schema.json
-COMMAND_TYPES: Final[FrozenSet[str]] = frozenset({
-    "REQUEST_START_RUN",
-    "REQUEST_STOP_RUN",
-    "REQUEST_PAUSE_RUN",
-    "REQUEST_UPGRADE_ARTIFACT",
-    "REQUEST_UPDATE_CONFIG",
-    "REQUEST_ROTATE_AGENT_SESSION",
-    "REQUEST_EXPORT_LOGS",
-})
+COMMAND_TYPES: Final[FrozenSet[str]] = frozenset(
+    {
+        "REQUEST_START_RUN",
+        "REQUEST_STOP_RUN",
+        "REQUEST_PAUSE_RUN",
+        "REQUEST_UPGRADE_ARTIFACT",
+        "REQUEST_UPDATE_CONFIG",
+        "REQUEST_ROTATE_AGENT_SESSION",
+        "REQUEST_EXPORT_LOGS",
+    }
+)
 
 
 @dataclass
 class CommandTypeContract:
     """Command type contract with metadata."""
+
     name: str
     requires_approval: bool
     change_class: str  # "TRADING_IMPACTING" | "NON_TRADING_IMPACTING" | "OPERATIONAL"
@@ -58,15 +61,17 @@ class CommandTypeContract:
 # Message Types (Schema is authoritative)
 # ============================================================================
 
-MESSAGE_TYPES: Final[FrozenSet[str]] = frozenset({
-    "HEARTBEAT",
-    "POLL_COMMANDS",
-    "COMMAND_BATCH",
-    "COMMAND_ACK",
-    "COMMAND_APPROVAL",
-    "COMMAND_RESULT",
-    "TELEMETRY",
-})
+MESSAGE_TYPES: Final[FrozenSet[str]] = frozenset(
+    {
+        "HEARTBEAT",
+        "POLL_COMMANDS",
+        "COMMAND_BATCH",
+        "COMMAND_ACK",
+        "COMMAND_APPROVAL",
+        "COMMAND_RESULT",
+        "TELEMETRY",
+    }
+)
 
 
 # ============================================================================
@@ -74,29 +79,33 @@ MESSAGE_TYPES: Final[FrozenSet[str]] = frozenset({
 # ============================================================================
 
 # Protocol-side (UPPERCASE) - from protocol_messages.schema.json
-COMMAND_STATUS_PROTOCOL: Final[FrozenSet[str]] = frozenset({
-    "PENDING",
-    "RECEIVED",
-    "AWAITING_APPROVAL",
-    "APPROVED",
-    "REJECTED",
-    "EXECUTING",
-    "COMPLETED",
-    "FAILED",
-})
+COMMAND_STATUS_PROTOCOL: Final[FrozenSet[str]] = frozenset(
+    {
+        "PENDING",
+        "RECEIVED",
+        "AWAITING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "EXECUTING",
+        "COMPLETED",
+        "FAILED",
+    }
+)
 
 # DB-side (lowercase) - from packages/cloud/control_plane/models.py
-COMMAND_STATUS_DB: Final[FrozenSet[str]] = frozenset({
-    "pending",
-    "sent",
-    "acknowledged",
-    "pending_approval",
-    "approved",
-    "rejected",
-    "executed",
-    "failed",
-    "expired",
-})
+COMMAND_STATUS_DB: Final[FrozenSet[str]] = frozenset(
+    {
+        "pending",
+        "sent",
+        "acknowledged",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "executed",
+        "failed",
+        "expired",
+    }
+)
 
 
 class CommandStatusMapping:
@@ -148,28 +157,32 @@ class CommandStatusMapping:
 # ============================================================================
 
 # Protocol-side (from protocol_messages.schema.json definitions.deployment_state)
-DEPLOYMENT_STATE_PROTOCOL: Final[FrozenSet[str]] = frozenset({
-    "CREATED",
-    "PENDING",
-    "ENROLLED",
-    "RUNNING",
-    "PAUSED",
-    "STOPPED",
-    "REVOKED",
-    "TERMINATED",
-})
+DEPLOYMENT_STATE_PROTOCOL: Final[FrozenSet[str]] = frozenset(
+    {
+        "CREATED",
+        "PENDING",
+        "ENROLLED",
+        "RUNNING",
+        "PAUSED",
+        "STOPPED",
+        "REVOKED",
+        "TERMINATED",
+    }
+)
 
 # DB-side (from packages/cloud/control_plane/models.py DeploymentState)
-DEPLOYMENT_STATE_DB: Final[FrozenSet[str]] = frozenset({
-    "created",
-    "pending_approval",
-    "approved",
-    "deploying",
-    "deployed",
-    "suspended",
-    "failed",
-    "retired",
-})
+DEPLOYMENT_STATE_DB: Final[FrozenSet[str]] = frozenset(
+    {
+        "created",
+        "pending_approval",
+        "approved",
+        "deploying",
+        "deployed",
+        "suspended",
+        "failed",
+        "retired",
+    }
+)
 
 
 class DeploymentStateMapping:
@@ -218,27 +231,31 @@ class DeploymentStateMapping:
 # ============================================================================
 
 # Protocol-side (from protocol_messages.schema.json definitions.run_state)
-RUN_STATE_PROTOCOL: Final[FrozenSet[str]] = frozenset({
-    "INITIALIZING",
-    "RUNNING",
-    "PAUSED",
-    "HALTED",
-    "STOPPED",
-})
+RUN_STATE_PROTOCOL: Final[FrozenSet[str]] = frozenset(
+    {
+        "INITIALIZING",
+        "RUNNING",
+        "PAUSED",
+        "HALTED",
+        "STOPPED",
+    }
+)
 
 # DB-side (from packages/cloud/control_plane/models.py RunState)
-RUN_STATE_DB: Final[FrozenSet[str]] = frozenset({
-    "created",
-    "pending_approval",
-    "approved",
-    "starting",
-    "running",
-    "paused",
-    "stopping",
-    "stopped",
-    "failed",
-    "completed",
-})
+RUN_STATE_DB: Final[FrozenSet[str]] = frozenset(
+    {
+        "created",
+        "pending_approval",
+        "approved",
+        "starting",
+        "running",
+        "paused",
+        "stopping",
+        "stopped",
+        "failed",
+        "completed",
+    }
+)
 
 
 class RunStateMapping:
@@ -285,62 +302,75 @@ class RunStateMapping:
 # Approval Status
 # ============================================================================
 
-APPROVAL_STATUS: Final[FrozenSet[str]] = frozenset({
-    "APPROVED",
-    "REJECTED",
-    "TIMEOUT",
-})
+APPROVAL_STATUS: Final[FrozenSet[str]] = frozenset(
+    {
+        "APPROVED",
+        "REJECTED",
+        "TIMEOUT",
+    }
+)
 
 
 # ============================================================================
 # Change Class
 # ============================================================================
 
-CHANGE_CLASS: Final[FrozenSet[str]] = frozenset({
-    "TRADING_IMPACTING",
-    "NON_TRADING_IMPACTING",
-})
+CHANGE_CLASS: Final[FrozenSet[str]] = frozenset(
+    {
+        "TRADING_IMPACTING",
+        "NON_TRADING_IMPACTING",
+    }
+)
 
 # DB uses lowercase with additional categories
-CHANGE_CLASS_DB: Final[FrozenSet[str]] = frozenset({
-    "operational",
-    "trading_impacting",
-    "security_sensitive",
-    "data_sensitive",
-})
+CHANGE_CLASS_DB: Final[FrozenSet[str]] = frozenset(
+    {
+        "operational",
+        "trading_impacting",
+        "security_sensitive",
+        "data_sensitive",
+    }
+)
 
 
 # ============================================================================
 # Telemetry Level
 # ============================================================================
 
-TELEMETRY_LEVEL_PROTOCOL: Final[FrozenSet[str]] = frozenset({
-    "AGGREGATED",
-    "DETAILED_NON_SENSITIVE",
-    "RAW_ORDER_EVENTS",
-})
+TELEMETRY_LEVEL_PROTOCOL: Final[FrozenSet[str]] = frozenset(
+    {
+        "AGGREGATED",
+        "DETAILED_NON_SENSITIVE",
+        "RAW_ORDER_EVENTS",
+    }
+)
 
-TELEMETRY_LEVEL_DB: Final[FrozenSet[str]] = frozenset({
-    "aggregated",
-    "detailed_non_sensitive",
-    "raw_order_events",
-})
+TELEMETRY_LEVEL_DB: Final[FrozenSet[str]] = frozenset(
+    {
+        "aggregated",
+        "detailed_non_sensitive",
+        "raw_order_events",
+    }
+)
 
 
 # ============================================================================
 # Signature Algorithms
 # ============================================================================
 
-SIGNATURE_ALGORITHMS: Final[FrozenSet[str]] = frozenset({
-    "ed25519",
-    "ecdsa-p256",
-    "rsa-pss",
-})
+SIGNATURE_ALGORITHMS: Final[FrozenSet[str]] = frozenset(
+    {
+        "ed25519",
+        "ecdsa-p256",
+        "rsa-pss",
+    }
+)
 
 
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def get_all_protocol_enums() -> Dict[str, FrozenSet[str]]:
     """Get all protocol-side enum sets."""

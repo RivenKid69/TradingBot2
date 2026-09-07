@@ -80,6 +80,7 @@ class BinanceFeeAdapter(FeeAdapter):
 
         if isinstance(data, dict):
             from fees import FeesModel
+
             self._fee_model = FeesModel.from_dict(data)
 
     def compute_fee(

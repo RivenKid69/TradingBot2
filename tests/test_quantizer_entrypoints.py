@@ -8,6 +8,7 @@ import yaml
 
 # Provide a lightweight ``requests`` stub if the dependency is absent.
 if "requests" not in sys.modules:  # pragma: no cover - test environment helper
+
     class _DummyResponse:
         def __init__(self, payload):
             self._payload = payload
@@ -21,19 +22,19 @@ if "requests" not in sys.modules:  # pragma: no cover - test environment helper
     class _DummyRequests(ModuleType):
         def get(self, url, params=None, timeout=0):  # pragma: no cover - simple stub
             if "ticker/24hr" in url:
-                return _DummyResponse([
-                    {"symbol": "BTCUSDT", "quoteVolume": 1_000_000}
-                ])
-            return _DummyResponse({
-                "symbols": [
-                    {
-                        "symbol": "BTCUSDT",
-                        "status": "TRADING",
-                        "quoteAsset": "USDT",
-                        "permissions": ["SPOT"],
-                    }
-                ]
-            })
+                return _DummyResponse([{"symbol": "BTCUSDT", "quoteVolume": 1_000_000}])
+            return _DummyResponse(
+                {
+                    "symbols": [
+                        {
+                            "symbol": "BTCUSDT",
+                            "status": "TRADING",
+                            "quoteAsset": "USDT",
+                            "permissions": ["SPOT"],
+                        }
+                    ]
+                }
+            )
 
     sys.modules["requests"] = _DummyRequests("requests")
 
@@ -85,7 +86,7 @@ def test_load_config_preserves_quantizer_section(tmp_path):
 
 def test_build_graph_provides_quantizer_instance(tmp_path):
     filters_path = tmp_path / "filters.json"
-    filters_path.write_text("{\"filters\": {}}", encoding="utf-8")
+    filters_path.write_text('{"filters": {}}', encoding="utf-8")
     components = _components_stub()
     run_cfg = SimpleNamespace(quantizer={"path": str(filters_path)}, retry=RetryConfig())
 
@@ -102,7 +103,7 @@ def test_quantizer_warnings_are_logged(monkeypatch, caplog, tmp_path):
     import impl_quantizer
 
     filters_path = tmp_path / "filters.json"
-    filters_path.write_text("{\"filters\": {}}", encoding="utf-8")
+    filters_path.write_text('{"filters": {}}', encoding="utf-8")
 
     def _fake_load_filters(path, max_age_days=0, fatal=False):
         import warnings
@@ -128,7 +129,7 @@ def test_quantizer_refresh_is_debounced(monkeypatch, tmp_path):
     QuantizerImpl._REFRESH_GUARD.clear()
 
     filters_path = tmp_path / "filters.json"
-    filters_path.write_text("{\"filters\": {}}", encoding="utf-8")
+    filters_path.write_text('{"filters": {}}', encoding="utf-8")
 
     def _fake_load_filters(path, max_age_days=0, fatal=False):
         return {}, {}

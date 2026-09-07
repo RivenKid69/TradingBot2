@@ -23,6 +23,7 @@ def project_root():
 def sample_heartbeat():
     """Sample valid heartbeat message."""
     from datetime import datetime
+
     return {
         "message_type": "HEARTBEAT",
         "agent_id": "agent_test123456789012",
@@ -38,6 +39,7 @@ def sample_heartbeat():
 def sample_command():
     """Sample valid command message."""
     from datetime import datetime
+
     return {
         "command_type": "REQUEST_START_RUN",
         "idempotency_key": "key_" + "a" * 20,

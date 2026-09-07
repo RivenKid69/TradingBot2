@@ -51,8 +51,10 @@ logger = logging.getLogger(__name__)
 # Enumerations for Template Fields (Per ITS Specification)
 # =============================================================================
 
+
 class IncidentTypeCode(Enum):
     """Incident type codes per ITS Annex."""
+
     CYBA = "CYBA"  # Cyber attack
     SYSF = "SYSF"  # System failure
     EXTE = "EXTE"  # External event
@@ -64,6 +66,7 @@ class IncidentTypeCode(Enum):
 
 class DataTypeCode(Enum):
     """Data type codes per ITS."""
+
     PERS = "PERS"  # Personal data
     FINA = "FINA"  # Financial data
     CONF = "CONF"  # Confidential business
@@ -74,6 +77,7 @@ class DataTypeCode(Enum):
 
 class ClientTypeCode(Enum):
     """Client type codes per ITS."""
+
     RETA = "RETA"  # Retail
     PROF = "PROF"  # Professional
     ELIG = "ELIG"  # Eligible counterparty
@@ -83,6 +87,7 @@ class ClientTypeCode(Enum):
 
 class ServiceTypeCode(Enum):
     """Service type codes per ITS."""
+
     OREX = "OREX"  # Order execution
     MKTD = "MKTD"  # Market data
     RISK = "RISK"  # Risk monitoring
@@ -98,6 +103,7 @@ class ServiceTypeCode(Enum):
 
 class ResponseEffectivenessCode(Enum):
     """Response effectiveness codes per ITS."""
+
     EFFC = "EFFC"  # Effective
     PART = "PART"  # Partially effective
     INEF = "INEF"  # Ineffective
@@ -105,6 +111,7 @@ class ResponseEffectivenessCode(Enum):
 
 class TemplateExportFormat(Enum):
     """Export formats for templates."""
+
     JSON = "json"
     CSV = "csv"
     XML = "xml"
@@ -114,6 +121,7 @@ class TemplateExportFormat(Enum):
 # =============================================================================
 # ITS Template Data Structures
 # =============================================================================
+
 
 @dataclass
 class ITSInitialNotificationTemplate:
@@ -126,6 +134,7 @@ class ITSInitialNotificationTemplate:
     Note: This is a DATA STRUCTURE for clients to populate
     their NCA submissions. ICT providers generate this for clients.
     """
+
     # Section 1: Report Identification
     report_reference: str = ""
     report_type: str = "INIT"
@@ -190,8 +199,7 @@ class ITSInitialNotificationTemplate:
     def __post_init__(self):
         if not self.report_reference:
             self.report_reference = (
-                f"INIT-{datetime.now().strftime('%Y%m%d%H%M%S')}-"
-                f"{uuid.uuid4().hex[:6].upper()}"
+                f"INIT-{datetime.now().strftime('%Y%m%d%H%M%S')}-" f"{uuid.uuid4().hex[:6].upper()}"
             )
         if not self.submission_datetime:
             self.submission_datetime = datetime.now(timezone.utc).isoformat()
@@ -236,6 +244,7 @@ class ITSIntermediateReportTemplate:
     Contains detailed information for report within 72 hours
     of initial notification.
     """
+
     # Section 1: Report Identification
     report_reference: str = ""
     report_type: str = "INTM"
@@ -320,8 +329,7 @@ class ITSIntermediateReportTemplate:
     def __post_init__(self):
         if not self.report_reference:
             self.report_reference = (
-                f"INTM-{datetime.now().strftime('%Y%m%d%H%M%S')}-"
-                f"{uuid.uuid4().hex[:6].upper()}"
+                f"INTM-{datetime.now().strftime('%Y%m%d%H%M%S')}-" f"{uuid.uuid4().hex[:6].upper()}"
             )
         if not self.submission_datetime:
             self.submission_datetime = datetime.now(timezone.utc).isoformat()
@@ -337,9 +345,7 @@ class ITSIntermediateReportTemplate:
         if len(self.detailed_description) > 4000:
             errors.append("detailed_description exceeds 4000 characters")
         if not self.preliminary_root_cause:
-            errors.append(
-                "preliminary_root_cause is required (even if 'under investigation')"
-            )
+            errors.append("preliminary_root_cause is required (even if 'under investigation')")
 
         return len(errors) == 0, errors
 
@@ -352,6 +358,7 @@ class ITSFinalReportTemplate:
     Contains complete information for report within 1 month
     of incident resolution.
     """
+
     # Section 1: Report Identification
     report_reference: str = ""
     report_type: str = "FINL"
@@ -454,8 +461,7 @@ class ITSFinalReportTemplate:
     def __post_init__(self):
         if not self.report_reference:
             self.report_reference = (
-                f"FINL-{datetime.now().strftime('%Y%m%d%H%M%S')}-"
-                f"{uuid.uuid4().hex[:6].upper()}"
+                f"FINL-{datetime.now().strftime('%Y%m%d%H%M%S')}-" f"{uuid.uuid4().hex[:6].upper()}"
             )
         if not self.submission_datetime:
             self.submission_datetime = datetime.now(timezone.utc).isoformat()
@@ -481,6 +487,7 @@ class ITSFinalReportTemplate:
 @dataclass
 class TimelineEvent:
     """Timeline event for incident reports."""
+
     event_id: str = ""
     timestamp: str = ""
     event_type: str = ""
@@ -512,6 +519,7 @@ class ClientIncidentDataPackage:
     ICT providers generate this package containing all data
     the client needs to populate their ITS templates for NCA submission.
     """
+
     package_id: str = ""
     generated_at: str = ""
     incident_id: str = ""
@@ -544,6 +552,7 @@ class ClientIncidentDataPackage:
 # =============================================================================
 # Template Factory
 # =============================================================================
+
 
 class DORAReportingTemplates:
     """
@@ -796,9 +805,7 @@ class DORAReportingTemplates:
             total_clients_affected=total_clients_affected,
             total_economic_impact_eur=total_economic_impact_eur,
             lessons_learned=lessons_learned or ["To be documented"],
-            remediation_measures=remediation_measures or [
-                {"description": "To be defined"}
-            ],
+            remediation_measures=remediation_measures or [{"description": "To be defined"}],
             preventive_measures=preventive_measures or [],
             response_effectiveness_code=response_effectiveness_code,
             contact_person_name=contact_person_name,
@@ -838,9 +845,7 @@ class DORAReportingTemplates:
             detection_datetime=incident_data.get("detected_at", ""),
             classification_datetime=incident_data.get("classified_at", ""),
             brief_description=incident_data.get("description", "")[:1000],
-            incident_type_code=self._map_incident_type(
-                incident_data.get("incident_type", "")
-            ),
+            incident_type_code=self._map_incident_type(incident_data.get("incident_type", "")),
             critical_services_affected=incident_data.get("affected_services", []),
             estimated_clients_affected=incident_data.get("affected_clients_count", 0),
             member_states_affected=incident_data.get("geographic_spread", []),
@@ -907,12 +912,14 @@ class DORAReportingTemplates:
         # Add timeline events if available
         if "timeline" in incident_data:
             for event_data in incident_data["timeline"]:
-                package.timeline_events.append(TimelineEvent(
-                    timestamp=event_data.get("timestamp", ""),
-                    event_type=event_data.get("type", ""),
-                    description=event_data.get("description", ""),
-                    actor=event_data.get("actor", ""),
-                ))
+                package.timeline_events.append(
+                    TimelineEvent(
+                        timestamp=event_data.get("timestamp", ""),
+                        event_type=event_data.get("type", ""),
+                        description=event_data.get("description", ""),
+                        actor=event_data.get("actor", ""),
+                    )
+                )
 
         return package
 
@@ -997,9 +1004,7 @@ class DORAReportingTemplates:
                         if isinstance(item, dict):
                             xml_parts.append(dict_to_xml(item, "item"))
                         else:
-                            xml_parts.append(
-                                f"<item>{_escape_xml(str(item))}</item>"
-                            )
+                            xml_parts.append(f"<item>{_escape_xml(str(item))}</item>")
                     xml_parts.append(f"</{key}>")
                 elif isinstance(value, dict):
                     xml_parts.append(dict_to_xml(value, key))
@@ -1064,7 +1069,7 @@ class DORAReportingTemplates:
         Returns:
             Tuple of (is_valid, errors)
         """
-        if hasattr(template, 'validate'):
+        if hasattr(template, "validate"):
             return template.validate()
         return True, []
 
@@ -1084,17 +1089,11 @@ class DORAReportingTemplates:
             Tuple of (is_valid, errors)
         """
         errors = []
-        data = (
-            asdict(template)
-            if hasattr(template, '__dataclass_fields__')
-            else template
-        )
+        data = asdict(template) if hasattr(template, "__dataclass_fields__") else template
 
         for field_name in mandatory_fields:
             if field_name not in data or not data[field_name]:
-                errors.append(
-                    f"Field '{field_name}' is mandatory but empty or missing"
-                )
+                errors.append(f"Field '{field_name}' is mandatory but empty or missing")
 
         return len(errors) == 0, errors
 
@@ -1103,14 +1102,15 @@ class DORAReportingTemplates:
 # Helper Functions
 # =============================================================================
 
+
 def _escape_xml(text: str) -> str:
     """Escape special XML characters."""
     return (
         text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&apos;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
     )
 
 

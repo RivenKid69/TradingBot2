@@ -12,6 +12,7 @@ This test demonstrates the mathematical difference and impact.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from variance_gradient_scaler import VarianceGradientScaler
@@ -28,10 +29,10 @@ def test_variance_computation_difference():
 
     # CURRENT CODE (POTENTIALLY WRONG)
     grad_mean = grad.mean().item()  # E[g]
-    grad_sq_wrong = grad_mean ** 2   # (E[g])² - square of mean
+    grad_sq_wrong = grad_mean**2  # (E[g])² - square of mean
 
     # PROPOSED FIX (CORRECT?)
-    grad_sq_correct = (grad ** 2).mean().item()  # E[g²] - mean of squares
+    grad_sq_correct = (grad**2).mean().item()  # E[g²] - mean of squares
 
     print(f"\nGradient: {grad.tolist()}")
     print(f"\nCURRENT CODE:")
@@ -68,10 +69,10 @@ def test_variance_computation_with_heterogeneous_gradients():
 
     # CURRENT CODE
     grad_mean = grad.mean().item()  # 10.0 / 10000 = 0.001
-    grad_sq_wrong = grad_mean ** 2   # 0.001^2 = 0.000001
+    grad_sq_wrong = grad_mean**2  # 0.001^2 = 0.000001
 
     # PROPOSED FIX
-    grad_sq_correct = (grad ** 2).mean().item()  # 100.0 / 10000 = 0.01
+    grad_sq_correct = (grad**2).mean().item()  # 100.0 / 10000 = 0.01
 
     print(f"\nGradient shape: {grad.shape}")
     print(f"Non-zero elements: 1 out of {N}")
@@ -113,7 +114,7 @@ def test_variance_over_time_current_code():
         enabled=True,
         beta=0.9,
         alpha=0.1,
-        warmup_steps=0  # No warmup for testing
+        warmup_steps=0,  # No warmup for testing
     )
 
     # Simulate gradients over time with KNOWN properties
@@ -175,13 +176,13 @@ def test_variance_over_time_proposed_fix():
 
         # PROPOSED FIX
         grad_mean_current = grad.mean().item()
-        grad_sq_current = (grad ** 2).mean().item()  # FIX: mean of squares!
+        grad_sq_current = (grad**2).mean().item()  # FIX: mean of squares!
 
         grad_mean_ema = beta * grad_mean_ema + (1 - beta) * grad_mean_current
         grad_sq_ema = beta * grad_sq_ema + (1 - beta) * grad_sq_current
 
-    variance_proposed = grad_sq_ema - grad_mean_ema ** 2
-    denominator = grad_mean_ema ** 2 + 1e-8
+    variance_proposed = grad_sq_ema - grad_mean_ema**2
+    denominator = grad_mean_ema**2 + 1e-8
     normalized_var_proposed = variance_proposed / denominator
 
     print(f"E[g]: {grad_mean_ema:.6f}")
@@ -201,13 +202,13 @@ def test_variance_over_time_proposed_fix():
         grad = torch.ones(100) * mean_val
 
         grad_mean_current = grad.mean().item()
-        grad_sq_current = (grad ** 2).mean().item()
+        grad_sq_current = (grad**2).mean().item()
 
         grad_mean_ema = beta * grad_mean_ema + (1 - beta) * grad_mean_current
         grad_sq_ema = beta * grad_sq_ema + (1 - beta) * grad_sq_current
 
-    variance_proposed2 = grad_sq_ema - grad_mean_ema ** 2
-    denominator2 = grad_mean_ema ** 2 + 1e-8
+    variance_proposed2 = grad_sq_ema - grad_mean_ema**2
+    denominator2 = grad_mean_ema**2 + 1e-8
     normalized_var_proposed2 = variance_proposed2 / denominator2
 
     print(f"E[g]: {grad_mean_ema:.6f}")
@@ -234,11 +235,11 @@ def test_mathematical_correctness():
 
     # Method 2: E[X^2] - E[X]^2 formula (CORRECT for stochastic variance)
     mean_x = samples.mean().item()
-    mean_x_sq = (samples ** 2).mean().item()
-    var_formula = mean_x_sq - mean_x ** 2
+    mean_x_sq = (samples**2).mean().item()
+    var_formula = mean_x_sq - mean_x**2
 
     # Method 3: WRONG - using square of mean
-    sq_of_mean = mean_x ** 2
+    sq_of_mean = mean_x**2
 
     print(f"\nSamples from N(0, 1), n={len(samples)}")
     print(f"\n1. Direct torch.var(): {var_direct:.6f}")

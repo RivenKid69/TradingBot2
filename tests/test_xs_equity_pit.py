@@ -22,7 +22,10 @@ from impl_panel import PanelBuilder
 from service_xs_data import DataAssembler
 from signals.equity_signals import EarningsYield, BookToPrice
 from loaders.equity_enrich import (
-    PITFundamentalsEnricher, TotalReturnEnricher, EarningsEnricher, make_pit_fundamentals_enricher,
+    PITFundamentalsEnricher,
+    TotalReturnEnricher,
+    EarningsEnricher,
+    make_pit_fundamentals_enricher,
 )
 
 T0, STEP = 1_700_000_000, 86_400
@@ -30,6 +33,7 @@ T0, STEP = 1_700_000_000, 86_400
 
 class FakeFund:
     """DI-источник фундаментала (long df с publish_ts)."""
+
     def __init__(self, df, pit="true", vendor="byo"):
         self.meta = DataSourceMeta(name="fund", vendor=vendor, kind="fundamentals", pit_quality=pit)
         self._df = df
@@ -44,8 +48,16 @@ class FakePriceSource:
         self.n = n
 
     def get_bars(self, symbols, timeframe, *, start_ms=None, end_ms=None, limit=1000):
-        return {s: pd.DataFrame({"timestamp": [T0 + i * STEP for i in range(self.n)], "symbol": s,
-                                 "close": 100.0 + np.arange(self.n)}) for s in symbols}
+        return {
+            s: pd.DataFrame(
+                {
+                    "timestamp": [T0 + i * STEP for i in range(self.n)],
+                    "symbol": s,
+                    "close": 100.0 + np.arange(self.n),
+                }
+            )
+            for s in symbols
+        }
 
 
 def _panel(n=10, syms=("AAA",), close=None):
@@ -53,7 +65,9 @@ def _panel(n=10, syms=("AAA",), close=None):
     for s in syms:
         ts = [T0 + i * STEP for i in range(n)]
         c = close if close is not None else (100.0 + np.arange(n))
-        frames[s] = pd.DataFrame({"timestamp": ts, "symbol": s, "close": np.asarray(c, dtype="float64")})
+        frames[s] = pd.DataFrame(
+            {"timestamp": ts, "symbol": s, "close": np.asarray(c, dtype="float64")}
+        )
     return PanelBuilder.from_frames(frames)
 
 
@@ -63,12 +77,14 @@ def _panel(n=10, syms=("AAA",), close=None):
 def test_pit_fundamentals_no_look_ahead():
     # отчётность опубликована на баре 5 → бары 0..4 ДОЛЖНЫ быть NaN (нет будущего)
     pub = T0 + 5 * STEP
-    df = pd.DataFrame({"publish_ts": [pub], "symbol": ["AAA"], "earnings": [8.0], "book_value": [40.0]})
+    df = pd.DataFrame(
+        {"publish_ts": [pub], "symbol": ["AAA"], "earnings": [8.0], "book_value": [40.0]}
+    )
     enr = PITFundamentalsEnricher(FakeFund(df, pit="true"), fields=["earnings", "book_value"])
     out = enr.enrich(_panel(10))
     e = out.xs("AAA", level=SYMBOL_LEVEL)["earnings"].to_numpy()
-    assert np.isnan(e[:5]).all()                 # до публикации — НЕТ данных (PIT)
-    assert np.allclose(e[5:], 8.0)               # после — значение
+    assert np.isnan(e[:5]).all()  # до публикации — НЕТ данных (PIT)
+    assert np.allclose(e[5:], 8.0)  # после — значение
     assert enr.meta.pit_quality == "true"
 
 
@@ -78,7 +94,7 @@ def test_pit_fundamentals_publish_lag():
     enr = PITFundamentalsEnricher(FakeFund(df), fields=["roe"], publish_lag_ms=2 * STEP * 1000)
     out = enr.enrich(_panel(8))
     r = out.xs("AAA", level=SYMBOL_LEVEL)["roe"].to_numpy()
-    assert np.isnan(r[:5]).all() and np.allclose(r[5:], 0.2)   # доступно с бара 5 (3+2 лаг)
+    assert np.isnan(r[:5]).all() and np.allclose(r[5:], 0.2)  # доступно с бара 5 (3+2 лаг)
 
 
 def test_free_snapshot_marked_pit_none():
@@ -92,7 +108,7 @@ def test_free_snapshot_marked_pit_none():
 # ---------------------------------------------------------------------------
 def test_total_return_reinvests_dividend():
     panel = _panel(4, close=[100.0, 100.0, 100.0, 100.0])
-    div_ts = (T0 + 2 * STEP) * 1000   # панель нормализует ts в мс
+    div_ts = (T0 + 2 * STEP) * 1000  # панель нормализует ts в мс
     enr = TotalReturnEnricher(actions_fn=lambda s: ({div_ts: 5.0}, {}))
     out = enr.enrich(panel)
     tr = out.xs("AAA", level=SYMBOL_LEVEL)["tr_close"].to_numpy()
@@ -106,7 +122,7 @@ def test_total_return_reinvests_dividend():
 # ---------------------------------------------------------------------------
 def test_earnings_soon_flag():
     panel = _panel(10)
-    earnings_ts = (T0 + 6 * STEP) * 1000   # мс
+    earnings_ts = (T0 + 6 * STEP) * 1000  # мс
     enr = EarningsEnricher(dates_fn=lambda s: [earnings_ts], window_days=3)
     out = enr.enrich(panel)
     f = out.xs("AAA", level=SYMBOL_LEVEL)["has_earnings_soon"].to_numpy()
@@ -121,13 +137,19 @@ def test_earnings_soon_flag():
 def test_equity_value_signal_comes_alive():
     src = FakePriceSource(n=10)
     pub = T0 + 3 * STEP
-    df = pd.DataFrame({"publish_ts": [pub, pub], "symbol": ["AAA", "BBB"],
-                       "earnings": [8.0, 2.0], "book_value": [40.0, 60.0]})
+    df = pd.DataFrame(
+        {
+            "publish_ts": [pub, pub],
+            "symbol": ["AAA", "BBB"],
+            "earnings": [8.0, 2.0],
+            "book_value": [40.0, 60.0],
+        }
+    )
     enr = PITFundamentalsEnricher(FakeFund(df, pit="true"), fields=["earnings", "book_value"])
     res = DataAssembler(src, enrichers=[enr]).assemble(["AAA", "BBB"], "1d")
     assert "earnings" in res.panel.columns and "book_value" in res.panel.columns
     ey = EarningsYield("ey").compute_panel(res.panel)
-    assert not ey.isna().all()                        # сигнал ожил
+    assert not ey.isna().all()  # сигнал ожил
     # E/P = earnings/close после публикации
     aaa_close = res.panel.xs("AAA", level=SYMBOL_LEVEL)["close"]
     last = ey.xs("AAA", level=SYMBOL_LEVEL).dropna().iloc[-1]
@@ -141,11 +163,18 @@ def test_equity_value_signal_comes_alive():
 # ---------------------------------------------------------------------------
 def test_build_enrichers_equity():
     from service_xs_pipeline import XSConfig, build_enrichers
-    cfg = XSConfig.model_validate({
-        "asset_class": "equity",
-        "data": {"source": "free", "vendor": "yahoo", "symbols": ["AAA"],
-                 "enrich": ["total_return", "pit_fundamentals", "earnings"]},
-    })
+
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "equity",
+            "data": {
+                "source": "free",
+                "vendor": "yahoo",
+                "symbols": ["AAA"],
+                "enrich": ["total_return", "pit_fundamentals", "earnings"],
+            },
+        }
+    )
     enrichers = build_enrichers(cfg)
     cols = sorted(sum([e.columns() for e in enrichers], []))
     assert "tr_close" in cols and "has_earnings_soon" in cols
@@ -157,7 +186,12 @@ def test_build_enrichers_equity():
 
 def test_data_quality_flags_snapshot_warn():
     from service_xs_pipeline import XSConfig, data_quality_for_config
-    cfg = XSConfig.model_validate({"asset_class": "equity",
-                                   "data": {"source": "synthetic", "symbols": ["AAA", "BBB"], "synthetic_bars": 20}})
+
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "equity",
+            "data": {"source": "synthetic", "symbols": ["AAA", "BBB"], "synthetic_bars": 20},
+        }
+    )
     rep = data_quality_for_config(cfg)
-    assert rep.verdict() in ("ok", "warn", "poor")   # отчёт строится
+    assert rep.verdict() in ("ok", "warn", "poor")  # отчёт строится

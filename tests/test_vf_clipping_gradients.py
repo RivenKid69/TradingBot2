@@ -10,6 +10,7 @@ a trust region constraint through gradient blocking, as proven by these tests.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn.functional as F
 
@@ -38,15 +39,13 @@ def test_vf_clipping_gradients_basic():
     print(f"  Clip delta: {clip_delta:.2f}")
 
     # Compute clipped value (as in PPO)
-    clipped_value = torch.clamp(
-        new_value,
-        min=old_value - clip_delta,
-        max=old_value + clip_delta
-    )
+    clipped_value = torch.clamp(new_value, min=old_value - clip_delta, max=old_value + clip_delta)
 
     print(f"\nClipped value: {clipped_value.item():.2f}")
-    print(f"  (clamped to [{old_value.item() - clip_delta:.2f}, "
-          f"{old_value.item() + clip_delta:.2f}])")
+    print(
+        f"  (clamped to [{old_value.item() - clip_delta:.2f}, "
+        f"{old_value.item() + clip_delta:.2f}])"
+    )
 
     # Compute losses
     loss_unclipped = F.mse_loss(new_value, target)
@@ -109,11 +108,7 @@ def test_vf_clipping_gradients_basic():
         old_value = torch.tensor([old_val], requires_grad=False)
         new_value = torch.tensor([new_val], requires_grad=True)
 
-        clipped_value = torch.clamp(
-            new_value,
-            min=old_value - clip_d,
-            max=old_value + clip_d
-        )
+        clipped_value = torch.clamp(new_value, min=old_value - clip_d, max=old_value + clip_d)
 
         loss_unclipped = F.mse_loss(new_value, target)
         loss_clipped = F.mse_loss(clipped_value, target)
@@ -132,23 +127,28 @@ def test_vf_clipping_gradients_basic():
         should_be_blocked = (not within_trust) and loss_clipped_higher
 
         # Verify correctness based on actual PPO VF clipping semantics
-        correct = (gradient_nonzero != should_be_blocked)
+        correct = gradient_nonzero != should_be_blocked
 
         print(f"\n{i}. {desc}")
         print(f"   old={old_val:.2f}, new={new_val:.2f}, target={target_val:.2f}")
-        print(f"   Clipped: {clipped_value.item():.2f} | "
-              f"Loss: U={loss_unclipped.item():.4f}, C={loss_clipped.item():.4f}")
-        print(f"   Within trust: {within_trust} | "
-              f"Gradient: {new_value.grad.item():+.6f} | "
-              f"Status: {'ALLOWED' if gradient_nonzero else 'BLOCKED'} "
-              f"{'✓' if correct else '✗'}")
+        print(
+            f"   Clipped: {clipped_value.item():.2f} | "
+            f"Loss: U={loss_unclipped.item():.4f}, C={loss_clipped.item():.4f}"
+        )
+        print(
+            f"   Within trust: {within_trust} | "
+            f"Gradient: {new_value.grad.item():+.6f} | "
+            f"Status: {'ALLOWED' if gradient_nonzero else 'BLOCKED'} "
+            f"{'✓' if correct else '✗'}"
+        )
 
         assert correct, f"Gradient behavior incorrect for scenario: {desc}"
 
     print("\n" + "=" * 80)
     print("MATHEMATICAL PROOF:")
     print("=" * 80)
-    print("""
+    print(
+        """
 The PPO value function clipping formula is:
 
     L^VF = max(L_unclipped, L_clipped)
@@ -166,7 +166,8 @@ When V_new moves outside [V_old - ε, V_old + ε]:
     5. No gradient → no update
 
 This is a TRUST REGION CONSTRAINT, not a bias!
-    """)
+    """
+    )
 
     print("=" * 80)
     print("CONCLUSION:")
@@ -211,11 +212,7 @@ def test_no_bias_in_value_estimates():
     # Simulate 20 update steps
     for step in range(20):
         # Compute clipped value
-        clipped_value = torch.clamp(
-            value,
-            min=old_value - clip_delta,
-            max=old_value + clip_delta
-        )
+        clipped_value = torch.clamp(value, min=old_value - clip_delta, max=old_value + clip_delta)
 
         # Compute losses
         loss_unclipped = F.mse_loss(value, target)
@@ -288,7 +285,9 @@ def test_gradient_blocking_mechanism():
 
     print(f"  loss_unclipped={(new_value.item() - target.item())**2:.4f}")
     print(f"  loss_clipped={(clipped_value.item() - target.item())**2:.4f}")
-    print(f"  max() selects: {'loss_clipped' if loss_clipped > loss_unclipped else 'loss_unclipped'}")
+    print(
+        f"  max() selects: {'loss_clipped' if loss_clipped > loss_unclipped else 'loss_unclipped'}"
+    )
 
     # Backward pass
     loss.backward()
@@ -333,7 +332,9 @@ def test_comparison_with_alternative_formulations():
     target = torch.tensor([1.0])
     clip_delta = 0.1
 
-    print(f"\nSetup: old={old_value.item():.2f}, new={new_value.item():.2f}, target={target.item():.2f}")
+    print(
+        f"\nSetup: old={old_value.item():.2f}, new={new_value.item():.2f}, target={target.item():.2f}"
+    )
 
     # Current (correct) implementation: max()
     clipped_value = torch.clamp(new_value, old_value - clip_delta, old_value + clip_delta)

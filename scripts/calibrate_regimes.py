@@ -57,7 +57,10 @@ def estimate_params(df: pd.DataFrame, regime: pd.Series) -> dict:
             "avg_spread": float(avg_spread if pd.notna(avg_spread) else 0.0),
         }
     counts = regime.value_counts()
-    probs = [float(counts.get(name, 0) / total) for name in ["NORMAL", "CHOPPY_FLAT", "STRONG_TREND", "ILLIQUID"]]
+    probs = [
+        float(counts.get(name, 0) / total)
+        for name in ["NORMAL", "CHOPPY_FLAT", "STRONG_TREND", "ILLIQUID"]
+    ]
     out["regime_probs"] = probs
     # flash shocks
     shock_threshold = returns.std() * 5
@@ -79,9 +82,17 @@ def main():
     params = estimate_params(df, regime)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as f:
-        json.dump({"regimes": {k: v for k, v in params.items() if k not in {"regime_probs", "flash_shock"}},
-                   "regime_probs": params["regime_probs"],
-                   "flash_shock": params["flash_shock"]}, f, indent=2)
+        json.dump(
+            {
+                "regimes": {
+                    k: v for k, v in params.items() if k not in {"regime_probs", "flash_shock"}
+                },
+                "regime_probs": params["regime_probs"],
+                "flash_shock": params["flash_shock"],
+            },
+            f,
+            indent=2,
+        )
     print(f"Saved regime parameters to {args.out}")
 
 

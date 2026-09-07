@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import warnings
 
+
 # Deprecation warning - module level (only when explicitly imported)
 def _warn_deprecated():
     warnings.warn(
@@ -40,6 +41,7 @@ def _warn_deprecated():
         DeprecationWarning,
         stacklevel=3,
     )
+
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -82,9 +84,7 @@ class CommandStatus(str, Enum):
 
 
 # Allowed command types (frozen for security)
-ALLOWED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset(
-    [ct.value for ct in CommandType]
-)
+ALLOWED_COMMAND_TYPES: Final[FrozenSet[str]] = frozenset([ct.value for ct in CommandType])
 
 # Fields that are PROHIBITED in command payloads
 PROHIBITED_PAYLOAD_FIELDS: Final[FrozenSet[str]] = frozenset(
@@ -156,16 +156,12 @@ class Command:
         """Validate command doesn't contain prohibited fields."""
         # Check command type
         if self.command_type.value not in ALLOWED_COMMAND_TYPES:
-            raise CommandValidationError(
-                f"Command type not allowed: {self.command_type}"
-            )
+            raise CommandValidationError(f"Command type not allowed: {self.command_type}")
 
         # Check payload for prohibited fields
         violations = self._find_prohibited_fields(self.payload)
         if violations:
-            raise CommandValidationError(
-                f"Prohibited fields in payload: {violations}"
-            )
+            raise CommandValidationError(f"Prohibited fields in payload: {violations}")
 
     def _find_prohibited_fields(
         self,
@@ -186,9 +182,7 @@ class Command:
                 )
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
-                violations.extend(
-                    self._find_prohibited_fields(item, f"{path}[{i}]")
-                )
+                violations.extend(self._find_prohibited_fields(item, f"{path}[{i}]"))
 
         return violations
 

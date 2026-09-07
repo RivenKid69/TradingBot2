@@ -4,6 +4,7 @@
 import sys
 from transformers import _format_window_name, FeatureSpec
 
+
 def test_format_window_name():
     """Test _format_window_name() function."""
     print("Testing _format_window_name() function:")
@@ -28,10 +29,13 @@ def test_format_window_name():
         status = "✓" if result == expected else "✗"
         if result != expected:
             all_passed = False
-        print(f"{status} _format_window_name({minutes:5d}) = '{result:4s}' (expected '{expected:4s}') - {description}")
+        print(
+            f"{status} _format_window_name({minutes:5d}) = '{result:4s}' (expected '{expected:4s}') - {description}"
+        )
 
     print()
     return all_passed
+
 
 def test_feature_names():
     """Test that feature names match between transformers and mediator."""
@@ -41,22 +45,34 @@ def test_feature_names():
     # Expected feature names from mediator.py _extract_norm_cols()
     expected_features = [
         # Returns
-        "ret_4h", "ret_12h", "ret_24h",
+        "ret_4h",
+        "ret_12h",
+        "ret_24h",
         # GARCH - КРИТИЧНО: минимум 50 баров для стабильной оценки!
         # 12000 минут = 50 баров = 200h (минимум для GARCH)
         # 20160 минут = 84 бара = 14d
         # 43200 минут = 180 баров = 30d
-        "garch_200h", "garch_14d", "garch_30d",
+        "garch_200h",
+        "garch_14d",
+        "garch_30d",
         # Yang-Zhang
-        "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
+        "yang_zhang_48h",
+        "yang_zhang_7d",
+        "yang_zhang_30d",
         # Parkinson
-        "parkinson_48h", "parkinson_7d",
+        "parkinson_48h",
+        "parkinson_7d",
         # CVD
-        "cvd_24h", "cvd_7d",
+        "cvd_24h",
+        "cvd_7d",
         # Taker Buy Ratio SMA
-        "taker_buy_ratio_sma_8h", "taker_buy_ratio_sma_16h", "taker_buy_ratio_sma_24h",
+        "taker_buy_ratio_sma_8h",
+        "taker_buy_ratio_sma_16h",
+        "taker_buy_ratio_sma_24h",
         # Taker Buy Ratio Momentum
-        "taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h",
+        "taker_buy_ratio_momentum_4h",
+        "taker_buy_ratio_momentum_8h",
+        "taker_buy_ratio_momentum_12h",
     ]
 
     # Create FeatureSpec with 4h interval parameters
@@ -130,6 +146,7 @@ def test_feature_names():
     print()
     return all_match
 
+
 def main():
     """Run all tests."""
     print("=" * 50)
@@ -152,6 +169,7 @@ def main():
         print("✗ SOME TESTS FAILED")
         print("=" * 50)
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

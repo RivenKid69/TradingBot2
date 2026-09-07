@@ -35,11 +35,13 @@ __all__ = [
     "close",
 ]
 
+
 # Уровень событий: NONE=0, SUMMARY=1, FULL=2
 class EventLevel(int):
     NONE = 0
     SUMMARY = 1
     FULL = 2
+
 
 # Глобальное состояние шины
 class _BusState:
@@ -71,6 +73,7 @@ class _BusState:
         self.default_symbol = None
         self.lock = Lock()
         self.initialized = False
+
 
 _STATE = _BusState()
 
@@ -108,6 +111,7 @@ def log_signal_metric(status: str) -> None:
     except Exception:
         pass
 
+
 def _ensure_open():
     """Открывает файлы, если ещё не открыты. Потокобезопасно."""
     if _STATE.initialized:
@@ -129,15 +133,31 @@ def _ensure_open():
         if not hasattr(_STATE, "unified_file"):
             _STATE.unified_file = open(_STATE.unified_path, "a", newline="", encoding="utf-8")
             _STATE.unified_writer = csv.writer(_STATE.unified_file)
-            _STATE.unified_writer.writerow([
-                "ts","run_id","symbol","side","order_type","price","quantity","fee","fee_asset",
-                "pnl","exec_status","liquidity","client_order_id","order_id","meta_json"
-            ])
+            _STATE.unified_writer.writerow(
+                [
+                    "ts",
+                    "run_id",
+                    "symbol",
+                    "side",
+                    "order_type",
+                    "price",
+                    "quantity",
+                    "fee",
+                    "fee_asset",
+                    "pnl",
+                    "exec_status",
+                    "liquidity",
+                    "client_order_id",
+                    "order_id",
+                    "meta_json",
+                ]
+            )
 
         # risk.jsonl
         _STATE.risk_file = open(_STATE.risk_path, "w")
 
         _STATE.initialized = True
+
 
 def configure(
     level: int = EventLevel.NONE,
@@ -158,18 +178,28 @@ def configure(
     _STATE.run_id = str(run_id) if run_id is not None else ""
     _STATE.default_symbol = str(default_symbol) if default_symbol is not None else None
 
+
 def set_defaults(*, run_id: str | None = None, default_symbol: str | None = None) -> None:
     if run_id is not None:
         _STATE.run_id = run_id
     if default_symbol is not None:
         _STATE.default_symbol = default_symbol
 
+
 def run_dir() -> str:
     """Путь к директории текущего запуска (создаётся лениво)."""
     _ensure_open()
     return _STATE.run_dir
 
-def log_trade(ts: int, price: float, volume: float, is_buy: bool, agent_flag: bool, order_id: int | None = None):
+
+def log_trade(
+    ts: int,
+    price: float,
+    volume: float,
+    is_buy: bool,
+    agent_flag: bool,
+    order_id: int | None = None,
+):
     """
     Логирует трейд. Если уровень NONE — запись пропускается (но формат сохраняем для совместимости).
 
@@ -185,44 +215,77 @@ def log_trade(ts: int, price: float, volume: float, is_buy: bool, agent_flag: bo
         sym = _STATE.default_symbol or "UNKNOWN"
         side_str = "BUY" if is_buy else "SELL"
         try:
-            _STATE.unified_writer.writerow([
-                int(ts),
-                getattr(_STATE, "run_id", ""),
-                sym,
-                side_str,
-                "MARKET",
-                float(price),
-                float(volume),
-                0.0,               # fee (неизвестно на этом уровне)
-                None,              # fee_asset
-                None,              # pnl
-                "FILLED",          # exec_status
-                "UNKNOWN",         # liquidity
-                None,              # client_order_id
-                None,              # order_id
-                "{}",              # meta_json
-            ])
+            _STATE.unified_writer.writerow(
+                [
+                    int(ts),
+                    getattr(_STATE, "run_id", ""),
+                    sym,
+                    side_str,
+                    "MARKET",
+                    float(price),
+                    float(volume),
+                    0.0,  # fee (неизвестно на этом уровне)
+                    None,  # fee_asset
+                    None,  # pnl
+                    "FILLED",  # exec_status
+                    "UNKNOWN",  # liquidity
+                    None,  # client_order_id
+                    None,  # order_id
+                    "{}",  # meta_json
+                ]
+            )
             _STATE.unified_file.flush()
         except Exception:
             pass
 
-def log_trade_row(*, ts: int, run_id: str, symbol: str, side: str, order_type: str,
-                  price: float, quantity: float, fee: float = 0.0, fee_asset: str | None = None,
-                  pnl: float | None = None, exec_status: str = "FILLED", liquidity: str = "UNKNOWN",
-                  client_order_id: str | None = None, order_id: str | None = None, meta_json: str = "{}") -> None:
+
+def log_trade_row(
+    *,
+    ts: int,
+    run_id: str,
+    symbol: str,
+    side: str,
+    order_type: str,
+    price: float,
+    quantity: float,
+    fee: float = 0.0,
+    fee_asset: str | None = None,
+    pnl: float | None = None,
+    exec_status: str = "FILLED",
+    liquidity: str = "UNKNOWN",
+    client_order_id: str | None = None,
+    order_id: str | None = None,
+    meta_json: str = "{}",
+) -> None:
     if _STATE.level <= EventLevel.NONE:
         return
     _ensure_open()
     with _STATE.lock:
         try:
-            _STATE.unified_writer.writerow([
-                int(ts), run_id, symbol, side, order_type, float(price), float(quantity),
-                float(fee), fee_asset, (None if pnl is None else float(pnl)),
-                exec_status, liquidity, client_order_id, order_id, meta_json
-            ])
+            _STATE.unified_writer.writerow(
+                [
+                    int(ts),
+                    run_id,
+                    symbol,
+                    side,
+                    order_type,
+                    float(price),
+                    float(quantity),
+                    float(fee),
+                    fee_asset,
+                    (None if pnl is None else float(pnl)),
+                    exec_status,
+                    liquidity,
+                    client_order_id,
+                    order_id,
+                    meta_json,
+                ]
+            )
             _STATE.unified_file.flush()
         except Exception:
             pass
+
+
 def log_trade_exec(er) -> None:
     """
     Удобная запись ExecReport/TradeLogRow/словаря в unified-CSV.
@@ -252,13 +315,21 @@ def log_trade_exec(er) -> None:
     if _ER is not None and isinstance(er, _ER):
         # подчистим возможные Decimal/Enum уже в to_dict(); ключи в event_bus фиксируем вручную
         d = {
-            "ts": d.get("ts"), "run_id": d.get("run_id"), "symbol": d.get("symbol"),
-            "side": d.get("side"), "order_type": d.get("order_type"),
-            "price": d.get("price"), "quantity": d.get("quantity"),
-            "fee": d.get("fee"), "fee_asset": d.get("fee_asset"),
-            "pnl": d.get("pnl"), "exec_status": d.get("exec_status"),
-            "liquidity": d.get("liquidity"), "client_order_id": d.get("client_order_id"),
-            "order_id": d.get("order_id"), "meta_json": _json.dumps(d.get("meta") or {}, ensure_ascii=False)
+            "ts": d.get("ts"),
+            "run_id": d.get("run_id"),
+            "symbol": d.get("symbol"),
+            "side": d.get("side"),
+            "order_type": d.get("order_type"),
+            "price": d.get("price"),
+            "quantity": d.get("quantity"),
+            "fee": d.get("fee"),
+            "fee_asset": d.get("fee_asset"),
+            "pnl": d.get("pnl"),
+            "exec_status": d.get("exec_status"),
+            "liquidity": d.get("liquidity"),
+            "client_order_id": d.get("client_order_id"),
+            "order_id": d.get("order_id"),
+            "meta_json": _json.dumps(d.get("meta") or {}, ensure_ascii=False),
         }
 
     # значения по умолчанию
@@ -271,7 +342,7 @@ def log_trade_exec(er) -> None:
     quantity = float(d.get("quantity") or 0.0)
     fee = float(d.get("fee") or 0.0)
     fee_asset = d.get("fee_asset")
-    pnl = (None if d.get("pnl") is None else float(d.get("pnl")))
+    pnl = None if d.get("pnl") is None else float(d.get("pnl"))
     exec_status = str(d.get("exec_status") or "FILLED")
     liquidity = str(d.get("liquidity") or "UNKNOWN")
     client_order_id = d.get("client_order_id")
@@ -281,13 +352,29 @@ def log_trade_exec(er) -> None:
     # запись одной строки unified-CSV
     with _STATE.lock:
         try:
-            _STATE.unified_writer.writerow([
-                ts, run_id, symbol, side, order_type, price, quantity,
-                fee, fee_asset, pnl, exec_status, liquidity, client_order_id, order_id, meta_json
-            ])
+            _STATE.unified_writer.writerow(
+                [
+                    ts,
+                    run_id,
+                    symbol,
+                    side,
+                    order_type,
+                    price,
+                    quantity,
+                    fee,
+                    fee_asset,
+                    pnl,
+                    exec_status,
+                    liquidity,
+                    client_order_id,
+                    order_id,
+                    meta_json,
+                ]
+            )
             _STATE.unified_file.flush()
         except Exception:
             pass
+
 
 def log_risk(obj):
     """
@@ -311,6 +398,7 @@ def log_risk(obj):
         _STATE.risk_file.write(json.dumps(obj, ensure_ascii=False) + "\n")
         _STATE.risk_file.flush()
 
+
 def flush():
     """Принудительный flush всех файлов."""
     if not _STATE.initialized:
@@ -324,6 +412,7 @@ def flush():
             _STATE.unified_file.flush()
         except Exception:
             pass
+
 
 def close():
     """Закрывает файлы (используется при завершении процесса)."""
@@ -339,6 +428,7 @@ def close():
         except Exception:
             pass
         _STATE.initialized = False
+
 
 @atexit.register
 def _on_exit():

@@ -34,6 +34,7 @@ from services.cme_calendar import (
 # CMESession Tests
 # =============================================================================
 
+
 class TestCMESession:
     """Test CMESession enum."""
 
@@ -51,6 +52,7 @@ class TestCMESession:
 # =============================================================================
 # CME Holiday Calendar Tests
 # =============================================================================
+
 
 class TestCMEHolidays:
     """Test CME holiday calendar."""
@@ -112,6 +114,7 @@ class TestCMEHolidays:
 # =============================================================================
 # CMETradingCalendar Tests
 # =============================================================================
+
 
 class TestCMETradingCalendar:
     """Test CME trading calendar functionality."""
@@ -219,9 +222,9 @@ class TestCMETradingCalendar:
         calendar = CMETradingCalendar()
 
         # Known holidays
-        assert calendar.is_holiday(date(2024, 1, 1)) is True   # New Year
-        assert calendar.is_holiday(date(2024, 7, 4)) is True   # Independence Day
-        assert calendar.is_holiday(date(2024, 12, 25)) is True # Christmas
+        assert calendar.is_holiday(date(2024, 1, 1)) is True  # New Year
+        assert calendar.is_holiday(date(2024, 7, 4)) is True  # Independence Day
+        assert calendar.is_holiday(date(2024, 12, 25)) is True  # Christmas
 
         # Regular days
         assert calendar.is_holiday(date(2024, 6, 18)) is False

@@ -8,12 +8,14 @@ Tests the full integration of all advanced optimization components.
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import traceback
 import warnings
 
 # Suppress warnings for cleaner output
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
+
 
 def check_dependencies():
     """Check if required dependencies are available."""
@@ -21,24 +23,28 @@ def check_dependencies():
 
     try:
         import torch
+
         print(f"[OK] PyTorch {torch.__version__}")
     except ImportError:
         missing.append("torch")
 
     try:
         import numpy
+
         print(f"[OK] NumPy {numpy.__version__}")
     except ImportError:
         missing.append("numpy")
 
     try:
         import gymnasium as gym
+
         print(f"[OK] Gymnasium {gym.__version__}")
     except ImportError:
         missing.append("gymnasium")
 
     try:
         import stable_baselines3
+
         print(f"[OK] Stable-Baselines3 {stable_baselines3.__version__}")
     except ImportError:
         missing.append("stable-baselines3")
@@ -78,6 +84,7 @@ def run_test(test_name, test_func):
 # Test Implementations
 # ===========================================================================
 
+
 def test_01_upgd_basic():
     """Test basic UPGD optimizer functionality."""
     import torch
@@ -103,9 +110,9 @@ def test_01_upgd_basic():
     assert model.weight in optimizer.state, "Weight should be in optimizer state"
 
     state = optimizer.state[model.weight]
-    assert 'step' in state, "Should track step count"
-    assert 'avg_utility' in state, "Should track utility"
-    assert state['step'] == 1, "Step count should be 1"
+    assert "step" in state, "Should track step count"
+    assert "avg_utility" in state, "Should track utility"
+    assert state["step"] == 1, "Step count should be 1"
 
     print("  [OK] UPGD optimizer initialized and step completed")
     print(f"  [OK] Optimizer state created for {len(optimizer.state)} parameters")
@@ -117,19 +124,9 @@ def test_02_adaptive_upgd():
     import torch.nn as nn
     from optimizers import AdaptiveUPGD
 
-    model = nn.Sequential(
-        nn.Linear(4, 16),
-        nn.ReLU(),
-        nn.Linear(16, 2)
-    )
+    model = nn.Sequential(nn.Linear(4, 16), nn.ReLU(), nn.Linear(16, 2))
 
-    optimizer = AdaptiveUPGD(
-        model.parameters(),
-        lr=3e-4,
-        beta1=0.9,
-        beta2=0.999,
-        sigma=0.01
-    )
+    optimizer = AdaptiveUPGD(model.parameters(), lr=3e-4, beta1=0.9, beta2=0.999, sigma=0.01)
 
     # Multiple training steps
     for i in range(10):
@@ -147,9 +144,9 @@ def test_02_adaptive_upgd():
     for param in model.parameters():
         if param in optimizer.state:
             state = optimizer.state[param]
-            assert 'first_moment' in state, "Should track first moment"
-            assert 'sec_moment' in state, "Should track second moment"
-            assert 'avg_utility' in state, "Should track utility"
+            assert "first_moment" in state, "Should track first moment"
+            assert "sec_moment" in state, "Should track second moment"
+            assert "avg_utility" in state, "Should track utility"
             has_moments = True
 
     assert has_moments, "At least some parameters should have moment statistics"
@@ -167,11 +164,7 @@ def test_03_variance_gradient_scaler():
     model = nn.Linear(4, 2)
     optimizer = UPGD(model.parameters(), lr=1e-3)
     vgs = VarianceGradientScaler(
-        model.parameters(),
-        enabled=True,
-        beta=0.99,
-        alpha=0.1,
-        warmup_steps=5
+        model.parameters(), enabled=True, beta=0.99, alpha=0.1, warmup_steps=5
     )
 
     # Train with VGS
@@ -212,11 +205,7 @@ def test_04_upgd_numerical_stability():
     from optimizers import AdaptiveUPGD
 
     model = nn.Sequential(
-        nn.Linear(8, 32),
-        nn.ReLU(),
-        nn.Linear(32, 16),
-        nn.ReLU(),
-        nn.Linear(16, 2)
+        nn.Linear(8, 32), nn.ReLU(), nn.Linear(32, 16), nn.ReLU(), nn.Linear(16, 2)
     )
 
     optimizer = AdaptiveUPGD(model.parameters(), lr=3e-4, sigma=0.01)
@@ -256,18 +245,8 @@ def test_05_pbt_scheduler():
         population_size=4,
         perturbation_interval=10,
         hyperparams=[
-            HyperparamConfig(
-                name="lr",
-                min_value=1e-5,
-                max_value=1e-3,
-                perturbation_factor=1.2
-            ),
-            HyperparamConfig(
-                name="sigma",
-                min_value=0.001,
-                max_value=0.1,
-                perturbation_factor=1.5
-            ),
+            HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3, perturbation_factor=1.2),
+            HyperparamConfig(name="sigma", min_value=0.001, max_value=0.1, perturbation_factor=1.5),
         ],
     )
 
@@ -287,10 +266,7 @@ def test_05_pbt_scheduler():
     for i, member in enumerate(population):
         performance = 10.0 + i * 2.0
         scheduler.update_performance(
-            member,
-            performance=performance,
-            step=5,
-            model_state_dict={"dummy": torch.randn(2, 2)}
+            member, performance=performance, step=5, model_state_dict={"dummy": torch.randn(2, 2)}
         )
 
     # Test exploit/explore
@@ -298,8 +274,7 @@ def test_05_pbt_scheduler():
     worst_member.step = 10
 
     new_state, new_params, _ = scheduler.exploit_and_explore(
-        worst_member,
-        model_state_dict={"dummy": torch.randn(2, 2)}
+        worst_member, model_state_dict={"dummy": torch.randn(2, 2)}
     )
 
     assert "lr" in new_params, "Should return new hyperparameters"
@@ -362,13 +337,7 @@ def test_07_twin_critics_with_upgd():
         "DistributionalPolicy",
         env,
         optimizer_class="adaptive_upgd",
-        policy_kwargs={
-            'arch_params': {
-                'critic': {
-                    'use_twin_critics': True
-                }
-            }
-        },
+        policy_kwargs={"arch_params": {"critic": {"use_twin_critics": True}}},
         n_steps=64,
         n_epochs=2,
         value_scale_max_rel_step=0.1,  # Required parameter
@@ -376,8 +345,12 @@ def test_07_twin_critics_with_upgd():
     )
 
     # Verify Twin Critics is active
-    assert getattr(model.policy, '_use_twin_critics', False) is True, "Twin critics should be enabled"
-    assert (model.policy.dist_head_2 is not None) or (model.policy.quantile_head_2 is not None), "Second critic head should exist"
+    assert (
+        getattr(model.policy, "_use_twin_critics", False) is True
+    ), "Twin critics should be enabled"
+    assert (model.policy.dist_head_2 is not None) or (
+        model.policy.quantile_head_2 is not None
+    ), "Second critic head should exist"
 
     # Train
     model.learn(total_timesteps=256)
@@ -406,13 +379,7 @@ def test_08_full_integration():
         env,
         optimizer_class="adaptive_upgd",
         optimizer_kwargs={"lr": 3e-4, "sigma": 0.01, "beta_utility": 0.999},
-        policy_kwargs={
-            'arch_params': {
-                'critic': {
-                    'use_twin_critics': True
-                }
-            }
-        },
+        policy_kwargs={"arch_params": {"critic": {"use_twin_critics": True}}},
         variance_gradient_scaling=True,
         vgs_alpha=0.15,
         vgs_warmup_steps=30,
@@ -454,12 +421,13 @@ def test_08_full_integration():
 # Main Test Runner
 # ===========================================================================
 
+
 def main():
     """Run all tests and report results."""
-    print("="*70)
+    print("=" * 70)
     print("UPGD + PBT + Twin Critics + VGS")
     print("Standalone Integration Test Suite")
-    print("="*70)
+    print("=" * 70)
     print()
 
     # Check dependencies
@@ -485,9 +453,9 @@ def main():
         results.append((test_name, success))
 
     # Print summary
-    print("="*70)
+    print("=" * 70)
     print("TEST SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     passed = sum(1 for _, success in results if success)
     failed = sum(1 for _, success in results if not success)
@@ -501,7 +469,7 @@ def main():
     print(f"Total: {total} tests")
     print(f"Passed: {passed}")
     print(f"Failed: {failed}")
-    print("="*70)
+    print("=" * 70)
 
     if failed == 0:
         print()

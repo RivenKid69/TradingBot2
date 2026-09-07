@@ -20,10 +20,12 @@ def test_core_config_has_4h_profiles():
 
     # Ищем определение enum ExecutionProfile
     # и проверяем что там есть 4H профили
-    assert 'MKT_OPEN_NEXT_4H = "MKT_OPEN_NEXT_4H"' in content, \
-        "core_config.py должен содержать MKT_OPEN_NEXT_4H в ExecutionProfile enum!"
-    assert 'VWAP_CURRENT_4H = "VWAP_CURRENT_4H"' in content, \
-        "core_config.py должен содержать VWAP_CURRENT_4H в ExecutionProfile enum!"
+    assert (
+        'MKT_OPEN_NEXT_4H = "MKT_OPEN_NEXT_4H"' in content
+    ), "core_config.py должен содержать MKT_OPEN_NEXT_4H в ExecutionProfile enum!"
+    assert (
+        'VWAP_CURRENT_4H = "VWAP_CURRENT_4H"' in content
+    ), "core_config.py должен содержать VWAP_CURRENT_4H в ExecutionProfile enum!"
 
     print("  ✓ ExecutionProfile enum содержит 4H профили")
 
@@ -50,8 +52,9 @@ def test_yaml_configs_use_4h_profiles():
 
         execution_profile = data.get("execution_profile")
 
-        assert execution_profile == expected_profile, \
-            f"{config_path}: execution_profile должен быть {expected_profile}, а не {execution_profile}"
+        assert (
+            execution_profile == expected_profile
+        ), f"{config_path}: execution_profile должен быть {expected_profile}, а не {execution_profile}"
         print(f"  ✓ {config_path}: execution_profile = {execution_profile}")
 
 
@@ -70,24 +73,27 @@ def test_timing_yaml_has_4h_profiles():
     profiles = data.get("profiles", {})
 
     # Должны быть определены 4H профили
-    assert "MKT_OPEN_NEXT_4H" in profiles, \
-        "timing.yaml должен содержать профиль MKT_OPEN_NEXT_4H"
+    assert "MKT_OPEN_NEXT_4H" in profiles, "timing.yaml должен содержать профиль MKT_OPEN_NEXT_4H"
 
     # Проверяем значения для 4H профиля
     mkt_open_4h = profiles["MKT_OPEN_NEXT_4H"]
-    assert mkt_open_4h.get("decision_mode") == "CLOSE_TO_OPEN", \
-        "MKT_OPEN_NEXT_4H должен иметь decision_mode = CLOSE_TO_OPEN"
-    assert mkt_open_4h.get("decision_delay_ms") == 8000, \
-        f"MKT_OPEN_NEXT_4H должен иметь decision_delay_ms = 8000 для 4h, а не {mkt_open_4h.get('decision_delay_ms')}"
+    assert (
+        mkt_open_4h.get("decision_mode") == "CLOSE_TO_OPEN"
+    ), "MKT_OPEN_NEXT_4H должен иметь decision_mode = CLOSE_TO_OPEN"
+    assert (
+        mkt_open_4h.get("decision_delay_ms") == 8000
+    ), f"MKT_OPEN_NEXT_4H должен иметь decision_delay_ms = 8000 для 4h, а не {mkt_open_4h.get('decision_delay_ms')}"
 
     print(f"  ✓ timing.yaml содержит MKT_OPEN_NEXT_4H профиль")
 
     # Проверяем дефолтные значения
     defaults = data.get("defaults", {})
-    assert defaults.get("timeframe_ms") == 14400000, \
-        f"defaults.timeframe_ms должен быть 14400000 (4h), а не {defaults.get('timeframe_ms')}"
-    assert defaults.get("close_lag_ms") == 8000, \
-        f"defaults.close_lag_ms должен быть 8000 для 4h, а не {defaults.get('close_lag_ms')}"
+    assert (
+        defaults.get("timeframe_ms") == 14400000
+    ), f"defaults.timeframe_ms должен быть 14400000 (4h), а не {defaults.get('timeframe_ms')}"
+    assert (
+        defaults.get("close_lag_ms") == 8000
+    ), f"defaults.close_lag_ms должен быть 8000 для 4h, а не {defaults.get('close_lag_ms')}"
 
     print(f"  ✓ timing.yaml имеет правильные дефолтные значения для 4h")
 

@@ -9,6 +9,7 @@ Root cause: When global_max_util = 0, division produces Inf, leading to NaN para
 
 import pytest
 import sys
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers.upgd import UPGD

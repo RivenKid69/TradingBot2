@@ -262,7 +262,10 @@ class MultiRegionService:
             endpoint=f"https://{self.config.primary_region.value}.api.platform.com",
             is_primary=True,
             data_residency=self._get_data_residency(self.config.primary_region),
-            availability_zones=[f"{self.config.primary_region.value}-a", f"{self.config.primary_region.value}-b"],
+            availability_zones=[
+                f"{self.config.primary_region.value}-a",
+                f"{self.config.primary_region.value}-b",
+            ],
         )
 
         # Initialize secondary regions
@@ -517,9 +520,11 @@ class MultiRegionService:
             if plan.source_region == region and plan.auto_failover:
                 # Check if we've had enough unhealthy checks
                 recent_events = [
-                    e for e in self._failover_events
+                    e
+                    for e in self._failover_events
                     if e.source_region == region
-                    and e.initiated_at > datetime.utcnow() - timedelta(minutes=plan.cooldown_minutes)
+                    and e.initiated_at
+                    > datetime.utcnow() - timedelta(minutes=plan.cooldown_minutes)
                 ]
                 if not recent_events:
                     # Trigger auto-failover
@@ -592,9 +597,7 @@ class MultiRegionService:
 
     def get_status_summary(self) -> dict[str, Any]:
         """Get overall multi-region status summary."""
-        healthy_regions = sum(
-            1 for h in self._health_status.values() if h.is_healthy
-        )
+        healthy_regions = sum(1 for h in self._health_status.values() if h.is_healthy)
         total_regions = len(self._region_configs)
 
         primary = next(
@@ -609,10 +612,13 @@ class MultiRegionService:
             "degraded_regions": total_regions - healthy_regions,
             "replication_count": len(self._replication_status),
             "active_failover_plans": len(self._failover_plans),
-            "recent_failovers": len([
-                e for e in self._failover_events
-                if e.initiated_at > datetime.utcnow() - timedelta(hours=24)
-            ]),
+            "recent_failovers": len(
+                [
+                    e
+                    for e in self._failover_events
+                    if e.initiated_at > datetime.utcnow() - timedelta(hours=24)
+                ]
+            ),
             "auto_failover_enabled": self.config.auto_failover_enabled,
             "eu_data_residency": self.config.eu_data_residency,
         }

@@ -39,19 +39,20 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 # SLA targets
-DSAR_SLA_DAYS: Final[int] = 30          # GDPR standard response time
+DSAR_SLA_DAYS: Final[int] = 30  # GDPR standard response time
 DSAR_SLA_EXTENDED_DAYS: Final[int] = 90  # With extension
 BREAK_GLASS_MAX_DURATION_HOURS: Final[int] = 24
-RESIDENCY_DRIFT_TARGET: Final[int] = 0   # Must be zero
+RESIDENCY_DRIFT_TARGET: Final[int] = 0  # Must be zero
 
 # Alert thresholds
-DSAR_WARNING_THRESHOLD: Final[float] = 0.8   # 80% of SLA
+DSAR_WARNING_THRESHOLD: Final[float] = 0.8  # 80% of SLA
 PURGE_FAILURE_ALERT_THRESHOLD: Final[int] = 3  # Consecutive failures
-BREAK_GLASS_ALERT_THRESHOLD: Final[int] = 5    # Per day
+BREAK_GLASS_ALERT_THRESHOLD: Final[int] = 5  # Per day
 
 
 class MetricType(str, Enum):
     """Type of compliance metric."""
+
     DSAR = "dsar"
     PURGE = "purge"
     BREAK_GLASS = "break_glass"
@@ -64,6 +65,7 @@ class MetricType(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -72,6 +74,7 @@ class AlertSeverity(str, Enum):
 
 class AlertStatus(str, Enum):
     """Alert status."""
+
     OPEN = "open"
     ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
@@ -80,6 +83,7 @@ class AlertStatus(str, Enum):
 
 class ComplianceStatus(str, Enum):
     """Overall compliance status."""
+
     COMPLIANT = "compliant"
     AT_RISK = "at_risk"
     NON_COMPLIANT = "non_compliant"
@@ -90,10 +94,14 @@ class ComplianceStatus(str, Enum):
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class DSARMetrics:
     """DSAR compliance metrics."""
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30))
+
+    period_start: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+    )
     period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Volume
@@ -165,7 +173,10 @@ class DSARMetrics:
 @dataclass
 class PurgeMetrics:
     """Auto-purge compliance metrics."""
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30))
+
+    period_start: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+    )
     period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Volume
@@ -224,10 +235,10 @@ class PurgeMetrics:
                 "anonymized": self.total_records_anonymized,
                 "aggregated": self.total_records_aggregated,
                 "total_processed": (
-                    self.total_records_deleted +
-                    self.total_records_archived +
-                    self.total_records_anonymized +
-                    self.total_records_aggregated
+                    self.total_records_deleted
+                    + self.total_records_archived
+                    + self.total_records_anonymized
+                    + self.total_records_aggregated
                 ),
                 "bytes_freed": self.total_bytes_freed,
             },
@@ -251,7 +262,10 @@ class PurgeMetrics:
 @dataclass
 class BreakGlassMetrics:
     """Break-glass usage metrics."""
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30))
+
+    period_start: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+    )
     period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Requests
@@ -324,6 +338,7 @@ class BreakGlassMetrics:
 @dataclass
 class ResidencyMetrics:
     """Data residency compliance metrics."""
+
     check_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Drift status (must be zero for compliance)
@@ -387,7 +402,9 @@ class ResidencyMetrics:
                 "review_due": self.subprocessor_review_due,
             },
             "health": {
-                "last_check": self.last_drift_check_at.isoformat() if self.last_drift_check_at else None,
+                "last_check": (
+                    self.last_drift_check_at.isoformat() if self.last_drift_check_at else None
+                ),
                 "last_result": self.last_drift_check_result,
                 "consecutive_passes": self.consecutive_passes,
                 "consecutive_failures": self.consecutive_failures,
@@ -398,6 +415,7 @@ class ResidencyMetrics:
 @dataclass
 class InventoryMetrics:
     """Data inventory compliance metrics."""
+
     check_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Entries
@@ -451,10 +469,10 @@ class InventoryMetrics:
                 "missing_retention": self.missing_retention,
                 "missing_residency": self.missing_residency,
                 "total_issues": (
-                    self.missing_purpose +
-                    self.missing_lawful_basis +
-                    self.missing_retention +
-                    self.missing_residency
+                    self.missing_purpose
+                    + self.missing_lawful_basis
+                    + self.missing_retention
+                    + self.missing_residency
                 ),
             },
             "detection": {
@@ -477,6 +495,7 @@ class InventoryMetrics:
 @dataclass
 class ComplianceAlert:
     """A compliance alert."""
+
     alert_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metric_type: MetricType = MetricType.DSAR
@@ -514,6 +533,7 @@ class ComplianceAlert:
 @dataclass
 class ComplianceDashboard:
     """Comprehensive compliance dashboard."""
+
     dashboard_id: str = field(default_factory=lambda: str(uuid4()))
     generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     workspace_id: Optional[str] = None
@@ -550,12 +570,15 @@ class ComplianceDashboard:
 
     def _compute_hash(self) -> str:
         """Compute integrity hash."""
-        content = json.dumps({
-            "dashboard_id": self.dashboard_id,
-            "generated_at": self.generated_at.isoformat(),
-            "overall_status": self.overall_status.value,
-            "overall_score": self.overall_score,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "dashboard_id": self.dashboard_id,
+                "generated_at": self.generated_at.isoformat(),
+                "overall_status": self.overall_status.value,
+                "overall_score": self.overall_score,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -577,7 +600,9 @@ class ComplianceDashboard:
             "metrics": {
                 "dsar": self.dsar_metrics.to_dict() if self.dsar_metrics else None,
                 "purge": self.purge_metrics.to_dict() if self.purge_metrics else None,
-                "break_glass": self.break_glass_metrics.to_dict() if self.break_glass_metrics else None,
+                "break_glass": (
+                    self.break_glass_metrics.to_dict() if self.break_glass_metrics else None
+                ),
                 "residency": self.residency_metrics.to_dict() if self.residency_metrics else None,
                 "inventory": self.inventory_metrics.to_dict() if self.inventory_metrics else None,
             },
@@ -593,6 +618,7 @@ class ComplianceDashboard:
 # ============================================================================
 # Compliance Dashboard Service
 # ============================================================================
+
 
 class ComplianceDashboardService:
     """
@@ -711,17 +737,19 @@ class ComplianceDashboardService:
         # Calculate scores
         dashboard.dsar_score = self._calculate_dsar_score(dashboard.dsar_metrics)
         dashboard.purge_score = self._calculate_purge_score(dashboard.purge_metrics)
-        dashboard.break_glass_score = self._calculate_break_glass_score(dashboard.break_glass_metrics)
+        dashboard.break_glass_score = self._calculate_break_glass_score(
+            dashboard.break_glass_metrics
+        )
         dashboard.residency_score = self._calculate_residency_score(dashboard.residency_metrics)
         dashboard.inventory_score = self._calculate_inventory_score(dashboard.inventory_metrics)
 
         # Overall score (weighted average)
         dashboard.overall_score = (
-            dashboard.dsar_score * 0.25 +
-            dashboard.purge_score * 0.15 +
-            dashboard.break_glass_score * 0.10 +
-            dashboard.residency_score * 0.30 +  # Residency is critical
-            dashboard.inventory_score * 0.20
+            dashboard.dsar_score * 0.25
+            + dashboard.purge_score * 0.15
+            + dashboard.break_glass_score * 0.10
+            + dashboard.residency_score * 0.30  # Residency is critical
+            + dashboard.inventory_score * 0.20
         )
 
         # Determine overall status
@@ -759,30 +787,32 @@ class ComplianceDashboardService:
             period_end=period_end,
         )
 
-        if self._dsar and hasattr(self._dsar, 'get_metrics'):
+        if self._dsar and hasattr(self._dsar, "get_metrics"):
             try:
                 dsar_data = self._dsar.get_metrics(
                     workspace_id=workspace_id,
                     days=(period_end - period_start).days,
                 )
-                metrics.total_requests = dsar_data.get('total_requests', 0)
-                metrics.pending_requests = dsar_data.get('pending_count', 0)
-                metrics.completed_requests = dsar_data.get('total_requests', 0) - dsar_data.get('pending_count', 0)
-                metrics.overdue_requests = dsar_data.get('overdue_count', 0)
-                metrics.avg_completion_days = dsar_data.get('avg_completion_days', 0)
-                metrics.on_time_rate = dsar_data.get('on_time_rate', 0)
+                metrics.total_requests = dsar_data.get("total_requests", 0)
+                metrics.pending_requests = dsar_data.get("pending_count", 0)
+                metrics.completed_requests = dsar_data.get("total_requests", 0) - dsar_data.get(
+                    "pending_count", 0
+                )
+                metrics.overdue_requests = dsar_data.get("overdue_count", 0)
+                metrics.avg_completion_days = dsar_data.get("avg_completion_days", 0)
+                metrics.on_time_rate = dsar_data.get("on_time_rate", 0)
 
                 # By type
-                by_type = dsar_data.get('by_type', {})
-                metrics.access_requests = by_type.get('access', 0)
-                metrics.portability_requests = by_type.get('portability', 0)
-                metrics.erasure_requests = by_type.get('erasure', 0)
-                metrics.rectification_requests = by_type.get('rectification', 0)
-                metrics.restriction_requests = by_type.get('restriction', 0)
+                by_type = dsar_data.get("by_type", {})
+                metrics.access_requests = by_type.get("access", 0)
+                metrics.portability_requests = by_type.get("portability", 0)
+                metrics.erasure_requests = by_type.get("erasure", 0)
+                metrics.rectification_requests = by_type.get("rectification", 0)
+                metrics.restriction_requests = by_type.get("restriction", 0)
 
                 # Processing
-                metrics.total_records_exported = dsar_data.get('total_records_processed', 0)
-                metrics.total_records_deleted = dsar_data.get('total_records_deleted', 0)
+                metrics.total_records_exported = dsar_data.get("total_records_processed", 0)
+                metrics.total_records_deleted = dsar_data.get("total_records_deleted", 0)
             except Exception as e:
                 logger.warning(f"Could not get DSAR metrics: {e}")
 
@@ -806,31 +836,31 @@ class ComplianceDashboardService:
             period_end=period_end,
         )
 
-        if self._purge and hasattr(self._purge, 'get_purge_statistics'):
+        if self._purge and hasattr(self._purge, "get_purge_statistics"):
             try:
                 purge_data = self._purge.get_purge_statistics(
                     workspace_id=workspace_id,
                     days=(period_end - period_start).days,
                 )
-                metrics.total_purge_runs = purge_data.get('total_runs', 0)
-                metrics.successful_runs = purge_data.get('successful_runs', 0)
-                metrics.failed_runs = purge_data.get('failed_runs', 0)
-                metrics.skipped_runs = purge_data.get('skipped_runs', 0)
+                metrics.total_purge_runs = purge_data.get("total_runs", 0)
+                metrics.successful_runs = purge_data.get("successful_runs", 0)
+                metrics.failed_runs = purge_data.get("failed_runs", 0)
+                metrics.skipped_runs = purge_data.get("skipped_runs", 0)
 
-                metrics.total_records_deleted = purge_data.get('total_records_deleted', 0)
-                metrics.total_records_archived = purge_data.get('total_records_archived', 0)
-                metrics.total_records_anonymized = purge_data.get('total_records_anonymized', 0)
-                metrics.total_records_aggregated = purge_data.get('total_records_aggregated', 0)
+                metrics.total_records_deleted = purge_data.get("total_records_deleted", 0)
+                metrics.total_records_archived = purge_data.get("total_records_archived", 0)
+                metrics.total_records_anonymized = purge_data.get("total_records_anonymized", 0)
+                metrics.total_records_aggregated = purge_data.get("total_records_aggregated", 0)
 
-                metrics.blocked_by_legal_hold = purge_data.get('blocked_by_legal_hold', 0)
-                metrics.avg_duration_seconds = purge_data.get('average_duration_seconds', 0)
+                metrics.blocked_by_legal_hold = purge_data.get("blocked_by_legal_hold", 0)
+                metrics.avg_duration_seconds = purge_data.get("average_duration_seconds", 0)
 
-                metrics.by_data_type = purge_data.get('by_data_type', {})
+                metrics.by_data_type = purge_data.get("by_data_type", {})
             except Exception as e:
                 logger.warning(f"Could not get purge metrics: {e}")
 
         # Get legal hold count
-        if self._legal_hold and hasattr(self._legal_hold, 'get_all_active_holds'):
+        if self._legal_hold and hasattr(self._legal_hold, "get_all_active_holds"):
             try:
                 holds = self._legal_hold.get_all_active_holds()
                 metrics.active_legal_holds = len(holds)
@@ -857,28 +887,28 @@ class ComplianceDashboardService:
             period_end=period_end,
         )
 
-        if self._break_glass and hasattr(self._break_glass, 'get_statistics'):
+        if self._break_glass and hasattr(self._break_glass, "get_statistics"):
             try:
                 bg_data = self._break_glass.get_statistics(
                     workspace_id=workspace_id,
                     days=(period_end - period_start).days,
                 )
-                metrics.total_requests = bg_data.get('total_requests', 0)
-                metrics.approved_requests = bg_data.get('approved_requests', 0)
-                metrics.denied_requests = bg_data.get('denied_requests', 0)
-                metrics.expired_requests = bg_data.get('expired_requests', 0)
-                metrics.revoked_requests = bg_data.get('revoked_requests', 0)
-                metrics.pending_requests = bg_data.get('pending_requests', 0)
+                metrics.total_requests = bg_data.get("total_requests", 0)
+                metrics.approved_requests = bg_data.get("approved_requests", 0)
+                metrics.denied_requests = bg_data.get("denied_requests", 0)
+                metrics.expired_requests = bg_data.get("expired_requests", 0)
+                metrics.revoked_requests = bg_data.get("revoked_requests", 0)
+                metrics.pending_requests = bg_data.get("pending_requests", 0)
 
-                metrics.total_access_events = bg_data.get('total_access_events', 0)
-                metrics.unique_principals = bg_data.get('unique_principals', 0)
-                metrics.unique_resources = bg_data.get('unique_resources', 0)
+                metrics.total_access_events = bg_data.get("total_access_events", 0)
+                metrics.unique_principals = bg_data.get("unique_principals", 0)
+                metrics.unique_resources = bg_data.get("unique_resources", 0)
 
-                metrics.by_scope = bg_data.get('by_scope', {})
-                metrics.by_reason = bg_data.get('by_reason', {})
+                metrics.by_scope = bg_data.get("by_scope", {})
+                metrics.by_reason = bg_data.get("by_reason", {})
 
-                metrics.avg_duration_hours = bg_data.get('avg_duration_hours', 0)
-                metrics.max_duration_hours = bg_data.get('max_duration_hours', 0)
+                metrics.avg_duration_hours = bg_data.get("avg_duration_hours", 0)
+                metrics.max_duration_hours = bg_data.get("max_duration_hours", 0)
 
                 # Calculate daily rates
                 days = (period_end - period_start).days or 1
@@ -902,24 +932,24 @@ class ComplianceDashboardService:
         if self._residency:
             try:
                 # Run drift check
-                if hasattr(self._residency, 'run_drift_check'):
+                if hasattr(self._residency, "run_drift_check"):
                     result = self._residency.run_drift_check()
-                    if hasattr(result, 'to_dict'):
+                    if hasattr(result, "to_dict"):
                         result = result.to_dict() if callable(result.to_dict) else result
 
-                    metrics.drift_count = len(result.get('violations', []))
-                    metrics.drift_violations = result.get('violations', [])[:10]
-                    metrics.total_endpoints_checked = len(result.get('checks', []))
+                    metrics.drift_count = len(result.get("violations", []))
+                    metrics.drift_violations = result.get("violations", [])[:10]
+                    metrics.total_endpoints_checked = len(result.get("checks", []))
 
                     # Count by compliance
-                    for check in result.get('checks', []):
-                        if check.get('eu_compliant'):
+                    for check in result.get("checks", []):
+                        if check.get("eu_compliant"):
                             metrics.eu_compliant_endpoints += 1
                         else:
                             metrics.non_eu_endpoints += 1
 
                     metrics.last_drift_check_at = datetime.now(timezone.utc)
-                    metrics.last_drift_check_result = result.get('status', 'unknown')
+                    metrics.last_drift_check_result = result.get("status", "unknown")
 
                     if metrics.drift_count == 0:
                         metrics.consecutive_passes += 1
@@ -941,37 +971,39 @@ class ComplianceDashboardService:
 
         if self._inventory:
             try:
-                if hasattr(self._inventory, 'generate_report'):
+                if hasattr(self._inventory, "generate_report"):
                     report = self._inventory.generate_report()
-                    if hasattr(report, 'to_dict'):
+                    if hasattr(report, "to_dict"):
                         data = report.to_dict()
                     else:
                         data = report
 
-                    metrics.total_entries = data.get('summary', {}).get('total_entries', 0)
-                    metrics.compliant_entries = data.get('summary', {}).get('compliant_entries', 0)
-                    metrics.non_compliant_entries = data.get('summary', {}).get('non_compliant_entries', 0)
+                    metrics.total_entries = data.get("summary", {}).get("total_entries", 0)
+                    metrics.compliant_entries = data.get("summary", {}).get("compliant_entries", 0)
+                    metrics.non_compliant_entries = data.get("summary", {}).get(
+                        "non_compliant_entries", 0
+                    )
 
-                    review = data.get('review', {})
-                    metrics.pending_review = review.get('pending_review', 0)
-                    metrics.requires_dpia = review.get('requires_dpia', 0)
+                    review = data.get("review", {})
+                    metrics.pending_review = review.get("pending_review", 0)
+                    metrics.requires_dpia = review.get("requires_dpia", 0)
 
-                    issues = data.get('issues', {})
-                    metrics.missing_purpose = issues.get('missing_purpose', 0)
-                    metrics.missing_lawful_basis = issues.get('missing_lawful_basis', 0)
-                    metrics.missing_retention = issues.get('missing_retention', 0)
+                    issues = data.get("issues", {})
+                    metrics.missing_purpose = issues.get("missing_purpose", 0)
+                    metrics.missing_lawful_basis = issues.get("missing_lawful_basis", 0)
+                    metrics.missing_retention = issues.get("missing_retention", 0)
 
-                    detection = data.get('auto_detection', {})
-                    metrics.pii_detected = detection.get('pii_detected', 0)
-                    metrics.credentials_detected = detection.get('credentials_detected', 0)
-                    metrics.order_fields_detected = detection.get('order_fields_detected', 0)
+                    detection = data.get("auto_detection", {})
+                    metrics.pii_detected = detection.get("pii_detected", 0)
+                    metrics.credentials_detected = detection.get("credentials_detected", 0)
+                    metrics.order_fields_detected = detection.get("order_fields_detected", 0)
 
-                elif hasattr(self._inventory, 'get_stats'):
+                elif hasattr(self._inventory, "get_stats"):
                     stats = self._inventory.get_stats()
-                    metrics.total_entries = stats.get('total_entries', 0)
-                    metrics.compliant_entries = stats.get('compliant_entries', 0)
-                    metrics.non_compliant_entries = stats.get('non_compliant_entries', 0)
-                    metrics.pending_review = stats.get('pending_review', 0)
+                    metrics.total_entries = stats.get("total_entries", 0)
+                    metrics.compliant_entries = stats.get("compliant_entries", 0)
+                    metrics.non_compliant_entries = stats.get("non_compliant_entries", 0)
+                    metrics.pending_review = stats.get("pending_review", 0)
             except Exception as e:
                 logger.warning(f"Could not get inventory metrics: {e}")
 
@@ -1034,7 +1066,9 @@ class ComplianceDashboardService:
 
         # Penalize exceeded duration
         if metrics.max_duration_hours > BREAK_GLASS_MAX_DURATION_HOURS:
-            excess = (metrics.max_duration_hours - BREAK_GLASS_MAX_DURATION_HOURS) / BREAK_GLASS_MAX_DURATION_HOURS
+            excess = (
+                metrics.max_duration_hours - BREAK_GLASS_MAX_DURATION_HOURS
+            ) / BREAK_GLASS_MAX_DURATION_HOURS
             score -= min(20, excess * 20)
 
         return max(0.0, min(100.0, score))
@@ -1076,9 +1110,7 @@ class ComplianceDashboardService:
 
         # Penalize missing fields
         total_issues = (
-            metrics.missing_purpose +
-            metrics.missing_lawful_basis +
-            metrics.missing_retention
+            metrics.missing_purpose + metrics.missing_lawful_basis + metrics.missing_retention
         )
         if total_issues > 0:
             score -= min(30, total_issues * 5)
@@ -1196,7 +1228,10 @@ class ComplianceDashboardService:
                 severity=AlertSeverity.CRITICAL,
                 title="Data Residency Drift Detected",
                 message=f"{metrics.drift_count} endpoint(s) detected outside EU region",
-                details={"drift_count": metrics.drift_count, "violations": metrics.drift_violations[:5]},
+                details={
+                    "drift_count": metrics.drift_count,
+                    "violations": metrics.drift_violations[:5],
+                },
                 workspace_id=workspace_id,
             )
 
@@ -1233,9 +1268,9 @@ class ComplianceDashboardService:
             # Check for duplicate
             for existing in self._alerts:
                 if (
-                    existing.title == alert.title and
-                    existing.workspace_id == alert.workspace_id and
-                    existing.status == AlertStatus.OPEN
+                    existing.title == alert.title
+                    and existing.workspace_id == alert.workspace_id
+                    and existing.status == AlertStatus.OPEN
                 ):
                     return existing
 

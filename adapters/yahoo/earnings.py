@@ -128,7 +128,7 @@ class YahooEarningsAdapter(EarningsAdapter):
 
             for idx, row in earnings_df.iterrows():
                 # Handle both datetime and Timestamp indices
-                if hasattr(idx, 'strftime'):
+                if hasattr(idx, "strftime"):
                     report_date = idx.strftime("%Y-%m-%d")
                 else:
                     report_date = str(idx)[:10]
@@ -145,18 +145,11 @@ class YahooEarningsAdapter(EarningsAdapter):
                 surprise_pct = None
 
                 # Column names vary between yfinance versions
-                estimate_col = next(
-                    (c for c in row.index if 'estimate' in c.lower()),
-                    None
-                )
+                estimate_col = next((c for c in row.index if "estimate" in c.lower()), None)
                 actual_col = next(
-                    (c for c in row.index if 'reported' in c.lower() or 'actual' in c.lower()),
-                    None
+                    (c for c in row.index if "reported" in c.lower() or "actual" in c.lower()), None
                 )
-                surprise_col = next(
-                    (c for c in row.index if 'surprise' in c.lower()),
-                    None
-                )
+                surprise_col = next((c for c in row.index if "surprise" in c.lower()), None)
 
                 if estimate_col is not None:
                     val = row.get(estimate_col)
@@ -296,7 +289,7 @@ class YahooEarningsAdapter(EarningsAdapter):
             if quarterly is not None and not quarterly.empty:
                 for idx, row in quarterly.iterrows():
                     # Index is typically the quarter end date
-                    if hasattr(idx, 'strftime'):
+                    if hasattr(idx, "strftime"):
                         report_date = idx.strftime("%Y-%m-%d")
                     else:
                         report_date = str(idx)[:10]
@@ -305,13 +298,13 @@ class YahooEarningsAdapter(EarningsAdapter):
                     revenue = None
                     earnings = None
 
-                    if 'Revenue' in row.index:
-                        val = row['Revenue']
+                    if "Revenue" in row.index:
+                        val = row["Revenue"]
                         if val is not None and not (isinstance(val, float) and val != val):
                             revenue = Decimal(str(int(val)))
 
-                    if 'Earnings' in row.index:
-                        val = row['Earnings']
+                    if "Earnings" in row.index:
+                        val = row["Earnings"]
                         if val is not None and not (isinstance(val, float) and val != val):
                             earnings = Decimal(str(round(float(val), 2)))
 
@@ -372,12 +365,12 @@ class YahooEarningsAdapter(EarningsAdapter):
 
         try:
             # Get historical earnings
-            start_date = (
-                datetime.fromisoformat(as_of_date) - timedelta(days=365)
-            ).strftime("%Y-%m-%d")
-            end_date = (
-                datetime.fromisoformat(as_of_date) + timedelta(days=90)
-            ).strftime("%Y-%m-%d")
+            start_date = (datetime.fromisoformat(as_of_date) - timedelta(days=365)).strftime(
+                "%Y-%m-%d"
+            )
+            end_date = (datetime.fromisoformat(as_of_date) + timedelta(days=90)).strftime(
+                "%Y-%m-%d"
+            )
 
             earnings = self.get_earnings_history(
                 symbol,
@@ -392,12 +385,10 @@ class YahooEarningsAdapter(EarningsAdapter):
 
             # Split into past and future
             past_earnings = [
-                e for e in earnings
-                if datetime.fromisoformat(e.report_date) <= as_of_dt
+                e for e in earnings if datetime.fromisoformat(e.report_date) <= as_of_dt
             ]
             future_earnings = [
-                e for e in earnings
-                if datetime.fromisoformat(e.report_date) > as_of_dt
+                e for e in earnings if datetime.fromisoformat(e.report_date) > as_of_dt
             ]
 
             # Days since last earnings

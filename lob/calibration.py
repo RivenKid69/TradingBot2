@@ -403,14 +403,16 @@ class QueueReactiveCalibrator(BaseCalibrator):
             imbalance: Book imbalance [-1, 1]
             executed_qty: Volume executed after observation
         """
-        self._state_data.append({
-            "timestamp_ns": timestamp_ns,
-            "queue_size": queue_size,
-            "spread_bps": spread_bps,
-            "volatility": volatility,
-            "imbalance": imbalance,
-            "executed_qty": executed_qty,
-        })
+        self._state_data.append(
+            {
+                "timestamp_ns": timestamp_ns,
+                "queue_size": queue_size,
+                "spread_bps": spread_bps,
+                "volatility": volatility,
+                "imbalance": imbalance,
+                "executed_qty": executed_qty,
+            }
+        )
 
     def fit(
         self,
@@ -655,7 +657,9 @@ class AdverseSelectionCalibrator(BaseCalibrator):
         # Informed traders: trades followed by consistent price moves
         # PIN = P(informed) ≈ (adverse - favorable) / total
         informed_signal = n_adverse - len(favorable_moves)
-        self._informed_fraction = max(0.05, min(0.5, informed_signal / n_total if n_total > 0 else 0.2))
+        self._informed_fraction = max(
+            0.05, min(0.5, informed_signal / n_total if n_total > 0 else 0.2)
+        )
 
         self._adverse_move_bps = avg_adverse_bps
 
@@ -882,9 +886,7 @@ class CalibrationPipeline:
         trade_side: Side,
     ) -> None:
         """Add price observation for adverse selection."""
-        self._adverse_calibrator.add_price_observation(
-            pre_trade_mid, post_trade_mid, trade_side
-        )
+        self._adverse_calibrator.add_price_observation(pre_trade_mid, post_trade_mid, trade_side)
 
     def add_fill_observation(
         self,
@@ -1001,9 +1003,11 @@ class CalibrationPipeline:
             test_scores.append(test_score)
 
         mean_test = sum(test_scores) / len(test_scores) if test_scores else 0.0
-        std_test = math.sqrt(
-            sum((s - mean_test) ** 2 for s in test_scores) / len(test_scores)
-        ) if test_scores else 0.0
+        std_test = (
+            math.sqrt(sum((s - mean_test) ** 2 for s in test_scores) / len(test_scores))
+            if test_scores
+            else 0.0
+        )
 
         return CrossValidationResult(
             n_folds=n_folds,
@@ -1051,7 +1055,9 @@ class CalibrationPipeline:
             )
 
             # Use actual time in queue if available, otherwise average
-            time_horizon = trade.time_in_queue_sec if trade.time_in_queue_sec is not None else avg_time_horizon
+            time_horizon = (
+                trade.time_in_queue_sec if trade.time_in_queue_sec is not None else avg_time_horizon
+            )
 
             # Predict fill probability
             result = model.compute_fill_probability(

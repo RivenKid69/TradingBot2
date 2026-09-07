@@ -75,8 +75,10 @@ SAFETY_COMMANDS: Set[str] = {
 # Command Record
 # ============================================================================
 
+
 class LocalCommandStatus(str, Enum):
     """Local command processing status."""
+
     RECEIVED = "RECEIVED"
     AWAITING_APPROVAL = "AWAITING_APPROVAL"
     APPROVED = "APPROVED"
@@ -90,6 +92,7 @@ class LocalCommandStatus(str, Enum):
 @dataclass
 class LocalCommandRecord:
     """Local record of a received command."""
+
     command_id: str
     idempotency_key: str
     command_type: str
@@ -108,6 +111,7 @@ class LocalCommandRecord:
 # ============================================================================
 # Command Filter
 # ============================================================================
+
 
 class CommandFilter:
     """
@@ -170,9 +174,17 @@ class CommandFilter:
         CRITICAL: Prevents injection of order payloads.
         """
         prohibited_fields = {
-            "side", "quantity", "qty", "price", "order_type",
-            "target_position", "execute_order", "place_order",
-            "submit_order", "intent", "signal"
+            "side",
+            "quantity",
+            "qty",
+            "price",
+            "order_type",
+            "target_position",
+            "execute_order",
+            "place_order",
+            "submit_order",
+            "intent",
+            "signal",
         }
 
         def check_recursive(obj: Any, path: str = "") -> Optional[str]:
@@ -262,7 +274,9 @@ class CommandHandler:
             if idempotency_key and idempotency_key in self._idempotency_keys:
                 existing_id = self._idempotency_keys[idempotency_key]
                 if existing_id in self._commands:
-                    logger.info(f"Returning existing command for idempotency key: {idempotency_key[:16]}...")
+                    logger.info(
+                        f"Returning existing command for idempotency key: {idempotency_key[:16]}..."
+                    )
                     return self._commands[existing_id]
 
             # Create record
@@ -289,7 +303,7 @@ class CommandHandler:
                 record.status = LocalCommandStatus.AWAITING_APPROVAL
                 logger.info(
                     f"Command awaiting approval",
-                    extra={"command_id": command_id, "command_type": command_type}
+                    extra={"command_id": command_id, "command_type": command_type},
                 )
             else:
                 # Safety commands execute immediately
@@ -408,7 +422,8 @@ class CommandHandler:
         """Get commands awaiting approval."""
         with self._lock:
             return [
-                r for r in self._commands.values()
+                r
+                for r in self._commands.values()
                 if r.status == LocalCommandStatus.AWAITING_APPROVAL
             ]
 

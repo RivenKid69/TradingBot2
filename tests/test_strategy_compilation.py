@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 
 client = TestClient(api)
 
+
 def test_get_strategy_templates():
     # Test getting templates for equity
     res = client.get("/api/strategy/templates?asset=equity")
@@ -29,10 +30,11 @@ def test_get_strategy_templates():
     assert res2.status_code == 200
     assert res2.json() == {}
 
+
 def test_save_strategy_success(tmp_path, monkeypatch):
     # Ensure strategies folder exists
     os.makedirs("strategies", exist_ok=True)
-    
+
     valid_code = """# custom strategy
 from strategies.base import BaseSignalPolicy, SignalPosition
 from core_contracts import PolicyCtx
@@ -47,21 +49,22 @@ class MockTestStrategy(BaseSignalPolicy):
         "asset": "equity",
         "template_name": "Mean Reversion (Возврат к среднему)",
         "code": valid_code,
-        "params": {"lookback": 10, "enter_threshold": 1.5}
+        "params": {"lookback": 10, "enter_threshold": 1.5},
     }
-    
+
     res = client.post("/api/save_strategy", json=payload)
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "success"
     assert "MockTestStrategy" in data["message"]
-    
+
     # Check file exists on disk
     filepath = os.path.join("strategies", "custom_equity.py")
     assert os.path.exists(filepath)
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
     assert "class MockTestStrategy" in content
+
 
 def test_save_strategy_syntax_error():
     invalid_code = """# invalid syntax python code
@@ -73,28 +76,25 @@ class BrokenStrategy(BaseSignalPolicy)
         "asset": "forex",
         "template_name": "Grid Trading",
         "code": invalid_code,
-        "params": {}
+        "params": {},
     }
     res = client.post("/api/save_strategy", json=payload)
     assert res.status_code == 400
     assert "Ошибка синтаксиса" in res.json()["detail"]
+
 
 def test_save_strategy_no_decide_class():
     code_no_class = """# valid code but no Strategy class
 def helper_func():
     return 42
 """
-    payload = {
-        "asset": "crypto",
-        "template_name": "Arbitrage",
-        "code": code_no_class,
-        "params": {}
-    }
+    payload = {"asset": "crypto", "template_name": "Arbitrage", "code": code_no_class, "params": {}}
     res = client.post("/api/save_strategy", json=payload)
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "warning"
     assert "decide" in data["message"]
+
 
 def test_get_strategy():
     # Fetch strategy for equity (which was saved in test_save_strategy_success)
@@ -105,7 +105,7 @@ def test_get_strategy():
     assert "params" in data
     assert "MockTestStrategy" in data["code"]
     assert data["params"]["lookback"] == 10
-    
+
     # Fetch strategy for a new asset that doesn't exist on disk (should load fallback)
     res2 = client.get("/api/strategy?asset=options")
     assert res2.status_code == 200
@@ -113,4 +113,3 @@ def test_get_strategy():
     assert "code" in data2
     assert "params" in data2
     assert "options" in data2["code"] or "base" in data2["code"] or "Signal" in data2["code"]
-

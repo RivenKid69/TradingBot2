@@ -205,10 +205,10 @@ class TestDLPScanner:
 
         # Test variations that are in PROHIBITED_SECRET_FIELDS (lowercase)
         variations = [
-            {"API_KEY": "secret"},      # Uppercase version of api_key
-            {"Api_Key": "secret"},      # Mixed case version
-            {"APIKEY": "secret"},       # Uppercase version of apikey
-            {"PASSWORD": "secret"},     # Uppercase version of password
+            {"API_KEY": "secret"},  # Uppercase version of api_key
+            {"Api_Key": "secret"},  # Mixed case version
+            {"APIKEY": "secret"},  # Uppercase version of apikey
+            {"PASSWORD": "secret"},  # Uppercase version of password
         ]
 
         for config in variations:

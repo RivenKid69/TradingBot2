@@ -40,9 +40,15 @@ def _grp(panel: Panel, col: str):
 class FXCarry(BaseSignal):
     """Carry: дифференциал процентных ставок (готовая колонка ИЛИ rate_base − rate_quote)."""
 
-    def __init__(self, name: str = "fx_carry", *, rate_diff_col: str = "rate_diff",
-                 carry_col: str = "carry", rate_base_col: str = "rate_base",
-                 rate_quote_col: str = "rate_quote") -> None:
+    def __init__(
+        self,
+        name: str = "fx_carry",
+        *,
+        rate_diff_col: str = "rate_diff",
+        carry_col: str = "carry",
+        rate_base_col: str = "rate_base",
+        rate_quote_col: str = "rate_quote",
+    ) -> None:
         self.name = name
         self.rate_diff_col = rate_diff_col
         self.carry_col = carry_col
@@ -54,7 +60,9 @@ class FXCarry(BaseSignal):
             if col in panel.columns:
                 return panel[col].astype("float64").rename(self.name)
         if self.rate_base_col in panel.columns and self.rate_quote_col in panel.columns:
-            diff = panel[self.rate_base_col].astype("float64") - panel[self.rate_quote_col].astype("float64")
+            diff = panel[self.rate_base_col].astype("float64") - panel[self.rate_quote_col].astype(
+                "float64"
+            )
             return diff.rename(self.name)
         return _nan_series(panel, self.name)
 
@@ -62,7 +70,9 @@ class FXCarry(BaseSignal):
 class FXMomentum(BaseSignal):
     """Трендовый momentum FX-курса: price[t] / price[t-lookback] − 1."""
 
-    def __init__(self, name: str = "fx_mom", *, lookback: int = 90, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "fx_mom", *, lookback: int = 90, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.lookback = int(lookback)
         self.price_col = price_col
@@ -77,8 +87,15 @@ class FXMomentum(BaseSignal):
 class FXValue(BaseSignal):
     """Value/PPP: готовая ``ppp``/``reer_gap`` колонка (недооценка→лонг) ИЛИ прокси −long-return."""
 
-    def __init__(self, name: str = "fx_value", *, ppp_col: str = "ppp",
-                 reer_col: str = "reer_gap", lookback: int = 500, price_col: str = "close") -> None:
+    def __init__(
+        self,
+        name: str = "fx_value",
+        *,
+        ppp_col: str = "ppp",
+        reer_col: str = "reer_gap",
+        lookback: int = 500,
+        price_col: str = "close",
+    ) -> None:
         self.name = name
         self.ppp_col = ppp_col
         self.reer_col = reer_col
@@ -126,6 +143,10 @@ def build_forex_signal(kind: str, name: str, **kwargs: Any) -> BaseSignal:
 FOREX_SIGNAL_KINDS = tuple(_KINDS.keys())
 
 __all__ = [
-    "FXCarry", "FXMomentum", "FXValue", "TermsOfTrade",
-    "build_forex_signal", "FOREX_SIGNAL_KINDS",
+    "FXCarry",
+    "FXMomentum",
+    "FXValue",
+    "TermsOfTrade",
+    "build_forex_signal",
+    "FOREX_SIGNAL_KINDS",
 ]

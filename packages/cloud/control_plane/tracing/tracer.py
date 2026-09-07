@@ -64,6 +64,7 @@ PRODUCTION_SAMPLE_RATE: Final[float] = 0.1  # 10% in production
 
 class ExporterType(str, Enum):
     """Trace exporter types."""
+
     CONSOLE = "console"
     JAEGER = "jaeger"
     OTLP = "otlp"
@@ -73,6 +74,7 @@ class ExporterType(str, Enum):
 
 class SamplingStrategy(str, Enum):
     """Sampling strategies."""
+
     ALWAYS_ON = "always_on"
     ALWAYS_OFF = "always_off"
     RATIO = "ratio"
@@ -91,6 +93,7 @@ class TracingConfig:
 
     Supports multiple exporters and sampling strategies.
     """
+
     # Service identification
     service_name: str = "ccea-control-plane"
     service_version: str = SERVICE_VERSION
@@ -124,9 +127,16 @@ class TracingConfig:
 
     # Security
     redact_sensitive_attributes: bool = True
-    sensitive_attribute_patterns: List[str] = field(default_factory=lambda: [
-        "password", "secret", "token", "key", "credential", "auth",
-    ])
+    sensitive_attribute_patterns: List[str] = field(
+        default_factory=lambda: [
+            "password",
+            "secret",
+            "token",
+            "key",
+            "credential",
+            "auth",
+        ]
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -250,9 +260,7 @@ class TracingService:
         elif self.config.sampling_strategy == SamplingStrategy.RATIO:
             return TraceIdRatioBased(self.config.sample_rate)
         else:  # PARENT_BASED
-            return ParentBased(
-                root=TraceIdRatioBased(self.config.sample_rate)
-            )
+            return ParentBased(root=TraceIdRatioBased(self.config.sample_rate))
 
     def _setup_exporters(self) -> None:
         """Setup trace exporters."""
@@ -351,10 +359,12 @@ class TracingService:
     def _setup_propagators(self) -> None:
         """Setup context propagators."""
         # W3C Trace Context + Baggage
-        propagator = CompositePropagator([
-            TraceContextTextMapPropagator(),
-            W3CBaggagePropagator(),
-        ])
+        propagator = CompositePropagator(
+            [
+                TraceContextTextMapPropagator(),
+                W3CBaggagePropagator(),
+            ]
+        )
         set_global_textmap(propagator)
 
     def get_tracer(self, name: Optional[str] = None) -> Any:
@@ -435,8 +445,7 @@ class TracingService:
         for key, value in attributes.items():
             key_lower = key.lower()
             is_sensitive = any(
-                pattern in key_lower
-                for pattern in self.config.sensitive_attribute_patterns
+                pattern in key_lower for pattern in self.config.sensitive_attribute_patterns
             )
             result[key] = "[REDACTED]" if is_sensitive else value
 

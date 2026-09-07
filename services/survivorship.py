@@ -71,22 +71,24 @@ DEFAULT_CONSTITUENTS_PATH = Path("data/universe/historical_constituents.json")
 
 class DelistingReason(str, Enum):
     """Reason for stock delisting."""
-    ACQUISITION = "acquisition"      # Company acquired by another
-    MERGER = "merger"                # Merged with another company
-    BANKRUPTCY = "bankruptcy"        # Company went bankrupt
-    DELISTED = "delisted"            # Delisted for non-compliance
+
+    ACQUISITION = "acquisition"  # Company acquired by another
+    MERGER = "merger"  # Merged with another company
+    BANKRUPTCY = "bankruptcy"  # Company went bankrupt
+    DELISTED = "delisted"  # Delisted for non-compliance
     PRIVATIZATION = "privatization"  # Went private (LBO, MBO)
-    SPINOFF = "spinoff"              # Spun off into separate company
-    LIQUIDATION = "liquidation"      # Company liquidated
-    OTHER = "other"                  # Other reasons
-    UNKNOWN = "unknown"              # Reason not known
+    SPINOFF = "spinoff"  # Spun off into separate company
+    LIQUIDATION = "liquidation"  # Company liquidated
+    OTHER = "other"  # Other reasons
+    UNKNOWN = "unknown"  # Reason not known
 
 
 class IndexType(str, Enum):
     """Standard index/universe types."""
+
     SP500 = "SP500"
-    SP400 = "SP400"              # S&P MidCap 400
-    SP600 = "SP600"              # S&P SmallCap 600
+    SP400 = "SP400"  # S&P MidCap 400
+    SP600 = "SP600"  # S&P SmallCap 600
     NASDAQ100 = "NASDAQ100"
     RUSSELL1000 = "RUSSELL1000"
     RUSSELL2000 = "RUSSELL2000"
@@ -113,6 +115,7 @@ class DelistingEvent:
         last_price: Last traded price before delisting
         metadata: Additional metadata (e.g., acquirer, deal price)
     """
+
     symbol: str
     delist_date: date
     reason: DelistingReason = DelistingReason.UNKNOWN
@@ -156,6 +159,7 @@ class ConstituentChange:
         removed: Symbols removed from index
         reason: Reason for changes (e.g., rebalance, corporate action)
     """
+
     index: str
     date: date
     added: List[str] = field(default_factory=list)
@@ -607,8 +611,7 @@ class UniverseSnapshot:
         self._changes[index].sort(key=lambda c: c.date)
 
         logger.debug(
-            f"Added change for {index} on {date_}: "
-            f"+{len(change.added)} -{len(change.removed)}"
+            f"Added change for {index} on {date_}: " f"+{len(change.added)} -{len(change.removed)}"
         )
 
     def get_constituents(
@@ -635,10 +638,7 @@ class UniverseSnapshot:
         index = index.upper()
 
         if index not in self._baselines:
-            raise ValueError(
-                f"No baseline for index '{index}'. "
-                f"Call set_baseline() first."
-            )
+            raise ValueError(f"No baseline for index '{index}'. " f"Call set_baseline() first.")
 
         baseline_date, baseline_constituents = self._baselines[index]
         constituents = baseline_constituents.copy()
@@ -659,10 +659,7 @@ class UniverseSnapshot:
         else:
             # Backward from baseline: reverse changes
             # Get changes between as_of and baseline, apply in reverse
-            relevant_changes = [
-                c for c in changes
-                if as_of < c.date <= baseline_date
-            ]
+            relevant_changes = [c for c in changes if as_of < c.date <= baseline_date]
 
             for change in reversed(relevant_changes):
                 # Reverse: add back what was removed, remove what was added
@@ -746,8 +743,7 @@ class UniverseSnapshot:
                 for idx, (d, c) in self._baselines.items()
             },
             "changes": {
-                idx: [c.to_dict() for c in changes]
-                for idx, changes in self._changes.items()
+                idx: [c.to_dict() for c in changes] for idx, changes in self._changes.items()
             },
         }
 
@@ -776,9 +772,7 @@ class UniverseSnapshot:
 
         # Load changes
         for idx, changes in data.get("changes", {}).items():
-            self._changes[idx] = [
-                ConstituentChange.from_dict(c) for c in changes
-            ]
+            self._changes[idx] = [ConstituentChange.from_dict(c) for c in changes]
 
         logger.info(
             f"Loaded {len(self._baselines)} baselines, "
@@ -858,9 +852,9 @@ def filter_survivorship_bias(
                 if timestamp_column in df.columns:
                     # Filter rows after delisting date
                     ts = pd.to_numeric(df.loc[group.index, timestamp_column], errors="coerce")
-                    delist_ts = int(datetime.combine(
-                        event.delist_date, datetime.min.time()
-                    ).timestamp())
+                    delist_ts = int(
+                        datetime.combine(event.delist_date, datetime.min.time()).timestamp()
+                    )
 
                     # Mark rows after delisting as False
                     mask.loc[group.index] = ts < delist_ts
@@ -934,18 +928,18 @@ def validate_no_survivorship_bias(
             max_ts = ts.max()
 
             # Convert delisting date to timestamp
-            delist_ts = int(datetime.combine(
-                event.delist_date, datetime.min.time()
-            ).timestamp())
+            delist_ts = int(datetime.combine(event.delist_date, datetime.min.time()).timestamp())
 
             if max_ts >= delist_ts:
-                violations.append({
-                    "symbol": symbol,
-                    "violation_type": "data_after_delisting",
-                    "delist_date": event.delist_date.isoformat(),
-                    "latest_data_ts": int(max_ts),
-                    "rows_affected": int((ts >= delist_ts).sum()),
-                })
+                violations.append(
+                    {
+                        "symbol": symbol,
+                        "violation_type": "data_after_delisting",
+                        "delist_date": event.delist_date.isoformat(),
+                        "latest_data_ts": int(max_ts),
+                        "rows_affected": int((ts >= delist_ts).sum()),
+                    }
+                )
 
     if violations and raise_on_violation:
         raise ValueError(

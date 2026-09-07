@@ -41,6 +41,7 @@ class EventType(str, Enum):
 def _as_plain_dict(obj: Any) -> Dict[str, Any]:
     from decimal import Decimal
     from enum import Enum as _Enum
+
     def _conv(v: Any):
         if isinstance(v, Decimal):
             return str(v)
@@ -53,6 +54,7 @@ def _as_plain_dict(obj: Any) -> Dict[str, Any]:
         if isinstance(v, list):
             return [_conv(x) for x in v]
         return v
+
     return {k: _conv(v) for k, v in asdict(obj).items()}
 
 
@@ -62,6 +64,7 @@ class MarketEvent:
     Универсальный конверт рыночных данных.
     Ровно одно из полей bar или tick должно быть задано.
     """
+
     etype: EventType
     ts: int
     bar: Optional[Bar] = None
@@ -76,7 +79,9 @@ class MarketEvent:
         et = EventType(d["etype"]) if not isinstance(d.get("etype"), EventType) else d["etype"]
         bar = Bar.from_dict(d["bar"]) if d.get("bar") is not None else None
         tick = Tick.from_dict(d["tick"]) if d.get("tick") is not None else None
-        return MarketEvent(etype=et, ts=int(d["ts"]), bar=bar, tick=tick, meta=dict(d.get("meta", {})))
+        return MarketEvent(
+            etype=et, ts=int(d["ts"]), bar=bar, tick=tick, meta=dict(d.get("meta", {}))
+        )
 
 
 @dataclass(frozen=True)
@@ -85,6 +90,7 @@ class OrderEvent:
     Событие, описывающее подачу/отмену/отклонение ордера.
     Для ORDER_SUBMITTED поле order содержит намерение. Для ORDER_CANCELED/REJECTED — оригинальный ордер.
     """
+
     etype: EventType
     ts: int
     order: Order
@@ -97,7 +103,13 @@ class OrderEvent:
     @staticmethod
     def from_dict(d: Mapping[str, Any]) -> "OrderEvent":
         et = EventType(d["etype"]) if not isinstance(d.get("etype"), EventType) else d["etype"]
-        return OrderEvent(etype=et, ts=int(d["ts"]), order=Order.from_dict(d["order"]), reason=d.get("reason"), meta=dict(d.get("meta", {})))
+        return OrderEvent(
+            etype=et,
+            ts=int(d["ts"]),
+            order=Order.from_dict(d["order"]),
+            reason=d.get("reason"),
+            meta=dict(d.get("meta", {})),
+        )
 
 
 @dataclass(frozen=True)
@@ -105,6 +117,7 @@ class FillEvent:
     """
     Событие сделки. Для частичного/полного исполнения используйте etype: EXEC_PARTIAL/EXEC_FILLED.
     """
+
     etype: EventType
     ts: int
     exec_report: ExecReport
@@ -116,4 +129,9 @@ class FillEvent:
     @staticmethod
     def from_dict(d: Mapping[str, Any]) -> "FillEvent":
         et = EventType(d["etype"]) if not isinstance(d.get("etype"), EventType) else d["etype"]
-        return FillEvent(etype=et, ts=int(d["ts"]), exec_report=ExecReport.from_dict(d["exec_report"]), meta=dict(d.get("meta", {})))
+        return FillEvent(
+            etype=et,
+            ts=int(d["ts"]),
+            exec_report=ExecReport.from_dict(d["exec_report"]),
+            meta=dict(d.get("meta", {})),
+        )

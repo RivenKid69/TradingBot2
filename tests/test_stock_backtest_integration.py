@@ -24,6 +24,7 @@ from unittest.mock import Mock, patch
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def mock_stock_data() -> pd.DataFrame:
     """Create mock stock OHLCV data for testing."""
@@ -44,14 +45,16 @@ def mock_stock_data() -> pd.DataFrame:
     close_prices = open_prices + np.random.randn(100) * 0.2
     volumes = np.abs(np.random.randn(100) * 100000 + 500000)
 
-    df = pd.DataFrame({
-        "timestamp": dates.astype(np.int64) // 10**6,  # ms
-        "open": open_prices,
-        "high": high_prices,
-        "low": low_prices,
-        "close": close_prices,
-        "volume": volumes,
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": dates.astype(np.int64) // 10**6,  # ms
+            "open": open_prices,
+            "high": high_prices,
+            "low": low_prices,
+            "close": close_prices,
+            "volume": volumes,
+        }
+    )
 
     return df
 
@@ -74,14 +77,16 @@ def mock_crypto_data() -> pd.DataFrame:
     close_prices = open_prices + np.random.randn(168) * 20
     volumes = np.abs(np.random.randn(168) * 1000 + 5000)
 
-    df = pd.DataFrame({
-        "timestamp": dates.astype(np.int64) // 10**6,  # ms
-        "open": open_prices,
-        "high": high_prices,
-        "low": low_prices,
-        "close": close_prices,
-        "volume": volumes,
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": dates.astype(np.int64) // 10**6,  # ms
+            "open": open_prices,
+            "high": high_prices,
+            "low": low_prices,
+            "close": close_prices,
+            "volume": volumes,
+        }
+    )
 
     return df
 
@@ -150,6 +155,7 @@ def crypto_backtest_config() -> Dict[str, Any]:
 # =============================================================================
 # Test Execution Provider Integration
 # =============================================================================
+
 
 class TestExecutionProviderIntegration:
     """Test execution providers work correctly in backtest context."""
@@ -265,6 +271,7 @@ class TestExecutionProviderIntegration:
 # Test Fee Calculation During Backtest
 # =============================================================================
 
+
 class TestFeeCalculationBacktest:
     """Test fee calculation works correctly during backtest."""
 
@@ -367,6 +374,7 @@ class TestFeeCalculationBacktest:
 # Test Slippage Calculation During Backtest
 # =============================================================================
 
+
 class TestSlippageCalculationBacktest:
     """Test slippage calculation works correctly during backtest."""
 
@@ -468,6 +476,7 @@ class TestSlippageCalculationBacktest:
 # Test Trading Hours During Backtest
 # =============================================================================
 
+
 class TestTradingHoursBacktest:
     """Test trading hours enforcement during backtest."""
 
@@ -491,16 +500,20 @@ class TestTradingHoursBacktest:
         """Test equity adapter respects market hours."""
         from adapters.alpaca.trading_hours import AlpacaTradingHoursAdapter
 
-        adapter = AlpacaTradingHoursAdapter(config={
-            "use_alpaca_calendar": False,
-            "allow_extended_hours": False,
-        })
+        adapter = AlpacaTradingHoursAdapter(
+            config={
+                "use_alpaca_calendar": False,
+                "allow_extended_hours": False,
+            }
+        )
 
         # Test during regular hours (Tuesday 10 AM ET)
         # November 26, 2024 at 10:00 AM ET
         from datetime import datetime
+
         try:
             from zoneinfo import ZoneInfo
+
             et = ZoneInfo("America/New_York")
             dt = datetime(2024, 11, 26, 10, 0, tzinfo=et)
             ts_open = int(dt.timestamp() * 1000)
@@ -515,6 +528,7 @@ class TestTradingHoursBacktest:
 # =============================================================================
 # Test Config Integration
 # =============================================================================
+
 
 class TestConfigIntegration:
     """Test config loading and integration."""
@@ -551,6 +565,7 @@ class TestConfigIntegration:
 # =============================================================================
 # Test Result Validation
 # =============================================================================
+
 
 class TestResultValidation:
     """Test backtest results are valid."""
@@ -681,6 +696,7 @@ class TestResultValidation:
 # =============================================================================
 # Test Complete Backtest Simulation
 # =============================================================================
+
 
 class TestCompleteBacktest:
     """Test complete backtest simulation."""

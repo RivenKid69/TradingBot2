@@ -10,6 +10,7 @@ These tests verify that Twin Critics are properly integrated into the PPO traini
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from gymnasium import spaces
@@ -54,13 +55,13 @@ class TestTwinCriticsTrainingIntegration:
     def test_latent_vf_caching_quantile(self, env):
         """Test that latent_vf is cached during forward pass (quantile mode)."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -82,24 +83,24 @@ class TestTwinCriticsTrainingIntegration:
 
         # After rollouts, latent_vf should be cached
         # Note: It might be None if not called recently, but the attribute should exist
-        assert hasattr(model.policy, '_last_latent_vf')
+        assert hasattr(model.policy, "_last_latent_vf")
 
         # Train one step
         model.learn(total_timesteps=64)
 
         # After training, check that caching mechanism is in place
-        assert hasattr(model.policy, '_last_latent_vf')
+        assert hasattr(model.policy, "_last_latent_vf")
 
     def test_both_critics_update_quantile(self, env):
         """Test that both critics are updated during training (quantile mode)."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -135,13 +136,13 @@ class TestTwinCriticsTrainingIntegration:
     def test_both_critics_update_categorical(self, env):
         """Test that both critics are updated during training (categorical mode)."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'num_atoms': 21,
-            'critic': {
-                'distributional': False,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "num_atoms": 21,
+            "critic": {
+                "distributional": False,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -177,13 +178,13 @@ class TestTwinCriticsTrainingIntegration:
     def test_min_value_used_for_prediction(self, env):
         """Test that min(V1, V2) is used for value predictions."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -209,10 +210,7 @@ class TestTwinCriticsTrainingIntegration:
             # Also get individual critic values for comparison
             features = model.policy.extract_features(obs, model.policy.vf_features_extractor)
             latent_vf, _ = model.policy._process_sequence(
-                features,
-                lstm_states.vf,
-                episode_starts,
-                model.policy.lstm_critic
+                features, lstm_states.vf, episode_starts, model.policy.lstm_critic
             )
             latent_vf = model.policy.mlp_extractor.forward_critic(latent_vf)
 
@@ -224,21 +222,22 @@ class TestTwinCriticsTrainingIntegration:
             min_value = torch.min(value_1, value_2)
 
         # Check that predict_values returns the minimum
-        assert torch.allclose(value_pred, min_value, atol=1e-6), \
-            "predict_values should return min(V1, V2) for Twin Critics"
+        assert torch.allclose(
+            value_pred, min_value, atol=1e-6
+        ), "predict_values should return min(V1, V2) for Twin Critics"
 
         print("✓ min(V1, V2) correctly used for value predictions")
 
     def test_twin_critics_loss_called_during_training(self, env):
         """Test that _twin_critics_loss() is called during training."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -273,13 +272,13 @@ class TestTwinCriticsTrainingIntegration:
     def test_twin_critics_metrics_logged(self, env):
         """Test that Twin Critics metrics are logged correctly."""
         arch_params = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         model = DistributionalPPO(
@@ -298,32 +297,32 @@ class TestTwinCriticsTrainingIntegration:
 
         # Check that Twin Critics attributes are initialized (they get reset after logging)
         # We can't easily check logger output, but we can verify the mechanism is in place
-        assert hasattr(model, '_twin_critic_1_loss_sum')
-        assert hasattr(model, '_twin_critic_2_loss_sum')
-        assert hasattr(model, '_twin_critic_loss_count')
+        assert hasattr(model, "_twin_critic_1_loss_sum")
+        assert hasattr(model, "_twin_critic_2_loss_sum")
+        assert hasattr(model, "_twin_critic_loss_count")
 
         print("✓ Twin Critics logging mechanism in place")
 
     def test_single_vs_twin_critics_convergence(self, env):
         """Compare convergence with and without Twin Critics."""
         arch_params_single = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': False,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": False,
+            },
         }
 
         arch_params_twin = {
-            'hidden_dim': 32,
-            'lstm_hidden_size': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 8,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "lstm_hidden_size": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 8,
+                "use_twin_critics": True,
+            },
         }
 
         # Train single critic model

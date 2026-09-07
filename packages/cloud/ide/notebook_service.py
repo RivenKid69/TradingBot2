@@ -60,15 +60,17 @@ MAX_CELL_TIMEOUT: Final[int] = 3600  # 1 hour
 SESSION_TIMEOUT_MINUTES: Final[int] = 120
 
 # Prohibited imports in Cloud Zone (broker SDKs, execution)
-PROHIBITED_IMPORTS: Final[frozenset] = frozenset({
-    "alpaca_trade_api",
-    "ib_insync",
-    "ccxt",
-    "packages.agent",
-    "ccea.agent",
-    "broker_connectors",
-    "execution_providers",
-})
+PROHIBITED_IMPORTS: Final[frozenset] = frozenset(
+    {
+        "alpaca_trade_api",
+        "ib_insync",
+        "ccxt",
+        "packages.agent",
+        "ccea.agent",
+        "broker_connectors",
+        "execution_providers",
+    }
+)
 
 # Sensitive patterns to redact from output
 SENSITIVE_PATTERNS: Final[List[re.Pattern]] = [
@@ -86,6 +88,7 @@ SENSITIVE_PATTERNS: Final[List[re.Pattern]] = [
 
 class CellType(str, Enum):
     """Notebook cell type."""
+
     CODE = "code"
     MARKDOWN = "markdown"
     RAW = "raw"
@@ -93,6 +96,7 @@ class CellType(str, Enum):
 
 class ExecutionState(str, Enum):
     """Cell execution state."""
+
     IDLE = "idle"
     QUEUED = "queued"
     RUNNING = "running"
@@ -104,6 +108,7 @@ class ExecutionState(str, Enum):
 
 class OutputType(str, Enum):
     """Cell output type."""
+
     STREAM = "stream"
     EXECUTE_RESULT = "execute_result"
     DISPLAY_DATA = "display_data"
@@ -123,6 +128,7 @@ class CellOutput:
     Based on Jupyter nbformat specification:
     https://nbformat.readthedocs.io/en/latest/format_description.html
     """
+
     output_type: OutputType
     data: Dict[str, Any] = field(default_factory=dict)
     text: Optional[str] = None
@@ -178,6 +184,7 @@ class NotebookCell:
 
     Based on Jupyter nbformat 4.5 specification.
     """
+
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     cell_type: CellType = CellType.CODE
     source: str = ""
@@ -231,6 +238,7 @@ class NotebookSession:
 
     Provides isolated execution environment per user/workspace.
     """
+
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     workspace_id: UUID = field(default_factory=uuid.uuid4)
     user_id: UUID = field(default_factory=uuid.uuid4)
@@ -252,17 +260,15 @@ class NotebookSession:
     # Notebook metadata (nbformat)
     nbformat: int = 4
     nbformat_minor: int = 5
-    metadata: Dict[str, Any] = field(default_factory=lambda: {
-        "kernelspec": {
-            "display_name": "Python 3",
-            "language": "python",
-            "name": "python3"
-        },
-        "language_info": {
-            "name": "python",
-            "version": "3.11.0",
+    metadata: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+            "language_info": {
+                "name": "python",
+                "version": "3.11.0",
+            },
         }
-    })
+    )
 
     def is_expired(self) -> bool:
         """Check if session has expired."""
@@ -306,6 +312,7 @@ class NotebookSession:
 @dataclass
 class ExecutionResult:
     """Result of cell execution."""
+
     cell_id: str
     success: bool
     outputs: List[CellOutput]
@@ -318,6 +325,7 @@ class ExecutionResult:
 @dataclass
 class NotebookQuota:
     """Resource quota for notebook execution."""
+
     max_memory_mb: int = 4096  # 4GB
     max_cpu_seconds: int = 3600  # 1 hour total
     max_cells: int = MAX_CELLS_PER_NOTEBOOK
@@ -610,12 +618,14 @@ class NotebookService:
             return ExecutionResult(
                 cell_id=cell_id,
                 success=False,
-                outputs=[CellOutput(
-                    output_type=OutputType.ERROR,
-                    ename="SecurityError",
-                    evalue=validation_error,
-                    traceback=[validation_error],
-                )],
+                outputs=[
+                    CellOutput(
+                        output_type=OutputType.ERROR,
+                        ename="SecurityError",
+                        evalue=validation_error,
+                        traceback=[validation_error],
+                    )
+                ],
                 execution_count=0,
                 execution_time_ms=0,
                 error_message=validation_error,
@@ -669,12 +679,14 @@ class NotebookService:
         for cell in session.cells:
             if cell.execution_state == ExecutionState.RUNNING:
                 cell.execution_state = ExecutionState.CANCELLED
-                cell.outputs.append(CellOutput(
-                    output_type=OutputType.ERROR,
-                    ename="KeyboardInterrupt",
-                    evalue="Execution interrupted by user",
-                    traceback=["KeyboardInterrupt: Execution interrupted by user"],
-                ))
+                cell.outputs.append(
+                    CellOutput(
+                        output_type=OutputType.ERROR,
+                        ename="KeyboardInterrupt",
+                        evalue="Execution interrupted by user",
+                        traceback=["KeyboardInterrupt: Execution interrupted by user"],
+                    )
+                )
 
         return True
 
@@ -740,8 +752,7 @@ class NotebookService:
         """
         # Check for prohibited imports
         import_pattern = re.compile(
-            r'(?:^|\s)(?:import|from)\s+([a-zA-Z_][a-zA-Z0-9_.]*)',
-            re.MULTILINE
+            r"(?:^|\s)(?:import|from)\s+([a-zA-Z_][a-zA-Z0-9_.]*)", re.MULTILINE
         )
 
         for match in import_pattern.finditer(code):
@@ -752,11 +763,11 @@ class NotebookService:
 
         # Check for dangerous operations
         dangerous_patterns = [
-            (r'\bos\.system\s*\(', "os.system() is not allowed"),
-            (r'\bsubprocess\.\w+\s*\(', "subprocess module is not allowed"),
-            (r'\b__import__\s*\(', "__import__() is not allowed"),
-            (r'\beval\s*\([^)]*\bopen\b', "eval with open() is not allowed"),
-            (r'\bexec\s*\([^)]*\bopen\b', "exec with open() is not allowed"),
+            (r"\bos\.system\s*\(", "os.system() is not allowed"),
+            (r"\bsubprocess\.\w+\s*\(", "subprocess module is not allowed"),
+            (r"\b__import__\s*\(", "__import__() is not allowed"),
+            (r"\beval\s*\([^)]*\bopen\b", "eval with open() is not allowed"),
+            (r"\bexec\s*\([^)]*\bopen\b", "exec with open() is not allowed"),
         ]
 
         for pattern, message in dangerous_patterns:
@@ -814,12 +825,14 @@ class NotebookService:
                 cell.execution_state = ExecutionState.TIMEOUT
                 success = False
                 error_message = f"Execution timed out after {timeout} seconds"
-                outputs.append(CellOutput(
-                    output_type=OutputType.ERROR,
-                    ename="TimeoutError",
-                    evalue=error_message,
-                    traceback=[error_message],
-                ))
+                outputs.append(
+                    CellOutput(
+                        output_type=OutputType.ERROR,
+                        ename="TimeoutError",
+                        evalue=error_message,
+                        traceback=[error_message],
+                    )
+                )
 
             # Update kernel state (excluding internal variables)
             for key, value in namespace.items():
@@ -832,32 +845,39 @@ class NotebookService:
                 if len(result_repr) > MAX_OUTPUT_SIZE:
                     result_repr = result_repr[:MAX_OUTPUT_SIZE] + "... [truncated]"
                     truncated = True
-                outputs.append(CellOutput(
-                    output_type=OutputType.EXECUTE_RESULT,
-                    data={"text/plain": result_repr},
-                    execution_count=execution_count,
-                ))
+                outputs.append(
+                    CellOutput(
+                        output_type=OutputType.EXECUTE_RESULT,
+                        data={"text/plain": result_repr},
+                        execution_count=execution_count,
+                    )
+                )
 
         except SyntaxError as e:
             success = False
             error_message = str(e)
-            outputs.append(CellOutput(
-                output_type=OutputType.ERROR,
-                ename="SyntaxError",
-                evalue=str(e),
-                traceback=[f"SyntaxError: {e}"],
-            ))
+            outputs.append(
+                CellOutput(
+                    output_type=OutputType.ERROR,
+                    ename="SyntaxError",
+                    evalue=str(e),
+                    traceback=[f"SyntaxError: {e}"],
+                )
+            )
         except Exception as e:
             success = False
             error_message = str(e)
             import traceback
+
             tb_lines = traceback.format_exception(type(e), e, e.__traceback__)
-            outputs.append(CellOutput(
-                output_type=OutputType.ERROR,
-                ename=type(e).__name__,
-                evalue=str(e),
-                traceback=tb_lines,
-            ))
+            outputs.append(
+                CellOutput(
+                    output_type=OutputType.ERROR,
+                    ename=type(e).__name__,
+                    evalue=str(e),
+                    traceback=tb_lines,
+                )
+            )
 
         end_time = time.monotonic()
         execution_time_ms = int((end_time - start_time) * 1000)
@@ -869,9 +889,7 @@ class NotebookService:
         cell.outputs = outputs
         cell.completed_at = datetime.now(timezone.utc)
         cell.execution_time_ms = execution_time_ms
-        cell.execution_state = (
-            ExecutionState.COMPLETED if success else ExecutionState.ERROR
-        )
+        cell.execution_state = ExecutionState.COMPLETED if success else ExecutionState.ERROR
 
         session.touch()
 
@@ -887,6 +905,7 @@ class NotebookService:
 
     def _create_capture_print(self, outputs: List[CellOutput]):
         """Create print function that captures output."""
+
         def capture_print(*args, **kwargs):
             text = " ".join(str(arg) for arg in args)
             end = kwargs.get("end", "\n")
@@ -895,11 +914,13 @@ class NotebookService:
             if outputs and outputs[-1].output_type == OutputType.STREAM:
                 outputs[-1].text = (outputs[-1].text or "") + text
             else:
-                outputs.append(CellOutput(
-                    output_type=OutputType.STREAM,
-                    name="stdout",
-                    text=text,
-                ))
+                outputs.append(
+                    CellOutput(
+                        output_type=OutputType.STREAM,
+                        name="stdout",
+                        text=text,
+                    )
+                )
 
         return capture_print
 

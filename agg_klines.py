@@ -69,21 +69,27 @@ def _agg(df: pd.DataFrame, interval: str, drop_partial: bool = False) -> pd.Data
 
     d["bucket"] = d["ts_ms"].astype("int64").map(lambda x: _floor_ts(int(x), step))
     g = d.groupby(["symbol", "bucket"])
-    out = g.agg(
-        open=("open", "first"),
-        high=("high", "max"),
-        low=("low", "min"),
-        close=("close", "last"),
-        volume=("volume", "sum"),
-        number_of_trades=("number_of_trades", "sum"),
-        taker_buy_base=("taker_buy_base", "sum"),
-        taker_buy_quote=("taker_buy_quote", "sum"),
-    ).reset_index().rename(columns={"bucket": "ts_ms"})
+    out = (
+        g.agg(
+            open=("open", "first"),
+            high=("high", "max"),
+            low=("low", "min"),
+            close=("close", "last"),
+            volume=("volume", "sum"),
+            number_of_trades=("number_of_trades", "sum"),
+            taker_buy_base=("taker_buy_base", "sum"),
+            taker_buy_quote=("taker_buy_quote", "sum"),
+        )
+        .reset_index()
+        .rename(columns={"bucket": "ts_ms"})
+    )
     out = out.sort_values(["symbol", "ts_ms"]).reset_index(drop=True)
     # приведение типов
     for c in ["open", "high", "low", "close", "volume", "taker_buy_base", "taker_buy_quote"]:
         out[c] = pd.to_numeric(out[c], errors="coerce")
-    out["number_of_trades"] = pd.to_numeric(out["number_of_trades"], errors="coerce").astype("Int64")
+    out["number_of_trades"] = pd.to_numeric(out["number_of_trades"], errors="coerce").astype(
+        "Int64"
+    )
 
     # валидации: ts_ms кратно step и нет пропусков/дубликатов
     if ((out["ts_ms"] % step) != 0).any():
@@ -105,7 +111,9 @@ def _agg(df: pd.DataFrame, interval: str, drop_partial: bool = False) -> pd.Data
 
 def main():
     p = argparse.ArgumentParser(description="Aggregate klines to a higher timeframe.")
-    p.add_argument("--in-path", required=True, help="Входной parquet 1m (или другой низкой частоты)")
+    p.add_argument(
+        "--in-path", required=True, help="Входной parquet 1m (или другой низкой частоты)"
+    )
     p.add_argument("--interval", required=True, help="Целевой интервал: 5m/15m/1h/4h/1d ...")
     p.add_argument("--out-path", required=True, help="Куда сохранить parquet агрегации")
     p.add_argument(

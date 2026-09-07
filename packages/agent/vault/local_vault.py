@@ -30,6 +30,7 @@ try:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
@@ -45,21 +46,25 @@ PBKDF2_ITERATIONS: Final[int] = 100000
 
 class VaultError(Exception):
     """Base exception for vault errors."""
+
     pass
 
 
 class CredentialNotFoundError(VaultError):
     """Credential not found in vault."""
+
     pass
 
 
 class VaultLockedError(VaultError):
     """Vault is locked and cannot be accessed."""
+
     pass
 
 
 class VaultCorruptedError(VaultError):
     """Vault data is corrupted."""
+
     pass
 
 
@@ -68,6 +73,7 @@ class VaultConfig:
     """
     Vault configuration.
     """
+
     # Storage path
     vault_path: Path = field(default_factory=lambda: Path.home() / ".ccea" / "vault.enc")
 
@@ -97,6 +103,7 @@ class CredentialEntry:
     """
     Single credential entry in vault.
     """
+
     credential_id: str
     broker: str
     credential_type: str  # api_key, api_secret, oauth_token, etc.
@@ -214,7 +221,7 @@ class LocalVault:
         try:
             header_end = vault_data.index(b"\n")
             header = json.loads(vault_data[:header_end])
-            encrypted_data = vault_data[header_end + 1:]
+            encrypted_data = vault_data[header_end + 1 :]
         except (ValueError, json.JSONDecodeError) as e:
             raise VaultCorruptedError(f"Invalid vault format: {e}")
 
@@ -235,9 +242,7 @@ class LocalVault:
             raise VaultError(f"Failed to unlock vault: {e}")
 
         # Load entries
-        self._entries = {
-            k: CredentialEntry.from_dict(v) for k, v in entries_data.items()
-        }
+        self._entries = {k: CredentialEntry.from_dict(v) for k, v in entries_data.items()}
 
         self._locked = False
         self._last_access = datetime.utcnow()
@@ -321,9 +326,7 @@ class LocalVault:
         credential_id = f"{broker}:{credential_type}"
 
         if credential_id not in self._entries:
-            raise CredentialNotFoundError(
-                f"Credential not found: {credential_id}"
-            )
+            raise CredentialNotFoundError(f"Credential not found: {credential_id}")
 
         entry = self._entries[credential_id]
 
@@ -371,14 +374,16 @@ class LocalVault:
         results = []
         for entry in self._entries.values():
             if broker is None or entry.broker == broker:
-                results.append({
-                    "credential_id": entry.credential_id,
-                    "broker": entry.broker,
-                    "credential_type": entry.credential_type,
-                    "created_at": entry.created_at.isoformat(),
-                    "updated_at": entry.updated_at.isoformat(),
-                    "metadata": entry.metadata,
-                })
+                results.append(
+                    {
+                        "credential_id": entry.credential_id,
+                        "broker": entry.broker,
+                        "credential_type": entry.credential_type,
+                        "created_at": entry.created_at.isoformat(),
+                        "updated_at": entry.updated_at.isoformat(),
+                        "metadata": entry.metadata,
+                    }
+                )
         return results
 
     def rotate_master_key(self, old_password: str, new_password: str) -> None:
@@ -443,9 +448,7 @@ class LocalVault:
         self.config.vault_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Serialize entries
-        entries_json = json.dumps({
-            k: v.to_dict() for k, v in self._entries.items()
-        })
+        entries_json = json.dumps({k: v.to_dict() for k, v in self._entries.items()})
 
         # Encrypt
         nonce = secrets.token_bytes(NONCE_SIZE)

@@ -21,19 +21,21 @@ def create_bars(prices: List[float]) -> List[Dict[str, Any]]:
     """Create bar data from price list."""
     bars = []
     for i, price in enumerate(prices):
-        bars.append({
-            "symbol": "BTCUSDT",
-            "time_key": f"2024-01-01T{i:02d}:00:00",
-            "close": price,
-            "open": price,
-            "high": price * 1.001,
-            "low": price * 0.999,
-            "volume": 1000.0,
-            "quote_volume": 1000.0 * price,
-            "trade_count": 100,
-            "taker_buy_base_volume": 500.0,
-            "taker_buy_quote_volume": 500.0 * price,
-        })
+        bars.append(
+            {
+                "symbol": "BTCUSDT",
+                "time_key": f"2024-01-01T{i:02d}:00:00",
+                "close": price,
+                "open": price,
+                "high": price * 1.001,
+                "low": price * 0.999,
+                "volume": 1000.0,
+                "quote_volume": 1000.0 * price,
+                "trade_count": 100,
+                "taker_buy_base_volume": 500.0,
+                "taker_buy_quote_volume": 500.0 * price,
+            }
+        )
     return bars
 
 
@@ -86,7 +88,9 @@ def test_rsi_pure_uptrend():
 
     assert "rsi" in final_features, "RSI should be in features"
     assert not math.isnan(final_features["rsi"]), "RSI should NOT be NaN"
-    assert final_features["rsi"] == 100.0, f"RSI should be 100.0 in pure uptrend, got {final_features['rsi']}"
+    assert (
+        final_features["rsi"] == 100.0
+    ), f"RSI should be 100.0 in pure uptrend, got {final_features['rsi']}"
 
 
 def test_rsi_pure_downtrend():
@@ -120,7 +124,9 @@ def test_rsi_pure_downtrend():
 
     assert "rsi" in final_features, "RSI should be in features"
     assert not math.isnan(final_features["rsi"]), "RSI should NOT be NaN"
-    assert final_features["rsi"] == 0.0, f"RSI should be 0.0 in pure downtrend, got {final_features['rsi']}"
+    assert (
+        final_features["rsi"] == 0.0
+    ), f"RSI should be 0.0 in pure downtrend, got {final_features['rsi']}"
 
 
 def test_rsi_no_movement():
@@ -154,7 +160,9 @@ def test_rsi_no_movement():
 
     assert "rsi" in final_features, "RSI should be in features"
     assert not math.isnan(final_features["rsi"]), "RSI should NOT be NaN"
-    assert final_features["rsi"] == 50.0, f"RSI should be 50.0 with no movement, got {final_features['rsi']}"
+    assert (
+        final_features["rsi"] == 50.0
+    ), f"RSI should be 50.0 with no movement, got {final_features['rsi']}"
 
 
 def test_rsi_normal_case():
@@ -166,10 +174,26 @@ def test_rsi_normal_case():
     """
     # Create realistic price movements (some ups, some downs)
     prices = [
-        29000, 29100, 29050, 29200, 29150,  # Mixed
-        29300, 29250, 29400, 29350, 29500,  # Mixed
-        29450, 29600, 29550, 29700, 29650,  # Mixed
-        29800, 29750, 29900, 29850, 30000,  # Overall uptrend
+        29000,
+        29100,
+        29050,
+        29200,
+        29150,  # Mixed
+        29300,
+        29250,
+        29400,
+        29350,
+        29500,  # Mixed
+        29450,
+        29600,
+        29550,
+        29700,
+        29650,  # Mixed
+        29800,
+        29750,
+        29900,
+        29850,
+        30000,  # Overall uptrend
     ]
     bars = create_bars(prices)
 
@@ -198,12 +222,14 @@ def test_rsi_normal_case():
     rs = state["avg_gain"] / state["avg_loss"]
     expected_rsi = 100.0 - (100.0 / (1.0 + rs))
 
-    assert abs(final_features["rsi"] - expected_rsi) < 0.01, (
-        f"RSI should match formula: expected {expected_rsi:.2f}, got {final_features['rsi']:.2f}"
-    )
+    assert (
+        abs(final_features["rsi"] - expected_rsi) < 0.01
+    ), f"RSI should match formula: expected {expected_rsi:.2f}, got {final_features['rsi']:.2f}"
 
     # RSI should be between 0 and 100
-    assert 0 <= final_features["rsi"] <= 100, f"RSI should be in range [0, 100], got {final_features['rsi']}"
+    assert (
+        0 <= final_features["rsi"] <= 100
+    ), f"RSI should be in range [0, 100], got {final_features['rsi']}"
 
 
 def test_rsi_original_bug_scenario():

@@ -11,8 +11,10 @@ Tests cover:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
+
 gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
 
@@ -24,6 +26,7 @@ try:
 except ImportError:
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from distributional_ppo import DistributionalPPO
     from variance_gradient_scaler import VarianceGradientScaler

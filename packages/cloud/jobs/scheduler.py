@@ -42,6 +42,7 @@ DEFAULT_JOB_TTL_HOURS: Final[int] = 24
 
 class JobPriority(IntEnum):
     """Job priority levels (lower value = higher priority)."""
+
     CRITICAL = 1
     HIGH = 3
     NORMAL = 5
@@ -57,6 +58,7 @@ class JobPriority(IntEnum):
 @dataclass
 class JobConfig:
     """Job configuration for scheduling."""
+
     workspace_id: UUID
     user_id: UUID
     task_type: TaskType
@@ -75,6 +77,7 @@ class ScheduledJob:
 
     Ordering: priority (asc), scheduled_at (asc)
     """
+
     # Fields used for ordering
     priority: int = field(compare=True)
     scheduled_at: datetime = field(compare=True, default_factory=lambda: datetime.now(timezone.utc))
@@ -90,7 +93,10 @@ class ScheduledJob:
     created_at: datetime = field(compare=False, default_factory=lambda: datetime.now(timezone.utc))
     started_at: Optional[datetime] = field(compare=False, default=None)
     completed_at: Optional[datetime] = field(compare=False, default=None)
-    expires_at: datetime = field(compare=False, default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=DEFAULT_JOB_TTL_HOURS))
+    expires_at: datetime = field(
+        compare=False,
+        default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=DEFAULT_JOB_TTL_HOURS),
+    )
 
     dependencies: List[str] = field(compare=False, default_factory=list)
     tags: List[str] = field(compare=False, default_factory=list)
@@ -137,6 +143,7 @@ class ScheduledJob:
 @dataclass
 class WorkspaceQuota:
     """Resource quota per workspace."""
+
     max_concurrent_jobs: int = MAX_CONCURRENT_JOBS_PER_WORKSPACE
     max_queued_jobs: int = MAX_QUEUED_JOBS_PER_WORKSPACE
     max_training_hours_per_day: int = 24
@@ -215,7 +222,9 @@ class JobScheduler:
             workspace_jobs = self._workspace_jobs.get(config.workspace_id, set())
 
             if len(workspace_jobs) >= quota.max_queued_jobs:
-                raise ValueError(f"Maximum queued jobs ({quota.max_queued_jobs}) exceeded for workspace")
+                raise ValueError(
+                    f"Maximum queued jobs ({quota.max_queued_jobs}) exceeded for workspace"
+                )
 
             # Create scheduled job
             job = ScheduledJob(
@@ -251,7 +260,9 @@ class JobScheduler:
 
             quota.current_queued += 1
 
-        logger.info(f"Job {job.job_id} submitted (type={config.task_type.value}, priority={config.priority.name})")
+        logger.info(
+            f"Job {job.job_id} submitted (type={config.task_type.value}, priority={config.priority.name})"
+        )
         return job
 
     async def cancel_job(self, job_id: str) -> bool:
@@ -341,9 +352,7 @@ class JobScheduler:
         """Process jobs from queue."""
         async with self._lock:
             # Count global running
-            global_running = sum(
-                len(jobs) for jobs in self._workspace_running.values()
-            )
+            global_running = sum(len(jobs) for jobs in self._workspace_running.values())
 
             if global_running >= self._max_concurrent_global:
                 return  # At capacity
@@ -411,9 +420,7 @@ class JobScheduler:
             # Create task instance
             task_class = get_task_class(job.task_type)
             config = TaskConfig(
-                workspace_id=job.workspace_id,
-                user_id=job.user_id,
-                **job.task_config
+                workspace_id=job.workspace_id, user_id=job.user_id, **job.task_config
             )
             task = task_class(config)
 
@@ -509,7 +516,11 @@ class JobScheduler:
         async with self._lock:
             expired = []
             for job_id, job in list(self._jobs.items()):
-                if job.is_expired() and job.state in (TaskState.PENDING, TaskState.SUCCESS, TaskState.FAILURE):
+                if job.is_expired() and job.state in (
+                    TaskState.PENDING,
+                    TaskState.SUCCESS,
+                    TaskState.FAILURE,
+                ):
                     expired.append(job_id)
 
             for job_id in expired:

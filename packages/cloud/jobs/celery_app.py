@@ -40,9 +40,9 @@ QUEUE_DEFAULT: Final[str] = "default"
 
 # Task timeouts
 TRAINING_TIMEOUT: Final[int] = 86400  # 24 hours
-BACKTEST_TIMEOUT: Final[int] = 3600   # 1 hour
-RESEARCH_TIMEOUT: Final[int] = 7200   # 2 hours
-ARTIFACT_TIMEOUT: Final[int] = 1800   # 30 minutes
+BACKTEST_TIMEOUT: Final[int] = 3600  # 1 hour
+RESEARCH_TIMEOUT: Final[int] = 7200  # 2 hours
+ARTIFACT_TIMEOUT: Final[int] = 1800  # 30 minutes
 
 
 # ============================================================================
@@ -57,6 +57,7 @@ class CeleryConfig:
 
     Supports Redis and RabbitMQ as message brokers.
     """
+
     # Broker settings
     broker_url: str = field(
         default_factory=lambda: os.getenv("CELERY_BROKER_URL", DEFAULT_BROKER_URL)
@@ -97,20 +98,24 @@ class CeleryConfig:
     task_default_rate_limit: Optional[str] = None  # e.g., "10/m"
 
     # Queues
-    task_queues: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
-        QUEUE_TRAINING: {"exchange": "training", "routing_key": "training"},
-        QUEUE_BACKTEST: {"exchange": "backtest", "routing_key": "backtest"},
-        QUEUE_RESEARCH: {"exchange": "research", "routing_key": "research"},
-        QUEUE_ARTIFACT: {"exchange": "artifact", "routing_key": "artifact"},
-        QUEUE_DEFAULT: {"exchange": "default", "routing_key": "default"},
-    })
+    task_queues: Dict[str, Dict[str, Any]] = field(
+        default_factory=lambda: {
+            QUEUE_TRAINING: {"exchange": "training", "routing_key": "training"},
+            QUEUE_BACKTEST: {"exchange": "backtest", "routing_key": "backtest"},
+            QUEUE_RESEARCH: {"exchange": "research", "routing_key": "research"},
+            QUEUE_ARTIFACT: {"exchange": "artifact", "routing_key": "artifact"},
+            QUEUE_DEFAULT: {"exchange": "default", "routing_key": "default"},
+        }
+    )
 
-    task_routes: Dict[str, Dict[str, str]] = field(default_factory=lambda: {
-        "packages.cloud.jobs.tasks.TrainingTask": {"queue": QUEUE_TRAINING},
-        "packages.cloud.jobs.tasks.BacktestTask": {"queue": QUEUE_BACKTEST},
-        "packages.cloud.jobs.tasks.ResearchTask": {"queue": QUEUE_RESEARCH},
-        "packages.cloud.jobs.tasks.ArtifactBuildTask": {"queue": QUEUE_ARTIFACT},
-    })
+    task_routes: Dict[str, Dict[str, str]] = field(
+        default_factory=lambda: {
+            "packages.cloud.jobs.tasks.TrainingTask": {"queue": QUEUE_TRAINING},
+            "packages.cloud.jobs.tasks.BacktestTask": {"queue": QUEUE_BACKTEST},
+            "packages.cloud.jobs.tasks.ResearchTask": {"queue": QUEUE_RESEARCH},
+            "packages.cloud.jobs.tasks.ArtifactBuildTask": {"queue": QUEUE_ARTIFACT},
+        }
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to Celery config dict."""

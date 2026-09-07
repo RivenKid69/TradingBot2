@@ -152,9 +152,7 @@ class _LegacyQuantizerWithoutQuantizeOrder:
     def check_percent_price_by_side(
         self, symbol: str, side: str, price: float, ref_price: float
     ) -> bool:
-        return bool(
-            self._delegate.check_percent_price_by_side(symbol, side, price, ref_price)
-        )
+        return bool(self._delegate.check_percent_price_by_side(symbol, side, price, ref_price))
 
 
 class _LegacyQuantizerWithoutPercentPriceCheck:
@@ -178,6 +176,7 @@ class _LegacyQuantizerWithoutPercentPriceCheck:
 
 
 # --- Python ExecutionSimulator tests ---
+
 
 def test_unquantized_limit_executes_permissive():
     sim = make_sim(strict=False)
@@ -354,9 +353,7 @@ def test_lowercase_filters_enforce_strict_checks():
     assert qty_total == pytest.approx(0.1)
     assert rejection is None
 
-    forced_qty = (
-        float(lowercase_filters["testusdt"]["MIN_NOTIONAL"]["minNotional"]) / ref_price_low
-    )
+    forced_qty = float(lowercase_filters["testusdt"]["MIN_NOTIONAL"]["minNotional"]) / ref_price_low
     qty_total, rejection = sim._apply_filters_market("BUY", forced_qty, ref_price=ref_price_low)
     assert qty_total == pytest.approx(0.0)
     assert rejection is not None
@@ -521,9 +518,7 @@ def test_market_qty_max_enforced_with_sub_picosecond_step():
     sim.quantizer = None
     sim.filters = local_filters
 
-    qty_total, rejection = sim._apply_filters_market(
-        "BUY", max_qty + 1e-13, ref_price=1.0
-    )
+    qty_total, rejection = sim._apply_filters_market("BUY", max_qty + 1e-13, ref_price=1.0)
 
     assert qty_total == pytest.approx(0.0)
     assert rejection is not None
@@ -560,9 +555,7 @@ def test_limit_ppbs_violation_without_quantizer():
         }
     }
 
-    price_adj, qty_adj, rejection = sim._apply_filters_limit(
-        "BUY", 101.2, 0.5, ref_price=100.0
-    )
+    price_adj, qty_adj, rejection = sim._apply_filters_limit("BUY", 101.2, 0.5, ref_price=100.0)
 
     assert price_adj == pytest.approx(101.2)
     assert qty_adj == pytest.approx(0.0)
@@ -600,9 +593,7 @@ def test_limit_ppbs_skipped_when_strict_filters_disabled():
         }
     }
 
-    price_adj, qty_adj, rejection = sim._apply_filters_limit(
-        "BUY", 170.0, 0.5, ref_price=100.0
-    )
+    price_adj, qty_adj, rejection = sim._apply_filters_limit("BUY", 170.0, 0.5, ref_price=100.0)
 
     assert rejection is None
     assert price_adj == pytest.approx(170.0)
@@ -905,6 +896,7 @@ def test_latency_sample_slightly_above_step_waits_full_delay():
 
 
 # --- C++ LOB tests (using stub) ---
+
 
 def test_unquantized_limit_rejected_lob():
     lob = CythonLOB()

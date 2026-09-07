@@ -58,10 +58,21 @@ _TICK_SIZE = _TICK_STRUCT.size  # 20
 
 # Timeframe → seconds (bars are resampled from ticks).
 _TIMEFRAME_SECONDS: Dict[str, int] = {
-    "1m": 60, "5m": 300, "15m": 900, "30m": 1800,
-    "1h": 3600, "4h": 14400, "1d": 86400,
+    "1m": 60,
+    "5m": 300,
+    "15m": 900,
+    "30m": 1800,
+    "1h": 3600,
+    "4h": 14400,
+    "1d": 86400,
     # tolerate a few common aliases
-    "m1": 60, "m5": 300, "m15": 900, "m30": 1800, "h1": 3600, "h4": 14400, "d1": 86400,
+    "m1": 60,
+    "m5": 300,
+    "m15": 900,
+    "m30": 1800,
+    "h1": 3600,
+    "h4": 14400,
+    "d1": 86400,
 }
 
 
@@ -93,7 +104,8 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
         self._timeout = int(self._config.get("timeout", 60))
         self._max_hours = int(self._config.get("max_hours", 720))
         self._point_overrides = {
-            str(k).upper(): float(v) for k, v in (self._config.get("point_values", {}) or {}).items()
+            str(k).upper(): float(v)
+            for k, v in (self._config.get("point_values", {}) or {}).items()
         }
         self._session = None
 
@@ -105,6 +117,7 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
         # read resp.content (raw bytes) directly.
         if self._session is None:
             import requests
+
             self._session = requests.Session()
             self._session.headers.update({"User-Agent": "riven-dukascopy/1.0"})
         return self._session
@@ -200,7 +213,8 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
         """Download + decode every hourly file spanning [start_ms, end_ms]."""
         point = self._point_value(instrument)
         start_hour = datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc).replace(
-            minute=0, second=0, microsecond=0)
+            minute=0, second=0, microsecond=0
+        )
         end_dt = datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc)
 
         ticks: List[Tuple[int, float, float]] = []
@@ -218,7 +232,9 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
         if hours >= self._max_hours:
             logger.warning(
                 "dukascopy: hit max_hours=%s for %s — range truncated (raise config max_hours)",
-                self._max_hours, instrument)
+                self._max_hours,
+                instrument,
+            )
         ticks.sort(key=lambda x: x[0])
         return ticks
 
@@ -237,8 +253,10 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
         instrument = self._normalize_symbol(symbol)
         tf_sec = _TIMEFRAME_SECONDS.get(timeframe.lower())
         if tf_sec is None:
-            raise ValueError(f"Unsupported timeframe {timeframe!r}; "
-                             f"supported: {sorted(set(_TIMEFRAME_SECONDS))}")
+            raise ValueError(
+                f"Unsupported timeframe {timeframe!r}; "
+                f"supported: {sorted(set(_TIMEFRAME_SECONDS))}"
+            )
 
         now_ms = int(_time.time() * 1000)
         if end_ts is None:
@@ -263,40 +281,64 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
         df = df.set_index("dt")
 
         rule = f"{tf_sec}s"
-        agg = df.resample(rule, label="left", closed="left").agg(
-            open=("mid", "first"), high=("mid", "max"),
-            low=("mid", "min"), close=("mid", "last"),
-            bid_open=("bid", "first"), bid_high=("bid", "max"),
-            bid_low=("bid", "min"), bid_close=("bid", "last"),
-            ask_open=("ask", "first"), ask_high=("ask", "max"),
-            ask_low=("ask", "min"), ask_close=("ask", "last"),
-            ticks=("mid", "count"),
-        ).dropna(subset=["open"])
+        agg = (
+            df.resample(rule, label="left", closed="left")
+            .agg(
+                open=("mid", "first"),
+                high=("mid", "max"),
+                low=("mid", "min"),
+                close=("mid", "last"),
+                bid_open=("bid", "first"),
+                bid_high=("bid", "max"),
+                bid_low=("bid", "min"),
+                bid_close=("bid", "last"),
+                ask_open=("ask", "first"),
+                ask_high=("ask", "max"),
+                ask_low=("ask", "min"),
+                ask_close=("ask", "last"),
+                ticks=("mid", "count"),
+            )
+            .dropna(subset=["open"])
+        )
 
         bars: List[Bar] = []
         for idx, row in agg.iterrows():
             ts_ms = int(idx.timestamp() * 1000)
             spread = float(row["ask_close"]) - float(row["bid_close"])
-            bars.append(Bar(
-                ts=ts_ms, symbol=instrument,
-                open=Decimal(str(row["open"])), high=Decimal(str(row["high"])),
-                low=Decimal(str(row["low"])), close=Decimal(str(row["close"])),
-                volume_base=Decimal(str(int(row["ticks"]))),   # tick count (honest proxy)
-                volume_quote=Decimal(str(round(spread * self._point_value(instrument)))),  # spread in points
-                bid_open=Decimal(str(row["bid_open"])), bid_high=Decimal(str(row["bid_high"])),
-                bid_low=Decimal(str(row["bid_low"])), bid_close=Decimal(str(row["bid_close"])),
-                ask_open=Decimal(str(row["ask_open"])), ask_high=Decimal(str(row["ask_high"])),
-                ask_low=Decimal(str(row["ask_low"])), ask_close=Decimal(str(row["ask_close"])),
-            ))
-        return bars[-int(limit):] if limit else bars
+            bars.append(
+                Bar(
+                    ts=ts_ms,
+                    symbol=instrument,
+                    open=Decimal(str(row["open"])),
+                    high=Decimal(str(row["high"])),
+                    low=Decimal(str(row["low"])),
+                    close=Decimal(str(row["close"])),
+                    volume_base=Decimal(str(int(row["ticks"]))),  # tick count (honest proxy)
+                    volume_quote=Decimal(
+                        str(round(spread * self._point_value(instrument)))
+                    ),  # spread in points
+                    bid_open=Decimal(str(row["bid_open"])),
+                    bid_high=Decimal(str(row["bid_high"])),
+                    bid_low=Decimal(str(row["bid_low"])),
+                    bid_close=Decimal(str(row["bid_close"])),
+                    ask_open=Decimal(str(row["ask_open"])),
+                    ask_high=Decimal(str(row["ask_high"])),
+                    ask_low=Decimal(str(row["ask_low"])),
+                    ask_close=Decimal(str(row["ask_close"])),
+                )
+            )
+        return bars[-int(limit) :] if limit else bars
 
     def get_latest_bar(self, symbol: str, timeframe: str) -> Optional[Bar]:
         tf_sec = _TIMEFRAME_SECONDS.get(timeframe.lower(), 3600)
         now_ms = int(_time.time() * 1000)
         # look back a few bars to be robust to the feed's ~ hourly finalization lag
-        bars = self.get_bars(symbol, timeframe,
-                             start_ts=now_ms - max(3, 1) * tf_sec * 1000 - 2 * 3600 * 1000,
-                             end_ts=now_ms)
+        bars = self.get_bars(
+            symbol,
+            timeframe,
+            start_ts=now_ms - max(3, 1) * tf_sec * 1000 - 2 * 3600 * 1000,
+            end_ts=now_ms,
+        )
         return bars[-1] if bars else None
 
     def get_tick(self, symbol: str) -> Optional[Tick]:
@@ -314,9 +356,11 @@ class DukascopyMarketDataAdapter(MarketDataAdapter):
             if parsed:
                 ts_ms, bid, ask = parsed[-1]
                 return Tick(
-                    ts=ts_ms, symbol=instrument,
+                    ts=ts_ms,
+                    symbol=instrument,
                     price=Decimal(str((bid + ask) / 2.0)),
-                    bid=Decimal(str(bid)), ask=Decimal(str(ask)),
+                    bid=Decimal(str(bid)),
+                    ask=Decimal(str(ask)),
                 )
         return None
 

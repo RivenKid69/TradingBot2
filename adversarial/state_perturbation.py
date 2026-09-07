@@ -40,6 +40,7 @@ class PerturbationConfig:
         clip_max: Maximum value for state clipping (None = no clipping)
         attack_method: Attack method to use ('pgd', 'fgsm')
     """
+
     epsilon: float = 0.075
     attack_steps: int = 3
     attack_lr: float = 0.03
@@ -217,7 +218,11 @@ class StatePerturbation:
                     # Project to L2 ball
                     delta_norm = torch.norm(delta.view(batch_size, -1), p=2, dim=1, keepdim=True)
                     delta_norm = delta_norm.view(batch_size, *([1] * (len(delta.shape) - 1)))
-                    delta = delta * torch.clamp(delta_norm, max=self.config.epsilon) / (delta_norm + 1e-8)
+                    delta = (
+                        delta
+                        * torch.clamp(delta_norm, max=self.config.epsilon)
+                        / (delta_norm + 1e-8)
+                    )
 
                 # Clip to valid state range if bounds specified
                 if self.config.clip_min is not None or self.config.clip_max is not None:
@@ -312,6 +317,7 @@ def create_policy_loss_fn(
     Returns:
         Loss function that takes perturbed states and returns scalar loss
     """
+
     def loss_fn(states_perturbed: Tensor) -> Tensor:
         """Compute PPO policy loss on perturbed states."""
         # Get log probabilities from policy
@@ -347,6 +353,7 @@ def create_value_loss_fn(
     Returns:
         Loss function that takes perturbed states and returns scalar loss
     """
+
     def loss_fn(states_perturbed: Tensor) -> Tensor:
         """Compute MSE value loss on perturbed states."""
         with torch.enable_grad():

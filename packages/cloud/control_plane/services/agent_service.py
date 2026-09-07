@@ -44,28 +44,34 @@ from ..models import (
 # Exceptions
 # ============================================================================
 
+
 class AgentServiceError(Exception):
     """Base exception for agent service errors."""
+
     pass
 
 
 class AgentNotFoundError(AgentServiceError):
     """Agent not found."""
+
     pass
 
 
 class AgentNotEnrolledError(AgentServiceError):
     """Agent is not enrolled."""
+
     pass
 
 
 class EnrollmentTokenError(AgentServiceError):
     """Enrollment token error."""
+
     pass
 
 
 class TrustStateError(AgentServiceError):
     """Trust state transition error."""
+
     pass
 
 
@@ -73,9 +79,11 @@ class TrustStateError(AgentServiceError):
 # DTOs
 # ============================================================================
 
+
 @dataclass
 class AgentEnrollmentRequest:
     """Request to enroll a new agent."""
+
     enrollment_token: str
     agent_name: str
     public_key: str
@@ -89,6 +97,7 @@ class AgentEnrollmentRequest:
 @dataclass
 class AgentEnrollmentResult:
     """Result of agent enrollment."""
+
     agent_id: UUID
     workspace_id: UUID
     organization_id: UUID
@@ -99,6 +108,7 @@ class AgentEnrollmentResult:
 @dataclass
 class HeartbeatRequest:
     """Agent heartbeat request."""
+
     agent_id: UUID
     agent_version: str
     current_state: str
@@ -109,6 +119,7 @@ class HeartbeatRequest:
 @dataclass
 class HeartbeatResult:
     """Agent heartbeat response."""
+
     server_time: datetime
     trust_state: TrustState
     pending_commands: int
@@ -118,6 +129,7 @@ class HeartbeatResult:
 # ============================================================================
 # Agent Service
 # ============================================================================
+
 
 class AgentService:
     """
@@ -354,9 +366,7 @@ class AgentService:
         agent = await self._get_agent(agent_id, workspace_id)
 
         if agent.trust_state != TrustState.ENROLLED.value:
-            raise TrustStateError(
-                f"Cannot suspend agent in state {agent.trust_state}"
-            )
+            raise TrustStateError(f"Cannot suspend agent in state {agent.trust_state}")
 
         now = datetime.now(timezone.utc)
         agent.trust_state = TrustState.SUSPENDED.value
@@ -387,9 +397,7 @@ class AgentService:
         agent = await self._get_agent(agent_id, workspace_id)
 
         if agent.trust_state != TrustState.SUSPENDED.value:
-            raise TrustStateError(
-                f"Cannot reinstate agent in state {agent.trust_state}"
-            )
+            raise TrustStateError(f"Cannot reinstate agent in state {agent.trust_state}")
 
         now = datetime.now(timezone.utc)
         agent.trust_state = TrustState.ENROLLED.value
@@ -477,12 +485,7 @@ class AgentService:
         total = count_result.scalar() or 0
 
         # Get agents
-        query = (
-            base_query
-            .order_by(Agent.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
+        query = base_query.order_by(Agent.created_at.desc()).offset(offset).limit(limit)
         result = await self.session.execute(query)
         agents = list(result.scalars().all())
 
@@ -524,11 +527,13 @@ class AgentService:
             select(func.count(Command.id)).where(
                 Command.agent_id == agent_id,
                 Command.workspace_id == workspace_id,
-                Command.status.in_([
-                    CommandStatus.PENDING.value,
-                    CommandStatus.APPROVED.value,
-                    CommandStatus.SENT.value,
-                ]),
+                Command.status.in_(
+                    [
+                        CommandStatus.PENDING.value,
+                        CommandStatus.APPROVED.value,
+                        CommandStatus.SENT.value,
+                    ]
+                ),
                 or_(
                     Command.expires_at.is_(None),
                     Command.expires_at > now,

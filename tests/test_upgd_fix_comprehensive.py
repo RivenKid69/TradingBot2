@@ -9,6 +9,7 @@ Tests verify that the min-max normalization fix correctly handles:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import sys
 import os
@@ -22,9 +23,9 @@ from optimizers.adaptive_upgd import AdaptiveUPGD
 
 def test_upgd_positive_utilities():
     """Test UPGD with all positive utilities (gradient opposes parameter)."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 1: UPGD with Positive Utilities")
-    print("="*80)
+    print("=" * 80)
 
     # Create parameters with different magnitudes
     param1 = torch.tensor([2.0], requires_grad=True)  # High positive utility
@@ -60,9 +61,9 @@ def test_upgd_positive_utilities():
 
 def test_upgd_negative_utilities():
     """Test UPGD with all negative utilities (gradient aligns with parameter)."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 2: UPGD with Negative Utilities (FIX VERIFICATION)")
-    print("="*80)
+    print("=" * 80)
 
     param1 = torch.tensor([2.0], requires_grad=True)  # More negative utility
     param2 = torch.tensor([1.0], requires_grad=True)  # Less negative utility
@@ -70,8 +71,8 @@ def test_upgd_negative_utilities():
     optimizer = UPGD([param1, param2], lr=0.1, sigma=0.0, beta_utility=0.001)
 
     # Gradients align with parameters (positive product = negative utility)
-    param1.grad = torch.tensor([2.0])   # utility = -(2.0) * 2.0 = -4.0
-    param2.grad = torch.tensor([1.0])   # utility = -(1.0) * 1.0 = -1.0
+    param1.grad = torch.tensor([2.0])  # utility = -(2.0) * 2.0 = -4.0
+    param2.grad = torch.tensor([1.0])  # utility = -(1.0) * 1.0 = -1.0
 
     param1_initial = param1.data.clone()
     param2_initial = param2.data.clone()
@@ -87,7 +88,9 @@ def test_upgd_negative_utilities():
     update1 = torch.abs(param1.data - param1_initial).item()
     update2 = torch.abs(param2.data - param2_initial).item()
 
-    print(f"Utilities: param1={utility1:.6f} (more negative), param2={utility2:.6f} (less negative)")
+    print(
+        f"Utilities: param1={utility1:.6f} (more negative), param2={utility2:.6f} (less negative)"
+    )
     print(f"Updates: param1={update1:.6f}, param2={update2:.6f}")
 
     # With the FIX: more negative utility (worse) should get LARGER update
@@ -111,7 +114,9 @@ def test_upgd_negative_utilities():
     utility2_final = state2["avg_utility"].item()
 
     print(f"\nAfter 10 steps:")
-    print(f"Utilities: param1={utility1_final:.6f} (more negative), param2={utility2_final:.6f} (less negative)")
+    print(
+        f"Utilities: param1={utility1_final:.6f} (more negative), param2={utility2_final:.6f} (less negative)"
+    )
 
     if utility1_final < utility2_final:
         print("[PASS] Utility ordering maintained correctly with negative utilities")
@@ -124,18 +129,18 @@ def test_upgd_negative_utilities():
 
 def test_upgd_mixed_utilities():
     """Test UPGD with mixed positive and negative utilities."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 3: UPGD with Mixed Utilities")
-    print("="*80)
+    print("=" * 80)
 
-    param1 = torch.tensor([2.0], requires_grad=True)   # Positive utility
-    param2 = torch.tensor([1.0], requires_grad=True)   # Negative utility
-    param3 = torch.tensor([1.5], requires_grad=True)   # Near-zero utility
+    param1 = torch.tensor([2.0], requires_grad=True)  # Positive utility
+    param2 = torch.tensor([1.0], requires_grad=True)  # Negative utility
+    param3 = torch.tensor([1.5], requires_grad=True)  # Near-zero utility
 
     optimizer = UPGD([param1, param2, param3], lr=0.1, sigma=0.0, beta_utility=0.001)
 
-    param1.grad = torch.tensor([-1.0])   # utility = 2.0 (positive)
-    param2.grad = torch.tensor([1.0])    # utility = -1.0 (negative)
+    param1.grad = torch.tensor([-1.0])  # utility = 2.0 (positive)
+    param2.grad = torch.tensor([1.0])  # utility = -1.0 (negative)
     param3.grad = torch.tensor([-0.01])  # utility ≈ 0.015 (near zero)
 
     # Run multiple steps
@@ -153,7 +158,9 @@ def test_upgd_mixed_utilities():
     utility2 = state2["avg_utility"].item()
     utility3 = state3["avg_utility"].item()
 
-    print(f"Utilities: param1={utility1:.6f} (positive), param2={utility2:.6f} (negative), param3={utility3:.6f} (near zero)")
+    print(
+        f"Utilities: param1={utility1:.6f} (positive), param2={utility2:.6f} (negative), param3={utility3:.6f} (near zero)"
+    )
 
     # Expected order: param1 (positive) > param3 (near zero) > param2 (negative)
     if utility1 > utility3 > utility2:
@@ -167,9 +174,9 @@ def test_upgd_mixed_utilities():
 
 def test_upgd_uniform_utilities():
     """Test UPGD with uniform utilities (edge case)."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 4: UPGD with Uniform Utilities (Edge Case)")
-    print("="*80)
+    print("=" * 80)
 
     param1 = torch.tensor([1.0, 1.0, 1.0], requires_grad=True)
 
@@ -198,9 +205,9 @@ def test_upgd_uniform_utilities():
 
 def test_adaptive_upgd_negative_utilities():
     """Test AdaptiveUPGD with negative utilities."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 5: AdaptiveUPGD with Negative Utilities (FIX VERIFICATION)")
-    print("="*80)
+    print("=" * 80)
 
     param1 = torch.tensor([2.0], requires_grad=True)
     param2 = torch.tensor([1.0], requires_grad=True)
@@ -209,8 +216,8 @@ def test_adaptive_upgd_negative_utilities():
 
     # Run multiple steps with negative utilities
     for _ in range(10):
-        param1.grad = torch.tensor([2.0])   # utility = -4.0 (more negative)
-        param2.grad = torch.tensor([1.0])   # utility = -1.0 (less negative)
+        param1.grad = torch.tensor([2.0])  # utility = -4.0 (more negative)
+        param2.grad = torch.tensor([1.0])  # utility = -1.0 (less negative)
         optimizer.step()
 
     state1 = optimizer.state[param1]
@@ -219,7 +226,9 @@ def test_adaptive_upgd_negative_utilities():
     utility1 = state1["avg_utility"].item()
     utility2 = state2["avg_utility"].item()
 
-    print(f"Utilities: param1={utility1:.6f} (more negative), param2={utility2:.6f} (less negative)")
+    print(
+        f"Utilities: param1={utility1:.6f} (more negative), param2={utility2:.6f} (less negative)"
+    )
 
     if utility1 < utility2:
         print("[PASS] AdaptiveUPGD utility ordering maintained correctly")
@@ -231,9 +240,9 @@ def test_adaptive_upgd_negative_utilities():
 
 def test_adaptive_upgd_adaptive_noise():
     """Test AdaptiveUPGD with adaptive noise enabled."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 6: AdaptiveUPGD with Adaptive Noise")
-    print("="*80)
+    print("=" * 80)
 
     param1 = torch.tensor([1.0, 1.0], requires_grad=True)
 
@@ -244,7 +253,7 @@ def test_adaptive_upgd_adaptive_noise():
         beta_utility=0.001,
         adaptive_noise=True,
         noise_beta=0.9,
-        min_noise_std=1e-6
+        min_noise_std=1e-6,
     )
 
     try:
@@ -270,9 +279,9 @@ def test_adaptive_upgd_adaptive_noise():
 
 def test_zero_gradients_edge_case():
     """Test UPGD with zero gradients (edge case)."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST 7: UPGD with Zero Gradients (Edge Case)")
-    print("="*80)
+    print("=" * 80)
 
     param1 = torch.tensor([1.0], requires_grad=True)
 
@@ -296,10 +305,10 @@ def test_zero_gradients_edge_case():
 
 def run_all_tests():
     """Run all tests and report results."""
-    print("\n" + "#"*80)
+    print("\n" + "#" * 80)
     print("# UPGD Optimizer Fix: Comprehensive Test Suite")
     print("# Testing min-max normalization fix for negative utility bug")
-    print("#"*80)
+    print("#" * 80)
 
     tests = [
         ("Positive Utilities", test_upgd_positive_utilities),
@@ -319,12 +328,13 @@ def run_all_tests():
         except Exception as e:
             print(f"\n[ERROR] Test '{name}' raised exception: {e}")
             import traceback
+
             traceback.print_exc()
             results.append((name, False))
 
-    print("\n" + "#"*80)
+    print("\n" + "#" * 80)
     print("# TEST RESULTS SUMMARY")
-    print("#"*80)
+    print("#" * 80)
 
     passed_count = sum(1 for _, passed in results if passed)
     total_count = len(results)
@@ -333,16 +343,16 @@ def run_all_tests():
         status = "PASS" if passed else "FAIL"
         print(f"  {status:4} | {name}")
 
-    print("\n" + "-"*80)
+    print("\n" + "-" * 80)
     print(f"  TOTAL: {passed_count}/{total_count} tests passed")
 
     if passed_count == total_count:
         print("\n  [SUCCESS] All tests passed! The fix is working correctly.")
-        print("="*80)
+        print("=" * 80)
         return True
     else:
         print(f"\n  [FAILURE] {total_count - passed_count} test(s) failed.")
-        print("="*80)
+        print("=" * 80)
         return False
 
 

@@ -44,6 +44,7 @@ from packages.cloud.governance.telemetry_contract import (
 # Test TelemetryLevelContract
 # ============================================================================
 
+
 class TestTelemetryLevelContract:
     """Tests for TelemetryLevelContract."""
 
@@ -165,11 +166,13 @@ class TestTelemetryLevelContract:
 # Test RawOrderEventsGate
 # ============================================================================
 
+
 class TestRawOrderEventsGate:
     """Tests for RawOrderEventsGate."""
 
     def test_gate_requires_enterprise_license(self):
         """Test gate requires enterprise license."""
+
         def enterprise_check(ws_id, org_id):
             return False, "Enterprise license required"
 
@@ -285,6 +288,7 @@ class TestRawOrderEventsGate:
 # Test TelemetryContractValidator
 # ============================================================================
 
+
 class TestTelemetryContractValidator:
     """Tests for TelemetryContractValidator."""
 
@@ -334,7 +338,9 @@ class TestTelemetryContractValidator:
         assert result.valid is False
         assert result.blocked is True
         assert len(result.violations) >= 3
-        assert any(v.violation_type == ContractViolationType.FORBIDDEN_FIELD for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.FORBIDDEN_FIELD for v in result.violations
+        )
 
     def test_validate_detailed_requires_redaction(self):
         """Test DETAILED requires redaction_applied=True."""
@@ -353,7 +359,9 @@ class TestTelemetryContractValidator:
         )
 
         assert result.valid is False
-        assert any(v.violation_type == ContractViolationType.REDACTION_MISSING for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.REDACTION_MISSING for v in result.violations
+        )
 
     def test_validate_raw_requires_enterprise(self):
         """Test RAW requires enterprise + opt-in."""
@@ -373,7 +381,9 @@ class TestTelemetryContractValidator:
 
         assert result.valid is False
         assert result.enterprise_verified is False
-        assert any(v.violation_type == ContractViolationType.ENTERPRISE_REQUIRED for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.ENTERPRISE_REQUIRED for v in result.violations
+        )
 
     def test_validate_raw_passes_with_enterprise(self):
         """Test RAW passes with enterprise opt-in."""
@@ -420,7 +430,9 @@ class TestTelemetryContractValidator:
         )
 
         assert result.valid is False
-        assert any(v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations
+        )
 
     def test_validate_detects_credential_patterns(self):
         """Test validator detects credential patterns."""
@@ -437,7 +449,9 @@ class TestTelemetryContractValidator:
         )
 
         assert result.valid is False
-        assert any(v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations
+        )
 
     def test_validate_detects_credential_values(self):
         """Test validator detects credential-like values."""
@@ -454,7 +468,9 @@ class TestTelemetryContractValidator:
         )
 
         assert result.valid is False
-        assert any(v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations
+        )
 
     def test_validate_nested_forbidden_fields(self):
         """Test validator catches forbidden fields in nested structures."""
@@ -464,7 +480,7 @@ class TestTelemetryContractValidator:
                 "data": {
                     "side": "BUY",  # Nested forbidden field
                 }
-            }
+            },
         }
 
         result = self.validator.validate(
@@ -501,12 +517,15 @@ class TestTelemetryContractValidator:
         )
 
         assert result.valid is False
-        assert any(v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations)
+        assert any(
+            v.violation_type == ContractViolationType.CREDENTIAL_DETECTED for v in result.violations
+        )
 
 
 # ============================================================================
 # Test Convenience Functions
 # ============================================================================
+
 
 class TestConvenienceFunctions:
     """Tests for convenience functions."""
@@ -576,6 +595,7 @@ class TestConvenienceFunctions:
 # Test Field Sets
 # ============================================================================
 
+
 class TestFieldSets:
     """Tests for field set constants."""
 
@@ -624,12 +644,15 @@ class TestFieldSets:
         all_allowed = AGGREGATED_ALLOWED_FIELDS | DETAILED_ALLOWED_FIELDS | RAW_ORDER_ALLOWED_FIELDS
 
         for cred_field in ALWAYS_FORBIDDEN_FIELDS:
-            assert cred_field not in all_allowed, f"Credential field {cred_field} should not be allowed"
+            assert (
+                cred_field not in all_allowed
+            ), f"Credential field {cred_field} should not be allowed"
 
 
 # ============================================================================
 # Test EnterpriseRawOptIn
 # ============================================================================
+
 
 class TestEnterpriseRawOptIn:
     """Tests for EnterpriseRawOptIn."""
@@ -691,6 +714,7 @@ class TestEnterpriseRawOptIn:
 # Test ContractViolation
 # ============================================================================
 
+
 class TestContractViolation:
     """Tests for ContractViolation."""
 
@@ -716,6 +740,7 @@ class TestContractViolation:
 # Test ContractValidationResult
 # ============================================================================
 
+
 class TestContractValidationResult:
     """Tests for ContractValidationResult."""
 
@@ -739,7 +764,7 @@ class TestContractValidationResult:
                     message="m2",
                     telemetry_level="AGGREGATED",
                 ),
-            ]
+            ],
         )
 
         assert len(result.critical_violations) == 1

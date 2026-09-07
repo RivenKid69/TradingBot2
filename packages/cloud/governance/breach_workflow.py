@@ -27,23 +27,27 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class BreachCategory(str, Enum):
     """Category of data breach per GDPR Art. 4(12)."""
+
     CONFIDENTIALITY = "confidentiality"  # Unauthorized disclosure/access
-    INTEGRITY = "integrity"              # Unauthorized modification
-    AVAILABILITY = "availability"        # Loss of access/destruction
+    INTEGRITY = "integrity"  # Unauthorized modification
+    AVAILABILITY = "availability"  # Loss of access/destruction
 
 
 class BreachSeverity(str, Enum):
     """Severity levels for breach assessment."""
-    LOW = "low"             # Unlikely risk to individuals
-    MEDIUM = "medium"       # Some risk, may require notification
-    HIGH = "high"           # Likely significant risk
-    CRITICAL = "critical"   # High risk, immediate notification required
+
+    LOW = "low"  # Unlikely risk to individuals
+    MEDIUM = "medium"  # Some risk, may require notification
+    HIGH = "high"  # Likely significant risk
+    CRITICAL = "critical"  # High risk, immediate notification required
 
 
 class BreachStatus(str, Enum):
     """Status of a breach incident."""
+
     DETECTED = "detected"
     CONFIRMED = "confirmed"
     ASSESSING = "assessing"
@@ -57,6 +61,7 @@ class BreachStatus(str, Enum):
 
 class NotificationStatus(str, Enum):
     """Status of breach notification."""
+
     NOT_REQUIRED = "not_required"
     PENDING = "pending"
     DRAFT = "draft"
@@ -67,13 +72,15 @@ class NotificationStatus(str, Enum):
 
 class ExemptionType(str, Enum):
     """Art. 34(3) exemptions from data subject notification."""
-    ENCRYPTION = "encryption"               # (a) Data rendered unintelligible
+
+    ENCRYPTION = "encryption"  # (a) Data rendered unintelligible
     SUBSEQUENT_MEASURES = "subsequent_measures"  # (b) Risk no longer likely
     DISPROPORTIONATE_EFFORT = "disproportionate_effort"  # (c) Use public communication
 
 
 class RiskFactor(str, Enum):
     """Risk factors for breach assessment."""
+
     DATA_SENSITIVITY = "data_sensitivity"
     DATA_VOLUME = "data_volume"
     IDENTIFIABILITY = "identifiability"
@@ -86,6 +93,7 @@ class RiskFactor(str, Enum):
 
 class TimelineEventType(str, Enum):
     """Types of events in breach timeline."""
+
     DETECTED = "detected"
     AWARENESS = "awareness"  # Starts 72h clock
     REPORTED_INTERNALLY = "reported_internally"
@@ -107,6 +115,7 @@ class TimelineEventType(str, Enum):
 
 class BreachEventType(str, Enum):
     """Types of breach workflow events."""
+
     BREACH_REPORTED = "breach_reported"
     BREACH_CONFIRMED = "breach_confirmed"
     ASSESSMENT_UPDATED = "assessment_updated"
@@ -133,9 +142,11 @@ HIGH_RISK_THRESHOLD = 6.0
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class DPOContact:
     """Data Protection Officer contact information."""
+
     name: str = ""
     email: str = ""
     phone: str = ""
@@ -153,6 +164,7 @@ class DPOContact:
 @dataclass
 class SupervisoryAuthority:
     """Supervisory authority information."""
+
     authority_id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""  # e.g., "ICO", "CNIL", "BfDI"
     country: str = ""
@@ -174,6 +186,7 @@ class SupervisoryAuthority:
 @dataclass
 class RiskAssessment:
     """Risk assessment for a breach."""
+
     assessment_id: str = field(default_factory=lambda: str(uuid4()))
     breach_id: str = ""
     assessed_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -201,12 +214,12 @@ class RiskAssessment:
     def calculate_risk_score(self) -> float:
         """Calculate overall risk score (0.0 - 10.0)."""
         base_score = (
-            self.data_sensitivity_score * 2.5 +
-            self.data_volume_score * 1.5 +
-            self.identifiability_score * 2.0 +
-            self.potential_harm_score * 2.5 +
-            (1.0 if self.special_categories_present else 0.0) +
-            (0.5 if self.vulnerable_individuals_affected else 0.0)
+            self.data_sensitivity_score * 2.5
+            + self.data_volume_score * 1.5
+            + self.identifiability_score * 2.0
+            + self.potential_harm_score * 2.5
+            + (1.0 if self.special_categories_present else 0.0)
+            + (0.5 if self.vulnerable_individuals_affected else 0.0)
         )
 
         # Adjustments
@@ -227,7 +240,9 @@ class RiskAssessment:
         if self.overall_risk_score < LOW_RISK_THRESHOLD:
             self.severity = BreachSeverity.LOW
         elif self.overall_risk_score < HIGH_RISK_THRESHOLD:
-            self.severity = BreachSeverity.MEDIUM if self.overall_risk_score < 5.0 else BreachSeverity.HIGH
+            self.severity = (
+                BreachSeverity.MEDIUM if self.overall_risk_score < 5.0 else BreachSeverity.HIGH
+            )
         else:
             self.severity = BreachSeverity.CRITICAL
 
@@ -258,6 +273,7 @@ class RiskAssessment:
 @dataclass
 class NotificationDecision:
     """Decision on notification requirements."""
+
     decision_id: str = field(default_factory=lambda: str(uuid4()))
     breach_id: str = ""
 
@@ -285,14 +301,17 @@ class NotificationDecision:
             self.evidence_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "decision_id": self.decision_id,
-            "breach_id": self.breach_id,
-            "authority_notification_required": self.authority_notification_required,
-            "subject_notification_required": self.subject_notification_required,
-            "decided_at": self.decided_at.isoformat(),
-            "decided_by": self.decided_by,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "decision_id": self.decision_id,
+                "breach_id": self.breach_id,
+                "authority_notification_required": self.authority_notification_required,
+                "subject_notification_required": self.subject_notification_required,
+                "decided_at": self.decided_at.isoformat(),
+                "decided_by": self.decided_by,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -300,7 +319,11 @@ class NotificationDecision:
             "decision_id": self.decision_id,
             "breach_id": self.breach_id,
             "authority_notification_required": self.authority_notification_required,
-            "authority_notification_deadline": self.authority_notification_deadline.isoformat() if self.authority_notification_deadline else None,
+            "authority_notification_deadline": (
+                self.authority_notification_deadline.isoformat()
+                if self.authority_notification_deadline
+                else None
+            ),
             "authority_notification_reason": self.authority_notification_reason,
             "subject_notification_required": self.subject_notification_required,
             "subject_notification_reason": self.subject_notification_reason,
@@ -318,6 +341,7 @@ class NotificationDecision:
 @dataclass
 class AuthorityNotification:
     """Notification to supervisory authority per GDPR Art. 33."""
+
     notification_id: str = field(default_factory=lambda: str(uuid4()))
     breach_id: str = ""
     authority: Optional[SupervisoryAuthority] = None
@@ -367,6 +391,7 @@ class AuthorityNotification:
 @dataclass
 class SubjectNotification:
     """Notification to data subjects per GDPR Art. 34."""
+
     notification_id: str = field(default_factory=lambda: str(uuid4()))
     breach_id: str = ""
 
@@ -410,6 +435,7 @@ class SubjectNotification:
 @dataclass
 class TimelineEvent:
     """An event in the breach timeline."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     breach_id: str = ""
     event_type: TimelineEventType = TimelineEventType.DETECTED
@@ -433,6 +459,7 @@ class TimelineEvent:
 @dataclass
 class DataBreach:
     """A personal data breach incident."""
+
     breach_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     title: str = ""
@@ -482,13 +509,16 @@ class DataBreach:
             self.evidence_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "breach_id": self.breach_id,
-            "workspace_id": self.workspace_id,
-            "title": self.title,
-            "category": self.category.value,
-            "detected_at": self.detected_at.isoformat(),
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "breach_id": self.breach_id,
+                "workspace_id": self.workspace_id,
+                "title": self.title,
+                "category": self.category.value,
+                "detected_at": self.detected_at.isoformat(),
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def get_authority_deadline(self) -> datetime:
@@ -524,8 +554,12 @@ class DataBreach:
             "systems_affected": self.systems_affected,
             "assessment": self.assessment.to_dict() if self.assessment else None,
             "decision": self.decision.to_dict() if self.decision else None,
-            "authority_notification": self.authority_notification.to_dict() if self.authority_notification else None,
-            "subject_notification": self.subject_notification.to_dict() if self.subject_notification else None,
+            "authority_notification": (
+                self.authority_notification.to_dict() if self.authority_notification else None
+            ),
+            "subject_notification": (
+                self.subject_notification.to_dict() if self.subject_notification else None
+            ),
             "timeline": [e.to_dict() for e in self.timeline],
             "root_cause": self.root_cause,
             "containment_measures": self.containment_measures,
@@ -542,6 +576,7 @@ class DataBreach:
 @dataclass
 class TabletopScenario:
     """A scenario for tabletop exercise."""
+
     scenario_id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
     description: str = ""
@@ -567,6 +602,7 @@ class TabletopScenario:
 @dataclass
 class TabletopExercise:
     """A tabletop exercise for breach response."""
+
     exercise_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     scenario: Optional[TabletopScenario] = None
@@ -599,13 +635,16 @@ class TabletopExercise:
             self.evidence_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "exercise_id": self.exercise_id,
-            "workspace_id": self.workspace_id,
-            "scenario_name": self.scenario.name if self.scenario else "",
-            "conducted_at": self.conducted_at.isoformat(),
-            "participants": self.participants,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "exercise_id": self.exercise_id,
+                "workspace_id": self.workspace_id,
+                "scenario_name": self.scenario.name if self.scenario else "",
+                "conducted_at": self.conducted_at.isoformat(),
+                "participants": self.participants,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -626,7 +665,9 @@ class TabletopExercise:
             "action_items": self.action_items,
             "status": self.status,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
-            "next_exercise_due": self.next_exercise_due.isoformat() if self.next_exercise_due else None,
+            "next_exercise_due": (
+                self.next_exercise_due.isoformat() if self.next_exercise_due else None
+            ),
             "evidence_hash": self.evidence_hash,
         }
 
@@ -634,6 +675,7 @@ class TabletopExercise:
 @dataclass
 class BreachWorkflowEvent:
     """Event in the breach workflow audit log."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     breach_id: Optional[str] = None
@@ -649,15 +691,18 @@ class BreachWorkflowEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "breach_id": self.breach_id,
-            "event_type": self.event_type.value,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "breach_id": self.breach_id,
+                "event_type": self.event_type.value,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -677,6 +722,7 @@ class BreachWorkflowEvent:
 @dataclass
 class BreachStats:
     """Statistics for breach management."""
+
     workspace_id: str = ""
     total_breaches: int = 0
     breaches_open: int = 0
@@ -700,7 +746,9 @@ class BreachStats:
             "average_response_hours": self.average_response_hours,
             "average_resolution_days": self.average_resolution_days,
             "tabletop_exercises_completed": self.tabletop_exercises_completed,
-            "next_tabletop_due": self.next_tabletop_due.isoformat() if self.next_tabletop_due else None,
+            "next_tabletop_due": (
+                self.next_tabletop_due.isoformat() if self.next_tabletop_due else None
+            ),
             "evaluated_at": self.evaluated_at.isoformat(),
         }
 
@@ -708,6 +756,7 @@ class BreachStats:
 # =============================================================================
 # Breach Workflow Service
 # =============================================================================
+
 
 class BreachWorkflowService:
     """
@@ -833,21 +882,25 @@ class BreachWorkflowService:
         )
 
         # Add initial timeline event
-        breach.timeline.append(TimelineEvent(
-            breach_id=breach.breach_id,
-            event_type=TimelineEventType.DETECTED,
-            timestamp=breach.detected_at,
-            description="Breach initially detected",
-            actor_id=reported_by,
-        ))
+        breach.timeline.append(
+            TimelineEvent(
+                breach_id=breach.breach_id,
+                event_type=TimelineEventType.DETECTED,
+                timestamp=breach.detected_at,
+                description="Breach initially detected",
+                actor_id=reported_by,
+            )
+        )
 
-        breach.timeline.append(TimelineEvent(
-            breach_id=breach.breach_id,
-            event_type=TimelineEventType.AWARENESS,
-            timestamp=datetime.now(timezone.utc),
-            description="Organization became aware of breach (72h clock started)",
-            actor_id=reported_by,
-        ))
+        breach.timeline.append(
+            TimelineEvent(
+                breach_id=breach.breach_id,
+                event_type=TimelineEventType.AWARENESS,
+                timestamp=datetime.now(timezone.utc),
+                description="Organization became aware of breach (72h clock started)",
+                actor_id=reported_by,
+            )
+        )
 
         with self._lock:
             self._breaches[breach.breach_id] = breach
@@ -887,12 +940,14 @@ class BreachWorkflowService:
                 raise ValueError(f"Breach {breach_id} not found")
 
             breach.status = BreachStatus.CONFIRMED
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.REPORTED_INTERNALLY,
-                description=f"Breach confirmed. {additional_details}",
-                actor_id=confirmed_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.REPORTED_INTERNALLY,
+                    description=f"Breach confirmed. {additional_details}",
+                    actor_id=confirmed_by,
+                )
+            )
 
         # Log event
         event = BreachWorkflowEvent(
@@ -925,13 +980,18 @@ class BreachWorkflowService:
             breach.assessment = assessment
             breach.status = BreachStatus.ASSESSED
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.ASSESSMENT_COMPLETED,
-                description=f"Risk assessment completed. Score: {assessment.overall_risk_score:.1f}, Severity: {assessment.severity.value}",
-                actor_id=assessed_by,
-                evidence={"risk_score": assessment.overall_risk_score, "severity": assessment.severity.value},
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.ASSESSMENT_COMPLETED,
+                    description=f"Risk assessment completed. Score: {assessment.overall_risk_score:.1f}, Severity: {assessment.severity.value}",
+                    actor_id=assessed_by,
+                    evidence={
+                        "risk_score": assessment.overall_risk_score,
+                        "severity": assessment.severity.value,
+                    },
+                )
+            )
 
         # Log event
         event = BreachWorkflowEvent(
@@ -969,11 +1029,15 @@ class BreachWorkflowService:
         # Auto-determine if not specified
         if authority_notification_required is None:
             # Art. 33: Notify unless unlikely to result in risk
-            authority_notification_required = breach.assessment.overall_risk_score >= LOW_RISK_THRESHOLD
+            authority_notification_required = (
+                breach.assessment.overall_risk_score >= LOW_RISK_THRESHOLD
+            )
 
         if subject_notification_required is None:
             # Art. 34: Notify if high risk
-            subject_notification_required = breach.assessment.overall_risk_score >= HIGH_RISK_THRESHOLD
+            subject_notification_required = (
+                breach.assessment.overall_risk_score >= HIGH_RISK_THRESHOLD
+            )
 
         # Check exemption
         if exemption and subject_notification_required:
@@ -982,29 +1046,34 @@ class BreachWorkflowService:
         decision = NotificationDecision(
             breach_id=breach_id,
             authority_notification_required=authority_notification_required,
-            authority_notification_deadline=breach.get_authority_deadline() if authority_notification_required else None,
+            authority_notification_deadline=(
+                breach.get_authority_deadline() if authority_notification_required else None
+            ),
             authority_notification_reason=f"Risk score {breach.assessment.overall_risk_score:.1f} {'≥' if authority_notification_required else '<'} threshold {LOW_RISK_THRESHOLD}",
             subject_notification_required=subject_notification_required,
             subject_notification_reason=f"Risk score {breach.assessment.overall_risk_score:.1f} {'≥' if subject_notification_required else '<'} threshold {HIGH_RISK_THRESHOLD}",
             exemption_applied=exemption,
             exemption_justification=exemption_justification,
-            decision_rationale=decision_rationale or f"Based on risk assessment with score {breach.assessment.overall_risk_score:.1f}",
+            decision_rationale=decision_rationale
+            or f"Based on risk assessment with score {breach.assessment.overall_risk_score:.1f}",
             decided_by=decided_by,
         )
 
         with self._lock:
             breach.decision = decision
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.DECISION_MADE,
-                description=f"Notification decision: Authority={authority_notification_required}, Subjects={subject_notification_required}",
-                actor_id=decided_by,
-                evidence={
-                    "authority_required": authority_notification_required,
-                    "subject_required": subject_notification_required,
-                    "exemption": exemption.value if exemption else None,
-                },
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.DECISION_MADE,
+                    description=f"Notification decision: Authority={authority_notification_required}, Subjects={subject_notification_required}",
+                    actor_id=decided_by,
+                    evidence={
+                        "authority_required": authority_notification_required,
+                        "subject_required": subject_notification_required,
+                        "exemption": exemption.value if exemption else None,
+                    },
+                )
+            )
 
         # Log event
         event = BreachWorkflowEvent(
@@ -1063,7 +1132,8 @@ class BreachWorkflowService:
             authority=authority or self._default_authority,
             nature_of_breach=f"{breach.category.value.title()} breach: {breach.title}",
             categories_of_data=breach.data_categories_affected,
-            approximate_number_of_subjects=breach.individuals_affected_estimate or str(breach.individuals_affected_count or "Unknown"),
+            approximate_number_of_subjects=breach.individuals_affected_estimate
+            or str(breach.individuals_affected_count or "Unknown"),
             approximate_number_of_records=str(breach.records_affected_count or "Unknown"),
             dpo_contact=self._dpo_contact,
             likely_consequences=breach.assessment.aggravating_factors if breach.assessment else [],
@@ -1099,13 +1169,15 @@ class BreachWorkflowService:
 
             breach.status = BreachStatus.NOTIFYING
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.AUTHORITY_NOTIFIED,
-                description=f"Notification submitted to {breach.authority_notification.authority.name if breach.authority_notification.authority else 'authority'}",
-                actor_id=submitted_by,
-                evidence={"reference": submission_reference},
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.AUTHORITY_NOTIFIED,
+                    description=f"Notification submitted to {breach.authority_notification.authority.name if breach.authority_notification.authority else 'authority'}",
+                    actor_id=submitted_by,
+                    evidence={"reference": submission_reference},
+                )
+            )
 
         # Log event
         event = BreachWorkflowEvent(
@@ -1138,7 +1210,8 @@ class BreachWorkflowService:
             dpo_contact=self._dpo_contact,
             likely_consequences=breach.assessment.aggravating_factors if breach.assessment else [],
             measures_taken=breach.containment_measures + breach.remediation_measures,
-            recommendations_for_subject=recommendations or [
+            recommendations_for_subject=recommendations
+            or [
                 "Monitor your accounts for suspicious activity",
                 "Change your passwords if you haven't recently",
                 "Be cautious of phishing emails",
@@ -1173,13 +1246,18 @@ class BreachWorkflowService:
             breach.subject_notification.sent_at = datetime.now(timezone.utc)
             breach.subject_notification.subjects_notified_count = subjects_notified_count
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.SUBJECTS_NOTIFIED,
-                description=f"Notified {subjects_notified_count} data subjects via {breach.subject_notification.notification_method}",
-                actor_id=sent_by,
-                evidence={"count": subjects_notified_count, "method": breach.subject_notification.notification_method},
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.SUBJECTS_NOTIFIED,
+                    description=f"Notified {subjects_notified_count} data subjects via {breach.subject_notification.notification_method}",
+                    actor_id=sent_by,
+                    evidence={
+                        "count": subjects_notified_count,
+                        "method": breach.subject_notification.notification_method,
+                    },
+                )
+            )
 
         # Log event
         event = BreachWorkflowEvent(
@@ -1212,12 +1290,14 @@ class BreachWorkflowService:
             breach.containment_measures.extend(measures)
             breach.status = BreachStatus.CONTAINED
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.CONTAINMENT_COMPLETED,
-                description=f"Containment measures implemented: {', '.join(measures)}",
-                actor_id=recorded_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.CONTAINMENT_COMPLETED,
+                    description=f"Containment measures implemented: {', '.join(measures)}",
+                    actor_id=recorded_by,
+                )
+            )
 
         return breach
 
@@ -1238,19 +1318,23 @@ class BreachWorkflowService:
             breach.root_cause = root_cause
             breach.status = BreachStatus.REMEDIATED
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.ROOT_CAUSE_IDENTIFIED,
-                description=f"Root cause: {root_cause}",
-                actor_id=recorded_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.ROOT_CAUSE_IDENTIFIED,
+                    description=f"Root cause: {root_cause}",
+                    actor_id=recorded_by,
+                )
+            )
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.REMEDIATION_COMPLETED,
-                description=f"Remediation measures: {', '.join(measures)}",
-                actor_id=recorded_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.REMEDIATION_COMPLETED,
+                    description=f"Remediation measures: {', '.join(measures)}",
+                    actor_id=recorded_by,
+                )
+            )
 
         return breach
 
@@ -1270,19 +1354,23 @@ class BreachWorkflowService:
             breach.status = BreachStatus.RESOLVED
             breach.resolved_at = datetime.now(timezone.utc)
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.LESSONS_LEARNED,
-                description=f"Lessons learned documented: {len(lessons_learned)} items",
-                actor_id=resolved_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.LESSONS_LEARNED,
+                    description=f"Lessons learned documented: {len(lessons_learned)} items",
+                    actor_id=resolved_by,
+                )
+            )
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.RESOLVED,
-                description="Breach marked as resolved",
-                actor_id=resolved_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.RESOLVED,
+                    description="Breach marked as resolved",
+                    actor_id=resolved_by,
+                )
+            )
 
         return breach
 
@@ -1303,12 +1391,14 @@ class BreachWorkflowService:
             breach.status = BreachStatus.CLOSED
             breach.closed_at = datetime.now(timezone.utc)
 
-            breach.timeline.append(TimelineEvent(
-                breach_id=breach_id,
-                event_type=TimelineEventType.CLOSED,
-                description="Breach incident closed",
-                actor_id=closed_by,
-            ))
+            breach.timeline.append(
+                TimelineEvent(
+                    breach_id=breach_id,
+                    event_type=TimelineEventType.CLOSED,
+                    description="Breach incident closed",
+                    actor_id=closed_by,
+                )
+            )
 
         return breach
 
@@ -1352,7 +1442,10 @@ class BreachWorkflowService:
 
         for breach in breaches:
             if breach.decision and breach.decision.authority_notification_required:
-                if not breach.authority_notification or breach.authority_notification.status != NotificationStatus.SUBMITTED:
+                if (
+                    not breach.authority_notification
+                    or breach.authority_notification.status != NotificationStatus.SUBMITTED
+                ):
                     hours_remaining = breach.get_hours_until_deadline()
                     if hours_remaining <= hours_threshold:
                         approaching.append(breach)
@@ -1398,7 +1491,11 @@ class BreachWorkflowService:
             conducted_at=scheduled_at or datetime.now(timezone.utc),
             conducted_by=conducted_by,
             participants=participants,
-            status="scheduled" if scheduled_at and scheduled_at > datetime.now(timezone.utc) else "in_progress",
+            status=(
+                "scheduled"
+                if scheduled_at and scheduled_at > datetime.now(timezone.utc)
+                else "in_progress"
+            ),
         )
 
         with self._lock:
@@ -1450,7 +1547,9 @@ class BreachWorkflowService:
             exercise.action_items = action_items or []
 
             # Set next exercise due (quarterly)
-            exercise.next_exercise_due = datetime.now(timezone.utc) + timedelta(days=QUARTERLY_TABLETOP_DAYS)
+            exercise.next_exercise_due = datetime.now(timezone.utc) + timedelta(
+                days=QUARTERLY_TABLETOP_DAYS
+            )
 
             # Update evidence hash
             exercise.evidence_hash = exercise._compute_hash()
@@ -1519,16 +1618,34 @@ class BreachWorkflowService:
         open_breaches = [b for b in breaches if b.status not in closed_statuses]
         resolved_breaches = [b for b in breaches if b.status in closed_statuses]
 
-        authority_sent = len([b for b in breaches
-                            if b.authority_notification and b.authority_notification.status == NotificationStatus.SUBMITTED])
-        subject_sent = len([b for b in breaches
-                           if b.subject_notification and b.subject_notification.status == NotificationStatus.COMPLETE])
+        authority_sent = len(
+            [
+                b
+                for b in breaches
+                if b.authority_notification
+                and b.authority_notification.status == NotificationStatus.SUBMITTED
+            ]
+        )
+        subject_sent = len(
+            [
+                b
+                for b in breaches
+                if b.subject_notification
+                and b.subject_notification.status == NotificationStatus.COMPLETE
+            ]
+        )
 
         # Calculate averages
         response_times = []
         for breach in breaches:
-            if breach.authority_notification and breach.authority_notification.submitted_at and breach.awareness_at:
-                delta = (breach.authority_notification.submitted_at - breach.awareness_at).total_seconds() / 3600
+            if (
+                breach.authority_notification
+                and breach.authority_notification.submitted_at
+                and breach.awareness_at
+            ):
+                delta = (
+                    breach.authority_notification.submitted_at - breach.awareness_at
+                ).total_seconds() / 3600
                 response_times.append(delta)
 
         resolution_times = []
@@ -1541,7 +1658,9 @@ class BreachWorkflowService:
         avg_resolution = sum(resolution_times) / len(resolution_times) if resolution_times else 0.0
 
         # Next tabletop
-        recent_exercises = self.list_exercises(workspace_id=workspace_id, completed_only=True, limit=1)
+        recent_exercises = self.list_exercises(
+            workspace_id=workspace_id, completed_only=True, limit=1
+        )
         next_tabletop = None
         if recent_exercises:
             next_tabletop = recent_exercises[0].next_exercise_due

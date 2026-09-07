@@ -45,31 +45,34 @@ class TestTermsOfService:
     def test_tos_contains_no_investment_advice_disclaimer(self, tos_content: str):
         """Verify no investment advice disclaimer is present."""
         content_lower = tos_content.lower()
-        assert "no investment advice" in content_lower or "not investment advice" in content_lower, \
-            "Must contain NO INVESTMENT ADVICE disclaimer"
+        assert (
+            "no investment advice" in content_lower or "not investment advice" in content_lower
+        ), "Must contain NO INVESTMENT ADVICE disclaimer"
 
     def test_tos_contains_limitation_of_liability(self, tos_content: str):
         """Verify limitation of liability section exists."""
-        assert "limitation of liability" in tos_content.lower(), \
-            "Must contain LIMITATION OF LIABILITY section"
+        assert (
+            "limitation of liability" in tos_content.lower()
+        ), "Must contain LIMITATION OF LIABILITY section"
 
     def test_tos_contains_broker_api_keys_section(self, tos_content: str):
         """Verify broker API keys section exists."""
         content_lower = tos_content.lower()
-        assert "broker" in content_lower and "api" in content_lower, \
-            "Must contain BROKER API KEYS section"
+        assert (
+            "broker" in content_lower and "api" in content_lower
+        ), "Must contain BROKER API KEYS section"
         assert "encrypt" in content_lower, "Must mention encryption"
 
     def test_tos_contains_risk_warning(self, tos_content: str):
         """Verify risk warnings are present."""
         content_lower = tos_content.lower()
-        assert "substantial risk" in content_lower or "risk of loss" in content_lower, \
-            "Must contain substantial risk warning"
+        assert (
+            "substantial risk" in content_lower or "risk of loss" in content_lower
+        ), "Must contain substantial risk warning"
 
     def test_tos_contains_past_performance_disclaimer(self, tos_content: str):
         """Verify past performance disclaimer exists."""
-        assert "past performance" in tos_content.lower(), \
-            "Must contain past performance disclaimer"
+        assert "past performance" in tos_content.lower(), "Must contain past performance disclaimer"
 
     def test_tos_contains_user_responsibilities(self, tos_content: str):
         """Verify user responsibilities section exists."""
@@ -83,13 +86,15 @@ class TestTermsOfService:
     def test_tos_contains_governing_law(self, tos_content: str):
         """Verify governing law section exists."""
         content_lower = tos_content.lower()
-        assert "governing law" in content_lower or "jurisdiction" in content_lower, \
-            "Must contain governing law section"
+        assert (
+            "governing law" in content_lower or "jurisdiction" in content_lower
+        ), "Must contain governing law section"
 
     def test_tos_contains_gdpr_reference(self, tos_content: str):
         """Verify GDPR is referenced."""
-        assert "gdpr" in tos_content.lower() or "data protection" in tos_content.lower(), \
-            "Must reference GDPR or data protection"
+        assert (
+            "gdpr" in tos_content.lower() or "data protection" in tos_content.lower()
+        ), "Must reference GDPR or data protection"
 
     def test_tos_contains_disclaimers(self, tos_content: str):
         """Verify disclaimers section exists."""
@@ -99,8 +104,9 @@ class TestTermsOfService:
         """Verify platform is described as software tool."""
         content_lower = tos_content.lower()
         assert "software" in content_lower, "Must clarify this is software"
-        assert "tool" in content_lower or "vendor" in content_lower, \
-            "Must clarify this is a tool/vendor, not investment service"
+        assert (
+            "tool" in content_lower or "vendor" in content_lower
+        ), "Must clarify this is a tool/vendor, not investment service"
 
     def test_tos_version_present(self, tos_content: str):
         """Verify document version is present."""
@@ -131,35 +137,38 @@ class TestPrivacyPolicy:
 
     def test_contains_data_controller_section(self, privacy_content: str):
         """Verify data controller is specified (GDPR Art. 13(1)(a))."""
-        assert "data controller" in privacy_content.lower(), \
-            "Must specify data controller"
+        assert "data controller" in privacy_content.lower(), "Must specify data controller"
 
     def test_contains_gdpr_article_15_reference(self, privacy_content: str):
         """Verify right of access is mentioned (GDPR Art. 15)."""
-        assert "article 15" in privacy_content.lower() or "right of access" in privacy_content.lower(), \
-            "Must reference GDPR Article 15 (Right of Access)"
+        assert (
+            "article 15" in privacy_content.lower() or "right of access" in privacy_content.lower()
+        ), "Must reference GDPR Article 15 (Right of Access)"
 
     def test_contains_gdpr_article_17_reference(self, privacy_content: str):
         """Verify right to erasure is mentioned (GDPR Art. 17)."""
-        assert "article 17" in privacy_content.lower() or "right to erasure" in privacy_content.lower() \
-            or "right to be forgotten" in privacy_content.lower(), \
-            "Must reference GDPR Article 17 (Right to Erasure)"
+        assert (
+            "article 17" in privacy_content.lower()
+            or "right to erasure" in privacy_content.lower()
+            or "right to be forgotten" in privacy_content.lower()
+        ), "Must reference GDPR Article 17 (Right to Erasure)"
 
     def test_contains_gdpr_article_20_reference(self, privacy_content: str):
         """Verify data portability is mentioned (GDPR Art. 20)."""
-        assert "article 20" in privacy_content.lower() or "data portability" in privacy_content.lower(), \
-            "Must reference GDPR Article 20 (Data Portability)"
+        assert (
+            "article 20" in privacy_content.lower() or "data portability" in privacy_content.lower()
+        ), "Must reference GDPR Article 20 (Data Portability)"
 
     def test_contains_legal_basis_section(self, privacy_content: str):
         """Verify legal basis for processing is specified (GDPR Art. 6)."""
         content_lower = privacy_content.lower()
-        assert "legal basis" in content_lower or "article 6" in content_lower, \
-            "Must specify legal basis for processing"
+        assert (
+            "legal basis" in content_lower or "article 6" in content_lower
+        ), "Must specify legal basis for processing"
 
     def test_contains_data_retention_section(self, privacy_content: str):
         """Verify data retention periods are specified."""
-        assert "retention" in privacy_content.lower(), \
-            "Must specify data retention periods"
+        assert "retention" in privacy_content.lower(), "Must specify data retention periods"
 
     def test_contains_security_measures(self, privacy_content: str):
         """Verify security measures are described."""
@@ -179,28 +188,33 @@ class TestPrivacyPolicy:
     def test_contains_contact_information(self, privacy_content: str):
         """Verify contact information is provided."""
         content_lower = privacy_content.lower()
-        assert "contact" in content_lower or "email" in content_lower, \
-            "Must provide contact information"
+        assert (
+            "contact" in content_lower or "email" in content_lower
+        ), "Must provide contact information"
 
     def test_contains_broker_credentials_handling(self, privacy_content: str):
         """Verify broker credentials handling is described."""
         content_lower = privacy_content.lower()
-        assert "api" in content_lower and ("credential" in content_lower or "key" in content_lower), \
-            "Must describe broker credential handling"
-        assert "aes" in content_lower or "encrypt" in content_lower, \
-            "Must mention encryption for credentials"
+        assert "api" in content_lower and (
+            "credential" in content_lower or "key" in content_lower
+        ), "Must describe broker credential handling"
+        assert (
+            "aes" in content_lower or "encrypt" in content_lower
+        ), "Must mention encryption for credentials"
 
     def test_contains_international_transfers(self, privacy_content: str):
         """Verify international transfers are addressed."""
         content_lower = privacy_content.lower()
-        assert "international" in content_lower or "transfer" in content_lower or "eu" in content_lower, \
-            "Must address international data transfers"
+        assert (
+            "international" in content_lower or "transfer" in content_lower or "eu" in content_lower
+        ), "Must address international data transfers"
 
     def test_contains_third_party_sharing(self, privacy_content: str):
         """Verify third party data sharing is addressed."""
         content_lower = privacy_content.lower()
-        assert "third" in content_lower or "sharing" in content_lower or "broker" in content_lower, \
-            "Must address third party data sharing"
+        assert (
+            "third" in content_lower or "sharing" in content_lower or "broker" in content_lower
+        ), "Must address third party data sharing"
 
 
 class TestLegalDocumentsIntegration:
@@ -301,8 +315,9 @@ class TestDataProcessingAgreement:
     def test_contains_sub_processor_section(self, dpa_content: str):
         """Verify sub-processor section exists."""
         content_lower = dpa_content.lower()
-        assert "sub-processor" in content_lower or "subprocessor" in content_lower, \
-            "Must address sub-processors"
+        assert (
+            "sub-processor" in content_lower or "subprocessor" in content_lower
+        ), "Must address sub-processors"
 
     def test_contains_security_measures(self, dpa_content: str):
         """Verify security measures are detailed (GDPR Art. 32)."""
@@ -315,18 +330,22 @@ class TestDataProcessingAgreement:
         """Verify data breach notification section exists."""
         content_lower = dpa_content.lower()
         assert "breach" in content_lower, "Must address data breaches"
-        assert "notification" in content_lower or "notify" in content_lower, \
-            "Must specify breach notification"
-        assert "24 hour" in content_lower or "24-hour" in content_lower, \
-            "Must specify notification timeline"
+        assert (
+            "notification" in content_lower or "notify" in content_lower
+        ), "Must specify breach notification"
+        assert (
+            "24 hour" in content_lower or "24-hour" in content_lower
+        ), "Must specify notification timeline"
 
     def test_contains_international_transfers(self, dpa_content: str):
         """Verify international transfers are addressed."""
         content_lower = dpa_content.lower()
-        assert "international" in content_lower or "transfer" in content_lower, \
-            "Must address international transfers"
-        assert "eea" in content_lower or "european economic area" in content_lower, \
-            "Must reference EEA"
+        assert (
+            "international" in content_lower or "transfer" in content_lower
+        ), "Must address international transfers"
+        assert (
+            "eea" in content_lower or "european economic area" in content_lower
+        ), "Must reference EEA"
 
     def test_contains_audit_rights(self, dpa_content: str):
         """Verify audit rights are specified."""
@@ -337,8 +356,9 @@ class TestDataProcessingAgreement:
         """Verify termination section exists."""
         content_lower = dpa_content.lower()
         assert "termination" in content_lower, "Must include termination provisions"
-        assert "deletion" in content_lower or "delete" in content_lower, \
-            "Must specify data deletion on termination"
+        assert (
+            "deletion" in content_lower or "delete" in content_lower
+        ), "Must specify data deletion on termination"
 
     def test_contains_annex_a(self, dpa_content: str):
         """Verify Annex A (Technical Measures) exists."""
@@ -350,8 +370,9 @@ class TestDataProcessingAgreement:
 
     def test_contains_annex_c(self, dpa_content: str):
         """Verify Annex C (SCCs) exists."""
-        assert "Annex C" in dpa_content or "Standard Contractual Clauses" in dpa_content, \
-            "Must include SCCs reference"
+        assert (
+            "Annex C" in dpa_content or "Standard Contractual Clauses" in dpa_content
+        ), "Must include SCCs reference"
 
     def test_contains_gdpr_references(self, dpa_content: str):
         """Verify GDPR articles are referenced."""
@@ -361,8 +382,9 @@ class TestDataProcessingAgreement:
 
     def test_contains_version_info(self, dpa_content: str):
         """Verify version information is present."""
-        assert "Version" in dpa_content or "version" in dpa_content.lower(), \
-            "Must contain version information"
+        assert (
+            "Version" in dpa_content or "version" in dpa_content.lower()
+        ), "Must contain version information"
 
     def test_contains_signature_blocks(self, dpa_content: str):
         """Verify signature blocks exist."""

@@ -6,6 +6,7 @@
 from transformers import FeatureSpec, OnlineFeatureTransformer, _format_window_name
 import pandas as pd
 
+
 def test_feature_name_consistency():
     """Проверяет согласованность имен признаков"""
 
@@ -18,7 +19,7 @@ def test_feature_name_consistency():
         taker_buy_ratio_windows=[480, 960, 1440],
         taker_buy_ratio_momentum=[240, 480, 720],
         cvd_windows=[1440, 10080],
-        bar_duration_minutes=240
+        bar_duration_minutes=240,
     )
 
     print("=" * 80)
@@ -64,18 +65,27 @@ def test_feature_name_consistency():
 
     print("\n6. Имена признаков в mediator.py (ожидаемые):")
     expected_features = [
-        "cvd_24h", "cvd_7d",
-        "yang_zhang_48h", "yang_zhang_7d",
-        "garch_200h", "garch_14d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
-        "ret_12h", "ret_24h", "ret_4h",
+        "cvd_24h",
+        "cvd_7d",
+        "yang_zhang_48h",
+        "yang_zhang_7d",
+        "garch_200h",
+        "garch_14d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+        "ret_12h",
+        "ret_24h",
+        "ret_4h",
         "sma_12000",  # было sma_50. 50 баров = 12000 минут = 200h
         "yang_zhang_30d",
-        "parkinson_48h", "parkinson_7d",
+        "parkinson_48h",
+        "parkinson_7d",
         "garch_30d",
         "taker_buy_ratio",
         "taker_buy_ratio_sma_24h",
-        "taker_buy_ratio_sma_8h", "taker_buy_ratio_sma_16h",
-        "taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h"
+        "taker_buy_ratio_sma_8h",
+        "taker_buy_ratio_sma_16h",
+        "taker_buy_ratio_momentum_4h",
+        "taker_buy_ratio_momentum_8h",
+        "taker_buy_ratio_momentum_12h",
     ]
     for feat in expected_features:
         print(f"   {feat}")
@@ -85,7 +95,9 @@ def test_feature_name_consistency():
     # Проверка SMA имен
     print("\n   А) ПРОБЛЕМА С ИМЕНАМИ SMA:")
     print("      - mediator.py ожидает: sma_12000 (в барах, 50 баров = 12000 минут = 200h)")
-    print(f"      - OnlineFeatureTransformer генерирует: sma_{spec._lookbacks_prices_minutes[3]} (в минутах)")
+    print(
+        f"      - OnlineFeatureTransformer генерирует: sma_{spec._lookbacks_prices_minutes[3]} (в минутах)"
+    )
     print(f"      - apply_offline_features генерирует: sma_{spec.lookbacks_prices[3]} (в барах)")
     print("      НЕСООТВЕТСТВИЕ между онлайн и оффлайн!")
 
@@ -94,6 +106,7 @@ def test_feature_name_consistency():
     print("      - FeatureSpec.__post_init__: [240, 720, 1440, 12000]")
     print("      - make_features.py default:  [240, 720, 1440] (отсутствует 12000!)")
     print("      НЕСООТВЕТСТВИЕ!")
+
 
 if __name__ == "__main__":
     test_feature_name_consistency()

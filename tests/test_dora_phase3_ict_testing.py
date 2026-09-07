@@ -24,11 +24,12 @@ References:
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -60,6 +61,7 @@ from services.dora.ict_testing import (
 # =============================================================================
 # ICT System Type Tests
 # =============================================================================
+
 
 class TestICTSystemType:
     """Tests for ICT system type enumeration."""
@@ -109,6 +111,7 @@ class TestICTSystemType:
 # System Criticality Tests (Article 25(1))
 # =============================================================================
 
+
 class TestSystemCriticality:
     """Tests for system criticality per Article 25(1)."""
 
@@ -132,6 +135,7 @@ class TestSystemCriticality:
 # =============================================================================
 # Testing Priority Tests
 # =============================================================================
+
 
 class TestTestingPriority:
     """Tests for testing priority enumeration."""
@@ -161,6 +165,7 @@ class TestTestingPriority:
 # Vulnerability Severity Tests
 # =============================================================================
 
+
 class TestVulnerabilitySeverity:
     """Tests for vulnerability severity enumeration."""
 
@@ -188,6 +193,7 @@ class TestVulnerabilitySeverity:
 # =============================================================================
 # Vulnerability Status Tests
 # =============================================================================
+
 
 class TestVulnerabilityStatus:
     """Tests for vulnerability status enumeration."""
@@ -224,6 +230,7 @@ class TestVulnerabilityStatus:
 # =============================================================================
 # Test Type Tests
 # =============================================================================
+
 
 class TestTestType:
     """Tests for test type enumeration."""
@@ -269,6 +276,7 @@ class TestTestType:
 # Test Status Tests
 # =============================================================================
 
+
 class TestTestStatus:
     """Tests for test status enumeration."""
 
@@ -293,6 +301,7 @@ class TestTestStatus:
 # Test Result Tests
 # =============================================================================
 
+
 class TestTestResult:
     """Tests for test result enumeration."""
 
@@ -316,6 +325,7 @@ class TestTestResult:
 # =============================================================================
 # Remediation Status Tests
 # =============================================================================
+
 
 class TestRemediationStatus:
     """Tests for remediation status enumeration."""
@@ -345,6 +355,7 @@ class TestRemediationStatus:
 # ICT System Profile Tests
 # =============================================================================
 
+
 class TestICTSystemProfile:
     """Tests for ICT system profile structure."""
 
@@ -356,19 +367,13 @@ class TestICTSystemProfile:
 
     def test_profile_with_name(self):
         """Test profile with specific name."""
-        profile = ICTSystemProfile(
-            name="Trading Engine",
-            system_type=ICTSystemType.TRADING_SYSTEM
-        )
+        profile = ICTSystemProfile(name="Trading Engine", system_type=ICTSystemType.TRADING_SYSTEM)
         assert profile.name == "Trading Engine"
         assert profile.system_type == ICTSystemType.TRADING_SYSTEM
 
     def test_profile_with_criticality(self):
         """Test profile with specific criticality."""
-        profile = ICTSystemProfile(
-            name="Risk Engine",
-            criticality=SystemCriticality.CRITICAL
-        )
+        profile = ICTSystemProfile(name="Risk Engine", criticality=SystemCriticality.CRITICAL)
         assert profile.criticality == SystemCriticality.CRITICAL
 
     def test_profile_auto_generates_id(self):
@@ -382,6 +387,7 @@ class TestICTSystemProfile:
 # System Test Plan Tests
 # =============================================================================
 
+
 class TestSystemTestPlan:
     """Tests for system test plan structure."""
 
@@ -393,10 +399,7 @@ class TestSystemTestPlan:
 
     def test_plan_with_name(self):
         """Test plan with specific name."""
-        plan = SystemTestPlan(
-            name="Q1 2025 Test Plan",
-            description="Quarterly testing plan"
-        )
+        plan = SystemTestPlan(name="Q1 2025 Test Plan", description="Quarterly testing plan")
         assert plan.name == "Q1 2025 Test Plan"
 
     def test_plan_auto_generates_id(self):
@@ -410,6 +413,7 @@ class TestSystemTestPlan:
 # System Test Tests
 # =============================================================================
 
+
 class TestSystemTest:
     """Tests for system test structure."""
 
@@ -421,10 +425,7 @@ class TestSystemTest:
 
     def test_test_with_type(self):
         """Test with specific type."""
-        test = SystemTest(
-            name="Vulnerability Scan",
-            test_type=TestType.VULNERABILITY_SCAN
-        )
+        test = SystemTest(name="Vulnerability Scan", test_type=TestType.VULNERABILITY_SCAN)
         assert test.test_type == TestType.VULNERABILITY_SCAN
 
     def test_test_auto_generates_id(self):
@@ -438,6 +439,7 @@ class TestSystemTest:
 # Vulnerability Tests
 # =============================================================================
 
+
 class TestVulnerability:
     """Tests for vulnerability structure."""
 
@@ -450,18 +452,13 @@ class TestVulnerability:
 
     def test_vulnerability_with_severity(self):
         """Test vulnerability with specific severity."""
-        vuln = Vulnerability(
-            title="SQL Injection",
-            severity=VulnerabilitySeverity.CRITICAL
-        )
+        vuln = Vulnerability(title="SQL Injection", severity=VulnerabilitySeverity.CRITICAL)
         assert vuln.severity == VulnerabilitySeverity.CRITICAL
 
     def test_vulnerability_with_cvss(self):
         """Test vulnerability with CVSS score."""
         vuln = Vulnerability(
-            title="XSS Vulnerability",
-            cvss_score=7.5,
-            severity=VulnerabilitySeverity.HIGH
+            title="XSS Vulnerability", cvss_score=7.5, severity=VulnerabilitySeverity.HIGH
         )
         assert vuln.cvss_score == 7.5
 
@@ -476,6 +473,7 @@ class TestVulnerability:
 # Remediation Plan Tests
 # =============================================================================
 
+
 class TestRemediationPlan:
     """Tests for remediation plan structure."""
 
@@ -488,8 +486,7 @@ class TestRemediationPlan:
     def test_plan_with_vulnerability_id(self):
         """Test plan with specific vulnerability ID."""
         plan = RemediationPlan(
-            vulnerability_id="VULN-001",
-            description="Patch SQL injection vulnerability"
+            vulnerability_id="VULN-001", description="Patch SQL injection vulnerability"
         )
         assert plan.vulnerability_id == "VULN-001"
 
@@ -504,6 +501,7 @@ class TestRemediationPlan:
 # Third-Party Interface Test Tests
 # =============================================================================
 
+
 class TestThirdPartyInterfaceTest:
     """Tests for third-party interface test structure."""
 
@@ -514,10 +512,7 @@ class TestThirdPartyInterfaceTest:
 
     def test_interface_test_with_provider(self):
         """Test interface test with specific provider."""
-        test = ThirdPartyInterfaceTest(
-            provider_name="Bloomberg",
-            interface_type="Market Data API"
-        )
+        test = ThirdPartyInterfaceTest(provider_name="Bloomberg", interface_type="Market Data API")
         assert test.provider_name == "Bloomberg"
 
     def test_interface_test_auto_generates_id(self):
@@ -531,6 +526,7 @@ class TestThirdPartyInterfaceTest:
 # ICT Testing Config Tests
 # =============================================================================
 
+
 class TestICTTestingConfig:
     """Tests for ICT testing configuration."""
 
@@ -541,15 +537,14 @@ class TestICTTestingConfig:
 
     def test_config_with_entity_id(self):
         """Test config with entity ID."""
-        config = ICTTestingConfig(
-            entity_id="ENT-001"
-        )
+        config = ICTTestingConfig(entity_id="ENT-001")
         assert config.entity_id == "ENT-001"
 
 
 # =============================================================================
 # DORAICTSystemTesting Creation Tests
 # =============================================================================
+
 
 class TestDORAICTSystemTestingCreation:
     """Tests for DORAICTSystemTesting creation."""
@@ -570,14 +565,15 @@ class TestDORAICTSystemTestingCreation:
     def test_has_required_methods(self):
         """Test that system testing has required methods."""
         testing = create_ict_system_testing()
-        assert hasattr(testing, 'register_system')
-        assert hasattr(testing, 'create_test_plan')
-        assert hasattr(testing, 'execute_test')
+        assert hasattr(testing, "register_system")
+        assert hasattr(testing, "create_test_plan")
+        assert hasattr(testing, "execute_test")
 
 
 # =============================================================================
 # DORAICTSystemTesting System Registration Tests
 # =============================================================================
+
 
 class TestDORAICTSystemTestingRegistration:
     """Tests for system registration functionality."""
@@ -588,7 +584,7 @@ class TestDORAICTSystemTestingRegistration:
         system = testing.register_system(
             name="Trading Engine",
             system_type=ICTSystemType.TRADING_SYSTEM,
-            criticality=SystemCriticality.CRITICAL
+            criticality=SystemCriticality.CRITICAL,
         )
         assert system is not None
         assert system.name == "Trading Engine"
@@ -597,8 +593,7 @@ class TestDORAICTSystemTestingRegistration:
         """Test retrieving a registered system."""
         testing = create_ict_system_testing()
         created = testing.register_system(
-            name="Risk Engine",
-            system_type=ICTSystemType.RISK_MANAGEMENT
+            name="Risk Engine", system_type=ICTSystemType.RISK_MANAGEMENT
         )
         retrieved = testing.get_system(created.system_id)
         assert retrieved is not None
@@ -617,6 +612,7 @@ class TestDORAICTSystemTestingRegistration:
 # DORAICTSystemTesting Test Plan Tests
 # =============================================================================
 
+
 class TestDORAICTSystemTestingPlan:
     """Tests for test plan management."""
 
@@ -624,27 +620,17 @@ class TestDORAICTSystemTestingPlan:
         """Test creating a test plan."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.TRADING_SYSTEM
+            name="Test System", system_type=ICTSystemType.TRADING_SYSTEM
         )
-        plan = testing.create_test_plan(
-            system_id=system.system_id,
-            name="Annual Test Plan 2025"
-        )
+        plan = testing.create_test_plan(system_id=system.system_id, name="Annual Test Plan 2025")
         assert plan is not None
         assert plan.name == "Annual Test Plan 2025"
 
     def test_get_test_plans(self):
         """Test retrieving test plans for a system."""
         testing = create_ict_system_testing()
-        system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.DATABASE
-        )
-        testing.create_test_plan(
-            system_id=system.system_id,
-            name="Plan 1"
-        )
+        system = testing.register_system(name="Test System", system_type=ICTSystemType.DATABASE)
+        testing.create_test_plan(system_id=system.system_id, name="Plan 1")
         plans = testing.get_test_plans(system.system_id)
         assert len(plans) >= 1
 
@@ -653,6 +639,7 @@ class TestDORAICTSystemTestingPlan:
 # DORAICTSystemTesting Test Execution Tests
 # =============================================================================
 
+
 class TestDORAICTSystemTestingExecution:
     """Tests for test execution management."""
 
@@ -660,17 +647,11 @@ class TestDORAICTSystemTestingExecution:
         """Test adding a test to a plan."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.AUTHENTICATION
+            name="Test System", system_type=ICTSystemType.AUTHENTICATION
         )
-        plan = testing.create_test_plan(
-            system_id=system.system_id,
-            name="Security Test Plan"
-        )
+        plan = testing.create_test_plan(system_id=system.system_id, name="Security Test Plan")
         test = testing.add_test(
-            plan_id=plan.plan_id,
-            name="Authentication Pentest",
-            test_type=TestType.PENETRATION_TEST
+            plan_id=plan.plan_id, name="Authentication Pentest", test_type=TestType.PENETRATION_TEST
         )
         assert test is not None
         assert test.test_type == TestType.PENETRATION_TEST
@@ -678,18 +659,10 @@ class TestDORAICTSystemTestingExecution:
     def test_execute_test(self):
         """Test executing a test."""
         testing = create_ict_system_testing()
-        system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.DATABASE
-        )
-        plan = testing.create_test_plan(
-            system_id=system.system_id,
-            name="DB Test Plan"
-        )
+        system = testing.register_system(name="Test System", system_type=ICTSystemType.DATABASE)
+        plan = testing.create_test_plan(system_id=system.system_id, name="DB Test Plan")
         test = testing.add_test(
-            plan_id=plan.plan_id,
-            name="Vuln Scan",
-            test_type=TestType.VULNERABILITY_SCAN
+            plan_id=plan.plan_id, name="Vuln Scan", test_type=TestType.VULNERABILITY_SCAN
         )
         executed = testing.execute_test(test.test_id)
         assert executed.status == TestStatus.IN_PROGRESS
@@ -697,24 +670,13 @@ class TestDORAICTSystemTestingExecution:
     def test_complete_test(self):
         """Test completing a test."""
         testing = create_ict_system_testing()
-        system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.API_GATEWAY
-        )
-        plan = testing.create_test_plan(
-            system_id=system.system_id,
-            name="API Test Plan"
-        )
+        system = testing.register_system(name="Test System", system_type=ICTSystemType.API_GATEWAY)
+        plan = testing.create_test_plan(system_id=system.system_id, name="API Test Plan")
         test = testing.add_test(
-            plan_id=plan.plan_id,
-            name="API Security Test",
-            test_type=TestType.PENETRATION_TEST
+            plan_id=plan.plan_id, name="API Security Test", test_type=TestType.PENETRATION_TEST
         )
         testing.execute_test(test.test_id)
-        completed = testing.complete_test(
-            test_id=test.test_id,
-            result=TestResult.PASSED
-        )
+        completed = testing.complete_test(test_id=test.test_id, result=TestResult.PASSED)
         assert completed.status == TestStatus.COMPLETED
         assert completed.result == TestResult.PASSED
 
@@ -723,6 +685,7 @@ class TestDORAICTSystemTestingExecution:
 # DORAICTSystemTesting Vulnerability Management Tests
 # =============================================================================
 
+
 class TestDORAICTSystemTestingVulnerabilities:
     """Tests for vulnerability management."""
 
@@ -730,14 +693,13 @@ class TestDORAICTSystemTestingVulnerabilities:
         """Test adding a vulnerability."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.TRADING_SYSTEM
+            name="Test System", system_type=ICTSystemType.TRADING_SYSTEM
         )
         vuln = testing.add_vulnerability(
             system_id=system.system_id,
             title="SQL Injection in Order API",
             severity=VulnerabilitySeverity.CRITICAL,
-            cvss_score=9.8
+            cvss_score=9.8,
         )
         assert vuln is not None
         assert vuln.severity == VulnerabilitySeverity.CRITICAL
@@ -745,14 +707,11 @@ class TestDORAICTSystemTestingVulnerabilities:
     def test_get_vulnerabilities(self):
         """Test retrieving vulnerabilities for a system."""
         testing = create_ict_system_testing()
-        system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.DATABASE
-        )
+        system = testing.register_system(name="Test System", system_type=ICTSystemType.DATABASE)
         testing.add_vulnerability(
             system_id=system.system_id,
             title="Weak Password Policy",
-            severity=VulnerabilitySeverity.MEDIUM
+            severity=VulnerabilitySeverity.MEDIUM,
         )
         vulns = testing.get_vulnerabilities(system.system_id)
         assert len(vulns) >= 1
@@ -761,17 +720,15 @@ class TestDORAICTSystemTestingVulnerabilities:
         """Test updating vulnerability status."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.AUTHENTICATION
+            name="Test System", system_type=ICTSystemType.AUTHENTICATION
         )
         vuln = testing.add_vulnerability(
             system_id=system.system_id,
             title="Insecure Session Handling",
-            severity=VulnerabilitySeverity.HIGH
+            severity=VulnerabilitySeverity.HIGH,
         )
         updated = testing.update_vulnerability_status(
-            vulnerability_id=vuln.vulnerability_id,
-            status=VulnerabilityStatus.IN_REMEDIATION
+            vulnerability_id=vuln.vulnerability_id, status=VulnerabilityStatus.IN_REMEDIATION
         )
         assert updated.status == VulnerabilityStatus.IN_REMEDIATION
 
@@ -780,6 +737,7 @@ class TestDORAICTSystemTestingVulnerabilities:
 # DORAICTSystemTesting Remediation Tests
 # =============================================================================
 
+
 class TestDORAICTSystemTestingRemediation:
     """Tests for remediation plan management."""
 
@@ -787,18 +745,17 @@ class TestDORAICTSystemTestingRemediation:
         """Test creating a remediation plan."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.TRADING_SYSTEM
+            name="Test System", system_type=ICTSystemType.TRADING_SYSTEM
         )
         vuln = testing.add_vulnerability(
             system_id=system.system_id,
             title="Critical Vulnerability",
-            severity=VulnerabilitySeverity.CRITICAL
+            severity=VulnerabilitySeverity.CRITICAL,
         )
         plan = testing.create_remediation_plan(
             vulnerability_id=vuln.vulnerability_id,
             description="Apply security patch",
-            target_date=(datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+            target_date=(datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         )
         assert plan is not None
         assert plan.vulnerability_id == vuln.vulnerability_id
@@ -806,18 +763,14 @@ class TestDORAICTSystemTestingRemediation:
     def test_approve_remediation_plan(self):
         """Test approving a remediation plan."""
         testing = create_ict_system_testing()
-        system = testing.register_system(
-            name="Test System",
-            system_type=ICTSystemType.DATABASE
-        )
+        system = testing.register_system(name="Test System", system_type=ICTSystemType.DATABASE)
         vuln = testing.add_vulnerability(
             system_id=system.system_id,
             title="DB Vulnerability",
-            severity=VulnerabilitySeverity.HIGH
+            severity=VulnerabilitySeverity.HIGH,
         )
         plan = testing.create_remediation_plan(
-            vulnerability_id=vuln.vulnerability_id,
-            description="Upgrade database version"
+            vulnerability_id=vuln.vulnerability_id, description="Upgrade database version"
         )
         approved = testing.approve_remediation_plan(plan.plan_id)
         assert approved.status == RemediationStatus.APPROVED
@@ -826,6 +779,7 @@ class TestDORAICTSystemTestingRemediation:
 # =============================================================================
 # Risk-Based Testing Tests (Article 25(1))
 # =============================================================================
+
 
 class TestRiskBasedSystemTesting:
     """Tests for risk-based testing approach per Article 25(1)."""
@@ -836,12 +790,12 @@ class TestRiskBasedSystemTesting:
         testing.register_system(
             name="Critical Trading System",
             system_type=ICTSystemType.TRADING_SYSTEM,
-            criticality=SystemCriticality.CRITICAL
+            criticality=SystemCriticality.CRITICAL,
         )
         testing.register_system(
             name="Support Tool",
             system_type=ICTSystemType.OTHER,
-            criticality=SystemCriticality.SUPPORT
+            criticality=SystemCriticality.SUPPORT,
         )
         prioritized = testing.get_prioritized_systems()
         assert prioritized[0].criticality == SystemCriticality.CRITICAL
@@ -852,7 +806,7 @@ class TestRiskBasedSystemTesting:
         system = testing.register_system(
             name="Critical System",
             system_type=ICTSystemType.RISK_MANAGEMENT,
-            criticality=SystemCriticality.CRITICAL
+            criticality=SystemCriticality.CRITICAL,
         )
         priority = testing.determine_testing_priority(system.system_id)
         assert priority == TestingPriority.P1_IMMEDIATE
@@ -861,6 +815,7 @@ class TestRiskBasedSystemTesting:
 # =============================================================================
 # Annual Testing Requirement Tests (Article 25(1))
 # =============================================================================
+
 
 class TestAnnualSystemTesting:
     """Tests for annual testing requirement per Article 25(1)."""
@@ -871,15 +826,18 @@ class TestAnnualSystemTesting:
         system = testing.register_system(
             name="Critical System",
             system_type=ICTSystemType.TRADING_SYSTEM,
-            criticality=SystemCriticality.CRITICAL
+            criticality=SystemCriticality.CRITICAL,
         )
         requirement = testing.get_testing_requirement(system.system_id)
-        assert "annual" in str(requirement).lower() or requirement.get("minimum_frequency") == "annual"
+        assert (
+            "annual" in str(requirement).lower() or requirement.get("minimum_frequency") == "annual"
+        )
 
 
 # =============================================================================
 # Reporting Tests
 # =============================================================================
+
 
 class TestICTSystemTestingReporting:
     """Tests for reporting functionality."""
@@ -888,8 +846,7 @@ class TestICTSystemTestingReporting:
         """Test generating a system test report."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Report Test System",
-            system_type=ICTSystemType.TRADING_SYSTEM
+            name="Report Test System", system_type=ICTSystemType.TRADING_SYSTEM
         )
         report = testing.generate_system_report(system.system_id)
         assert report is not None
@@ -899,13 +856,10 @@ class TestICTSystemTestingReporting:
         """Test getting vulnerability summary."""
         testing = create_ict_system_testing()
         system = testing.register_system(
-            name="Vuln Test System",
-            system_type=ICTSystemType.DATABASE
+            name="Vuln Test System", system_type=ICTSystemType.DATABASE
         )
         testing.add_vulnerability(
-            system_id=system.system_id,
-            title="Test Vuln",
-            severity=VulnerabilitySeverity.HIGH
+            system_id=system.system_id, title="Test Vuln", severity=VulnerabilitySeverity.HIGH
         )
         summary = testing.get_vulnerability_summary(system.system_id)
         assert summary is not None

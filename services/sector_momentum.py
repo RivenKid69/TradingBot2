@@ -73,9 +73,11 @@ SECTOR_CACHE_TTL = 3600  # 1 hour
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class SectorReturn:
     """Container for sector return data."""
+
     sector: str
     etf_symbol: str
     return_20d: float
@@ -87,6 +89,7 @@ class SectorReturn:
 @dataclass
 class SectorMomentumResult:
     """Result of sector momentum calculation."""
+
     symbol: str
     sector: Optional[str]
     sector_return_20d: float
@@ -99,6 +102,7 @@ class SectorMomentumResult:
 @dataclass
 class SectorDataConfig:
     """Configuration for sector data loading."""
+
     # Data source
     data_vendor: str = "yahoo"  # yahoo, alpaca, polygon
     cache_enabled: bool = True
@@ -118,6 +122,7 @@ class SectorDataConfig:
 # =============================================================================
 # Sector Data Loader
 # =============================================================================
+
 
 class SectorDataLoader:
     """
@@ -240,14 +245,16 @@ class SectorDataLoader:
             # Convert to DataFrame
             data = []
             for bar in bars:
-                data.append({
-                    "timestamp": bar.timestamp,
-                    "open": bar.open,
-                    "high": bar.high,
-                    "low": bar.low,
-                    "close": bar.close,
-                    "volume": bar.volume,
-                })
+                data.append(
+                    {
+                        "timestamp": bar.timestamp,
+                        "open": bar.open,
+                        "high": bar.high,
+                        "low": bar.low,
+                        "close": bar.close,
+                        "volume": bar.volume,
+                    }
+                )
 
             df = pd.DataFrame(data)
             if not df.empty:
@@ -318,14 +325,16 @@ class SectorDataLoader:
 
             data = []
             for bar in bars:
-                data.append({
-                    "timestamp": bar.timestamp,
-                    "open": bar.open,
-                    "high": bar.high,
-                    "low": bar.low,
-                    "close": bar.close,
-                    "volume": bar.volume,
-                })
+                data.append(
+                    {
+                        "timestamp": bar.timestamp,
+                        "open": bar.open,
+                        "high": bar.high,
+                        "low": bar.low,
+                        "close": bar.close,
+                        "volume": bar.volume,
+                    }
+                )
 
             df = pd.DataFrame(data)
             if not df.empty:
@@ -377,6 +386,7 @@ class SectorDataLoader:
 # =============================================================================
 # Sector Momentum Calculator
 # =============================================================================
+
 
 class SectorMomentumCalculator:
     """
@@ -510,13 +520,14 @@ class SectorMomentumCalculator:
         if len(prices) < window + 1:
             return 0.0
 
-        returns = np.diff(np.log(prices[-window-1:]))
+        returns = np.diff(np.log(prices[-window - 1 :]))
         return float(np.std(returns)) * math.sqrt(252)  # Annualized
 
 
 # =============================================================================
 # Sector Momentum Service
 # =============================================================================
+
 
 class SectorMomentumService:
     """
@@ -583,16 +594,14 @@ class SectorMomentumService:
             (momentum_value, is_valid) tuple
         """
         # Update data if stale
-        if self._last_update is None or (
-            datetime.now() - self._last_update
-        ).total_seconds() > self._config.cache_ttl_seconds:
+        if (
+            self._last_update is None
+            or (datetime.now() - self._last_update).total_seconds() > self._config.cache_ttl_seconds
+        ):
             self.update_sector_data()
 
         # Get sector returns dict for calculate_sector_momentum
-        sector_returns_dict = {
-            sr.sector: sr.return_20d
-            for sr in self._sector_returns.values()
-        }
+        sector_returns_dict = {sr.sector: sr.return_20d for sr in self._sector_returns.values()}
 
         # Use the function from stock_features.py
         momentum, is_valid = calculate_sector_momentum(
@@ -613,10 +622,7 @@ class SectorMomentumService:
         if self._last_update is None:
             self.update_sector_data()
 
-        return {
-            sr.sector: sr.return_20d
-            for sr in self._sector_returns.values()
-        }
+        return {sr.sector: sr.return_20d for sr in self._sector_returns.values()}
 
     def get_market_return(self) -> float:
         """Get current market return."""
@@ -628,6 +634,7 @@ class SectorMomentumService:
 # =============================================================================
 # DataFrame Enrichment
 # =============================================================================
+
 
 def enrich_dataframe_with_sector_momentum(
     df: pd.DataFrame,
@@ -661,13 +668,10 @@ def enrich_dataframe_with_sector_momentum(
         df["sector_momentum"] = momentum if is_valid else 0.0
     else:
         # Update existing values
-        df["sector_momentum"] = df["sector_momentum"].fillna(
-            momentum if is_valid else 0.0
-        )
+        df["sector_momentum"] = df["sector_momentum"].fillna(momentum if is_valid else 0.0)
 
     logger.debug(
-        f"Enriched {symbol} DataFrame with sector_momentum={momentum:.4f} "
-        f"(valid={is_valid})"
+        f"Enriched {symbol} DataFrame with sector_momentum={momentum:.4f} " f"(valid={is_valid})"
     )
 
     return df
@@ -722,6 +726,7 @@ def enrich_dataframe_with_all_stock_features(
 # Factory Functions
 # =============================================================================
 
+
 def create_sector_momentum_service(
     data_vendor: str = "yahoo",
     cache_enabled: bool = True,
@@ -754,9 +759,16 @@ if __name__ == "__main__":
     from datetime import datetime as _dt
 
     ap = argparse.ArgumentParser(description="Compute sector momentum and write a JSON report.")
-    ap.add_argument("--window", type=int, default=DEFAULT_MOMENTUM_WINDOW, help="Momentum lookback window (trading days).")
+    ap.add_argument(
+        "--window",
+        type=int,
+        default=DEFAULT_MOMENTUM_WINDOW,
+        help="Momentum lookback window (trading days).",
+    )
     ap.add_argument("--vendor", default="yahoo", help="Data vendor: yahoo, alpaca, local.")
-    ap.add_argument("--out", default="models/momentum_report.json", help="Path to write the report JSON.")
+    ap.add_argument(
+        "--out", default="models/momentum_report.json", help="Path to write the report JSON."
+    )
     args = ap.parse_args()
 
     cfg = SectorDataConfig(data_vendor=args.vendor, momentum_window=int(args.window))
@@ -779,18 +791,18 @@ if __name__ == "__main__":
                 "(требуется доступ к рыночным данным / yfinance)."
             )
         else:
-            for sector, ret in sorted(
-                sector_returns.items(), key=lambda kv: kv[1], reverse=True
-            ):
+            for sector, ret in sorted(sector_returns.items(), key=lambda kv: kv[1], reverse=True):
                 etf = SECTOR_ETFS.get(sector, "")
                 excess = float(ret) - market_return
-                sectors_out.append({
-                    "sector": sector,
-                    "etf": etf,
-                    "return_window": float(ret),
-                    "excess_vs_market": excess,
-                    "rank": len(sectors_out) + 1,
-                })
+                sectors_out.append(
+                    {
+                        "sector": sector,
+                        "etf": etf,
+                        "return_window": float(ret),
+                        "excess_vs_market": excess,
+                        "rank": len(sectors_out) + 1,
+                    }
+                )
     except Exception as exc:  # pragma: no cover - network/runtime dependent
         status = "error"
         message = f"Ошибка расчета momentum: {exc}"

@@ -26,11 +26,12 @@ References:
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -61,6 +62,7 @@ from services.dora.tester_management import (
 # Tester Type Tests
 # =============================================================================
 
+
 class TestTesterType:
     """Tests for tester type enumeration."""
 
@@ -76,6 +78,7 @@ class TestTesterType:
 # =============================================================================
 # Tester Role Tests
 # =============================================================================
+
 
 class TestTesterRole:
     """Tests for tester role enumeration."""
@@ -100,6 +103,7 @@ class TestTesterRole:
 # =============================================================================
 # Certification Category Tests
 # =============================================================================
+
 
 class TestCertificationCategory:
     """Tests for certification category enumeration."""
@@ -129,6 +133,7 @@ class TestCertificationCategory:
 # Qualification Status Tests
 # =============================================================================
 
+
 class TestQualificationStatus:
     """Tests for qualification status enumeration."""
 
@@ -157,6 +162,7 @@ class TestQualificationStatus:
 # Conflict Check Result Tests
 # =============================================================================
 
+
 class TestConflictCheckResult:
     """Tests for conflict of interest check result enumeration."""
 
@@ -181,6 +187,7 @@ class TestConflictCheckResult:
 # Security Certification Tests (Article 27(1)(a))
 # =============================================================================
 
+
 class TestSecurityCertification:
     """Tests for security certification per Article 27(1)(a)."""
 
@@ -192,19 +199,13 @@ class TestSecurityCertification:
 
     def test_certification_with_name(self):
         """Test certification with specific name."""
-        cert = SecurityCertification(
-            name="OSCP",
-            issuing_body="Offensive Security"
-        )
+        cert = SecurityCertification(name="OSCP", issuing_body="Offensive Security")
         assert cert.name == "OSCP"
         assert cert.issuing_body == "Offensive Security"
 
     def test_certification_with_category(self):
         """Test certification with specific category."""
-        cert = SecurityCertification(
-            name="CREST CRT",
-            category=CertificationCategory.RED_TEAMING
-        )
+        cert = SecurityCertification(name="CREST CRT", category=CertificationCategory.RED_TEAMING)
         assert cert.category == CertificationCategory.RED_TEAMING
 
     def test_certification_auto_generates_id(self):
@@ -217,26 +218,21 @@ class TestSecurityCertification:
         """Test certification expiry checking."""
         # Create expired certification
         past_date = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-        cert = SecurityCertification(
-            name="Expired Cert",
-            expiry_date=past_date
-        )
+        cert = SecurityCertification(name="Expired Cert", expiry_date=past_date)
         assert cert.is_expired == True
 
     def test_certification_valid_check(self):
         """Test certification validity checking."""
         # Create valid certification
         future_date = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
-        cert = SecurityCertification(
-            name="Valid Cert",
-            expiry_date=future_date
-        )
+        cert = SecurityCertification(name="Valid Cert", expiry_date=future_date)
         assert cert.is_expired == False
 
 
 # =============================================================================
 # Tester Expertise Tests (Article 27(1)(a))
 # =============================================================================
+
 
 class TestTesterExpertise:
     """Tests for tester expertise per Article 27(1)(a)."""
@@ -249,10 +245,7 @@ class TestTesterExpertise:
 
     def test_expertise_with_area(self):
         """Test expertise with specific area."""
-        expertise = TesterExpertise(
-            area="penetration_testing",
-            years_experience=5.0
-        )
+        expertise = TesterExpertise(area="penetration_testing", years_experience=5.0)
         assert expertise.area == "penetration_testing"
         assert expertise.years_experience == 5.0
 
@@ -260,7 +253,7 @@ class TestTesterExpertise:
         """Test expertise with specific skills."""
         expertise = TesterExpertise(
             area="red_teaming",
-            specific_skills=["social_engineering", "network_pivoting", "malware_development"]
+            specific_skills=["social_engineering", "network_pivoting", "malware_development"],
         )
         assert "social_engineering" in expertise.specific_skills
 
@@ -275,6 +268,7 @@ class TestTesterExpertise:
 # Conflict of Interest Declaration Tests (Article 27(2))
 # =============================================================================
 
+
 class TestConflictOfInterestDeclaration:
     """Tests for conflict of interest declaration per Article 27(2)."""
 
@@ -286,8 +280,7 @@ class TestConflictOfInterestDeclaration:
     def test_declaration_with_tester_id(self):
         """Test declaration with specific tester ID."""
         declaration = ConflictOfInterestDeclaration(
-            tester_id="TESTER-001",
-            engagement_id="TLPT-001"
+            tester_id="TESTER-001", engagement_id="TLPT-001"
         )
         assert declaration.tester_id == "TESTER-001"
 
@@ -302,6 +295,7 @@ class TestConflictOfInterestDeclaration:
 # Professional Indemnity Insurance Tests (Article 27(1)(b))
 # =============================================================================
 
+
 class TestProfessionalIndemnityInsurance:
     """Tests for professional indemnity insurance per Article 27(1)(b)."""
 
@@ -313,9 +307,7 @@ class TestProfessionalIndemnityInsurance:
     def test_insurance_with_coverage(self):
         """Test insurance with specific coverage."""
         insurance = ProfessionalIndemnityInsurance(
-            insurer="Lloyd's of London",
-            coverage_amount=5000000.0,
-            currency="EUR"
+            insurer="Lloyd's of London", coverage_amount=5000000.0, currency="EUR"
         )
         assert insurance.coverage_amount == 5000000.0
         assert insurance.currency == "EUR"
@@ -331,6 +323,7 @@ class TestProfessionalIndemnityInsurance:
 # TLPT Tester Tests
 # =============================================================================
 
+
 class TestTLPTTester:
     """Tests for TLPT tester structure."""
 
@@ -342,18 +335,12 @@ class TestTLPTTester:
 
     def test_tester_with_name(self):
         """Test tester with specific name."""
-        tester = TLPTTester(
-            name="John Smith",
-            tester_type=TesterType.EXTERNAL
-        )
+        tester = TLPTTester(name="John Smith", tester_type=TesterType.EXTERNAL)
         assert tester.name == "John Smith"
 
     def test_tester_with_role(self):
         """Test tester with specific role."""
-        tester = TLPTTester(
-            name="Jane Doe",
-            role=TesterRole.RED_TEAM_LEAD
-        )
+        tester = TLPTTester(name="Jane Doe", role=TesterRole.RED_TEAM_LEAD)
         assert tester.role == TesterRole.RED_TEAM_LEAD
 
     def test_tester_auto_generates_id(self):
@@ -367,6 +354,7 @@ class TestTLPTTester:
 # Tester Organization Tests
 # =============================================================================
 
+
 class TestTesterOrganization:
     """Tests for tester organization structure."""
 
@@ -377,10 +365,7 @@ class TestTesterOrganization:
 
     def test_organization_with_name(self):
         """Test organization with specific name."""
-        org = TesterOrganization(
-            name="Cyber Security Partners Ltd",
-            country="UK"
-        )
+        org = TesterOrganization(name="Cyber Security Partners Ltd", country="UK")
         assert org.name == "Cyber Security Partners Ltd"
 
     def test_organization_auto_generates_id(self):
@@ -394,6 +379,7 @@ class TestTesterOrganization:
 # Tester Qualification Assessment Tests
 # =============================================================================
 
+
 class TestTesterQualificationAssessment:
     """Tests for tester qualification assessment structure."""
 
@@ -405,9 +391,7 @@ class TestTesterQualificationAssessment:
 
     def test_assessment_with_tester_id(self):
         """Test assessment with specific tester ID."""
-        assessment = TesterQualificationAssessment(
-            tester_id="TESTER-001"
-        )
+        assessment = TesterQualificationAssessment(tester_id="TESTER-001")
         assert assessment.tester_id == "TESTER-001"
 
     def test_assessment_auto_generates_id(self):
@@ -421,6 +405,7 @@ class TestTesterQualificationAssessment:
 # Internal Tester Approval Tests (Article 27(2))
 # =============================================================================
 
+
 class TestInternalTesterApproval:
     """Tests for internal tester NCA approval per Article 27(2)."""
 
@@ -431,10 +416,7 @@ class TestInternalTesterApproval:
 
     def test_approval_with_tester_id(self):
         """Test approval with specific tester ID."""
-        approval = InternalTesterApproval(
-            tester_id="TESTER-001",
-            authority_id="NCA-001"
-        )
+        approval = InternalTesterApproval(tester_id="TESTER-001", authority_id="NCA-001")
         assert approval.tester_id == "TESTER-001"
 
     def test_approval_auto_generates_id(self):
@@ -448,6 +430,7 @@ class TestInternalTesterApproval:
 # Tester Management Config Tests
 # =============================================================================
 
+
 class TestTesterManagementConfig:
     """Tests for tester management configuration."""
 
@@ -458,15 +441,14 @@ class TestTesterManagementConfig:
 
     def test_config_with_entity_id(self):
         """Test config with entity ID."""
-        config = TesterManagementConfig(
-            entity_id="ENT-001"
-        )
+        config = TesterManagementConfig(entity_id="ENT-001")
         assert config.entity_id == "ENT-001"
 
 
 # =============================================================================
 # DORATestermanagement Creation Tests
 # =============================================================================
+
 
 class TestDORATestermanagementCreation:
     """Tests for DORATestermanagement creation."""
@@ -487,14 +469,15 @@ class TestDORATestermanagementCreation:
     def test_has_required_methods(self):
         """Test that manager has required methods."""
         manager = create_tester_management()
-        assert hasattr(manager, 'register_tester')
-        assert hasattr(manager, 'assess_qualifications')
-        assert hasattr(manager, 'check_conflict_of_interest')
+        assert hasattr(manager, "register_tester")
+        assert hasattr(manager, "assess_qualifications")
+        assert hasattr(manager, "check_conflict_of_interest")
 
 
 # =============================================================================
 # DORATestermanagement Tester Registration Tests
 # =============================================================================
+
 
 class TestDORATestermanagementRegistration:
     """Tests for tester registration functionality."""
@@ -503,9 +486,7 @@ class TestDORATestermanagementRegistration:
         """Test registering a new tester."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="John Smith",
-            tester_type=TesterType.EXTERNAL,
-            role=TesterRole.PENETRATION_TESTER
+            name="John Smith", tester_type=TesterType.EXTERNAL, role=TesterRole.PENETRATION_TESTER
         )
         assert tester is not None
         assert tester.name == "John Smith"
@@ -513,10 +494,7 @@ class TestDORATestermanagementRegistration:
     def test_get_tester(self):
         """Test retrieving a registered tester."""
         manager = create_tester_management()
-        created = manager.register_tester(
-            name="Jane Doe",
-            tester_type=TesterType.EXTERNAL
-        )
+        created = manager.register_tester(name="Jane Doe", tester_type=TesterType.EXTERNAL)
         retrieved = manager.get_tester(created.tester_id)
         assert retrieved is not None
         assert retrieved.name == "Jane Doe"
@@ -534,21 +512,19 @@ class TestDORATestermanagementRegistration:
 # DORATestermanagement Certification Tests
 # =============================================================================
 
+
 class TestDORATestermanagementCertification:
     """Tests for certification management."""
 
     def test_add_certification(self):
         """Test adding a certification to a tester."""
         manager = create_tester_management()
-        tester = manager.register_tester(
-            name="Test Tester",
-            tester_type=TesterType.EXTERNAL
-        )
+        tester = manager.register_tester(name="Test Tester", tester_type=TesterType.EXTERNAL)
         cert = manager.add_certification(
             tester_id=tester.tester_id,
             name="OSCP",
             issuing_body="Offensive Security",
-            category=CertificationCategory.PENETRATION_TESTING
+            category=CertificationCategory.PENETRATION_TESTING,
         )
         assert cert is not None
         assert cert.name == "OSCP"
@@ -556,14 +532,9 @@ class TestDORATestermanagementCertification:
     def test_verify_certification(self):
         """Test verifying a certification."""
         manager = create_tester_management()
-        tester = manager.register_tester(
-            name="Test Tester",
-            tester_type=TesterType.EXTERNAL
-        )
+        tester = manager.register_tester(name="Test Tester", tester_type=TesterType.EXTERNAL)
         cert = manager.add_certification(
-            tester_id=tester.tester_id,
-            name="CREST CRT",
-            issuing_body="CREST"
+            tester_id=tester.tester_id, name="CREST CRT", issuing_body="CREST"
         )
         verified = manager.verify_certification(cert.certification_id)
         assert verified.verified == True
@@ -573,6 +544,7 @@ class TestDORATestermanagementCertification:
 # DORATestermanagement Qualification Assessment Tests
 # =============================================================================
 
+
 class TestDORATestermanagementAssessment:
     """Tests for qualification assessment."""
 
@@ -580,13 +552,10 @@ class TestDORATestermanagementAssessment:
         """Test assessing tester qualifications."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Assessment Test Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Assessment Test Tester", tester_type=TesterType.EXTERNAL
         )
         manager.add_certification(
-            tester_id=tester.tester_id,
-            name="OSCP",
-            issuing_body="Offensive Security"
+            tester_id=tester.tester_id, name="OSCP", issuing_body="Offensive Security"
         )
         assessment = manager.assess_qualifications(tester.tester_id)
         assert assessment is not None
@@ -596,13 +565,10 @@ class TestDORATestermanagementAssessment:
         """Test approving tester qualifications."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Approval Test Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Approval Test Tester", tester_type=TesterType.EXTERNAL
         )
         manager.add_certification(
-            tester_id=tester.tester_id,
-            name="CREST CRT",
-            issuing_body="CREST"
+            tester_id=tester.tester_id, name="CREST CRT", issuing_body="CREST"
         )
         assessment = manager.assess_qualifications(tester.tester_id)
         approved = manager.approve_qualifications(assessment.assessment_id)
@@ -613,6 +579,7 @@ class TestDORATestermanagementAssessment:
 # DORATestermanagement Conflict of Interest Tests
 # =============================================================================
 
+
 class TestDORATestermanagementConflict:
     """Tests for conflict of interest checking."""
 
@@ -620,12 +587,10 @@ class TestDORATestermanagementConflict:
         """Test checking for conflicts of interest."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Conflict Test Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Conflict Test Tester", tester_type=TesterType.EXTERNAL
         )
         result = manager.check_conflict_of_interest(
-            tester_id=tester.tester_id,
-            engagement_id="TLPT-001"
+            tester_id=tester.tester_id, engagement_id="TLPT-001"
         )
         assert result in ConflictCheckResult or isinstance(result, ConflictCheckResult)
 
@@ -633,13 +598,12 @@ class TestDORATestermanagementConflict:
         """Test adding a conflict of interest declaration."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Declaration Test Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Declaration Test Tester", tester_type=TesterType.EXTERNAL
         )
         declaration = manager.add_conflict_declaration(
             tester_id=tester.tester_id,
             engagement_id="TLPT-001",
-            declaration_text="No conflicts of interest to declare."
+            declaration_text="No conflicts of interest to declare.",
         )
         assert declaration is not None
 
@@ -648,20 +612,18 @@ class TestDORATestermanagementConflict:
 # DORATestermanagement Internal Tester Approval Tests (Article 27(2))
 # =============================================================================
 
+
 class TestDORATestermanagementInternalApproval:
     """Tests for internal tester NCA approval per Article 27(2)."""
 
     def test_request_internal_approval(self):
         """Test requesting NCA approval for internal tester."""
         manager = create_tester_management()
-        tester = manager.register_tester(
-            name="Internal Tester",
-            tester_type=TesterType.INTERNAL
-        )
+        tester = manager.register_tester(name="Internal Tester", tester_type=TesterType.INTERNAL)
         approval = manager.request_internal_approval(
             tester_id=tester.tester_id,
             authority_id="NCA-001",
-            justification="Specialized internal expertise required"
+            justification="Specialized internal expertise required",
         )
         assert approval is not None
         assert approval.tester_id == tester.tester_id
@@ -669,17 +631,18 @@ class TestDORATestermanagementInternalApproval:
     def test_internal_tester_requires_approval(self):
         """Test that internal testers require NCA approval."""
         manager = create_tester_management()
-        tester = manager.register_tester(
-            name="Internal Tester",
-            tester_type=TesterType.INTERNAL
-        )
+        tester = manager.register_tester(name="Internal Tester", tester_type=TesterType.INTERNAL)
         requirements = manager.get_tester_requirements(tester.tester_id)
-        assert requirements.get("nca_approval_required") == True or "internal" in str(requirements).lower()
+        assert (
+            requirements.get("nca_approval_required") == True
+            or "internal" in str(requirements).lower()
+        )
 
 
 # =============================================================================
 # DORATestermanagement Insurance Tests (Article 27(1)(b))
 # =============================================================================
+
 
 class TestDORATestermanagementInsurance:
     """Tests for professional indemnity insurance per Article 27(1)(b)."""
@@ -688,14 +651,10 @@ class TestDORATestermanagementInsurance:
         """Test adding insurance to a tester."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Insurance Test Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Insurance Test Tester", tester_type=TesterType.EXTERNAL
         )
         insurance = manager.add_insurance(
-            tester_id=tester.tester_id,
-            insurer="AIG",
-            coverage_amount=5000000.0,
-            currency="EUR"
+            tester_id=tester.tester_id, insurer="AIG", coverage_amount=5000000.0, currency="EUR"
         )
         assert insurance is not None
         assert insurance.coverage_amount == 5000000.0
@@ -704,13 +663,10 @@ class TestDORATestermanagementInsurance:
         """Test verifying insurance coverage."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Insurance Verify Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Insurance Verify Tester", tester_type=TesterType.EXTERNAL
         )
         insurance = manager.add_insurance(
-            tester_id=tester.tester_id,
-            insurer="Lloyd's",
-            coverage_amount=10000000.0
+            tester_id=tester.tester_id, insurer="Lloyd's", coverage_amount=10000000.0
         )
         verified = manager.verify_insurance(insurance.insurance_id)
         assert verified is not None
@@ -720,30 +676,25 @@ class TestDORATestermanagementInsurance:
 # DORATestermanagement Organization Tests
 # =============================================================================
 
+
 class TestDORATestermanagementOrganization:
     """Tests for tester organization management."""
 
     def test_register_organization(self):
         """Test registering a tester organization."""
         manager = create_tester_management()
-        org = manager.register_organization(
-            name="Red Team Services Ltd",
-            country="UK"
-        )
+        org = manager.register_organization(name="Red Team Services Ltd", country="UK")
         assert org is not None
         assert org.name == "Red Team Services Ltd"
 
     def test_associate_tester_with_organization(self):
         """Test associating a tester with an organization."""
         manager = create_tester_management()
-        org = manager.register_organization(
-            name="Cyber Security Partners",
-            country="DE"
-        )
+        org = manager.register_organization(name="Cyber Security Partners", country="DE")
         tester = manager.register_tester(
             name="Org Test Tester",
             tester_type=TesterType.EXTERNAL,
-            organization_id=org.organization_id
+            organization_id=org.organization_id,
         )
         assert tester.organization_id == org.organization_id
 
@@ -752,16 +703,14 @@ class TestDORATestermanagementOrganization:
 # Reporting Tests
 # =============================================================================
 
+
 class TestTesterManagementReporting:
     """Tests for reporting functionality."""
 
     def test_generate_tester_report(self):
         """Test generating a tester report."""
         manager = create_tester_management()
-        tester = manager.register_tester(
-            name="Report Test Tester",
-            tester_type=TesterType.EXTERNAL
-        )
+        tester = manager.register_tester(name="Report Test Tester", tester_type=TesterType.EXTERNAL)
         report = manager.generate_tester_report(tester.tester_id)
         assert report is not None
         assert "tester_id" in report
@@ -770,8 +719,7 @@ class TestTesterManagementReporting:
         """Test getting qualification summary."""
         manager = create_tester_management()
         tester = manager.register_tester(
-            name="Summary Test Tester",
-            tester_type=TesterType.EXTERNAL
+            name="Summary Test Tester", tester_type=TesterType.EXTERNAL
         )
         summary = manager.get_qualification_summary(tester.tester_id)
         assert summary is not None

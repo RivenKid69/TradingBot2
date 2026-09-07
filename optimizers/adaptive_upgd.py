@@ -175,7 +175,7 @@ class AdaptiveUPGD(torch.optim.Optimizer):
                 first_moment = state["first_moment"]
                 sec_moment = state["sec_moment"]
                 first_moment.mul_(group["beta1"]).add_(p.grad.data, alpha=1 - group["beta1"])
-                sec_moment.mul_(group["beta2"]).add_(p.grad.data ** 2, alpha=1 - group["beta2"])
+                sec_moment.mul_(group["beta2"]).add_(p.grad.data**2, alpha=1 - group["beta2"])
 
                 # Track global min/max utility for normalization
                 # FIX (2026-05-27): Track min/max on BIAS-CORRECTED utility
@@ -237,8 +237,7 @@ class AdaptiveUPGD(torch.optim.Optimizer):
                     # Scale sigma to maintain constant noise-to-signal ratio
                     # Ensure minimum noise floor to prevent zero noise
                     adaptive_sigma = max(
-                        group["sigma"] * grad_norm_for_noise,
-                        group["min_noise_std"]
+                        group["sigma"] * grad_norm_for_noise, group["min_noise_std"]
                     )
                     noise = torch.randn_like(p.grad) * adaptive_sigma
                 else:

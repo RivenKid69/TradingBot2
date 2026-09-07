@@ -81,7 +81,7 @@ class TestEncryptionDecryption:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="sk-live-abc123xyz789"
+            plaintext="sk-live-abc123xyz789",
         )
 
     def test_encrypt_decrypt_roundtrip(self, vault):
@@ -91,7 +91,7 @@ class TestEncryptionDecryption:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext=plaintext
+            plaintext=plaintext,
         )
         decrypted = vault.decrypt(encrypted, purpose="test")
         assert decrypted == plaintext
@@ -104,7 +104,7 @@ class TestEncryptionDecryption:
                 user_id="user_001",
                 credential_type=cred_type,
                 broker="test_broker",
-                plaintext=plaintext
+                plaintext=plaintext,
             )
             decrypted = vault.decrypt(encrypted, purpose="test")
             assert decrypted == plaintext
@@ -127,7 +127,7 @@ class TestEncryptionDecryption:
                 user_id="user_001",
                 credential_type=CredentialType.BROKER_API_KEY,
                 broker="alpaca",
-                plaintext="same_key"
+                plaintext="same_key",
             )
             nonces.add(encrypted.nonce)
         # All nonces should be unique
@@ -141,7 +141,7 @@ class TestEncryptionDecryption:
                 user_id="user_001",
                 credential_type=CredentialType.BROKER_API_KEY,
                 broker="alpaca",
-                plaintext="same_key"
+                plaintext="same_key",
             )
             ciphertexts.add(encrypted.ciphertext)
         # All ciphertexts should be unique (due to random nonce)
@@ -165,7 +165,7 @@ class TestEncryptionDecryption:
                 user_id="user_001",
                 credential_type=CredentialType.BROKER_API_KEY,
                 broker="test",
-                plaintext=plaintext
+                plaintext=plaintext,
             )
             decrypted = vault.decrypt(encrypted, purpose="test")
             assert decrypted == plaintext
@@ -177,7 +177,7 @@ class TestEncryptionDecryption:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="test",
-            plaintext=plaintext
+            plaintext=plaintext,
         )
         decrypted = vault.decrypt(encrypted, purpose="test")
         assert decrypted == plaintext
@@ -189,7 +189,7 @@ class TestEncryptionDecryption:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="test",
-            plaintext=plaintext
+            plaintext=plaintext,
         )
         decrypted = vault.decrypt(encrypted, purpose="test")
         assert decrypted == plaintext
@@ -216,7 +216,7 @@ class TestUserIsolation:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="user_001_key"
+            plaintext="user_001_key",
         )
         # Modify user_id (simulating cross-user access attempt)
         encrypted.user_id = "user_002"
@@ -230,7 +230,7 @@ class TestUserIsolation:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="alpaca_key"
+            plaintext="alpaca_key",
         )
         # Modify broker (simulating cross-broker access attempt)
         encrypted.broker = "binance"
@@ -244,7 +244,7 @@ class TestUserIsolation:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="api_key"
+            plaintext="api_key",
         )
         # Modify type (simulating cross-type access attempt)
         encrypted.credential_type = CredentialType.BROKER_API_SECRET
@@ -267,7 +267,7 @@ class TestTamperDetection:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="original_key"
+            plaintext="original_key",
         )
         # Tamper with ciphertext
         tampered = bytearray(encrypted.ciphertext)
@@ -283,7 +283,7 @@ class TestTamperDetection:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="original_key"
+            plaintext="original_key",
         )
         # Tamper with nonce
         tampered = bytearray(encrypted.nonce)
@@ -299,7 +299,7 @@ class TestTamperDetection:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="original_key"
+            plaintext="original_key",
         )
         # Truncate ciphertext
         encrypted.ciphertext = encrypted.ciphertext[:10]
@@ -322,7 +322,7 @@ class TestAccessLogging:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
         vault.decrypt(encrypted, purpose="order_execution")
 
@@ -337,7 +337,7 @@ class TestAccessLogging:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
         encrypted.ciphertext = b"tampered"
 
@@ -354,7 +354,7 @@ class TestAccessLogging:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
         assert encrypted.access_count == 0
 
@@ -370,7 +370,7 @@ class TestAccessLogging:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
         assert encrypted.last_accessed is None
 
@@ -395,7 +395,7 @@ class TestAccessLogging:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
         vault.decrypt(encrypted, purpose="test")
 
@@ -418,7 +418,7 @@ class TestSecureDeletion:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="secret_key"
+            plaintext="secret_key",
         )
         original_ciphertext = encrypted.ciphertext
 
@@ -433,7 +433,7 @@ class TestSecureDeletion:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="secret_key"
+            plaintext="secret_key",
         )
         original_nonce = encrypted.nonce
 
@@ -446,7 +446,7 @@ class TestSecureDeletion:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="secret_key"
+            plaintext="secret_key",
         )
         vault.delete(encrypted)
 
@@ -469,7 +469,7 @@ class TestCredentialRotation:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="old_key"
+            plaintext="old_key",
         )
         vault.decrypt(original, purpose="test")  # Access to increment count
         original_access_count = original.access_count
@@ -506,7 +506,7 @@ class TestCredentialVerification:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="correct_key"
+            plaintext="correct_key",
         )
         assert vault.verify_credential(encrypted, "correct_key") is True
 
@@ -516,7 +516,7 @@ class TestCredentialVerification:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="correct_key"
+            plaintext="correct_key",
         )
         assert vault.verify_credential(encrypted, "wrong_key") is False
 
@@ -526,7 +526,7 @@ class TestCredentialVerification:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="correct_key"
+            plaintext="correct_key",
         )
         encrypted.ciphertext = b"tampered"
         assert vault.verify_credential(encrypted, "correct_key") is False
@@ -547,7 +547,7 @@ class TestSerialization:
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
             plaintext="test_key",
-            metadata={"label": "primary"}
+            metadata={"label": "primary"},
         )
         data = encrypted.to_dict()
         restored = EncryptedCredential.from_dict(data)
@@ -580,7 +580,7 @@ class TestKeyDerivation:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
         decrypted = vault2.decrypt(encrypted, purpose="test")
         assert decrypted == "test_key"
@@ -594,7 +594,7 @@ class TestKeyDerivation:
             user_id="user_001",
             credential_type=CredentialType.BROKER_API_KEY,
             broker="alpaca",
-            plaintext="test_key"
+            plaintext="test_key",
         )
 
         with pytest.raises(CredentialDecryptionError):

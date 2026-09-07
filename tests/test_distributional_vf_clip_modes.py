@@ -11,9 +11,11 @@ This test suite validates three modes:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
+
 gym = pytest.importorskip("gymnasium")
 
 
@@ -36,11 +38,13 @@ class TestDistributionalVFClipModes:
         policy.uses_quantile_value_head = True
         policy.quantile_huber_kappa = 1.0
         # Mock forward pass
-        policy.forward = Mock(return_value=(
-            Mock(),  # actions
-            Mock(),  # values
-            Mock(),  # log_probs
-        ))
+        policy.forward = Mock(
+            return_value=(
+                Mock(),  # actions
+                Mock(),  # values
+                Mock(),  # log_probs
+            )
+        )
         return policy
 
     def test_parameter_validation_mode(self):
@@ -50,7 +54,7 @@ class TestDistributionalVFClipModes:
         # Valid modes
         for mode in [None, "disable", "mean_only", "mean_and_variance", "per_quantile"]:
             try:
-                with patch('distributional_ppo.DistributionalPPO._setup_model'):
+                with patch("distributional_ppo.DistributionalPPO._setup_model"):
                     model = DistributionalPPO(
                         policy="MlpLstmPolicy",
                         env=self.mock_env(),
@@ -66,7 +70,7 @@ class TestDistributionalVFClipModes:
 
         # Invalid mode
         with pytest.raises(ValueError, match="distributional_vf_clip_mode"):
-            with patch('distributional_ppo.DistributionalPPO._setup_model'):
+            with patch("distributional_ppo.DistributionalPPO._setup_model"):
                 DistributionalPPO(
                     policy="MlpLstmPolicy",
                     env=self.mock_env(),
@@ -81,7 +85,7 @@ class TestDistributionalVFClipModes:
         # Valid factor >= 1.0
         for factor in [1.0, 1.5, 2.0, 10.0]:
             try:
-                with patch('distributional_ppo.DistributionalPPO._setup_model'):
+                with patch("distributional_ppo.DistributionalPPO._setup_model"):
                     model = DistributionalPPO(
                         policy="MlpLstmPolicy",
                         env=self.mock_env(),
@@ -93,9 +97,9 @@ class TestDistributionalVFClipModes:
                 pytest.fail(f"Valid factor {factor} raised exception: {e}")
 
         # Invalid factors
-        for invalid_factor in [0.0, 0.5, -1.0, float('inf'), float('nan')]:
+        for invalid_factor in [0.0, 0.5, -1.0, float("inf"), float("nan")]:
             with pytest.raises(ValueError, match="distributional_vf_clip_variance_factor"):
-                with patch('distributional_ppo.DistributionalPPO._setup_model'):
+                with patch("distributional_ppo.DistributionalPPO._setup_model"):
                     DistributionalPPO(
                         policy="MlpLstmPolicy",
                         env=self.mock_env(),
@@ -118,12 +122,13 @@ class TestDistributionalVFClipModes:
         clip_range_vf = 0.5
 
         for mode in [None, "disable"]:
-            distributional_vf_clip_enabled = (
-                clip_range_vf is not None
-                and mode not in (None, "disable")
+            distributional_vf_clip_enabled = clip_range_vf is not None and mode not in (
+                None,
+                "disable",
             )
-            assert not distributional_vf_clip_enabled, \
-                f"VF clipping should be disabled for mode={mode}"
+            assert (
+                not distributional_vf_clip_enabled
+            ), f"VF clipping should be disabled for mode={mode}"
 
     def test_mode_mean_only_legacy_behavior(self):
         """
@@ -137,27 +142,27 @@ class TestDistributionalVFClipModes:
         batch_size = 2
 
         # Old quantiles (narrow distribution)
-        quantiles_old = torch.tensor([
-            [0.0, 1.0, 2.0, 3.0, 4.0],  # mean=2, std~1.41
-            [1.0, 2.0, 3.0, 4.0, 5.0],  # mean=3, std~1.41
-        ])
+        quantiles_old = torch.tensor(
+            [
+                [0.0, 1.0, 2.0, 3.0, 4.0],  # mean=2, std~1.41
+                [1.0, 2.0, 3.0, 4.0, 5.0],  # mean=3, std~1.41
+            ]
+        )
 
         # New quantiles (wide distribution - 5x variance!)
-        quantiles_new = torch.tensor([
-            [-5.0, 0.0, 5.0, 10.0, 15.0],   # mean=5, std~7.07 (5x variance!)
-            [-4.0, 1.0, 6.0, 11.0, 16.0],   # mean=6, std~7.07 (5x variance!)
-        ])
+        quantiles_new = torch.tensor(
+            [
+                [-5.0, 0.0, 5.0, 10.0, 15.0],  # mean=5, std~7.07 (5x variance!)
+                [-4.0, 1.0, 6.0, 11.0, 16.0],  # mean=6, std~7.07 (5x variance!)
+            ]
+        )
 
         old_mean = quantiles_old.mean(dim=1, keepdim=True)
         new_mean = quantiles_new.mean(dim=1, keepdim=True)
 
         # Clip mean with delta=2
         clip_delta = 2.0
-        clipped_mean = torch.clamp(
-            new_mean,
-            old_mean - clip_delta,
-            old_mean + clip_delta
-        )
+        clipped_mean = torch.clamp(new_mean, old_mean - clip_delta, old_mean + clip_delta)
 
         # Legacy mode: parallel shift
         delta = clipped_mean - new_mean
@@ -172,13 +177,13 @@ class TestDistributionalVFClipModes:
         clipped_std_legacy = quantiles_clipped_legacy.std(dim=1)
 
         # Parallel shift preserves variance exactly
-        assert torch.allclose(new_std, clipped_std_legacy), \
-            "Legacy mode (parallel shift) does NOT constrain variance!"
+        assert torch.allclose(
+            new_std, clipped_std_legacy
+        ), "Legacy mode (parallel shift) does NOT constrain variance!"
 
         # Variance increased ~5x despite clipping
         variance_ratio = (clipped_std_legacy / old_std).mean().item()
-        assert variance_ratio > 4.0, \
-            f"Variance should increase ~5x, got {variance_ratio:.2f}x"
+        assert variance_ratio > 4.0, f"Variance should increase ~5x, got {variance_ratio:.2f}x"
 
     def test_mode_mean_and_variance_constrains_both(self):
         """
@@ -191,27 +196,27 @@ class TestDistributionalVFClipModes:
         batch_size = 2
 
         # Old quantiles (narrow distribution)
-        quantiles_old = torch.tensor([
-            [0.0, 1.0, 2.0, 3.0, 4.0],  # mean=2, std~1.41
-            [1.0, 2.0, 3.0, 4.0, 5.0],  # mean=3, std~1.41
-        ])
+        quantiles_old = torch.tensor(
+            [
+                [0.0, 1.0, 2.0, 3.0, 4.0],  # mean=2, std~1.41
+                [1.0, 2.0, 3.0, 4.0, 5.0],  # mean=3, std~1.41
+            ]
+        )
 
         # New quantiles (wide distribution - 10x variance!)
-        quantiles_new = torch.tensor([
-            [-10.0, 0.0, 10.0, 20.0, 30.0],   # mean=10, std~14.14 (10x variance!)
-            [-9.0, 1.0, 11.0, 21.0, 31.0],    # mean=11, std~14.14 (10x variance!)
-        ])
+        quantiles_new = torch.tensor(
+            [
+                [-10.0, 0.0, 10.0, 20.0, 30.0],  # mean=10, std~14.14 (10x variance!)
+                [-9.0, 1.0, 11.0, 21.0, 31.0],  # mean=11, std~14.14 (10x variance!)
+            ]
+        )
 
         old_mean = quantiles_old.mean(dim=1, keepdim=True)
         new_mean = quantiles_new.mean(dim=1, keepdim=True)
 
         # Clip mean with delta=5
         clip_delta = 5.0
-        clipped_mean = torch.clamp(
-            new_mean,
-            old_mean - clip_delta,
-            old_mean + clip_delta
-        )
+        clipped_mean = torch.clamp(new_mean, old_mean - clip_delta, old_mean + clip_delta)
 
         # Improved mode: parallel shift + variance constraint
         delta = clipped_mean - new_mean
@@ -219,27 +224,26 @@ class TestDistributionalVFClipModes:
 
         # Constrain variance
         quantiles_centered = quantiles_shifted - clipped_mean
-        current_variance = (quantiles_centered ** 2).mean(dim=1, keepdim=True)
+        current_variance = (quantiles_centered**2).mean(dim=1, keepdim=True)
 
         old_quantiles_centered = quantiles_old - old_mean
-        old_variance = (old_quantiles_centered ** 2).mean(dim=1, keepdim=True)
+        old_variance = (old_quantiles_centered**2).mean(dim=1, keepdim=True)
 
         # Constrain to max 2x variance
         variance_factor = 2.0
-        max_variance = old_variance * (variance_factor ** 2)
-        variance_ratio = torch.sqrt(torch.clamp(
-            current_variance / (old_variance + 1e-8),
-            max=max_variance / (old_variance + 1e-8)
-        ))
+        max_variance = old_variance * (variance_factor**2)
+        variance_ratio = torch.sqrt(
+            torch.clamp(
+                current_variance / (old_variance + 1e-8), max=max_variance / (old_variance + 1e-8)
+            )
+        )
 
         # Scale quantiles back if variance too large
         quantiles_clipped_improved = clipped_mean + quantiles_centered * variance_ratio
 
         # Verify mean is clipped
         assert torch.allclose(
-            quantiles_clipped_improved.mean(dim=1, keepdim=True),
-            clipped_mean,
-            atol=1e-5
+            quantiles_clipped_improved.mean(dim=1, keepdim=True), clipped_mean, atol=1e-5
         )
 
         # Verify variance is constrained
@@ -247,13 +251,15 @@ class TestDistributionalVFClipModes:
         old_variance_1d = old_variance.squeeze(-1)
 
         # Variance should be <= old_variance * variance_factor^2
-        assert torch.all(clipped_variance <= old_variance_1d * (variance_factor ** 2) + 1e-5), \
-            "Variance should be constrained to max_variance"
+        assert torch.all(
+            clipped_variance <= old_variance_1d * (variance_factor**2) + 1e-5
+        ), "Variance should be constrained to max_variance"
 
         # Variance ratio should be <= variance_factor
         actual_variance_ratio = torch.sqrt(clipped_variance / old_variance_1d)
-        assert torch.all(actual_variance_ratio <= variance_factor + 1e-3), \
-            f"Variance ratio should be <= {variance_factor}, got {actual_variance_ratio}"
+        assert torch.all(
+            actual_variance_ratio <= variance_factor + 1e-3
+        ), f"Variance ratio should be <= {variance_factor}, got {actual_variance_ratio}"
 
     def test_mode_per_quantile_guarantees_bounds(self):
         """
@@ -268,16 +274,20 @@ class TestDistributionalVFClipModes:
         batch_size = 2
 
         # Old values
-        old_values = torch.tensor([
-            [10.0],  # Sample 1
-            [20.0],  # Sample 2
-        ])
+        old_values = torch.tensor(
+            [
+                [10.0],  # Sample 1
+                [20.0],  # Sample 2
+            ]
+        )
 
         # New quantiles (wide distributions)
-        quantiles_new = torch.tensor([
-            [-10.0, 0.0, 10.0, 30.0, 60.0],   # Sample 1: mean=18, very wide
-            [-5.0, 10.0, 20.0, 40.0, 75.0],   # Sample 2: mean=28, very wide
-        ])
+        quantiles_new = torch.tensor(
+            [
+                [-10.0, 0.0, 10.0, 30.0, 60.0],  # Sample 1: mean=18, very wide
+                [-5.0, 10.0, 20.0, 40.0, 75.0],  # Sample 2: mean=28, very wide
+            ]
+        )
 
         # Clip delta
         clip_delta = 5.0
@@ -285,9 +295,7 @@ class TestDistributionalVFClipModes:
         # per_quantile mode: clip EACH quantile relative to old_value
         # Formula: quantile_clipped = old_value + clip(quantile - old_value, -clip_delta, +clip_delta)
         quantiles_clipped = old_values + torch.clamp(
-            quantiles_new - old_values,
-            min=-clip_delta,
-            max=clip_delta
+            quantiles_new - old_values, min=-clip_delta, max=clip_delta
         )
 
         # Verify ALL quantiles are within bounds for each sample
@@ -299,17 +307,17 @@ class TestDistributionalVFClipModes:
             sample_quantiles = quantiles_clipped[i]
 
             # CRITICAL: All quantiles must be within bounds
-            assert torch.all(sample_quantiles >= clip_min_i), \
-                f"Sample {i}: Some quantiles below {clip_min_i}: {sample_quantiles}"
-            assert torch.all(sample_quantiles <= clip_max_i), \
-                f"Sample {i}: Some quantiles above {clip_max_i}: {sample_quantiles}"
+            assert torch.all(
+                sample_quantiles >= clip_min_i
+            ), f"Sample {i}: Some quantiles below {clip_min_i}: {sample_quantiles}"
+            assert torch.all(
+                sample_quantiles <= clip_max_i
+            ), f"Sample {i}: Some quantiles above {clip_max_i}: {sample_quantiles}"
 
         # Compare with mean_only mode for same input
         new_mean = quantiles_new.mean(dim=1, keepdim=True)
         clipped_mean = torch.clamp(
-            new_mean,
-            min=old_values - clip_delta,
-            max=old_values + clip_delta
+            new_mean, min=old_values - clip_delta, max=old_values + clip_delta
         )
         delta = clipped_mean - new_mean
         quantiles_mean_only = quantiles_new + delta
@@ -322,14 +330,14 @@ class TestDistributionalVFClipModes:
             clip_max_i = old_value_i + clip_delta
 
             sample_quantiles_mean_only = quantiles_mean_only[i]
-            if (sample_quantiles_mean_only < clip_min_i).any() or \
-               (sample_quantiles_mean_only > clip_max_i).any():
+            if (sample_quantiles_mean_only < clip_min_i).any() or (
+                sample_quantiles_mean_only > clip_max_i
+            ).any():
                 mean_only_violates = True
                 break
 
         # Verify the problem exists in mean_only
-        assert mean_only_violates, \
-            "mean_only should allow bounds violations for this test case"
+        assert mean_only_violates, "mean_only should allow bounds violations for this test case"
 
         print("✓ per_quantile mode GUARANTEES all quantiles within bounds!")
         print("  (while mean_only allows violations)")
@@ -349,7 +357,7 @@ class TestDistributionalVFClipModes:
         # Old distribution: concentrated around 0 (low variance)
         old_probs = torch.zeros(batch_size, num_atoms)
         center_idx = num_atoms // 2
-        old_probs[:, center_idx - 2:center_idx + 3] = torch.tensor([0.1, 0.2, 0.4, 0.2, 0.1])
+        old_probs[:, center_idx - 2 : center_idx + 3] = torch.tensor([0.1, 0.2, 0.4, 0.2, 0.1])
         old_mean = (old_probs * atoms).sum(dim=1, keepdim=True)
         old_variance = ((atoms - old_mean) ** 2 * old_probs).sum(dim=1, keepdim=True)
 
@@ -364,8 +372,9 @@ class TestDistributionalVFClipModes:
 
         # The actual constraint should reduce this ratio
         # This test documents the expected behavior
-        assert variance_ratio_before.min() > 5.0, \
-            "Uniform distribution should have much higher variance than concentrated"
+        assert (
+            variance_ratio_before.min() > 5.0
+        ), "Uniform distribution should have much higher variance than concentrated"
 
     def test_logging_of_modes(self):
         """
@@ -389,13 +398,11 @@ class TestDistributionalVFClipModes:
         clip_range_vf = 0.5
         mode = None
 
-        distributional_vf_clip_enabled = (
-            clip_range_vf is not None
-            and mode not in (None, "disable")
-        )
+        distributional_vf_clip_enabled = clip_range_vf is not None and mode not in (None, "disable")
 
-        assert not distributional_vf_clip_enabled, \
-            "Default mode=None should disable VF clipping for distributional critics"
+        assert (
+            not distributional_vf_clip_enabled
+        ), "Default mode=None should disable VF clipping for distributional critics"
 
 
 class TestQuantileCriticVFClipModes:
@@ -407,9 +414,9 @@ class TestQuantileCriticVFClipModes:
         clip_range_vf_value = 0.5
         distributional_vf_clip_mode = None
 
-        enabled = (
-            clip_range_vf_value is not None
-            and distributional_vf_clip_mode not in (None, "disable")
+        enabled = clip_range_vf_value is not None and distributional_vf_clip_mode not in (
+            None,
+            "disable",
         )
 
         assert not enabled, "Should be disabled when mode=None"
@@ -433,9 +440,9 @@ class TestCategoricalCriticVFClipModes:
         clip_range_vf_value = 0.5
         distributional_vf_clip_mode = "disable"
 
-        enabled = (
-            clip_range_vf_value is not None
-            and distributional_vf_clip_mode not in (None, "disable")
+        enabled = clip_range_vf_value is not None and distributional_vf_clip_mode not in (
+            None,
+            "disable",
         )
 
         assert not enabled, "Should be disabled when mode='disable'"

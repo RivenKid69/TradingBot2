@@ -30,7 +30,7 @@ def download_klines(
     interval: str,
     start_date: str,
     end_date: str,
-    market: str = "spot"
+    market: str = "spot",
 ) -> pd.DataFrame:
     """
     Download klines from Binance with pagination.
@@ -87,7 +87,7 @@ def download_klines(
                 interval=interval,
                 start_ms=current_start,
                 end_ms=end_ms,
-                limit=limit
+                limit=limit,
             )
 
             if not klines:
@@ -117,9 +117,18 @@ def download_klines(
 
     # Convert to DataFrame
     columns = [
-        "open_time", "open", "high", "low", "close", "volume",
-        "close_time", "quote_asset_volume", "number_of_trades",
-        "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume", "ignore"
+        "open_time",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "close_time",
+        "quote_asset_volume",
+        "number_of_trades",
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume",
+        "ignore",
     ]
 
     df = pd.DataFrame(all_klines, columns=columns)
@@ -127,10 +136,20 @@ def download_klines(
     # Convert types
     df["open_time"] = pd.to_numeric(df["open_time"])
     df["close_time"] = pd.to_numeric(df["close_time"])
-    for col in ["open", "high", "low", "close", "volume", "quote_asset_volume",
-                "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume"]:
+    for col in [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_asset_volume",
+        "taker_buy_base_asset_volume",
+        "taker_buy_quote_asset_volume",
+    ]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    df["number_of_trades"] = pd.to_numeric(df["number_of_trades"], errors="coerce").fillna(0).astype(int)
+    df["number_of_trades"] = (
+        pd.to_numeric(df["number_of_trades"], errors="coerce").fillna(0).astype(int)
+    )
 
     # Add derived columns
     df["symbol"] = symbol
@@ -161,7 +180,9 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
 
     # SMA (Simple Moving Average)
     df["sma_1200"] = df["close"].rolling(window=5, min_periods=1).mean()  # 5 bars = 1200 min (20h)
-    df["sma_5040"] = df["close"].rolling(window=21, min_periods=1).mean()  # 21 bars = 5040 min (84h)
+    df["sma_5040"] = (
+        df["close"].rolling(window=21, min_periods=1).mean()
+    )  # 21 bars = 5040 min (84h)
     df["sma_12000"] = df["close"].rolling(window=50, min_periods=1).mean()  # 50 bars = 200h
 
     # RSI (Relative Strength Index)
@@ -170,8 +191,8 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
     loss = (-delta).where(delta < 0, 0.0)
 
     # Wilder's smoothed RSI
-    avg_gain = gain.ewm(alpha=1/14, min_periods=14, adjust=False).mean()
-    avg_loss = loss.ewm(alpha=1/14, min_periods=14, adjust=False).mean()
+    avg_gain = gain.ewm(alpha=1 / 14, min_periods=14, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1 / 14, min_periods=14, adjust=False).mean()
 
     rs = avg_gain / (avg_loss + 1e-10)
     df["rsi"] = 100.0 - (100.0 / (1.0 + rs))
@@ -197,7 +218,9 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
     # CCI (Commodity Channel Index)
     tp = (df["high"] + df["low"] + df["close"]) / 3  # Typical Price
     sma_tp = tp.rolling(window=20, min_periods=1).mean()
-    mad = tp.rolling(window=20, min_periods=1).apply(lambda x: np.abs(x - x.mean()).mean(), raw=True)
+    mad = tp.rolling(window=20, min_periods=1).apply(
+        lambda x: np.abs(x - x.mean()).mean(), raw=True
+    )
     df["cci"] = (tp - sma_tp) / (0.015 * mad + 1e-10)
     df["cci"] = df["cci"].fillna(0.0)
     df["cci_valid"] = (df.index >= 19).astype(float)
@@ -205,9 +228,9 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
     # OBV (On-Balance Volume)
     obv = [0.0]
     for i in range(1, len(df)):
-        if df["close"].iloc[i] > df["close"].iloc[i-1]:
+        if df["close"].iloc[i] > df["close"].iloc[i - 1]:
             obv.append(obv[-1] + df["volume"].iloc[i])
-        elif df["close"].iloc[i] < df["close"].iloc[i-1]:
+        elif df["close"].iloc[i] < df["close"].iloc[i - 1]:
             obv.append(obv[-1] - df["volume"].iloc[i])
         else:
             obv.append(obv[-1])
@@ -265,8 +288,8 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
         return yz
 
     df["yang_zhang_48h"] = yang_zhang_vol(df, 12)  # 12 bars = 48h
-    df["yang_zhang_7d"] = yang_zhang_vol(df, 42)   # 42 bars = 7d
-    df["yang_zhang_30d"] = yang_zhang_vol(df, 180) # 180 bars = 30d
+    df["yang_zhang_7d"] = yang_zhang_vol(df, 42)  # 42 bars = 7d
+    df["yang_zhang_30d"] = yang_zhang_vol(df, 180)  # 180 bars = 30d
 
     # Parkinson Volatility
     def parkinson_vol(high: pd.Series, low: pd.Series, window: int) -> pd.Series:
@@ -279,9 +302,9 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
     df["parkinson_7d"] = parkinson_vol(df["high"], df["low"], 42)
 
     # Simplified GARCH proxy (using rolling std of returns)
-    df["garch_200h"] = df["ret_4h"].rolling(window=50, min_periods=10).std()   # 50 bars = 200h
-    df["garch_14d"] = df["ret_4h"].rolling(window=84, min_periods=20).std()    # 84 bars = 14d
-    df["garch_30d"] = df["ret_4h"].rolling(window=180, min_periods=30).std()   # 180 bars = 30d
+    df["garch_200h"] = df["ret_4h"].rolling(window=50, min_periods=10).std()  # 50 bars = 200h
+    df["garch_14d"] = df["ret_4h"].rolling(window=84, min_periods=20).std()  # 84 bars = 14d
+    df["garch_30d"] = df["ret_4h"].rolling(window=180, min_periods=30).std()  # 180 bars = 30d
 
     # ================= VOLUME FEATURES =================
 
@@ -303,8 +326,8 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
     sell_volume = df["volume"] - buy_volume
     delta = buy_volume - sell_volume
 
-    df["cvd_24h"] = delta.rolling(window=6, min_periods=1).sum()   # 6 bars = 24h
-    df["cvd_7d"] = delta.rolling(window=42, min_periods=1).sum()   # 42 bars = 7d
+    df["cvd_24h"] = delta.rolling(window=6, min_periods=1).sum()  # 6 bars = 24h
+    df["cvd_7d"] = delta.rolling(window=42, min_periods=1).sum()  # 42 bars = 7d
 
     # ================= DATA QUALITY FLAGS =================
 
@@ -326,7 +349,9 @@ def compute_technical_indicators(df: pd.DataFrame, interval_minutes: int = 240) 
     return df
 
 
-def add_train_val_test_split(df: pd.DataFrame, train_ratio: float = 0.7, val_ratio: float = 0.15) -> pd.DataFrame:
+def add_train_val_test_split(
+    df: pd.DataFrame, train_ratio: float = 0.7, val_ratio: float = 0.15
+) -> pd.DataFrame:
     """Add wf_role column for train/val/test split."""
     df = df.copy()
     n = len(df)
@@ -368,7 +393,7 @@ def main():
             interval=args.interval,
             start_date=args.start,
             end_date=args.end,
-            market=args.market
+            market=args.market,
         )
 
         print(f"\nRaw data: {len(df)} bars")

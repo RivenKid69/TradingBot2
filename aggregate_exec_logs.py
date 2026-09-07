@@ -63,9 +63,9 @@ def _normalize_trades(df: pd.DataFrame) -> pd.DataFrame:
     cols = set(df.columns)
 
     # Unified already
-    if {"ts","run_id","symbol","side","order_type","price","quantity"}.issubset(cols):
+    if {"ts", "run_id", "symbol", "side", "order_type", "price", "quantity"}.issubset(cols):
         df = df.copy()
-        for c in ["fee","pnl"]:
+        for c in ["fee", "pnl"]:
             if c in df.columns:
                 df[c] = pd.to_numeric(df[c], errors="coerce")
         # ensure required cols exist
@@ -107,7 +107,7 @@ def _normalize_trades(df: pd.DataFrame) -> pd.DataFrame:
         return df[columns]
 
     # Legacy -> map
-    if {"ts","price","volume","side"}.issubset(cols):
+    if {"ts", "price", "volume", "side"}.issubset(cols):
         out = pd.DataFrame()
         out["ts"] = pd.to_numeric(df["ts"], errors="coerce").astype("Int64")
         out["run_id"] = ""
@@ -396,9 +396,7 @@ def _normalize_reports(df: pd.DataFrame) -> pd.DataFrame:
 def _bucket_ts_ms(ts_ms: pd.Series, *, bar_seconds: int) -> pd.Series:
     """Floors ms timestamp to bar_seconds buckets."""
     if bar_seconds <= 0:
-        raise ValueError(
-            f"bar_seconds must be a positive integer (received {bar_seconds!r})"
-        )
+        raise ValueError(f"bar_seconds must be a positive integer (received {bar_seconds!r})")
 
     step = int(bar_seconds) * 1000
     return (pd.to_numeric(ts_ms, errors="coerce").astype("Int64") // step) * step
@@ -457,7 +455,11 @@ def recompute_pnl(trades: pd.DataFrame, reports: pd.DataFrame) -> pd.Series:
                         avg = None
                 else:
                     new_pos = pos + qty
-                    avg = (avg * pos + price * qty) / new_pos if pos > 0.0 and avg is not None else price
+                    avg = (
+                        (avg * pos + price * qty) / new_pos
+                        if pos > 0.0 and avg is not None
+                        else price
+                    )
                     pos = new_pos
             else:  # SELL
                 if pos > 0.0:
@@ -473,7 +475,11 @@ def recompute_pnl(trades: pd.DataFrame, reports: pd.DataFrame) -> pd.Series:
                         avg = None
                 else:
                     new_pos = pos - qty
-                    avg = (avg * (-pos) + price * qty) / (-new_pos) if pos < 0.0 and avg is not None else price
+                    avg = (
+                        (avg * (-pos) + price * qty) / (-new_pos)
+                        if pos < 0.0 and avg is not None
+                        else price
+                    )
                     pos = new_pos
             i += 1
 
@@ -543,9 +549,7 @@ def aggregate(
     cap_from_meta = meta_series.apply(
         lambda m: _extract_meta_float(m, ("cap_usd", "cap_quote", "daily_notional_cap"))
     )
-    adv_from_meta = meta_series.apply(
-        lambda m: _extract_meta_float(m, ("adv_quote", "adv_usd"))
-    )
+    adv_from_meta = meta_series.apply(lambda m: _extract_meta_float(m, ("adv_quote", "adv_usd")))
     act_now_from_meta = meta_series.apply(
         lambda m: _extract_meta_bool(m, ("act_now", "execute_now"))
     )
@@ -575,9 +579,7 @@ def aggregate(
     )
 
     if "turnover_usd" in trades.columns:
-        trades["turnover_usd"] = (
-            pd.to_numeric(trades["turnover_usd"], errors="coerce").fillna(0.0)
-        )
+        trades["turnover_usd"] = pd.to_numeric(trades["turnover_usd"], errors="coerce").fillna(0.0)
     else:
         trades["turnover_usd"] = turnover_from_meta
 
@@ -634,33 +636,33 @@ def aggregate(
     trades["cost_bias_bps"] = trades["realized_slippage_bps"] - trades["modeled_cost_bps"]
 
     trades["bar_decision_count"] = trades["execution_mode"].eq("bar").astype(int)
-    act_now_mask = trades["act_now_flag"].apply(
-        lambda v: _normalize_bool_like(v) is True
-    )
-    trades["bar_act_now_count"] = (
-        trades["execution_mode"].eq("bar") & act_now_mask
-    ).astype(int)
+    act_now_mask = trades["act_now_flag"].apply(lambda v: _normalize_bool_like(v) is True)
+    trades["bar_act_now_count"] = (trades["execution_mode"].eq("bar") & act_now_mask).astype(int)
 
     # Per-bar aggregation
     trades["ts_bucket"] = _bucket_ts_ms(trades["ts"], bar_seconds=bar_seconds)
-    g = trades.groupby(["symbol","ts_bucket"], as_index=False)
+    g = trades.groupby(["symbol", "ts_bucket"], as_index=False)
 
     def _agg(df: pd.DataFrame) -> pd.Series:
         qty_abs_series = df["quantity"].abs()
         qty_abs = float(qty_abs_series.sum())
         notional = (df["price"] * qty_abs_series).sum()
         vwap = float(notional / qty_abs) if qty_abs and math.isfinite(notional) else float("nan")
-        buy_qty = df.loc[df["side_sign"]>0, "quantity"].abs().sum()
-        sell_qty = df.loc[df["side_sign"]<0, "quantity"].abs().sum()
+        buy_qty = df.loc[df["side_sign"] > 0, "quantity"].abs().sum()
+        sell_qty = df.loc[df["side_sign"] < 0, "quantity"].abs().sum()
         trade_mask = df["quantity"].abs() > 0
         n_trades = int(trade_mask.sum())
-        fee_sum = float(pd.to_numeric(df["fee"], errors="coerce").fillna(0.0).sum()) if "fee" in df.columns else 0.0
-        bar_decisions = int(df["bar_decision_count"].sum()) if "bar_decision_count" in df.columns else 0
+        fee_sum = (
+            float(pd.to_numeric(df["fee"], errors="coerce").fillna(0.0).sum())
+            if "fee" in df.columns
+            else 0.0
+        )
+        bar_decisions = (
+            int(df["bar_decision_count"].sum()) if "bar_decision_count" in df.columns else 0
+        )
         bar_act_now = int(df["bar_act_now_count"].sum()) if "bar_act_now_count" in df.columns else 0
         turnover_total = float(df.get("turnover_usd", pd.Series(dtype=float)).sum())
-        cap_series = pd.to_numeric(
-            df.get("cap_usd", pd.Series(dtype=float)), errors="coerce"
-        )
+        cap_series = pd.to_numeric(df.get("cap_usd", pd.Series(dtype=float)), errors="coerce")
         cap_values = cap_series[cap_series > 0]
         cap_value = float(cap_values.iloc[0]) if not cap_values.empty else float("nan")
         ratio = (
@@ -668,9 +670,7 @@ def aggregate(
             if cap_value > 0 and math.isfinite(cap_value)
             else float("nan")
         )
-        adv_series = pd.to_numeric(
-            df.get("adv_quote", pd.Series(dtype=float)), errors="coerce"
-        )
+        adv_series = pd.to_numeric(df.get("adv_quote", pd.Series(dtype=float)), errors="coerce")
         adv_values = adv_series[adv_series > 0]
         adv_value = float(adv_values.iloc[0]) if not adv_values.empty else float("nan")
         act_rate = float(bar_act_now / bar_decisions) if bar_decisions > 0 else float("nan")
@@ -693,33 +693,36 @@ def aggregate(
             bias_avg = float(realized_avg - modeled_avg)
         else:
             bias_avg = float("nan")
-        return pd.Series({
-            "volume": float(qty_abs),
-            "buy_qty": float(buy_qty),
-            "sell_qty": float(sell_qty),
-            "trades": n_trades,
-            "vwap": float(vwap),
-            "fee_total": fee_sum,
-            "bar_decisions": bar_decisions,
-            "bar_act_now": bar_act_now,
-            "bar_act_now_rate": act_rate,
-            "bar_turnover_usd": turnover_total,
-            "bar_cap_usd": float(cap_value) if cap_value > 0 else float("nan"),
-            "bar_turnover_vs_cap": ratio,
-            "bar_adv_quote": float(adv_value) if adv_value > 0 else float("nan"),
-            "realized_slippage_bps": float(realized_avg),
-            "modeled_cost_bps": float(modeled_avg),
-            "cost_bias_bps": float(bias_avg),
-        })
+        return pd.Series(
+            {
+                "volume": float(qty_abs),
+                "buy_qty": float(buy_qty),
+                "sell_qty": float(sell_qty),
+                "trades": n_trades,
+                "vwap": float(vwap),
+                "fee_total": fee_sum,
+                "bar_decisions": bar_decisions,
+                "bar_act_now": bar_act_now,
+                "bar_act_now_rate": act_rate,
+                "bar_turnover_usd": turnover_total,
+                "bar_cap_usd": float(cap_value) if cap_value > 0 else float("nan"),
+                "bar_turnover_vs_cap": ratio,
+                "bar_adv_quote": float(adv_value) if adv_value > 0 else float("nan"),
+                "realized_slippage_bps": float(realized_avg),
+                "modeled_cost_bps": float(modeled_avg),
+                "cost_bias_bps": float(bias_avg),
+            }
+        )
 
     bars = g.apply(_agg)
     bars = bars.rename(columns={"ts_bucket": "ts"})
     bars["ts"] = bars["ts"].astype("Int64")
 
     # Per-day aggregation (UTC days by ms timestamp)
-    day_ms = 24*60*60*1000
+    day_ms = 24 * 60 * 60 * 1000
     trades["day"] = (trades["ts"].astype("Int64") // day_ms) * day_ms
-    gd = trades.groupby(["symbol","day"], as_index=False)
+    gd = trades.groupby(["symbol", "day"], as_index=False)
+
     def _agg_day(df: pd.DataFrame) -> pd.Series:
         qty_abs_series = df["quantity"].abs()
         qty_abs = float(qty_abs_series.sum())
@@ -728,14 +731,10 @@ def aggregate(
         trades_count = int(len(df))
         notional = (df["price"] * qty_abs_series).sum()
         vwap = float(notional / qty_abs) if qty_abs and math.isfinite(notional) else float("nan")
-        cap_series = pd.to_numeric(
-            df.get("cap_usd", pd.Series(dtype=float)), errors="coerce"
-        )
+        cap_series = pd.to_numeric(df.get("cap_usd", pd.Series(dtype=float)), errors="coerce")
         cap_values = cap_series[cap_series > 0]
         cap_value = float(cap_values.iloc[0]) if not cap_values.empty else float("nan")
-        adv_series = pd.to_numeric(
-            df.get("adv_quote", pd.Series(dtype=float)), errors="coerce"
-        )
+        adv_series = pd.to_numeric(df.get("adv_quote", pd.Series(dtype=float)), errors="coerce")
         adv_values = adv_series[adv_series > 0]
         adv_value = float(adv_values.iloc[0]) if not adv_values.empty else float("nan")
         bar_decisions = float(df.get("bar_decision_count", pd.Series(dtype=float)).sum())
@@ -760,32 +759,46 @@ def aggregate(
             bias_avg = float(realized_avg - modeled_avg)
         else:
             bias_avg = float("nan")
-        return pd.Series({
-            "volume": float(qty_abs),
-            "trades": trades_count,
-            "buy_qty": buy_qty,
-            "sell_qty": sell_qty,
-            "fee_total": float(pd.to_numeric(df["fee"], errors="coerce").fillna(0.0).sum()) if "fee" in df.columns else 0.0,
-            "vwap": float(vwap),
-            "bar_decisions": int(bar_decisions),
-            "bar_act_now": int(bar_act_now),
-            "bar_act_now_rate": float(bar_act_now / bar_decisions) if bar_decisions > 0 else float("nan"),
-            "bar_turnover_usd": turnover_total,
-            "bar_cap_usd": float(cap_value) if cap_value > 0 else float("nan"),
-            "bar_turnover_vs_cap": float(turnover_total / cap_value)
-            if cap_value > 0 and math.isfinite(cap_value)
-            else float("nan"),
-            "bar_adv_quote": float(adv_value) if adv_value > 0 else float("nan"),
-            "realized_slippage_bps": float(realized_avg),
-            "modeled_cost_bps": float(modeled_avg),
-            "cost_bias_bps": float(bias_avg),
-        })
+        return pd.Series(
+            {
+                "volume": float(qty_abs),
+                "trades": trades_count,
+                "buy_qty": buy_qty,
+                "sell_qty": sell_qty,
+                "fee_total": (
+                    float(pd.to_numeric(df["fee"], errors="coerce").fillna(0.0).sum())
+                    if "fee" in df.columns
+                    else 0.0
+                ),
+                "vwap": float(vwap),
+                "bar_decisions": int(bar_decisions),
+                "bar_act_now": int(bar_act_now),
+                "bar_act_now_rate": (
+                    float(bar_act_now / bar_decisions) if bar_decisions > 0 else float("nan")
+                ),
+                "bar_turnover_usd": turnover_total,
+                "bar_cap_usd": float(cap_value) if cap_value > 0 else float("nan"),
+                "bar_turnover_vs_cap": (
+                    float(turnover_total / cap_value)
+                    if cap_value > 0 and math.isfinite(cap_value)
+                    else float("nan")
+                ),
+                "bar_adv_quote": float(adv_value) if adv_value > 0 else float("nan"),
+                "realized_slippage_bps": float(realized_avg),
+                "modeled_cost_bps": float(modeled_avg),
+                "cost_bias_bps": float(bias_avg),
+            }
+        )
 
     days = gd.apply(_agg_day)
-    days = days.rename(columns={"day":"ts"})
+    days = days.rename(columns={"day": "ts"})
     days["ts"] = days["ts"].astype("Int64")
 
-    reports = _normalize_reports(read_any(reports_path)) if reports_path else _normalize_reports(pd.DataFrame())
+    reports = (
+        _normalize_reports(read_any(reports_path))
+        if reports_path
+        else _normalize_reports(pd.DataFrame())
+    )
     if not reports.empty:
         rep_sorted = reports.sort_values(["symbol", "ts_ms"])
         bars = pd.merge_asof(
@@ -889,18 +902,32 @@ def aggregate(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Aggregate execution logs into per-bar and per-day summaries.")
-    p.add_argument("--trades", required=True, help="Path or glob to unified Exec logs (log_trades_*.csv). Legacy trades.csv is supported but deprecated.")
+    p = argparse.ArgumentParser(
+        description="Aggregate execution logs into per-bar and per-day summaries."
+    )
+    p.add_argument(
+        "--trades",
+        required=True,
+        help="Path or glob to unified Exec logs (log_trades_*.csv). Legacy trades.csv is supported but deprecated.",
+    )
     p.add_argument(
         "--reports",
         default="",
         help="Optional path or glob to equity reports (report_equity_*.csv)",
     )
-    p.add_argument("--out-bars", default="logs/agg_bars.csv", help="Output CSV path for per-bar aggregation")
-    p.add_argument("--out-days", default="logs/agg_days.csv", help="Output CSV path for per-day aggregation")
-    p.add_argument("--bar-seconds", type=int, default=60, help="Bar length in seconds (default: 60)")
+    p.add_argument(
+        "--out-bars", default="logs/agg_bars.csv", help="Output CSV path for per-bar aggregation"
+    )
+    p.add_argument(
+        "--out-days", default="logs/agg_days.csv", help="Output CSV path for per-day aggregation"
+    )
+    p.add_argument(
+        "--bar-seconds", type=int, default=60, help="Bar length in seconds (default: 60)"
+    )
     p.add_argument("--equity-png", default="", help="Optional path to save equity curve PNG")
-    p.add_argument("--metrics-md", default="", help="Optional path to save metrics summary in Markdown")
+    p.add_argument(
+        "--metrics-md", default="", help="Optional path to save metrics summary in Markdown"
+    )
     args = p.parse_args()
 
     try:

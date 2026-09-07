@@ -4,6 +4,7 @@ These tests check for subtle bugs and edge cases.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -16,11 +17,12 @@ def test_projection_multiple_same_bounds_bug():
     implementation incorrectly zeroes out the entire row multiple times, losing
     probability mass from earlier atoms.
     """
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Multiple same_bounds atoms in same batch")
-    print("="*70)
+    print("=" * 70)
 
     from distributional_ppo import DistributionalPPO
+
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     # Setup: Create scenario where multiple atoms exactly match target grid
@@ -29,9 +31,11 @@ def test_projection_multiple_same_bounds_bug():
 
     # Source atoms are same as target (identity case for some atoms)
     # But with different probabilities
-    probs = torch.tensor([
-        [0.2, 0.3, 0.1, 0.15, 0.25],  # All atoms have same_bounds
-    ])
+    probs = torch.tensor(
+        [
+            [0.2, 0.3, 0.1, 0.15, 0.25],  # All atoms have same_bounds
+        ]
+    )
 
     source_atoms = target_atoms  # No shift - all atoms should have same_bounds
 
@@ -55,11 +59,12 @@ def test_projection_multiple_same_bounds_bug():
 
 def test_projection_preserves_probability_mass():
     """Test that total probability is always 1.0 after projection."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Probability mass conservation")
-    print("="*70)
+    print("=" * 70)
 
     from distributional_ppo import DistributionalPPO
+
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     batch_size = 10
@@ -101,11 +106,12 @@ def test_projection_preserves_probability_mass():
 
 def test_projection_mean_preservation():
     """Test that mean value is preserved after projection (within tolerance)."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Mean value preservation")
-    print("="*70)
+    print("=" * 70)
 
     from distributional_ppo import DistributionalPPO
+
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     batch_size = 8
@@ -147,11 +153,15 @@ def test_projection_mean_preservation():
 
             if error > tolerance:
                 failures.append(f"delta={delta}, mean_target={mean_target}: error={error:.3f}")
-                print(f"✗ delta={delta:5.1f}, target={mean_target:5.1f}: "
-                      f"orig={original_mean:6.2f}, proj={projected_mean:6.2f}, err={error:.3f}")
+                print(
+                    f"✗ delta={delta:5.1f}, target={mean_target:5.1f}: "
+                    f"orig={original_mean:6.2f}, proj={projected_mean:6.2f}, err={error:.3f}"
+                )
             else:
-                print(f"✓ delta={delta:5.1f}, target={mean_target:5.1f}: "
-                      f"orig={original_mean:6.2f}, proj={projected_mean:6.2f}, err={error:.3f}")
+                print(
+                    f"✓ delta={delta:5.1f}, target={mean_target:5.1f}: "
+                    f"orig={original_mean:6.2f}, proj={projected_mean:6.2f}, err={error:.3f}"
+                )
 
     if failures:
         print(f"\n✗ FAIL: {len(failures)} cases have large mean error")
@@ -163,11 +173,12 @@ def test_projection_mean_preservation():
 
 def test_projection_gradient_flow():
     """Test that gradients flow through projection correctly."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Gradient flow through projection")
-    print("="*70)
+    print("=" * 70)
 
     from distributional_ppo import DistributionalPPO
+
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     num_atoms = 21
@@ -217,11 +228,12 @@ def test_projection_gradient_flow():
 
 def test_projection_extreme_shifts():
     """Test projection with extreme atom shifts."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Extreme atom shifts")
-    print("="*70)
+    print("=" * 70)
 
     from distributional_ppo import DistributionalPPO
+
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     num_atoms = 51
@@ -267,9 +279,9 @@ def test_projection_extreme_shifts():
 
 def test_vf_clipping_code_structure():
     """Verify VF clipping code has correct structure."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: VF clipping code structure")
-    print("="*70)
+    print("=" * 70)
 
     import inspect
     import distributional_ppo
@@ -277,21 +289,18 @@ def test_vf_clipping_code_structure():
     source = inspect.getsource(distributional_ppo.DistributionalPPO.train)
 
     checks = {
-        "Has critic_loss_unclipped for categorical":
-            "critic_loss_unclipped = -(" in source and "categorical" in source.lower(),
-        "Has critic_loss_clipped for categorical":
-            "critic_loss_clipped = -(" in source,
-        "Uses max(loss_unclipped, loss_clipped)":
-            "torch.max(critic_loss_unclipped, critic_loss_clipped)" in source,
-        "Calls _project_categorical_distribution":
-            "_project_categorical_distribution" in source,
+        "Has critic_loss_unclipped for categorical": "critic_loss_unclipped = -(" in source
+        and "categorical" in source.lower(),
+        "Has critic_loss_clipped for categorical": "critic_loss_clipped = -(" in source,
+        "Uses max(loss_unclipped, loss_clipped)": "torch.max(critic_loss_unclipped, critic_loss_clipped)"
+        in source,
+        "Calls _project_categorical_distribution": "_project_categorical_distribution" in source,
         "VF clipping is NOT in no_grad block for loss":
-            # Check that clipping code is NOT in with torch.no_grad() for loss computation
-            True,  # Need manual verification
-        "Has PPO VF clipping comment":
-            "PPO VF clipping" in source,
-        "Clips in raw space before projection":
-            "mean_values_raw_clipped" in source or "mean_values_unscaled_clipped" in source,
+        # Check that clipping code is NOT in with torch.no_grad() for loss computation
+        True,  # Need manual verification
+        "Has PPO VF clipping comment": "PPO VF clipping" in source,
+        "Clips in raw space before projection": "mean_values_raw_clipped" in source
+        or "mean_values_unscaled_clipped" in source,
     }
 
     all_pass = True
@@ -311,11 +320,12 @@ def test_vf_clipping_code_structure():
 
 def test_projection_batch_independence():
     """Test that projection treats each batch element independently."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Batch independence")
-    print("="*70)
+    print("=" * 70)
 
     from distributional_ppo import DistributionalPPO
+
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     num_atoms = 11
@@ -338,7 +348,7 @@ def test_projection_batch_independence():
     all_match = True
     for i in range(batch_size):
         projected_single = algo._project_categorical_distribution(
-            probs=probs[i:i+1], source_atoms=source_atoms, target_atoms=target_atoms
+            probs=probs[i : i + 1], source_atoms=source_atoms, target_atoms=target_atoms
         )
 
         if not torch.allclose(projected_batch[i], projected_single[0], atol=1e-5):
@@ -356,9 +366,9 @@ def test_projection_batch_independence():
 
 def main():
     """Run all deep verification tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("CATEGORICAL VF CLIPPING - DEEP VERIFICATION")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         ("Multiple same_bounds bug", test_projection_multiple_same_bounds_bug),
@@ -378,13 +388,14 @@ def main():
         except Exception as e:
             print(f"\n✗ EXCEPTION in {test_name}: {e}")
             import traceback
+
             traceback.print_exc()
             results.append((test_name, False, str(e)))
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     passed_count = sum(1 for _, p, _ in results if p)
     total_count = len(results)
@@ -398,14 +409,14 @@ def main():
     print(f"\nTotal: {passed_count}/{total_count} tests passed")
 
     if passed_count == total_count:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("✓✓✓ ALL DEEP VERIFICATION TESTS PASSED ✓✓✓")
-        print("="*70)
+        print("=" * 70)
         return 0
     else:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"✗✗✗ {total_count - passed_count} TESTS FAILED ✗✗✗")
-        print("="*70)
+        print("=" * 70)
         return 1
 
 

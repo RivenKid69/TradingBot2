@@ -67,25 +67,29 @@ def create_benchmark_orderbook(
     for i in range(levels):
         # Bids
         bid_price = mid_price - half_spread - i * 0.01
-        book.add_limit_order(LimitOrder(
-            order_id=f"bid_{i}",
-            price=bid_price,
-            qty=qty_per_level,
-            remaining_qty=qty_per_level,
-            timestamp_ns=1000,
-            side=Side.BUY,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id=f"bid_{i}",
+                price=bid_price,
+                qty=qty_per_level,
+                remaining_qty=qty_per_level,
+                timestamp_ns=1000,
+                side=Side.BUY,
+            )
+        )
 
         # Asks
         ask_price = mid_price + half_spread + i * 0.01
-        book.add_limit_order(LimitOrder(
-            order_id=f"ask_{i}",
-            price=ask_price,
-            qty=qty_per_level,
-            remaining_qty=qty_per_level,
-            timestamp_ns=1000,
-            side=Side.SELL,
-        ))
+        book.add_limit_order(
+            LimitOrder(
+                order_id=f"ask_{i}",
+                price=ask_price,
+                qty=qty_per_level,
+                remaining_qty=qty_per_level,
+                timestamp_ns=1000,
+                side=Side.SELL,
+            )
+        )
 
     return book
 
@@ -134,7 +138,9 @@ def print_results(results: List[dict]) -> None:
     print("-" * 80)
 
     for r in results:
-        print(f"{r['name']:<40} {r['mean_us']:<12.2f} {r['p50_us']:<12.2f} {r['p95_us']:<12.2f} {r['p99_us']:<12.2f}")
+        print(
+            f"{r['name']:<40} {r['mean_us']:<12.2f} {r['p50_us']:<12.2f} {r['p95_us']:<12.2f} {r['p99_us']:<12.2f}"
+        )
 
     print("=" * 80)
 

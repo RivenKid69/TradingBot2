@@ -6,12 +6,13 @@ Tests all functionality with 100% code coverage goal.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import sys
 import os
 
-sys.path.insert(0, '/home/user/ai-quant-platform')
+sys.path.insert(0, "/home/user/ai-quant-platform")
 from variance_gradient_scaler import VarianceGradientScaler
 
 
@@ -27,9 +28,9 @@ class SimpleModel(nn.Module):
 
 def test_basic_functionality():
     """Test basic VGS functionality."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Basic Functionality")
-    print("="*70)
+    print("=" * 70)
 
     torch.manual_seed(42)
     model = SimpleModel()
@@ -62,9 +63,9 @@ def test_basic_functionality():
 
 def test_gradient_statistics_accuracy():
     """Test accuracy of gradient statistics computation."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Gradient Statistics Accuracy")
-    print("="*70)
+    print("=" * 70)
 
     torch.manual_seed(123)
     model = SimpleModel()
@@ -82,7 +83,9 @@ def test_gradient_statistics_accuracy():
     # Manual verification
     all_grads = torch.cat([p.grad.flatten() for p in model.parameters() if p.grad is not None])
 
-    manual_norm = (sum(p.grad.pow(2).sum().item() for p in model.parameters() if p.grad is not None) ** 0.5)
+    manual_norm = (
+        sum(p.grad.pow(2).sum().item() for p in model.parameters() if p.grad is not None) ** 0.5
+    )
     manual_mean = all_grads.abs().mean().item()
     manual_var = all_grads.abs().var().item()  # Fixed: variance of abs values for consistency
     manual_max = all_grads.abs().max().item()
@@ -92,10 +95,10 @@ def test_gradient_statistics_accuracy():
     print(f"Computed var:  {stats['grad_var']:.8f}, Manual: {manual_var:.8f}")
     print(f"Computed max:  {stats['grad_max']:.8f}, Manual: {manual_max:.8f}")
 
-    assert abs(stats['grad_norm'] - manual_norm) < 1e-6
-    assert abs(stats['grad_mean'] - manual_mean) < 1e-6
-    assert abs(stats['grad_var'] - manual_var) < 1e-6
-    assert abs(stats['grad_max'] - manual_max) < 1e-6
+    assert abs(stats["grad_norm"] - manual_norm) < 1e-6
+    assert abs(stats["grad_mean"] - manual_mean) < 1e-6
+    assert abs(stats["grad_var"] - manual_var) < 1e-6
+    assert abs(stats["grad_max"] - manual_max) < 1e-6
 
     print("✓ Gradient statistics match manual computation")
     return True
@@ -103,9 +106,9 @@ def test_gradient_statistics_accuracy():
 
 def test_ema_accumulation():
     """Test EMA accumulation over time."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: EMA Accumulation")
-    print("="*70)
+    print("=" * 70)
 
     torch.manual_seed(456)
     model = SimpleModel()
@@ -132,8 +135,8 @@ def test_ema_accumulation():
 
     # EMA should stabilize over time (changes should decrease)
     if len(ema_history) >= 5:
-        early_changes = [abs(ema_history[i+1] - ema_history[i]) for i in range(3)]
-        late_changes = [abs(ema_history[i+1] - ema_history[i]) for i in range(6, 9)]
+        early_changes = [abs(ema_history[i + 1] - ema_history[i]) for i in range(3)]
+        late_changes = [abs(ema_history[i + 1] - ema_history[i]) for i in range(6, 9)]
 
         avg_early = sum(early_changes) / len(early_changes)
         avg_late = sum(late_changes) / len(late_changes)
@@ -148,9 +151,9 @@ def test_ema_accumulation():
 
 def test_scaling_application():
     """Test that scaling actually modifies gradients."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Scaling Application")
-    print("="*70)
+    print("=" * 70)
 
     torch.manual_seed(789)
     model = SimpleModel()
@@ -199,9 +202,9 @@ def test_scaling_application():
 
 def test_warmup_behavior():
     """Test warmup period behavior."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Warmup Behavior")
-    print("="*70)
+    print("=" * 70)
 
     model = SimpleModel()
     warmup_steps = 15
@@ -228,7 +231,9 @@ def test_warmup_behavior():
 
     print(f"Warmup period: {warmup_steps} steps")
     print(f"Scaling during warmup: {scaling_factors[:warmup_steps]}")
-    print(f"Scaling after warmup: {[f'{s:.4f}' for s in scaling_factors[warmup_steps:warmup_steps+5]]}")
+    print(
+        f"Scaling after warmup: {[f'{s:.4f}' for s in scaling_factors[warmup_steps:warmup_steps+5]]}"
+    )
 
     print("✓ Warmup behavior correct")
     return True
@@ -236,9 +241,9 @@ def test_warmup_behavior():
 
 def test_state_persistence():
     """Test state_dict and load_state_dict."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: State Persistence")
-    print("="*70)
+    print("=" * 70)
 
     torch.manual_seed(111)
     model = SimpleModel()
@@ -282,9 +287,9 @@ def test_state_persistence():
 
 def test_reset_functionality():
     """Test reset_statistics."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Reset Functionality")
-    print("="*70)
+    print("=" * 70)
 
     model = SimpleModel()
     scaler = VarianceGradientScaler(model.parameters())
@@ -326,9 +331,9 @@ def test_reset_functionality():
 
 def test_disabled_mode():
     """Test that VGS does nothing when disabled."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Disabled Mode")
-    print("="*70)
+    print("=" * 70)
 
     model = SimpleModel()
     scaler = VarianceGradientScaler(model.parameters(), enabled=False)
@@ -359,9 +364,9 @@ def test_disabled_mode():
 
 def test_repr():
     """Test __repr__ method."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: String Representation")
-    print("="*70)
+    print("=" * 70)
 
     scaler = VarianceGradientScaler(
         None,
@@ -387,9 +392,9 @@ def test_repr():
 
 def test_parameter_validation():
     """Test parameter validation in __init__."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Parameter Validation")
-    print("="*70)
+    print("=" * 70)
 
     model = SimpleModel()
 
@@ -433,9 +438,9 @@ def test_parameter_validation():
 
 def run_all_tests():
     """Run all tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("COMPLETE VGS TEST SUITE")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         ("Basic Functionality", test_basic_functionality),
@@ -468,12 +473,13 @@ def run_all_tests():
             print(f"\n✗ FAILED: {name}")
             print(f"  Error: {e}")
             import traceback
+
             traceback.print_exc()
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST SUMMARY")
-    print("="*70)
+    print("=" * 70)
     print(f"Total tests: {len(tests)}")
     print(f"Passed: {passed}")
     print(f"Failed: {failed}")
@@ -484,9 +490,9 @@ def run_all_tests():
             print(f"  - {name}: {error}")
         return False
     else:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("ALL TESTS PASSED! ✓")
-        print("="*70)
+        print("=" * 70)
         return True
 
 

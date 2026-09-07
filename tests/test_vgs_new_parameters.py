@@ -7,6 +7,7 @@ for the analysis that led to these changes.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import sys
@@ -137,9 +138,9 @@ class TestVGSScalingWithNewParameters:
         scale_with_cap = vgs_with_cap.get_scaling_factor()
 
         # With cap, scale should be higher (less aggressive)
-        assert scale_with_cap >= scale_no_cap, (
-            f"Capped scale {scale_with_cap} should be >= uncapped {scale_no_cap}"
-        )
+        assert (
+            scale_with_cap >= scale_no_cap
+        ), f"Capped scale {scale_with_cap} should be >= uncapped {scale_no_cap}"
 
     def test_variance_cap_effect_on_formula(self):
         """Test the mathematical effect of variance cap."""
@@ -266,11 +267,7 @@ class TestVGSTrainingImprovement:
         torch.manual_seed(42)
 
         # Simple critic
-        model = nn.Sequential(
-            nn.Linear(10, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1)
-        )
+        model = nn.Sequential(nn.Linear(10, 32), nn.ReLU(), nn.Linear(32, 1))
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
         # VGS with new default parameters

@@ -35,6 +35,7 @@ sys.path.insert(0, str(PACKAGE_ROOT))
 # 2.0 RBAC/Tenant Isolation Tests
 # ============================================================================
 
+
 class TestRBACTenantIsolation:
     """Tests for RBAC and tenant isolation."""
 
@@ -133,6 +134,7 @@ class TestTenantContext:
 # ============================================================================
 # 2.1 DB-backed Governance Tests
 # ============================================================================
+
 
 class TestDSARService:
     """Tests for DSAR service."""
@@ -396,6 +398,7 @@ class TestBreakGlassService:
 # 2.1A Agent Trust-State Enforcement Tests
 # ============================================================================
 
+
 class TestAgentTrustStateEnforcement:
     """Tests for agent trust-state enforcement."""
 
@@ -412,6 +415,7 @@ class TestAgentTrustStateEnforcement:
 # ============================================================================
 # 2.2 AccessAudit Middleware Tests
 # ============================================================================
+
 
 class TestAuditLogger:
     """Tests for audit logger."""
@@ -492,6 +496,7 @@ class TestAuditSensitiveResources:
 # 2.5 Telemetry Validation Tests
 # ============================================================================
 
+
 class TestTelemetryValidator:
     """Tests for telemetry payload validation."""
 
@@ -566,7 +571,7 @@ class TestTelemetryValidator:
                     "side": "SELL",
                     "quantity": 50,
                     "price": 100,
-                }
+                },
             }
         }
 
@@ -579,8 +584,10 @@ class TestTelemetryValidator:
         assert result.valid is False
         # Should catch both prohibited fields AND intent injection
         violation_types = {v.violation_type for v in result.violations}
-        assert ViolationType.PROHIBITED_FIELD in violation_types or \
-               ViolationType.INTENT_INJECTION in violation_types
+        assert (
+            ViolationType.PROHIBITED_FIELD in violation_types
+            or ViolationType.INTENT_INJECTION in violation_types
+        )
 
     def test_rejects_broker_credentials(self):
         """Test validator rejects broker credentials."""
@@ -675,7 +682,7 @@ class TestTelemetryValidator:
                 "side": "BUY",
                 "quantity": 100,
                 "price": 50.0,
-            }
+            },
         }
 
         result = validator.validate(
@@ -685,8 +692,10 @@ class TestTelemetryValidator:
         )
 
         assert result.valid is False
-        assert any(v.violation_type in (ViolationType.PROHIBITED_FIELD, ViolationType.INTENT_INJECTION)
-                  for v in result.violations)
+        assert any(
+            v.violation_type in (ViolationType.PROHIBITED_FIELD, ViolationType.INTENT_INJECTION)
+            for v in result.violations
+        )
 
 
 class TestRedactionEnforcer:
@@ -768,6 +777,7 @@ class TestRedactionEnforcer:
 # 2.3 Retention/Purge Tests
 # ============================================================================
 
+
 class TestPurgeScheduler:
     """Tests for auto-purge scheduler."""
 
@@ -799,6 +809,7 @@ class TestPurgeScheduler:
 # ============================================================================
 # Prohibited Fields Constants Tests
 # ============================================================================
+
 
 class TestProhibitedFieldsConstants:
     """Tests for prohibited fields constants."""
@@ -864,6 +875,7 @@ class TestProhibitedFieldsConstants:
 # ============================================================================
 # Integration Tests
 # ============================================================================
+
 
 class TestGovernanceIntegration:
     """Integration tests for governance components."""

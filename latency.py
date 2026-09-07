@@ -75,6 +75,7 @@ class LatencyModel:
         "attempts": int      # сколько было попыток
       }
     """
+
     base_ms: int = 250
     jitter_ms: int = 50
     spike_p: float = 0.01
@@ -93,10 +94,10 @@ class LatencyModel:
         base = max(0, int(self.base_ms))
         jitter = max(0, int(self.jitter_ms))
         t = base + (self._rng.randint(0, jitter) if jitter > 0 else 0)
-        is_spike = (self._rng.random() < float(self.spike_p))
+        is_spike = self._rng.random() < float(self.spike_p)
         if is_spike:
             t = int(t * float(self.spike_mult))
-        timeout = (t > int(self.timeout_ms))
+        timeout = t > int(self.timeout_ms)
         return {"total_ms": int(t), "spike": bool(is_spike), "timeout": bool(timeout)}
 
     def sample(self) -> Dict[str, int | float | bool]:
@@ -138,6 +139,7 @@ class LatencyModel:
         if n == 0:
             return {"p50_ms": 0.0, "p95_ms": 0.0, "timeout_rate": 0.0}
         sorted_samples = sorted(self.lat_samples)
+
         # Helper to compute percentile with linear interpolation
         def percentile(p: float) -> float:
             if n == 1:

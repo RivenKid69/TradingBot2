@@ -69,8 +69,8 @@ class Fill:
     """A single (incremental) execution applied to the ledger."""
 
     symbol: str
-    side: str                 # "buy" | "sell"
-    quantity: Decimal         # absolute, > 0
+    side: str  # "buy" | "sell"
+    quantity: Decimal  # absolute, > 0
     price: Decimal
     fee: Decimal = _D0
     ts: datetime = field(default_factory=_now)
@@ -85,6 +85,7 @@ class Fill:
 @dataclass
 class _Lot:
     """FIFO lot: signed qty (sign = position direction) at a cost price."""
+
     qty: Decimal
     price: Decimal
 
@@ -94,12 +95,12 @@ class LedgerPosition:
     """Per-symbol inventory + realized accounting."""
 
     symbol: str
-    quantity: Decimal = _D0          # signed (long > 0, short < 0)
-    avg_cost: Decimal = _D0          # average entry (abs basis)
-    realized_pnl: Decimal = _D0      # cumulative realized on this symbol (excl. fees)
+    quantity: Decimal = _D0  # signed (long > 0, short < 0)
+    avg_cost: Decimal = _D0  # average entry (abs basis)
+    realized_pnl: Decimal = _D0  # cumulative realized on this symbol (excl. fees)
     fees: Decimal = _D0
     financing: Decimal = _D0
-    mark: Decimal = _D0              # last mark price
+    mark: Decimal = _D0  # last mark price
     lots: Deque[_Lot] = field(default_factory=deque)  # FIFO mode only
 
     @property
@@ -259,9 +260,13 @@ class PnLLedger:
         ).fetchall()
         for r in rows:
             f = Fill(
-                symbol=r["symbol"], side=r["side"], quantity=_d(r["quantity"]),
-                price=_d(r["price"]), fee=_d(r["fee"]),
-                client_order_id=r["client_order_id"], broker_order_id=r["broker_order_id"],
+                symbol=r["symbol"],
+                side=r["side"],
+                quantity=_d(r["quantity"]),
+                price=_d(r["price"]),
+                fee=_d(r["fee"]),
+                client_order_id=r["client_order_id"],
+                broker_order_id=r["broker_order_id"],
             )
             self._apply_fill(f, persist=False)
         # A trade price is not a market mark.  Restore the last durable marks
@@ -301,9 +306,16 @@ class PnLLedger:
         qty = _d(quantity)
         if qty <= 0:
             raise ValueError("quantity must be > 0")
-        f = Fill(symbol=str(symbol), side=side, quantity=qty, price=_d(price),
-                 fee=_d(fee), ts=ts or _now(),
-                 client_order_id=client_order_id, broker_order_id=broker_order_id)
+        f = Fill(
+            symbol=str(symbol),
+            side=side,
+            quantity=qty,
+            price=_d(price),
+            fee=_d(fee),
+            ts=ts or _now(),
+            client_order_id=client_order_id,
+            broker_order_id=broker_order_id,
+        )
         with self._lock:
             return self._apply_fill(f, persist=True)
 
@@ -312,7 +324,7 @@ class PnLLedger:
         realized = self._apply_inventory(pos, f)
 
         # cash & cumulative bookkeeping
-        self._cash -= f.signed_qty * f.price        # buy reduces cash, sell increases
+        self._cash -= f.signed_qty * f.price  # buy reduces cash, sell increases
         self._cash -= f.fee
         pos.fees += f.fee
         pos.realized_pnl += realized
@@ -329,17 +341,30 @@ class PnLLedger:
             self._conn.execute(
                 "INSERT INTO fills(ts, symbol, side, quantity, price, fee, client_order_id, broker_order_id) "
                 "VALUES(?,?,?,?,?,?,?,?)",
-                (f.ts.isoformat(), f.symbol, f.side, str(f.quantity), str(f.price),
-                 str(f.fee), f.client_order_id, f.broker_order_id),
+                (
+                    f.ts.isoformat(),
+                    f.symbol,
+                    f.side,
+                    str(f.quantity),
+                    str(f.price),
+                    str(f.fee),
+                    f.client_order_id,
+                    f.broker_order_id,
+                ),
             )
             self._conn.commit()
 
         return {
-            "symbol": f.symbol, "side": f.side, "quantity": float(f.quantity),
-            "price": float(f.price), "fee": float(f.fee),
+            "symbol": f.symbol,
+            "side": f.side,
+            "quantity": float(f.quantity),
+            "price": float(f.price),
+            "fee": float(f.fee),
             "realized_delta": float(realized),
-            "position_qty": float(pos.quantity), "avg_cost": float(pos.avg_cost),
-            "realized_pnl": float(self._realized_cum), "equity": float(self.equity),
+            "position_qty": float(pos.quantity),
+            "avg_cost": float(pos.avg_cost),
+            "realized_pnl": float(self._realized_cum),
+            "equity": float(self.equity),
         }
 
     def _apply_inventory(self, pos: LedgerPosition, f: Fill) -> Decimal:
@@ -362,14 +387,14 @@ class PnLLedger:
         else:
             # opposite direction: reduce / close / possibly flip
             closing = min(abs(signed), abs(prev))
-            if prev > 0:                      # selling to reduce a long
+            if prev > 0:  # selling to reduce a long
                 realized = (f.price - pos.avg_cost) * closing
-            else:                             # buying to reduce a short
+            else:  # buying to reduce a short
                 realized = (pos.avg_cost - f.price) * closing
             new_qty = prev + signed
             pos.quantity = new_qty
             if (prev > 0) != (new_qty > 0) and new_qty != 0:
-                pos.avg_cost = f.price        # flipped through zero -> new basis
+                pos.avg_cost = f.price  # flipped through zero -> new basis
             elif new_qty == 0:
                 pos.avg_cost = _D0
             # else: same-side remainder keeps avg_cost
@@ -384,12 +409,12 @@ class PnLLedger:
         while remaining != 0 and pos.lots and (pos.lots[0].qty > 0) != (remaining > 0):
             lot = pos.lots[0]
             close = min(abs(remaining), abs(lot.qty))
-            if lot.qty > 0:                   # closing long lots by selling
+            if lot.qty > 0:  # closing long lots by selling
                 realized += (f.price - lot.price) * close
-            else:                             # closing short lots by buying
+            else:  # closing short lots by buying
                 realized += (lot.price - f.price) * close
-            lot.qty -= (close if lot.qty > 0 else -close)
-            remaining -= (-close if remaining < 0 else close)
+            lot.qty -= close if lot.qty > 0 else -close
+            remaining -= -close if remaining < 0 else close
             if lot.qty == 0:
                 pos.lots.popleft()
         # any remainder opens a new lot in the trade direction
@@ -398,9 +423,7 @@ class PnLLedger:
         # recompute aggregate qty + avg from lots
         pos.quantity = sum((l.qty for l in pos.lots), _D0)
         tot = sum((abs(l.qty) for l in pos.lots), _D0)
-        pos.avg_cost = (
-            sum((abs(l.qty) * l.price for l in pos.lots), _D0) / tot if tot != 0 else _D0
-        )
+        pos.avg_cost = sum((abs(l.qty) * l.price for l in pos.lots), _D0) / tot if tot != 0 else _D0
         return realized
 
     # ---------------------------------------------------------------- marks
@@ -479,11 +502,16 @@ class PnLLedger:
         with self._lock:
             t = (ts or _now()).isoformat()
             snap = NavSnapshot(
-                ts=t, nav=float(self.equity), cash=float(self._cash),
-                realized_pnl=float(self._realized_cum), unrealized_pnl=float(self.unrealized_pnl),
-                fees=float(self._fees_cum), financing=float(self._financing_cum),
+                ts=t,
+                nav=float(self.equity),
+                cash=float(self._cash),
+                realized_pnl=float(self._realized_cum),
+                unrealized_pnl=float(self.unrealized_pnl),
+                fees=float(self._fees_cum),
+                financing=float(self._financing_cum),
                 day_pnl=float(self.day_pnl),
-                gross_exposure=float(self.gross_exposure), net_exposure=float(self.net_exposure),
+                gross_exposure=float(self.gross_exposure),
+                net_exposure=float(self.net_exposure),
                 n_positions=len([p for p in self._positions.values() if p.quantity != 0]),
                 label=label,
             )
@@ -512,15 +540,19 @@ class PnLLedger:
     def snapshot(self) -> Dict[str, Any]:
         with self._lock:
             return {
-                "account_id": self.account_id, "strategy_id": self.strategy_id,
-                "base_currency": self.base_currency, "method": self.method,
+                "account_id": self.account_id,
+                "strategy_id": self.strategy_id,
+                "base_currency": self.base_currency,
+                "method": self.method,
                 "starting_cash": float(self._starting_cash),
                 "cash": float(self._cash),
-                "equity": float(self.equity), "nav": float(self.equity),
+                "equity": float(self.equity),
+                "nav": float(self.equity),
                 "realized_pnl": float(self._realized_cum),
                 "unrealized_pnl": float(self.unrealized_pnl),
                 "total_pnl": float(self.equity - self._starting_cash),
-                "fees": float(self._fees_cum), "financing": float(self._financing_cum),
+                "fees": float(self._fees_cum),
+                "financing": float(self._financing_cum),
                 "day_pnl": float(self.day_pnl),
                 "gross_exposure": float(self.gross_exposure),
                 "net_exposure": float(self.net_exposure),
@@ -539,10 +571,15 @@ class PnLLedger:
         values = {s: p.market_value for s, p in self._positions.items() if p.quantity != 0}
         eq = self.equity
         return PortfolioState(
-            equity=eq, buying_power=eq, margin_available=eq,
-            positions=positions, position_values=values,
-            gross_exposure=self.gross_exposure, net_exposure=self.net_exposure,
-            daily_pnl=self.day_pnl, peak_equity=max(eq, self._last_close_nav),
+            equity=eq,
+            buying_power=eq,
+            margin_available=eq,
+            positions=positions,
+            position_values=values,
+            gross_exposure=self.gross_exposure,
+            net_exposure=self.net_exposure,
+            daily_pnl=self.day_pnl,
+            peak_equity=max(eq, self._last_close_nav),
         )
 
     def reconcile_against(self, broker_positions: Dict[str, Any]) -> Dict[str, Any]:
@@ -553,8 +590,9 @@ class PnLLedger:
             led = float(self._positions.get(s, LedgerPosition(symbol=s)).quantity)
             brk = float(_d(broker_positions.get(s, 0)))
             if abs(led - brk) > 1e-9:
-                breaks.append({"symbol": s, "ledger_qty": led, "broker_qty": brk,
-                               "diff": led - brk})
+                breaks.append(
+                    {"symbol": s, "ledger_qty": led, "broker_qty": brk, "diff": led - brk}
+                )
         return {"reconciled": len(breaks) == 0, "breaks": breaks}
 
     def close(self) -> None:
@@ -598,8 +636,13 @@ def ledger_fill_callback(ledger: PnLLedger) -> Callable[[Dict[str, Any]], None]:
             seen[coid] = cum
         if qty <= 0:
             return
-        ledger.on_fill(symbol, side, qty, price,
-                       client_order_id=coid or None,
-                       broker_order_id=payload.get("broker_order_id"))
+        ledger.on_fill(
+            symbol,
+            side,
+            qty,
+            price,
+            client_order_id=coid or None,
+            broker_order_id=payload.get("broker_order_id"),
+        )
 
     return _cb

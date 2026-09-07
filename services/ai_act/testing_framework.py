@@ -51,8 +51,10 @@ logger = logging.getLogger(__name__)
 # Enums
 # =============================================================================
 
+
 class TestCategory(Enum):
     """Categories of tests per Article 9."""
+
     FUNCTIONAL = "functional"  # Intended purpose verification
     PERFORMANCE = "performance"  # Accuracy metrics verification
     ROBUSTNESS = "robustness"  # Resilience to perturbations
@@ -65,6 +67,7 @@ class TestCategory(Enum):
 
 class TestPriority(Enum):
     """Test priority levels."""
+
     CRITICAL = 1
     HIGH = 2
     MEDIUM = 3
@@ -73,6 +76,7 @@ class TestPriority(Enum):
 
 class TestStatus(Enum):
     """Test execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     PASSED = "passed"
@@ -84,6 +88,7 @@ class TestStatus(Enum):
 
 class MetricType(Enum):
     """Types of test metrics."""
+
     ACCURACY = "accuracy"
     LATENCY = "latency"
     THROUGHPUT = "throughput"
@@ -97,6 +102,7 @@ class MetricType(Enum):
 
 class ComparisonOperator(Enum):
     """Operators for threshold comparison."""
+
     GREATER_THAN = "gt"
     GREATER_THAN_OR_EQUAL = "gte"
     LESS_THAN = "lt"
@@ -109,6 +115,7 @@ class ComparisonOperator(Enum):
 
 class VulnerableGroup(Enum):
     """Vulnerable groups per Article 9(9)."""
+
     ELDERLY = "elderly"
     DISABLED = "disabled"
     CHILDREN = "children"
@@ -122,6 +129,7 @@ class VulnerableGroup(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class TestMetric:
     """
@@ -129,6 +137,7 @@ class TestMetric:
 
     Represents a measurable metric with defined thresholds.
     """
+
     metric_id: str
     name: str
     metric_type: MetricType
@@ -188,6 +197,7 @@ class TestScenario:
 
     Represents a specific test case or scenario to execute.
     """
+
     scenario_id: str
     name: str
     description: str
@@ -237,6 +247,7 @@ class TestExecution:
 
     Documents the execution of a test scenario.
     """
+
     execution_id: str
     scenario_id: str
     scenario_name: str
@@ -283,8 +294,10 @@ class TestExecution:
     def is_complete(self) -> bool:
         """Check if execution is complete."""
         return self.status in (
-            TestStatus.PASSED, TestStatus.FAILED,
-            TestStatus.SKIPPED, TestStatus.ERROR
+            TestStatus.PASSED,
+            TestStatus.FAILED,
+            TestStatus.SKIPPED,
+            TestStatus.ERROR,
         )
 
 
@@ -295,6 +308,7 @@ class TestSuite:
 
     Groups related tests for organized execution.
     """
+
     suite_id: str
     name: str
     description: str
@@ -345,6 +359,7 @@ class RealWorldTestPlan:
 
     Documents testing in real-world conditions.
     """
+
     plan_id: str
     name: str
     description: str
@@ -400,11 +415,13 @@ class RealWorldTestPlan:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class TestingConfig:
     """
     Configuration for AI Act Testing Framework.
     """
+
     # Test execution
     default_timeout_seconds: float = 300.0
     parallel_workers: int = 4
@@ -436,6 +453,7 @@ class TestingConfig:
 # =============================================================================
 # Test Executor Interface
 # =============================================================================
+
 
 class TestExecutor(ABC):
     """Abstract base class for test executors."""
@@ -499,6 +517,7 @@ class DefaultTestExecutor(TestExecutor):
 # =============================================================================
 # Main Testing Framework
 # =============================================================================
+
 
 class AIActTestingFramework:
     """
@@ -697,11 +716,14 @@ class AIActTestingFramework:
         with self._lock:
             self._scenarios[scenario.scenario_id] = scenario
 
-        self._log_event("scenario_created", {
-            "scenario_id": scenario.scenario_id,
-            "name": name,
-            "category": category.value,
-        })
+        self._log_event(
+            "scenario_created",
+            {
+                "scenario_id": scenario.scenario_id,
+                "name": name,
+                "category": category.value,
+            },
+        )
         logger.info(f"Test scenario created: {scenario.scenario_id}")
         return scenario
 
@@ -721,8 +743,7 @@ class AIActTestingFramework:
     ) -> List[TestScenario]:
         """Get scenarios that test a specific vulnerable group."""
         with self._lock:
-            return [s for s in self._scenarios.values()
-                    if group in s.vulnerable_groups_tested]
+            return [s for s in self._scenarios.values() if group in s.vulnerable_groups_tested]
 
     # =========================================================================
     # Test Suite Management
@@ -765,11 +786,14 @@ class AIActTestingFramework:
         with self._lock:
             self._suites[suite.suite_id] = suite
 
-        self._log_event("suite_created", {
-            "suite_id": suite.suite_id,
-            "name": name,
-            "test_count": len(suite.scenario_ids),
-        })
+        self._log_event(
+            "suite_created",
+            {
+                "suite_id": suite.suite_id,
+                "name": name,
+                "test_count": len(suite.scenario_ids),
+            },
+        )
         return suite
 
     def add_scenario_to_suite(
@@ -822,8 +846,7 @@ class AIActTestingFramework:
                 raise ValueError(f"Scenario {scenario_id} not found")
 
             scenario = self._scenarios[scenario_id]
-            metrics = [self._metrics[m] for m in scenario.metrics
-                      if m in self._metrics]
+            metrics = [self._metrics[m] for m in scenario.metrics if m in self._metrics]
 
         # Execute test
         execution = self._executor.execute(scenario, metrics)
@@ -836,11 +859,14 @@ class AIActTestingFramework:
             scenario.status = execution.status
             scenario.last_execution = execution.execution_id
 
-        self._log_event("test_executed", {
-            "execution_id": execution.execution_id,
-            "scenario_id": scenario_id,
-            "status": execution.status.value,
-        })
+        self._log_event(
+            "test_executed",
+            {
+                "execution_id": execution.execution_id,
+                "scenario_id": scenario_id,
+                "status": execution.status.value,
+            },
+        )
 
         return execution
 
@@ -902,12 +928,15 @@ class AIActTestingFramework:
             suite.skipped_tests = skipped
             suite.last_run = datetime.now(timezone.utc).isoformat()
 
-        self._log_event("suite_executed", {
-            "suite_id": suite_id,
-            "passed": passed,
-            "failed": failed,
-            "skipped": skipped,
-        })
+        self._log_event(
+            "suite_executed",
+            {
+                "suite_id": suite_id,
+                "passed": passed,
+                "failed": failed,
+                "skipped": skipped,
+            },
+        )
 
         return results
 
@@ -919,8 +948,7 @@ class AIActTestingFramework:
     def get_scenario_executions(self, scenario_id: str) -> List[TestExecution]:
         """Get all executions for a scenario."""
         with self._lock:
-            return [e for e in self._executions.values()
-                    if e.scenario_id == scenario_id]
+            return [e for e in self._executions.values() if e.scenario_id == scenario_id]
 
     # =========================================================================
     # Statistical Analysis
@@ -1087,10 +1115,13 @@ class AIActTestingFramework:
         with self._lock:
             self._real_world_plans[plan.plan_id] = plan
 
-        self._log_event("real_world_plan_created", {
-            "plan_id": plan.plan_id,
-            "name": name,
-        })
+        self._log_event(
+            "real_world_plan_created",
+            {
+                "plan_id": plan.plan_id,
+                "name": name,
+            },
+        )
         logger.info(f"Real-world test plan created: {plan.plan_id}")
         return plan
 
@@ -1112,10 +1143,13 @@ class AIActTestingFramework:
             if human_oversight_measures:
                 plan.human_oversight_measures = human_oversight_measures
 
-        self._log_event("real_world_plan_approved", {
-            "plan_id": plan_id,
-            "approved_by": approved_by,
-        })
+        self._log_event(
+            "real_world_plan_approved",
+            {
+                "plan_id": plan_id,
+                "approved_by": approved_by,
+            },
+        )
         return plan
 
     def start_real_world_test(self, plan_id: str) -> RealWorldTestPlan:
@@ -1151,10 +1185,13 @@ class AIActTestingFramework:
             plan.findings = findings or []
             plan.recommendations = recommendations or []
 
-        self._log_event("real_world_test_completed", {
-            "plan_id": plan_id,
-            "findings_count": len(plan.findings),
-        })
+        self._log_event(
+            "real_world_test_completed",
+            {
+                "plan_id": plan_id,
+                "findings_count": len(plan.findings),
+            },
+        )
         return plan
 
     def get_real_world_plan(self, plan_id: str) -> Optional[RealWorldTestPlan]:
@@ -1179,15 +1216,16 @@ class AIActTestingFramework:
             total_executions = len(self._executions)
 
             # Count passed/failed executions
-            passed_execs = len([e for e in self._executions.values()
-                               if e.status == TestStatus.PASSED])
-            failed_execs = len([e for e in self._executions.values()
-                               if e.status == TestStatus.FAILED])
+            passed_execs = len(
+                [e for e in self._executions.values() if e.status == TestStatus.PASSED]
+            )
+            failed_execs = len(
+                [e for e in self._executions.values() if e.status == TestStatus.FAILED]
+            )
 
             # Calculate pass rate
             completed_execs = passed_execs + failed_execs
-            pass_rate = (passed_execs / completed_execs * 100
-                        if completed_execs > 0 else 0.0)
+            pass_rate = passed_execs / completed_execs * 100 if completed_execs > 0 else 0.0
 
             # Category coverage
             tested_categories = set()
@@ -1205,14 +1243,16 @@ class AIActTestingFramework:
             # Suite statistics
             suite_stats = []
             for suite in self._suites.values():
-                suite_stats.append({
-                    "suite_id": suite.suite_id,
-                    "name": suite.name,
-                    "pass_rate": suite.pass_rate,
-                    "total": suite.total_tests,
-                    "passed": suite.passed_tests,
-                    "failed": suite.failed_tests,
-                })
+                suite_stats.append(
+                    {
+                        "suite_id": suite.suite_id,
+                        "name": suite.name,
+                        "pass_rate": suite.pass_rate,
+                        "total": suite.total_tests,
+                        "passed": suite.passed_tests,
+                        "failed": suite.failed_tests,
+                    }
+                )
 
         return {
             "metrics": {
@@ -1240,8 +1280,8 @@ class AIActTestingFramework:
                 "minimum_coverage": self.config.minimum_coverage,
             },
             "compliance_met": (
-                pass_rate >= self.config.minimum_pass_rate and
-                category_coverage >= self.config.minimum_coverage
+                pass_rate >= self.config.minimum_pass_rate
+                and category_coverage >= self.config.minimum_coverage
             ),
         }
 
@@ -1285,9 +1325,7 @@ class AIActTestingFramework:
                 report["recent_executions"] = [
                     asdict(e) for e in list(self._executions.values())[-20:]
                 ]
-                report["real_world_plans"] = [
-                    asdict(p) for p in self._real_world_plans.values()
-                ]
+                report["real_world_plans"] = [asdict(p) for p in self._real_world_plans.values()]
 
         return report
 
@@ -1314,6 +1352,7 @@ class AIActTestingFramework:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_testing_framework(
     config: Optional[Union[Dict[str, Any], TestingConfig]] = None,

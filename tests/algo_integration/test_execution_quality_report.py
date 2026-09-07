@@ -179,6 +179,7 @@ def mock_best_execution_analyzer(sample_execution_analysis):
 def mock_tca_wrapper():
     """Create mock TCA wrapper."""
     from datetime import datetime
+
     wrapper = Mock(spec=TCAComplianceWrapper)
     wrapper.get_aggregate_metrics.return_value = TCAAggregateMetrics(
         period_start=datetime(2024, 1, 1),
@@ -502,7 +503,9 @@ class TestExecutionQualityReport:
         assert report.top_venues_overall == []
         assert report.tca_metrics is None
 
-    def test_full_initialization(self, sample_report_metadata, sample_venue_summary, sample_asset_class_summary):
+    def test_full_initialization(
+        self, sample_report_metadata, sample_venue_summary, sample_asset_class_summary
+    ):
         """Test initialization with all values."""
         report = ExecutionQualityReport(
             metadata=sample_report_metadata,
@@ -1184,7 +1187,7 @@ class TestExecutionQualityReportGenerator:
         )
 
         # Use a mock format that doesn't exist in the enum check
-        with patch.object(ReportFormat, '__eq__', return_value=False):
+        with patch.object(ReportFormat, "__eq__", return_value=False):
             output = generator.export_report(report, ReportFormat.JSON)
 
         # Should still get valid JSON
@@ -1372,7 +1375,9 @@ class TestEdgeCases:
 
         assert report.quality_distribution == {}
 
-    def test_venue_summary_with_partial_data(self, report_generator_config, sample_execution_analysis):
+    def test_venue_summary_with_partial_data(
+        self, report_generator_config, sample_execution_analysis
+    ):
         """Test venue summary creation with partial data."""
         generator = ExecutionQualityReportGenerator(config=report_generator_config)
 

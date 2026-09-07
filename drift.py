@@ -13,30 +13,48 @@ import pandas as pd
 
 @dataclass
 class NumericBins:
-    edges: List[float]          # границы бинов (включая -inf и +inf)
-    probs: List[float]          # доли по бинам на baseline (Qi)
-    n: int                      # объём baseline
+    edges: List[float]  # границы бинов (включая -inf и +inf)
+    probs: List[float]  # доли по бинам на baseline (Qi)
+    n: int  # объём baseline
 
     def to_dict(self) -> Dict:
-        return {"type": "numeric", "edges": list(self.edges), "probs": list(self.probs), "n": int(self.n)}
+        return {
+            "type": "numeric",
+            "edges": list(self.edges),
+            "probs": list(self.probs),
+            "n": int(self.n),
+        }
 
     @classmethod
     def from_dict(cls, d: Dict) -> "NumericBins":
-        return cls(edges=[float(x) for x in d["edges"]], probs=[float(p) for p in d["probs"]], n=int(d.get("n", 0)))
+        return cls(
+            edges=[float(x) for x in d["edges"]],
+            probs=[float(p) for p in d["probs"]],
+            n=int(d.get("n", 0)),
+        )
 
 
 @dataclass
 class CategoricalDist:
-    categories: List[str]       # список категорий (включая "OTHER", если был тримминг)
-    probs: List[float]          # доли по категориям на baseline (Qi)
-    n: int                      # объём baseline
+    categories: List[str]  # список категорий (включая "OTHER", если был тримминг)
+    probs: List[float]  # доли по категориям на baseline (Qi)
+    n: int  # объём baseline
 
     def to_dict(self) -> Dict:
-        return {"type": "categorical", "categories": list(self.categories), "probs": list(self.probs), "n": int(self.n)}
+        return {
+            "type": "categorical",
+            "categories": list(self.categories),
+            "probs": list(self.probs),
+            "n": int(self.n),
+        }
 
     @classmethod
     def from_dict(cls, d: Dict) -> "CategoricalDist":
-        return cls(categories=[str(x) for x in d["categories"]], probs=[float(p) for p in d["probs"]], n=int(d.get("n", 0)))
+        return cls(
+            categories=[str(x) for x in d["categories"]],
+            probs=[float(p) for p in d["probs"]],
+            n=int(d.get("n", 0)),
+        )
 
 
 BaselineSpec = Dict[str, Union[NumericBins, CategoricalDist]]
@@ -157,7 +175,9 @@ def make_baseline(
         if col not in df.columns:
             continue
         s = df[col]
-        if col in categorical or (pd.api.types.is_object_dtype(s) or pd.api.types.is_categorical_dtype(s)):
+        if col in categorical or (
+            pd.api.types.is_object_dtype(s) or pd.api.types.is_categorical_dtype(s)
+        ):
             cat = _build_categorical_baseline(s, top_k=top_k_cats)
             spec[col] = cat.to_dict()
         else:
@@ -235,22 +255,66 @@ def compute_psi(
         if col not in baseline:
             continue
         if col not in current_df.columns:
-            rows.append({"feature": col, "psi": float("nan"), "type": "missing", "n_current": 0, "n_baseline": 0})
+            rows.append(
+                {
+                    "feature": col,
+                    "psi": float("nan"),
+                    "type": "missing",
+                    "n_current": 0,
+                    "n_baseline": 0,
+                }
+            )
             continue
         spec = baseline[col]
         try:
-            if isinstance(spec, NumericBins) or (isinstance(spec, dict) and spec.get("type") == "numeric"):
+            if isinstance(spec, NumericBins) or (
+                isinstance(spec, dict) and spec.get("type") == "numeric"
+            ):
                 nb = spec if isinstance(spec, NumericBins) else NumericBins.from_dict(spec)  # type: ignore
                 psi = _psi_numeric_current(current_df[col], nb)
-                rows.append({"feature": col, "psi": float(psi), "type": "numeric", "n_current": int(current_df[col].notna().sum()), "n_baseline": int(nb.n)})
-            elif isinstance(spec, CategoricalDist) or (isinstance(spec, dict) and spec.get("type") == "categorical"):
+                rows.append(
+                    {
+                        "feature": col,
+                        "psi": float(psi),
+                        "type": "numeric",
+                        "n_current": int(current_df[col].notna().sum()),
+                        "n_baseline": int(nb.n),
+                    }
+                )
+            elif isinstance(spec, CategoricalDist) or (
+                isinstance(spec, dict) and spec.get("type") == "categorical"
+            ):
                 cd = spec if isinstance(spec, CategoricalDist) else CategoricalDist.from_dict(spec)  # type: ignore
                 psi = _psi_categorical_current(current_df[col], cd)
-                rows.append({"feature": col, "psi": float(psi), "type": "categorical", "n_current": int(current_df[col].notna().sum()), "n_baseline": int(cd.n)})
+                rows.append(
+                    {
+                        "feature": col,
+                        "psi": float(psi),
+                        "type": "categorical",
+                        "n_current": int(current_df[col].notna().sum()),
+                        "n_baseline": int(cd.n),
+                    }
+                )
             else:
-                rows.append({"feature": col, "psi": float("nan"), "type": "unknown", "n_current": 0, "n_baseline": 0})
+                rows.append(
+                    {
+                        "feature": col,
+                        "psi": float("nan"),
+                        "type": "unknown",
+                        "n_current": 0,
+                        "n_baseline": 0,
+                    }
+                )
         except Exception:
-            rows.append({"feature": col, "psi": float("nan"), "type": "error", "n_current": 0, "n_baseline": 0})
+            rows.append(
+                {
+                    "feature": col,
+                    "psi": float("nan"),
+                    "type": "error",
+                    "n_current": 0,
+                    "n_baseline": 0,
+                }
+            )
     res = pd.DataFrame(rows)
     res = res.sort_values(["psi"], ascending=[False]).reset_index(drop=True)
     return res
@@ -262,8 +326,10 @@ def ks_statistic(baseline: np.ndarray, current: np.ndarray) -> float:
     Distribution-shape drift test that complements PSI (PSI is binned; KS is the
     sup-norm of the empirical CDFs). Pure-NumPy, no scipy needed.
     """
-    a = np.asarray(baseline, dtype="float64"); a = a[np.isfinite(a)]
-    b = np.asarray(current, dtype="float64"); b = b[np.isfinite(b)]
+    a = np.asarray(baseline, dtype="float64")
+    a = a[np.isfinite(a)]
+    b = np.asarray(current, dtype="float64")
+    b = b[np.isfinite(b)]
     if len(a) == 0 or len(b) == 0:
         return float("nan")
     grid = np.sort(np.concatenate([a, b]))
@@ -278,8 +344,10 @@ def wasserstein1d(baseline: np.ndarray, current: np.ndarray) -> float:
     Integral of |CDF_a − CDF_b|; sensitive to mean/location shift, unlike KS which
     is scale-free. Useful for magnitude of covariate drift.
     """
-    a = np.sort(np.asarray(baseline, dtype="float64")); a = a[np.isfinite(a)]
-    b = np.sort(np.asarray(current, dtype="float64")); b = b[np.isfinite(b)]
+    a = np.sort(np.asarray(baseline, dtype="float64"))
+    a = a[np.isfinite(a)]
+    b = np.sort(np.asarray(current, dtype="float64"))
+    b = b[np.isfinite(b)]
     if len(a) == 0 or len(b) == 0:
         return float("nan")
     grid = np.sort(np.concatenate([a, b]))
@@ -308,14 +376,17 @@ def compute_distribution_drift(
         b = _safe_to_numeric(current_df[c]).to_numpy()
         ks = ks_statistic(a, b)
         wd = wasserstein1d(a, b)
-        rows.append({"feature": c, "ks": ks, "wasserstein": wd,
-                     "drift": bool(np.isfinite(ks) and ks > 0.1)})
+        rows.append(
+            {"feature": c, "ks": ks, "wasserstein": wd, "drift": bool(np.isfinite(ks) and ks > 0.1)}
+        )
     return pd.DataFrame(rows).sort_values("ks", ascending=False).reset_index(drop=True)
 
 
 def concept_drift(
-    baseline_y_true: np.ndarray, baseline_y_pred: np.ndarray,
-    current_y_true: np.ndarray, current_y_pred: np.ndarray,
+    baseline_y_true: np.ndarray,
+    baseline_y_pred: np.ndarray,
+    current_y_true: np.ndarray,
+    current_y_pred: np.ndarray,
     *,
     metric: str = "rmse",
 ) -> Dict[str, float]:
@@ -325,27 +396,33 @@ def concept_drift(
     input→target relationship changed. We compare model error on a baseline window
     vs the current window; a large relative increase signals concept drift.
     """
+
     def _err(yt, yp):
-        yt = np.asarray(yt, dtype="float64"); yp = np.asarray(yp, dtype="float64")
+        yt = np.asarray(yt, dtype="float64")
+        yp = np.asarray(yp, dtype="float64")
         m = np.isfinite(yt) & np.isfinite(yp)
         yt, yp = yt[m], yp[m]
         if len(yt) == 0:
             return float("nan")
         if metric == "mae":
             return float(np.mean(np.abs(yt - yp)))
-        if metric == "directional":   # 1 - hit-rate of sign prediction
+        if metric == "directional":  # 1 - hit-rate of sign prediction
             return float(1.0 - np.mean(np.sign(yt) == np.sign(yp)))
-        return float(np.sqrt(np.mean((yt - yp) ** 2)))   # rmse
+        return float(np.sqrt(np.mean((yt - yp) ** 2)))  # rmse
 
     base_err = _err(baseline_y_true, baseline_y_pred)
     cur_err = _err(current_y_true, current_y_pred)
-    rel = (cur_err / base_err - 1.0) if (base_err and np.isfinite(base_err) and base_err > 0) else float("nan")
+    rel = (
+        (cur_err / base_err - 1.0)
+        if (base_err and np.isfinite(base_err) and base_err > 0)
+        else float("nan")
+    )
     return {
         "metric": metric,
         "baseline_error": base_err,
         "current_error": cur_err,
         "relative_degradation": float(rel),
-        "concept_drift": bool(np.isfinite(rel) and rel > 0.15),   # >15% worse → drift
+        "concept_drift": bool(np.isfinite(rel) and rel > 0.15),  # >15% worse → drift
     }
 
 
@@ -365,12 +442,18 @@ def default_feature_list(df: pd.DataFrame) -> List[str]:
 if __name__ == "__main__":
     import argparse
     import sys
-    
+
     ap = argparse.ArgumentParser(description="Запустить расчет дрифта данных.")
     ap.add_argument("--data", default="data/features.parquet", help="Путь к текущим фичам.")
-    ap.add_argument("--baseline", default="models/drift_baseline.json", help="Путь к baseline JSON.")
-    ap.add_argument("--out_csv", default="data/features_psi.csv", help="Путь к сохранению CSV с PSI.")
-    ap.add_argument("--out_json", default="models/drift_report.json", help="Путь к сохранению JSON отчета.")
+    ap.add_argument(
+        "--baseline", default="models/drift_baseline.json", help="Путь к baseline JSON."
+    )
+    ap.add_argument(
+        "--out_csv", default="data/features_psi.csv", help="Путь к сохранению CSV с PSI."
+    )
+    ap.add_argument(
+        "--out_json", default="models/drift_report.json", help="Путь к сохранению JSON отчета."
+    )
     args = ap.parse_args()
 
     # Попытка найти датасет
@@ -394,7 +477,11 @@ if __name__ == "__main__":
     feats = default_feature_list(df)
     if not feats:
         print("Предупреждение: не найдено фичей (f_* или *_z). Используем все числовые колонки.")
-        feats = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c]) and c not in ("ts_ms", "timestamp", "time")]
+        feats = [
+            c
+            for c in df.columns
+            if pd.api.types.is_numeric_dtype(df[c]) and c not in ("ts_ms", "timestamp", "time")
+        ]
 
     if not feats:
         print("Ошибка: в датасете нет подходящих фичей для анализа.")
@@ -403,7 +490,9 @@ if __name__ == "__main__":
     # Проверка baseline
     baseline_path = args.baseline
     if not os.path.exists(baseline_path):
-        print(f"Файл baseline {baseline_path} не найден. Генерируем автоматический baseline из первой половины данных...")
+        print(
+            f"Файл baseline {baseline_path} не найден. Генерируем автоматический baseline из первой половины данных..."
+        )
         half_idx = len(df) // 2
         df_base = df.iloc[:half_idx]
         spec = make_baseline(df_base, feats, bins=10, categorical=None, top_k_cats=20)
@@ -415,7 +504,7 @@ if __name__ == "__main__":
 
     print(f"Загрузка baseline из: {baseline_path}")
     baseline = load_baseline_json(baseline_path)
-    
+
     # Сопоставим фичи
     run_feats = [f for f in feats if f in baseline]
     if not run_feats:
@@ -424,7 +513,7 @@ if __name__ == "__main__":
 
     print(f"Расчет PSI для {len(run_feats)} фичей...")
     res = compute_psi(df_curr, baseline, features=run_feats)
-    
+
     # Сохранение CSV
     os.makedirs(os.path.dirname(args.out_csv) or ".", exist_ok=True)
     res.to_csv(args.out_csv, index=False)
@@ -454,7 +543,7 @@ if __name__ == "__main__":
         "status": status_code,
         "status_label": status_lbl,
         "total_features": len(run_feats),
-        "n_samples": len(df_curr)
+        "n_samples": len(df_curr),
     }
 
     os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
@@ -463,20 +552,26 @@ if __name__ == "__main__":
 
     # Также сохраним как validation_report.json для совместимости
     with open("models/validation_report.json", "w", encoding="utf-8") as f:
-        json.dump({
-            "mean_reward": 0.0,
-            "std_reward": 0.0,
-            "sortino_ratio": 0.0,
-            "sharpe_ratio": 0.0,
-            "validation_pnl": 0.0,
-            "psi": avg_psi,
-            "psi_worst_feature": worst_feat,
-            "psi_worst": worst_psi
-        }, f, ensure_ascii=False, indent=2)
+        json.dump(
+            {
+                "mean_reward": 0.0,
+                "std_reward": 0.0,
+                "sortino_ratio": 0.0,
+                "sharpe_ratio": 0.0,
+                "validation_pnl": 0.0,
+                "psi": avg_psi,
+                "psi_worst_feature": worst_feat,
+                "psi_worst": worst_psi,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
 
     print("\n=== РЕЗУЛЬТАТЫ АНАЛИЗА ДРЕЙФА (CONCEPT DRIFT) ===")
     print(f"Количество проанализированных признаков: {len(run_feats)}")
     print(f"Средний индекс PSI: {avg_psi:.4f} ({status_lbl})")
     print(f"Наиболее нестабильный признак: {worst_feat} (PSI = {worst_psi:.4f})")
-    print("Границы оценки PSI: <0.1 — норма, 0.1–0.25 — предупреждение, >0.25 — необходима переподготовка модели.")
-
+    print(
+        "Границы оценки PSI: <0.1 — норма, 0.1–0.25 — предупреждение, >0.25 — необходима переподготовка модели."
+    )

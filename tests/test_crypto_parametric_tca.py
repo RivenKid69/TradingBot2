@@ -51,6 +51,7 @@ from execution_providers import (
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def default_provider() -> CryptoParametricSlippageProvider:
     """Create a provider with default configuration."""
@@ -152,6 +153,7 @@ def low_vol_market() -> MarketState:
 # Test Configuration Validation
 # =============================================================================
 
+
 class TestCryptoParametricConfig:
     """Tests for CryptoParametricConfig validation."""
 
@@ -206,6 +208,7 @@ class TestCryptoParametricConfig:
 # Test Basic Slippage Calculation
 # =============================================================================
 
+
 class TestBasicSlippage:
     """Tests for basic slippage calculation."""
 
@@ -226,27 +229,21 @@ class TestBasicSlippage:
 
     def test_zero_participation(self, default_provider, buy_order, basic_market):
         """Test slippage at zero participation."""
-        slippage = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.0
-        )
+        slippage = default_provider.compute_slippage_bps(buy_order, basic_market, 0.0)
         # Should still have spread component
         assert slippage > 0
         assert slippage >= default_provider.config.min_slippage_bps
 
     def test_small_participation(self, default_provider, buy_order, basic_market):
         """Test slippage at small participation."""
-        slippage = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.001
-        )
+        slippage = default_provider.compute_slippage_bps(buy_order, basic_market, 0.001)
         # Should be reasonable for 0.1% participation
         assert slippage > 0
         assert slippage < 100.0
 
     def test_large_participation(self, default_provider, buy_order, basic_market):
         """Test slippage at large participation."""
-        slippage = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.10
-        )
+        slippage = default_provider.compute_slippage_bps(buy_order, basic_market, 0.10)
         # Should be significantly higher for 10% participation
         assert slippage > 50.0
 
@@ -278,15 +275,14 @@ class TestBasicSlippage:
 
     def test_min_slippage_floor(self, default_provider, buy_order, basic_market):
         """Test minimum slippage floor is enforced."""
-        slippage = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 1e-10
-        )
+        slippage = default_provider.compute_slippage_bps(buy_order, basic_market, 1e-10)
         assert slippage >= default_provider.config.min_slippage_bps
 
 
 # =============================================================================
 # Test √Participation Factor (Almgren-Chriss)
 # =============================================================================
+
 
 class TestParticipationFactor:
     """Tests for √participation factor (Almgren-Chriss model)."""
@@ -331,6 +327,7 @@ class TestParticipationFactor:
 # Test Volatility Regime Detection
 # =============================================================================
 
+
 class TestVolatilityRegime:
     """Tests for volatility regime detection."""
 
@@ -351,7 +348,7 @@ class TestVolatilityRegime:
 
         # Build up history
         for i in range(0, len(baseline_returns), 20):
-            window = baseline_returns[i:i+20]
+            window = baseline_returns[i : i + 20]
             default_provider.detect_volatility_regime(window)
 
         # Now test regime detection
@@ -363,7 +360,9 @@ class TestVolatilityRegime:
         # The test verifies the method runs without error
         # In practice, regime depends on history which is built dynamically
         assert default_provider.detect_volatility_regime(low_vol_returns) in [
-            VolatilityRegime.LOW, VolatilityRegime.NORMAL, VolatilityRegime.HIGH
+            VolatilityRegime.LOW,
+            VolatilityRegime.NORMAL,
+            VolatilityRegime.HIGH,
         ]
 
     def test_vol_regime_multipliers_applied(self, buy_order, basic_market):
@@ -391,6 +390,7 @@ class TestVolatilityRegime:
 # =============================================================================
 # Test Order Book Imbalance Factor
 # =============================================================================
+
 
 class TestOrderBookImbalance:
     """Tests for order book imbalance factor (Cont et al. 2014)."""
@@ -452,12 +452,18 @@ class TestOrderBookImbalance:
     def test_explicit_depth_used(self, default_provider, buy_order, basic_market):
         """Test that explicit depth parameters are used."""
         slip_balanced = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
-            bid_depth_total=1000.0, ask_depth_total=1000.0,
+            buy_order,
+            basic_market,
+            0.01,
+            bid_depth_total=1000.0,
+            ask_depth_total=1000.0,
         )
         slip_imbalanced = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
-            bid_depth_total=2000.0, ask_depth_total=500.0,  # Thin asks
+            buy_order,
+            basic_market,
+            0.01,
+            bid_depth_total=2000.0,
+            ask_depth_total=500.0,  # Thin asks
         )
 
         assert slip_imbalanced > slip_balanced
@@ -467,17 +473,22 @@ class TestOrderBookImbalance:
 # Test Funding Rate Stress Factor
 # =============================================================================
 
+
 class TestFundingRateStress:
     """Tests for funding rate stress factor (perp-specific)."""
 
     def test_no_funding_neutral(self, default_provider, buy_order, basic_market):
         """Test that missing funding rate is neutral."""
         slip_none = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=None,
         )
         slip_zero = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=0.0,
         )
 
@@ -486,11 +497,15 @@ class TestFundingRateStress:
     def test_positive_funding_increases_slippage(self, default_provider, buy_order, basic_market):
         """Test that positive funding (crowded long) increases slippage."""
         slip_base = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=0.0,
         )
         slip_funding = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=0.001,  # 0.1% funding rate
         )
 
@@ -499,11 +514,15 @@ class TestFundingRateStress:
     def test_negative_funding_increases_slippage(self, default_provider, buy_order, basic_market):
         """Test that negative funding (crowded short) also increases slippage."""
         slip_base = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=0.0,
         )
         slip_funding = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=-0.001,  # -0.1% funding rate
         )
 
@@ -512,11 +531,15 @@ class TestFundingRateStress:
     def test_funding_effect_magnitude(self, default_provider, buy_order, basic_market):
         """Test that funding effect scales with absolute value."""
         slip_small = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=0.0001,
         )
         slip_large = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             funding_rate=0.001,
         )
 
@@ -527,6 +550,7 @@ class TestFundingRateStress:
 # =============================================================================
 # Test Time-of-Day Factor
 # =============================================================================
+
 
 class TestTimeOfDayFactor:
     """Tests for time-of-day liquidity factor."""
@@ -562,11 +586,15 @@ class TestTimeOfDayFactor:
     def test_tod_affects_slippage(self, default_provider, buy_order, basic_market):
         """Test that time-of-day affects slippage calculation."""
         slip_asia = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             hour_utc=3,  # Low liquidity
         )
         slip_peak = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             hour_utc=16,  # High liquidity
         )
 
@@ -575,14 +603,21 @@ class TestTimeOfDayFactor:
 
     def test_tod_hour_wrapping(self, default_provider):
         """Test that hour values wrap correctly."""
-        assert default_provider.get_time_of_day_factor(24) == default_provider.get_time_of_day_factor(0)
-        assert default_provider.get_time_of_day_factor(25) == default_provider.get_time_of_day_factor(1)
-        assert default_provider.get_time_of_day_factor(-1) == default_provider.get_time_of_day_factor(23)
+        assert default_provider.get_time_of_day_factor(
+            24
+        ) == default_provider.get_time_of_day_factor(0)
+        assert default_provider.get_time_of_day_factor(
+            25
+        ) == default_provider.get_time_of_day_factor(1)
+        assert default_provider.get_time_of_day_factor(
+            -1
+        ) == default_provider.get_time_of_day_factor(23)
 
 
 # =============================================================================
 # Test BTC Correlation Decay Factor
 # =============================================================================
+
 
 class TestBTCCorrelationDecay:
     """Tests for BTC correlation decay factor (altcoin fragmentation)."""
@@ -590,11 +625,15 @@ class TestBTCCorrelationDecay:
     def test_correlation_none_neutral(self, default_provider, buy_order, basic_market):
         """Test that missing correlation is neutral."""
         slip_none = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             btc_correlation=None,
         )
         slip_one = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             btc_correlation=1.0,  # Perfect correlation
         )
 
@@ -604,11 +643,15 @@ class TestBTCCorrelationDecay:
     def test_low_correlation_increases_slippage(self, default_provider, buy_order, basic_market):
         """Test that low BTC correlation increases slippage."""
         slip_high_corr = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             btc_correlation=0.9,  # High correlation
         )
         slip_low_corr = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             btc_correlation=0.3,  # Low correlation
         )
 
@@ -619,11 +662,15 @@ class TestBTCCorrelationDecay:
         """Test that correlation values are clamped to [0, 1]."""
         # These should not crash and give reasonable results
         slip_negative = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             btc_correlation=-0.5,  # Should be treated as 0
         )
         slip_over_one = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             btc_correlation=1.5,  # Should be treated as 1
         )
 
@@ -634,6 +681,7 @@ class TestBTCCorrelationDecay:
 # =============================================================================
 # Test Asymmetric Slippage
 # =============================================================================
+
 
 class TestAsymmetricSlippage:
     """Tests for asymmetric slippage (sells more expensive in downtrend)."""
@@ -646,11 +694,15 @@ class TestAsymmetricSlippage:
         uptrend_returns = [0.01, 0.02, 0.015, 0.005, 0.01]
 
         slip_buy = provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             recent_returns=uptrend_returns,
         )
         slip_sell = provider.compute_slippage_bps(
-            sell_order, basic_market, 0.01,
+            sell_order,
+            basic_market,
+            0.01,
             recent_returns=uptrend_returns,
         )
 
@@ -665,11 +717,15 @@ class TestAsymmetricSlippage:
         downtrend_returns = [-0.02, -0.015, -0.01, -0.005, -0.01]
 
         slip_buy = provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             recent_returns=downtrend_returns,
         )
         slip_sell = provider.compute_slippage_bps(
-            sell_order, basic_market, 0.01,
+            sell_order,
+            basic_market,
+            0.01,
             recent_returns=downtrend_returns,
         )
 
@@ -686,14 +742,18 @@ class TestAsymmetricSlippage:
         # Just above threshold (cumulative = -0.015 > -0.02)
         mild_downtrend = [-0.005, -0.005, -0.005]  # -1.5%
         slip_mild = provider.compute_slippage_bps(
-            sell_order, basic_market, 0.01,
+            sell_order,
+            basic_market,
+            0.01,
             recent_returns=mild_downtrend,
         )
 
         # Below threshold (cumulative = -0.03 < -0.02)
         strong_downtrend = [-0.01, -0.01, -0.01]  # -3%
         slip_strong = provider.compute_slippage_bps(
-            sell_order, basic_market, 0.01,
+            sell_order,
+            basic_market,
+            0.01,
             recent_returns=strong_downtrend,
         )
 
@@ -704,6 +764,7 @@ class TestAsymmetricSlippage:
 # =============================================================================
 # Test Whale Detection
 # =============================================================================
+
 
 class TestWhaleDetection:
     """Tests for whale order detection and TWAP adjustment."""
@@ -718,12 +779,16 @@ class TestWhaleDetection:
 
         # Non-whale order (0.5% ADV)
         slip_normal = provider.compute_slippage_bps(
-            buy_order, basic_market, 0.005,
+            buy_order,
+            basic_market,
+            0.005,
         )
 
         # Whale order (2% ADV) - should have TWAP-adjusted impact
         slip_whale = provider.compute_slippage_bps(
-            buy_order, basic_market, 0.02,
+            buy_order,
+            basic_market,
+            0.02,
         )
 
         # Whale should have proportionally lower slippage per unit
@@ -760,6 +825,7 @@ class TestWhaleDetection:
 # =============================================================================
 # Test Adaptive Impact Coefficient
 # =============================================================================
+
 
 class TestAdaptiveImpact:
     """Tests for adaptive impact coefficient adjustment."""
@@ -835,8 +901,8 @@ class TestAdaptiveImpact:
         initial_k = default_provider._adaptive_k
 
         default_provider.update_fill_quality(-10.0, 10.0)  # Negative predicted
-        default_provider.update_fill_quality(0.0, 10.0)    # Zero predicted
-        default_provider.update_fill_quality(10.0, -5.0)   # Negative actual
+        default_provider.update_fill_quality(0.0, 10.0)  # Zero predicted
+        default_provider.update_fill_quality(10.0, -5.0)  # Negative actual
 
         assert default_provider._adaptive_k == initial_k
 
@@ -844,6 +910,7 @@ class TestAdaptiveImpact:
 # =============================================================================
 # Test Edge Cases
 # =============================================================================
+
 
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
@@ -858,8 +925,10 @@ class TestEdgeCases:
     def test_nan_funding_rate(self, default_provider, buy_order, basic_market):
         """Test handling of NaN funding rate."""
         slippage = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
-            funding_rate=float('nan'),
+            buy_order,
+            basic_market,
+            0.01,
+            funding_rate=float("nan"),
         )
         # Should use neutral factor
         assert slippage > 0
@@ -868,11 +937,9 @@ class TestEdgeCases:
     def test_nan_volatility(self, buy_order):
         """Test handling of NaN volatility in market state."""
         provider = CryptoParametricSlippageProvider()
-        market = MarketState(timestamp=0, volatility=float('nan'))
+        market = MarketState(timestamp=0, volatility=float("nan"))
 
-        slippage = provider.compute_slippage_bps(
-            buy_order, market, 0.01
-        )
+        slippage = provider.compute_slippage_bps(buy_order, market, 0.01)
         assert slippage > 0
         assert math.isfinite(slippage)
 
@@ -880,13 +947,11 @@ class TestEdgeCases:
         """Test handling of infinite values."""
         market = MarketState(
             timestamp=0,
-            bid=float('inf'),
-            ask=float('inf'),
+            bid=float("inf"),
+            ask=float("inf"),
         )
 
-        slippage = default_provider.compute_slippage_bps(
-            buy_order, market, 0.01
-        )
+        slippage = default_provider.compute_slippage_bps(buy_order, market, 0.01)
         # Should use default spread
         assert slippage > 0
         assert math.isfinite(slippage)
@@ -895,9 +960,7 @@ class TestEdgeCases:
         """Test with minimal market data."""
         market = MarketState(timestamp=0)  # No bid/ask/etc
 
-        slippage = default_provider.compute_slippage_bps(
-            buy_order, market, 0.01
-        )
+        slippage = default_provider.compute_slippage_bps(buy_order, market, 0.01)
         # Should use defaults
         assert slippage > 0
         assert math.isfinite(slippage)
@@ -905,7 +968,9 @@ class TestEdgeCases:
     def test_empty_returns_array(self, default_provider, buy_order, basic_market):
         """Test with empty returns array."""
         slippage = default_provider.compute_slippage_bps(
-            buy_order, basic_market, 0.01,
+            buy_order,
+            basic_market,
+            0.01,
             recent_returns=[],
         )
         assert slippage > 0
@@ -916,7 +981,7 @@ class TestEdgeCases:
             timestamp=0,
             bid=100.0,
             ask=100.05,
-            bid_depth=[(100.0, 50.0), (99.95, 50.0)],   # Total 100
+            bid_depth=[(100.0, 50.0), (99.95, 50.0)],  # Total 100
             ask_depth=[(100.05, 100.0), (100.10, 100.0)],  # Total 200
         )
 
@@ -928,6 +993,7 @@ class TestEdgeCases:
 # =============================================================================
 # Test Factory Methods
 # =============================================================================
+
 
 class TestFactoryMethods:
     """Tests for factory and profile methods."""
@@ -995,6 +1061,7 @@ class TestFactoryMethods:
 # Test Estimate Impact Cost
 # =============================================================================
 
+
 class TestEstimateImpactCost:
     """Tests for pre-trade cost estimation."""
 
@@ -1051,12 +1118,16 @@ class TestEstimateImpactCost:
             hour_utc=3,  # Low liquidity
         )
 
-        assert "Low liquidity" in result["recommendation"] or "delay" in result["recommendation"].lower()
+        assert (
+            "Low liquidity" in result["recommendation"]
+            or "delay" in result["recommendation"].lower()
+        )
 
 
 # =============================================================================
 # Test Protocol Compliance
 # =============================================================================
+
 
 class TestProtocolCompliance:
     """Tests that CryptoParametricSlippageProvider satisfies SlippageProvider protocol."""
@@ -1074,6 +1145,7 @@ class TestProtocolCompliance:
 # =============================================================================
 # Test Integration with L2ExecutionProvider
 # =============================================================================
+
 
 class TestL2Integration:
     """Tests for integration with L2ExecutionProvider."""
@@ -1134,7 +1206,9 @@ class TestL2Integration:
         )
 
         slippage = provider.compute_slippage_bps(
-            order, market, estimate["participation"],
+            order,
+            market,
+            estimate["participation"],
             hour_utc=16,  # Match the estimate hour
         )
 
@@ -1147,6 +1221,7 @@ class TestL2Integration:
 # =============================================================================
 # Regression Tests
 # =============================================================================
+
 
 class TestRegression:
     """Regression tests for output stability."""
@@ -1165,10 +1240,7 @@ class TestRegression:
         )
 
         # Compute multiple times
-        results = [
-            provider.compute_slippage_bps(order, market, 0.01)
-            for _ in range(10)
-        ]
+        results = [provider.compute_slippage_bps(order, market, 0.01) for _ in range(10)]
 
         # All should be identical
         assert all(r == results[0] for r in results)
@@ -1210,6 +1282,7 @@ class TestRegression:
 # Benchmark Tests (optional - run with pytest -v)
 # =============================================================================
 
+
 class TestPerformance:
     """Performance tests for slippage calculation."""
 
@@ -1226,7 +1299,9 @@ class TestPerformance:
         iterations = 10000
         for _ in range(iterations):
             default_provider.compute_slippage_bps(
-                buy_order, basic_market, 0.01,
+                buy_order,
+                basic_market,
+                0.01,
                 funding_rate=0.0001,
                 btc_correlation=0.85,
                 hour_utc=14,

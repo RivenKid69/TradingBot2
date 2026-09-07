@@ -24,9 +24,7 @@ spec_impl.loader.exec_module(impl_module)
 
 LatencyImpl = impl_module.LatencyImpl
 ExecutionSimulator = importlib.import_module("execution_sim").ExecutionSimulator
-LatencyVolatilityCache = importlib.import_module(
-    "latency_volatility_cache"
-).LatencyVolatilityCache
+LatencyVolatilityCache = importlib.import_module("latency_volatility_cache").LatencyVolatilityCache
 
 
 class DummyCache:
@@ -58,9 +56,7 @@ class DummyCache:
         )
         return self.multiplier, {"source": "dummy"}
 
-    def update_latency_factor(
-        self, *, symbol: str, ts_ms: int, value: float
-    ) -> None:
+    def update_latency_factor(self, *, symbol: str, ts_ms: int, value: float) -> None:
         self.updates.append({"symbol": symbol, "ts_ms": ts_ms, "value": value})
 
 
@@ -259,4 +255,3 @@ def test_execution_simulator_updates_latency():
     assert cache_entry["symbol"] == "ADAUSDT"
     assert cache_entry["ts_ms"] == 2000
     assert cache_entry["value"] == pytest.approx(0.25)
-

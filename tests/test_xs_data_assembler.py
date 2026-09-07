@@ -21,7 +21,11 @@ from impl_data_cache import ParquetCache
 from impl_data_sources import DataSourceMeta
 from impl_panel import PanelBuilder
 from service_xs_data import (
-    DataAssembler, ColumnMapEnricher, AsofEnricher, FunctionEnricher, build_quality_report,
+    DataAssembler,
+    ColumnMapEnricher,
+    AsofEnricher,
+    FunctionEnricher,
+    build_quality_report,
 )
 
 T0, STEP = 1_700_000_000, 86_400
@@ -32,7 +36,9 @@ T0, STEP = 1_700_000_000, 86_400
 # ---------------------------------------------------------------------------
 class FakePriceSource:
     def __init__(self, vendor="fake", n=12, pit="true"):
-        self.meta = DataSourceMeta(name=f"free:{vendor}", vendor=vendor, kind="price", pit_quality=pit)
+        self.meta = DataSourceMeta(
+            name=f"free:{vendor}", vendor=vendor, kind="price", pit_quality=pit
+        )
         self.n = n
         self.calls = []
 
@@ -41,9 +47,14 @@ class FakePriceSource:
         out = {}
         for s in symbols:
             ts = [T0 + i * STEP for i in range(self.n)]
-            out[s] = pd.DataFrame({"timestamp": ts, "symbol": s,
-                                   "close": 100.0 * (1 + 0.01 * np.arange(self.n)),
-                                   "volume": 1000.0})
+            out[s] = pd.DataFrame(
+                {
+                    "timestamp": ts,
+                    "symbol": s,
+                    "close": 100.0 * (1 + 0.01 * np.arange(self.n)),
+                    "volume": 1000.0,
+                }
+            )
         return out
 
 
@@ -73,8 +84,12 @@ def test_assemble_with_column_map_enricher():
 
 def test_function_enricher_di():
     src = FakePriceSource()
+
     def add_col(panel):
-        out = panel.copy(); out["feat"] = out["close"] * 2.0; return out
+        out = panel.copy()
+        out["feat"] = out["close"] * 2.0
+        return out
+
     enr = FunctionEnricher(add_col, columns=["feat"], name="x2")
     res = DataAssembler(src, enrichers=[enr]).assemble(["BTC"], "1d")
     assert np.allclose(res.panel["feat"].to_numpy(), res.panel["close"].to_numpy() * 2.0)
@@ -87,20 +102,26 @@ def test_asof_enricher_is_pit_safe():
     src = FakePriceSource(n=10)
     # фундаментал публикуется на баре 5 → бары 0..4 ДОЛЖНЫ быть NaN (нет look-ahead)
     pub_ts = T0 + 5 * STEP
+
     def provider(symbols):
         return pd.DataFrame({"publish_ts": [pub_ts], "symbol": ["BTC"], "earnings": [8.0]})
-    enr = AsofEnricher(provider, columns=["earnings"], publish_ts_col="publish_ts", pit_quality="true")
+
+    enr = AsofEnricher(
+        provider, columns=["earnings"], publish_ts_col="publish_ts", pit_quality="true"
+    )
     res = DataAssembler(src, enrichers=[enr]).assemble(["BTC"], "1d")
     e = res.panel.xs("BTC", level=SYMBOL_LEVEL)["earnings"].to_numpy()
-    assert np.isnan(e[:5]).all()        # до публикации — NaN (PIT)
-    assert (e[5:] == 8.0).all()         # после — значение
+    assert np.isnan(e[:5]).all()  # до публикации — NaN (PIT)
+    assert (e[5:] == 8.0).all()  # после — значение
 
 
 def test_asof_enricher_publish_lag():
     src = FakePriceSource(n=10)
     pub_ts = T0 + 3 * STEP
+
     def provider(symbols):
         return pd.DataFrame({"publish_ts": [pub_ts], "symbol": ["BTC"], "roe": [0.2]})
+
     # лаг в 2 бара → значение доступно только с бара 5
     enr = AsofEnricher(provider, columns=["roe"], publish_lag_ms=2 * STEP * 1000)
     res = DataAssembler(src, enrichers=[enr]).assemble(["BTC"], "1d")
@@ -126,26 +147,34 @@ def test_assembler_uses_cache(tmp_path):
     src = FakePriceSource(vendor="binance")
     cache = ParquetCache(root=str(tmp_path))
     asm = DataAssembler(src, cache=cache)
-    asm.assemble(["BTC"], "1d")                 # первый раз → fetch + put
+    asm.assemble(["BTC"], "1d")  # первый раз → fetch + put
     n_after_first = len(src.calls)
-    asm.assemble(["BTC"], "1d")                 # второй раз → из кэша, без fetch
-    assert len(src.calls) == n_after_first      # повторного get_bars не было
+    asm.assemble(["BTC"], "1d")  # второй раз → из кэша, без fetch
+    assert len(src.calls) == n_after_first  # повторного get_bars не было
 
 
 # ---------------------------------------------------------------------------
 # quality report
 # ---------------------------------------------------------------------------
 def test_quality_report_coverage_and_verdict():
-    frame = pd.DataFrame({"timestamp": [T0, T0 + STEP, T0 + 2 * STEP], "symbol": "BTC",
-                          "close": [1.0, 2.0, 3.0], "iv": [np.nan, np.nan, 0.2]})
+    frame = pd.DataFrame(
+        {
+            "timestamp": [T0, T0 + STEP, T0 + 2 * STEP],
+            "symbol": "BTC",
+            "close": [1.0, 2.0, 3.0],
+            "iv": [np.nan, np.nan, 0.2],
+        }
+    )
     panel = PanelBuilder.from_frames({"BTC": frame})
-    prov = [ColumnProvenance("close", "p", "binance", PIT_TRUE),
-            ColumnProvenance("iv", "e", "byo", PIT_NONE)]
+    prov = [
+        ColumnProvenance("close", "p", "binance", PIT_TRUE),
+        ColumnProvenance("iv", "e", "byo", PIT_NONE),
+    ]
     rep = build_quality_report(panel, prov, price_col="close")
     assert rep.coverage["close"] == pytest.approx(1.0)
     assert rep.coverage["iv"] == pytest.approx(1 / 3)
     assert rep.worst_pit == "none"
-    assert rep.verdict() == "warn"                       # none-колонка + низкое покрытие
+    assert rep.verdict() == "warn"  # none-колонка + низкое покрытие
     assert any("pit_quality=none" in w for w in rep.warnings)
 
 
@@ -154,11 +183,16 @@ def test_quality_report_coverage_and_verdict():
 # ---------------------------------------------------------------------------
 def test_data_quality_for_config_synthetic():
     from service_xs_pipeline import XSConfig, data_quality_for_config
-    cfg = XSConfig.model_validate({"asset_class": "crypto",
-                                   "data": {"source": "synthetic", "symbols": ["BTC", "ETH"], "synthetic_bars": 30}})
+
+    cfg = XSConfig.model_validate(
+        {
+            "asset_class": "crypto",
+            "data": {"source": "synthetic", "symbols": ["BTC", "ETH"], "synthetic_bars": 30},
+        }
+    )
     rep = data_quality_for_config(cfg)
     assert rep.n_symbols == 2
-    assert rep.worst_pit == "none"                       # синтетика честно помечена
+    assert rep.worst_pit == "none"  # синтетика честно помечена
     assert "close" in rep.coverage
 
 
@@ -166,10 +200,14 @@ def test_api_data_quality():
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
     from xs_api import register_xs_routes
-    app = FastAPI(); register_xs_routes(app)
+
+    app = FastAPI()
+    register_xs_routes(app)
     client = TestClient(app)
-    r = client.post("/api/xs/data_quality",
-                    json={"asset_class": "crypto", "data": {"source": "synthetic", "symbols": ["BTC", "ETH"]}})
+    r = client.post(
+        "/api/xs/data_quality",
+        json={"asset_class": "crypto", "data": {"source": "synthetic", "symbols": ["BTC", "ETH"]}},
+    )
     assert r.status_code == 200
     data = r.json()
     assert data["n_symbols"] == 2 and "verdict" in data and "columns" in data

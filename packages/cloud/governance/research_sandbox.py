@@ -27,18 +27,21 @@ from uuid import uuid4
 # Enums and Constants
 # =============================================================================
 
+
 class IsolationLevel(str, Enum):
     """Sandbox isolation levels."""
-    CONTAINER = "container"       # Standard container isolation
+
+    CONTAINER = "container"  # Standard container isolation
     CONTAINER_HARDENED = "container_hardened"  # Container with additional restrictions
-    FIRECRACKER = "firecracker"   # microVM isolation
-    KATA = "kata"                 # Kata containers
-    VM = "vm"                     # Full VM isolation
-    WASM = "wasm"                 # WebAssembly sandbox
+    FIRECRACKER = "firecracker"  # microVM isolation
+    KATA = "kata"  # Kata containers
+    VM = "vm"  # Full VM isolation
+    WASM = "wasm"  # WebAssembly sandbox
 
 
 class JobStatus(str, Enum):
     """Research job status."""
+
     PENDING = "pending"
     QUEUED = "queued"
     RUNNING = "running"
@@ -52,6 +55,7 @@ class JobStatus(str, Enum):
 
 class AbuseType(str, Enum):
     """Types of detected abuse."""
+
     CRYPTO_MINING = "crypto_mining"
     BOTNET_ACTIVITY = "botnet_activity"
     NETWORK_SCANNING = "network_scanning"
@@ -66,6 +70,7 @@ class AbuseType(str, Enum):
 
 class AbuseAction(str, Enum):
     """Actions taken on abuse detection."""
+
     ALERT = "alert"
     THROTTLE = "throttle"
     TERMINATE = "terminate"
@@ -75,6 +80,7 @@ class AbuseAction(str, Enum):
 
 class SandboxEventType(str, Enum):
     """Types of sandbox events."""
+
     JOB_CREATED = "job_created"
     JOB_STARTED = "job_started"
     JOB_COMPLETED = "job_completed"
@@ -93,6 +99,7 @@ class SandboxEventType(str, Enum):
 
 class QuotaType(str, Enum):
     """Types of resource quotas."""
+
     CPU = "cpu"
     MEMORY = "memory"
     DISK = "disk"
@@ -142,9 +149,11 @@ C2_PATTERNS = [
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class ResourceQuota:
     """Resource quota configuration."""
+
     quota_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     cpu_limit: float = DEFAULT_CPU_LIMIT
@@ -184,24 +193,37 @@ class ResourceQuota:
 @dataclass
 class SandboxConfig:
     """Sandbox isolation configuration."""
+
     config_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     isolation_level: IsolationLevel = IsolationLevel.CONTAINER_HARDENED
     seccomp_profile: str = "runtime/default"
     apparmor_profile: str = "runtime/default"
-    capabilities_drop: List[str] = field(default_factory=lambda: [
-        "ALL",
-    ])
+    capabilities_drop: List[str] = field(
+        default_factory=lambda: [
+            "ALL",
+        ]
+    )
     capabilities_add: List[str] = field(default_factory=list)
     read_only_rootfs: bool = True
     no_new_privileges: bool = True
     user_namespace: bool = True
     privileged: bool = False
     allowed_syscalls: Set[str] = field(default_factory=set)
-    blocked_syscalls: Set[str] = field(default_factory=lambda: {
-        "mount", "umount", "ptrace", "kexec_load", "reboot",
-        "swapon", "swapoff", "syslog", "init_module", "delete_module",
-    })
+    blocked_syscalls: Set[str] = field(
+        default_factory=lambda: {
+            "mount",
+            "umount",
+            "ptrace",
+            "kexec_load",
+            "reboot",
+            "swapon",
+            "swapoff",
+            "syslog",
+            "init_module",
+            "delete_module",
+        }
+    )
     network_mode: str = "none"  # none, host, bridge, custom
     volumes_read_only: bool = True
 
@@ -228,16 +250,19 @@ class SandboxConfig:
 @dataclass
 class EgressRule:
     """A rule in the egress policy."""
+
     rule_id: str = field(default_factory=lambda: str(uuid4()))
-    domain: Optional[str] = None        # Domain pattern (e.g., "*.polygon.io")
-    ip_cidr: Optional[str] = None       # IP/CIDR (e.g., "10.0.0.0/8")
-    port: Optional[int] = None          # Specific port (None = all)
+    domain: Optional[str] = None  # Domain pattern (e.g., "*.polygon.io")
+    ip_cidr: Optional[str] = None  # IP/CIDR (e.g., "10.0.0.0/8")
+    port: Optional[int] = None  # Specific port (None = all)
     ports: Set[int] = field(default_factory=lambda: {443, 80})
-    protocol: str = "tcp"               # tcp, udp, any
+    protocol: str = "tcp"  # tcp, udp, any
     allow: bool = True
     description: str = ""
 
-    def matches(self, target_domain: Optional[str], target_ip: Optional[str], target_port: int) -> bool:
+    def matches(
+        self, target_domain: Optional[str], target_ip: Optional[str], target_port: int
+    ) -> bool:
         """Check if this rule matches the target."""
         # Check domain
         if self.domain and target_domain:
@@ -282,6 +307,7 @@ class EgressRule:
 @dataclass
 class EgressPolicy:
     """Egress policy for a workspace."""
+
     policy_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     deny_all_by_default: bool = True
@@ -322,6 +348,7 @@ class EgressPolicy:
 @dataclass
 class ResourceUsage:
     """Current resource usage for a job."""
+
     cpu_percent: float = 0.0
     memory_used_mb: int = 0
     memory_percent: float = 0.0
@@ -353,6 +380,7 @@ class ResourceUsage:
 @dataclass
 class ResearchJob:
     """A research job running in a sandbox."""
+
     job_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     user_id: str = ""
@@ -413,6 +441,7 @@ class ResearchJob:
 @dataclass
 class AbuseIndicator:
     """An indicator of potential abuse."""
+
     indicator_id: str = field(default_factory=lambda: str(uuid4()))
     abuse_type: AbuseType = AbuseType.RESOURCE_ABUSE
     pattern: str = ""
@@ -436,6 +465,7 @@ class AbuseIndicator:
 @dataclass
 class AbuseEvent:
     """A detected abuse event."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     job_id: str = ""
     workspace_id: str = ""
@@ -456,14 +486,17 @@ class AbuseEvent:
             self.evidence_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "job_id": self.job_id,
-            "workspace_id": self.workspace_id,
-            "abuse_type": self.abuse_type.value,
-            "detected_at": self.detected_at.isoformat(),
-            "indicators": self.indicators,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "job_id": self.job_id,
+                "workspace_id": self.workspace_id,
+                "abuse_type": self.abuse_type.value,
+                "detected_at": self.detected_at.isoformat(),
+                "indicators": self.indicators,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -488,6 +521,7 @@ class AbuseEvent:
 @dataclass
 class EgressLogEntry:
     """Log entry for egress connection."""
+
     entry_id: str = field(default_factory=lambda: str(uuid4()))
     job_id: str = ""
     workspace_id: str = ""
@@ -523,6 +557,7 @@ class EgressLogEntry:
 @dataclass
 class SandboxEvent:
     """Event in the sandbox audit log."""
+
     event_id: str = field(default_factory=lambda: str(uuid4()))
     workspace_id: str = ""
     job_id: Optional[str] = None
@@ -538,15 +573,18 @@ class SandboxEvent:
             self.integrity_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_id": self.event_id,
-            "workspace_id": self.workspace_id,
-            "job_id": self.job_id,
-            "event_type": self.event_type.value,
-            "timestamp": self.timestamp.isoformat(),
-            "actor_id": self.actor_id,
-            "result": self.result,
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_id": self.event_id,
+                "workspace_id": self.workspace_id,
+                "job_id": self.job_id,
+                "event_type": self.event_type.value,
+                "timestamp": self.timestamp.isoformat(),
+                "actor_id": self.actor_id,
+                "result": self.result,
+            },
+            sort_keys=True,
+        )
         return f"sha256:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -566,6 +604,7 @@ class SandboxEvent:
 @dataclass
 class SandboxStats:
     """Statistics for sandbox usage."""
+
     workspace_id: str = ""
     total_jobs: int = 0
     jobs_running: int = 0
@@ -601,6 +640,7 @@ class SandboxStats:
 # =============================================================================
 # Research Sandbox Service
 # =============================================================================
+
 
 class ResearchSandboxService:
     """
@@ -708,16 +748,24 @@ class ResearchSandboxService:
             violations.append(f"CPU usage {usage.cpu_percent:.1f}% exceeds limit")
 
         if usage.memory_used_mb > quota.memory_limit_mb:
-            violations.append(f"Memory usage {usage.memory_used_mb}MB exceeds limit {quota.memory_limit_mb}MB")
+            violations.append(
+                f"Memory usage {usage.memory_used_mb}MB exceeds limit {quota.memory_limit_mb}MB"
+            )
 
         if usage.disk_used_mb > quota.disk_limit_mb:
-            violations.append(f"Disk usage {usage.disk_used_mb}MB exceeds limit {quota.disk_limit_mb}MB")
+            violations.append(
+                f"Disk usage {usage.disk_used_mb}MB exceeds limit {quota.disk_limit_mb}MB"
+            )
 
         if usage.process_count > quota.max_processes:
-            violations.append(f"Process count {usage.process_count} exceeds limit {quota.max_processes}")
+            violations.append(
+                f"Process count {usage.process_count} exceeds limit {quota.max_processes}"
+            )
 
         if usage.runtime_seconds > quota.max_runtime_seconds:
-            violations.append(f"Runtime {usage.runtime_seconds:.0f}s exceeds limit {quota.max_runtime_seconds}s")
+            violations.append(
+                f"Runtime {usage.runtime_seconds:.0f}s exceeds limit {quota.max_runtime_seconds}s"
+            )
 
         return len(violations) == 0, violations
 
@@ -1394,7 +1442,9 @@ class ResearchSandboxService:
         running = len([j for j in jobs if j.status == JobStatus.RUNNING])
         completed = len([j for j in jobs if j.status == JobStatus.COMPLETED])
         failed = len([j for j in jobs if j.status == JobStatus.FAILED])
-        terminated = len([j for j in jobs if j.status in (JobStatus.TERMINATED, JobStatus.ABUSE_DETECTED)])
+        terminated = len(
+            [j for j in jobs if j.status in (JobStatus.TERMINATED, JobStatus.ABUSE_DETECTED)]
+        )
 
         total_runtime = sum(j.get_runtime_seconds() for j in jobs if j.completed_at)
 
@@ -1409,18 +1459,31 @@ class ResearchSandboxService:
         cutoff = datetime.now(timezone.utc) - timedelta(days=30)
 
         with self._lock:
-            abuse_events_30d = len([e for e in self._abuse_events
-                                   if e.workspace_id == workspace_id
-                                   and e.detected_at >= cutoff])
+            abuse_events_30d = len(
+                [
+                    e
+                    for e in self._abuse_events
+                    if e.workspace_id == workspace_id and e.detected_at >= cutoff
+                ]
+            )
 
-            egress_blocked_30d = len([e for e in self._egress_logs
-                                     if e.workspace_id == workspace_id
-                                     and e.timestamp >= cutoff
-                                     and not e.allowed])
+            egress_blocked_30d = len(
+                [
+                    e
+                    for e in self._egress_logs
+                    if e.workspace_id == workspace_id and e.timestamp >= cutoff and not e.allowed
+                ]
+            )
 
-        quota_exceeded_30d = len([j for j in jobs
-                                  if j.status == JobStatus.QUOTA_EXCEEDED
-                                  and j.completed_at and j.completed_at >= cutoff])
+        quota_exceeded_30d = len(
+            [
+                j
+                for j in jobs
+                if j.status == JobStatus.QUOTA_EXCEEDED
+                and j.completed_at
+                and j.completed_at >= cutoff
+            ]
+        )
 
         return SandboxStats(
             workspace_id=workspace_id,

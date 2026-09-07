@@ -412,7 +412,7 @@ class TestLoadAlgoIntegrationConfig:
             }
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
@@ -433,7 +433,7 @@ class TestLoadAlgoIntegrationConfig:
             },
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
@@ -450,7 +450,7 @@ class TestLoadAlgoIntegrationConfig:
 
     def test_load_empty_file(self):
         """Test loading empty YAML file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("")
             temp_path = f.name
 
@@ -489,7 +489,7 @@ class TestLoadAlgoIntegrationConfig:
             }
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
@@ -548,5 +548,8 @@ class TestConfigSerialization:
         restored = AlgoIntegrationConfig.model_validate(data)
 
         assert restored.enabled == original.enabled
-        assert restored.algorithm_registry.nca_jurisdiction == original.algorithm_registry.nca_jurisdiction
+        assert (
+            restored.algorithm_registry.nca_jurisdiction
+            == original.algorithm_registry.nca_jurisdiction
+        )
         assert restored.best_execution.report_frequency == original.best_execution.report_frequency

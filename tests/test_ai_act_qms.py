@@ -47,6 +47,7 @@ from services.ai_act.qms import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def temp_log_dir():
     """Create temporary directory for logs."""
@@ -79,6 +80,7 @@ def qms(qms_config):
 # =============================================================================
 # Test Enums
 # =============================================================================
+
 
 class TestEnums:
     """Test enum definitions."""
@@ -140,6 +142,7 @@ class TestEnums:
 # Test Data Classes
 # =============================================================================
 
+
 class TestDataClasses:
     """Test data class initialization and properties."""
 
@@ -191,18 +194,34 @@ class TestDataClasses:
         )
 
         # Add findings of different severities
-        audit.findings.append(AuditFinding(
-            finding_id="F1", audit_id="AUDIT-001",
-            severity=FindingSeverity.CRITICAL, title="Critical", description="",
-        ))
-        audit.findings.append(AuditFinding(
-            finding_id="F2", audit_id="AUDIT-001",
-            severity=FindingSeverity.MAJOR, title="Major", description="",
-        ))
-        audit.findings.append(AuditFinding(
-            finding_id="F3", audit_id="AUDIT-001",
-            severity=FindingSeverity.MINOR, title="Minor", description="", is_closed=True,
-        ))
+        audit.findings.append(
+            AuditFinding(
+                finding_id="F1",
+                audit_id="AUDIT-001",
+                severity=FindingSeverity.CRITICAL,
+                title="Critical",
+                description="",
+            )
+        )
+        audit.findings.append(
+            AuditFinding(
+                finding_id="F2",
+                audit_id="AUDIT-001",
+                severity=FindingSeverity.MAJOR,
+                title="Major",
+                description="",
+            )
+        )
+        audit.findings.append(
+            AuditFinding(
+                finding_id="F3",
+                audit_id="AUDIT-001",
+                severity=FindingSeverity.MINOR,
+                title="Minor",
+                description="",
+                is_closed=True,
+            )
+        )
 
         assert len(audit.critical_findings) == 1
         assert len(audit.major_findings) == 1
@@ -267,6 +286,7 @@ class TestDataClasses:
 # =============================================================================
 # Test QMS Procedure Management
 # =============================================================================
+
 
 class TestProcedureManagement:
     """Test procedure management functionality."""
@@ -392,6 +412,7 @@ class TestProcedureManagement:
 # =============================================================================
 # Test Audit Management
 # =============================================================================
+
 
 class TestAuditManagement:
     """Test audit management functionality."""
@@ -533,6 +554,7 @@ class TestAuditManagement:
 # Test Design Control
 # =============================================================================
 
+
 class TestDesignControl:
     """Test design control functionality."""
 
@@ -585,6 +607,7 @@ class TestDesignControl:
 # =============================================================================
 # Test Change Management
 # =============================================================================
+
 
 class TestChangeManagement:
     """Test change management functionality."""
@@ -720,6 +743,7 @@ class TestChangeManagement:
 # Test CAPA Management
 # =============================================================================
 
+
 class TestCAPAManagement:
     """Test CAPA management functionality."""
 
@@ -846,6 +870,7 @@ class TestCAPAManagement:
 # Test Resource Management
 # =============================================================================
 
+
 class TestResourceManagement:
     """Test resource management functionality."""
 
@@ -882,6 +907,7 @@ class TestResourceManagement:
 # =============================================================================
 # Test Accountability Framework
 # =============================================================================
+
 
 class TestAccountabilityFramework:
     """Test accountability framework functionality."""
@@ -926,6 +952,7 @@ class TestAccountabilityFramework:
 # =============================================================================
 # Test Compliance Status
 # =============================================================================
+
 
 class TestComplianceStatus:
     """Test compliance status functionality."""
@@ -1007,6 +1034,7 @@ class TestComplianceStatus:
 # Test Export and Reporting
 # =============================================================================
 
+
 class TestExportAndReporting:
     """Test export and reporting functionality."""
 
@@ -1070,6 +1098,7 @@ class TestExportAndReporting:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Test factory functions."""
 
@@ -1120,6 +1149,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Test Thread Safety
 # =============================================================================
+
 
 class TestThreadSafety:
     """Test thread safety of QMS operations."""

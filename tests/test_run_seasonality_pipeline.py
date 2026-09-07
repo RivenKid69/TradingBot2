@@ -59,7 +59,12 @@ def test_build_pipeline_steps_skip_optional(base_options: PipelineOptions) -> No
     )
     steps = build_pipeline_steps(opts)
     titles = [title for title, _ in steps]
-    assert titles == ["build seasonality", "plot seasonality", "validate seasonality", "train model"]
+    assert titles == [
+        "build seasonality",
+        "plot seasonality",
+        "validate seasonality",
+        "train model",
+    ]
     validate_cmd = dict(steps)["validate seasonality"]
     assert "BTCUSDT" in validate_cmd
 

@@ -7,6 +7,7 @@ This module tests two critical bugs:
 
 Reference: CRITICAL_BUGS_ANALYSIS_2025_11_23.md
 """
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,6 +16,7 @@ import pytest
 # ==============================================================================
 # Problem #1: Data Leakage - Technical Indicators Shift
 # ==============================================================================
+
 
 def test_technical_indicators_shifted_with_close():
     """
@@ -30,28 +32,30 @@ def test_technical_indicators_shifted_with_close():
 
     # Create synthetic dataframe with close prices and technical indicators
     n = 100
-    df = pd.DataFrame({
-        "ts_ms": np.arange(n) * 60_000,
-        "open": np.linspace(100.0, 110.0, n),
-        "high": np.linspace(101.0, 111.0, n),
-        "low": np.linspace(99.0, 109.0, n),
-        "close": np.linspace(100.0, 110.0, n),  # Linear growth
-        "volume": np.ones(n) * 1000.0,
-        "quote_asset_volume": np.ones(n) * 100_000.0,
-        "number_of_trades": np.ones(n) * 100,
-        "taker_buy_base_asset_volume": np.ones(n) * 500.0,
-        "taker_buy_quote_asset_volume": np.ones(n) * 50_000.0,
-        # Technical indicators (calculated from ORIGINAL close before shift)
-        "rsi": np.linspace(30.0, 70.0, n),      # Linear growth
-        "sma_1200": np.linspace(99.0, 109.0, n),  # Linear growth
-        "sma_5040": np.linspace(98.0, 108.0, n),  # Linear growth
-        "macd": np.linspace(-1.0, 1.0, n),
-        "macd_signal": np.linspace(-0.5, 0.5, n),
-        "momentum": np.linspace(0.0, 5.0, n),
-        "atr": np.linspace(1.0, 2.0, n),
-        "cci": np.linspace(-50.0, 50.0, n),
-        "obv": np.linspace(1000.0, 2000.0, n),
-    })
+    df = pd.DataFrame(
+        {
+            "ts_ms": np.arange(n) * 60_000,
+            "open": np.linspace(100.0, 110.0, n),
+            "high": np.linspace(101.0, 111.0, n),
+            "low": np.linspace(99.0, 109.0, n),
+            "close": np.linspace(100.0, 110.0, n),  # Linear growth
+            "volume": np.ones(n) * 1000.0,
+            "quote_asset_volume": np.ones(n) * 100_000.0,
+            "number_of_trades": np.ones(n) * 100,
+            "taker_buy_base_asset_volume": np.ones(n) * 500.0,
+            "taker_buy_quote_asset_volume": np.ones(n) * 50_000.0,
+            # Technical indicators (calculated from ORIGINAL close before shift)
+            "rsi": np.linspace(30.0, 70.0, n),  # Linear growth
+            "sma_1200": np.linspace(99.0, 109.0, n),  # Linear growth
+            "sma_5040": np.linspace(98.0, 108.0, n),  # Linear growth
+            "macd": np.linspace(-1.0, 1.0, n),
+            "macd_signal": np.linspace(-0.5, 0.5, n),
+            "momentum": np.linspace(0.0, 5.0, n),
+            "atr": np.linspace(1.0, 2.0, n),
+            "cci": np.linspace(-50.0, 50.0, n),
+            "obv": np.linspace(1000.0, 2000.0, n),
+        }
+    )
 
     # Store original values before TradingEnv modifies them
     original_close = df["close"].copy()
@@ -82,7 +86,7 @@ def test_technical_indicators_shifted_with_close():
         env.df["close"].iloc[1],
         original_close.iloc[0],
         decimal=6,
-        err_msg="close should be shifted by 1 step"
+        err_msg="close should be shifted by 1 step",
     )
 
     # ASSERTION 2: RSI should be shifted by 1 (same as close)
@@ -91,7 +95,7 @@ def test_technical_indicators_shifted_with_close():
         env.df["rsi"].iloc[1],
         original_rsi.iloc[0],
         decimal=6,
-        err_msg="rsi should be shifted by 1 step together with close"
+        err_msg="rsi should be shifted by 1 step together with close",
     )
 
     # ASSERTION 3: SMA should be shifted by 1 (same as close)
@@ -100,7 +104,7 @@ def test_technical_indicators_shifted_with_close():
         env.df["sma_1200"].iloc[1],
         original_sma_1200.iloc[0],
         decimal=6,
-        err_msg="sma_1200 should be shifted by 1 step together with close"
+        err_msg="sma_1200 should be shifted by 1 step together with close",
     )
 
     # ASSERTION 4: All indicators should be shifted by the same amount
@@ -135,20 +139,22 @@ def test_data_leakage_prevented():
     rsi_values = np.ones(n) * 50.0
     rsi_values[25] = 90.0  # RSI spike (indicates strong momentum)
 
-    df = pd.DataFrame({
-        "ts_ms": np.arange(n) * 60_000,
-        "open": np.ones(n) * 100.0,
-        "high": np.ones(n) * 101.0,
-        "low": np.ones(n) * 99.0,
-        "close": close_values,
-        "volume": np.ones(n) * 1000.0,
-        "quote_asset_volume": np.ones(n) * 100_000.0,
-        "number_of_trades": np.ones(n) * 100,
-        "taker_buy_base_asset_volume": np.ones(n) * 500.0,
-        "taker_buy_quote_asset_volume": np.ones(n) * 50_000.0,
-        "rsi": rsi_values,
-        "sma_1200": np.ones(n) * 100.0,
-    })
+    df = pd.DataFrame(
+        {
+            "ts_ms": np.arange(n) * 60_000,
+            "open": np.ones(n) * 100.0,
+            "high": np.ones(n) * 101.0,
+            "low": np.ones(n) * 99.0,
+            "close": close_values,
+            "volume": np.ones(n) * 1000.0,
+            "quote_asset_volume": np.ones(n) * 100_000.0,
+            "number_of_trades": np.ones(n) * 100,
+            "taker_buy_base_asset_volume": np.ones(n) * 500.0,
+            "taker_buy_quote_asset_volume": np.ones(n) * 50_000.0,
+            "rsi": rsi_values,
+            "sma_1200": np.ones(n) * 100.0,
+        }
+    )
 
     try:
         env = TradingEnv(
@@ -179,13 +185,13 @@ def test_data_leakage_prevented():
         env.df["close"].iloc[25],
         100.0,  # From index 24 (before spike)
         decimal=1,
-        err_msg="close[25] should be 100.0 (shifted from index 24), not 200.0 (spike)"
+        err_msg="close[25] should be 100.0 (shifted from index 24), not 200.0 (spike)",
     )
     np.testing.assert_almost_equal(
         env.df["rsi"].iloc[25],
         50.0,  # From index 24 (before spike)
         decimal=1,
-        err_msg="rsi[25] should be 50.0 (shifted from index 24), not 90.0 (spike)"
+        err_msg="rsi[25] should be 50.0 (shifted from index 24), not 90.0 (spike)",
     )
 
     # At index 26: Spike appears (shifted by 1)
@@ -193,19 +199,20 @@ def test_data_leakage_prevented():
         env.df["close"].iloc[26],
         200.0,  # From index 25 (spike), shifted to 26
         decimal=1,
-        err_msg="close[26] should be 200.0 (spike shifted from index 25)"
+        err_msg="close[26] should be 200.0 (spike shifted from index 25)",
     )
     np.testing.assert_almost_equal(
         env.df["rsi"].iloc[26],
         90.0,  # From index 25 (spike), shifted to 26
         decimal=1,
-        err_msg="rsi[26] should be 90.0 (spike shifted from index 25)"
+        err_msg="rsi[26] should be 90.0 (spike shifted from index 25)",
     )
 
 
 # ==============================================================================
 # Problem #2: Bankruptcy NaN Crash
 # ==============================================================================
+
 
 def test_bankruptcy_returns_negative_penalty_not_nan():
     """
@@ -252,6 +259,7 @@ def test_bankruptcy_returns_negative_penalty_not_nan():
     state.bankruptcy_penalty = 0.0
 
     from risk_enums import ClosedReason
+
     closed_reason = ClosedReason.NONE
     trades_count = 0
 
@@ -271,9 +279,7 @@ def test_bankruptcy_returns_negative_penalty_not_nan():
     )
 
     # ASSERTION 3: Reward should be finite
-    assert np.isfinite(reward), (
-        f"Reward must be finite! Got: {reward}"
-    )
+    assert np.isfinite(reward), f"Reward must be finite! Got: {reward}"
 
 
 def test_bankruptcy_penalty_magnitude():
@@ -304,6 +310,7 @@ def test_bankruptcy_penalty_magnitude():
     # ... (set other required fields)
 
     from risk_enums import ClosedReason
+
     closed_reason = ClosedReason.NONE
 
     reward_normal = compute_reward(state_normal, closed_reason, 0)
@@ -343,7 +350,7 @@ def test_gae_computation_does_not_crash_with_bankruptcy():
     rewards = np.zeros((n_steps, n_envs), dtype=np.float32)
     rewards[:8, 0] = 0.01  # Normal small positive rewards
     rewards[8, 0] = -10.0  # Bankruptcy penalty (large negative)
-    rewards[9, 0] = 0.0    # After bankruptcy (terminal state)
+    rewards[9, 0] = 0.0  # After bankruptcy (terminal state)
 
     values = np.zeros((n_steps, n_envs), dtype=np.float32)
     values[:, 0] = np.linspace(1.0, 0.1, n_steps)  # Decreasing values
@@ -379,24 +386,20 @@ def test_gae_computation_does_not_crash_with_bankruptcy():
 
     # ASSERTION: GAE computation succeeded (no exception)
     # ASSERTION: Advantages and returns are finite
-    assert np.all(np.isfinite(advantages)), (
-        f"Advantages contain NaN/inf: {advantages}"
-    )
-    assert np.all(np.isfinite(returns)), (
-        f"Returns contain NaN/inf: {returns}"
-    )
+    assert np.all(np.isfinite(advantages)), f"Advantages contain NaN/inf: {advantages}"
+    assert np.all(np.isfinite(returns)), f"Returns contain NaN/inf: {returns}"
 
     # ASSERTION: Advantage at bankruptcy step should be large negative
     # (reflecting the large negative penalty)
     assert advantages[8, 0] < -5.0, (
-        f"Advantage at bankruptcy step should be large negative. "
-        f"Got: {advantages[8, 0]}"
+        f"Advantage at bankruptcy step should be large negative. " f"Got: {advantages[8, 0]}"
     )
 
 
 # ==============================================================================
 # Regression Prevention - Combined Tests
 # ==============================================================================
+
 
 def test_no_regression_data_leakage_and_bankruptcy():
     """

@@ -15,6 +15,7 @@ Test Coverage:
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
@@ -106,7 +107,9 @@ class TestCategoricalMeanClipping:
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
 
         # Create target distribution (should be a valid probability distribution)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
 
         # Old probabilities: deliberately create different distributions for c1 and c2
         old_probs_c1 = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
@@ -168,7 +171,9 @@ class TestCategoricalMeanClipping:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
 
         # Create old probs with known mean values
         old_probs_c1 = torch.softmax(torch.zeros(batch_size, num_atoms, device=device), dim=1)
@@ -213,7 +218,9 @@ class TestCategoricalIndependence:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
 
         # Create VERY DIFFERENT old probs for c1 and c2
         # C1: probability mass on left atoms (negative values)
@@ -268,7 +275,9 @@ class TestCategoricalEdgeCases:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
 
         # Uniform probabilities
         old_probs_c1 = torch.ones(batch_size, num_atoms, device=device) / num_atoms
@@ -309,7 +318,9 @@ class TestCategoricalEdgeCases:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
 
         # Peaked distributions (all probability on one atom)
         old_probs_c1 = torch.zeros(batch_size, num_atoms, device=device)
@@ -357,7 +368,9 @@ class TestCategoricalReductionModes:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
         old_probs_c1 = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
         old_probs_c2 = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
         clip_delta = 0.5
@@ -398,7 +411,9 @@ class TestCategoricalReductionModes:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
         old_probs_c1 = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
         old_probs_c2 = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
         clip_delta = 0.5
@@ -528,7 +543,9 @@ class TestCategoricalErrorHandling:
         device = model.device
 
         latent_vf = torch.randn(batch_size, latent_dim, device=device)
-        target_distribution = torch.softmax(torch.randn(batch_size, num_atoms, device=device), dim=1)
+        target_distribution = torch.softmax(
+            torch.randn(batch_size, num_atoms, device=device), dim=1
+        )
 
         # Should raise ValueError when old_probs are None
         with pytest.raises(ValueError, match="old_probs required"):

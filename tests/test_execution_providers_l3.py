@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 # Import L3 config
@@ -83,6 +84,7 @@ from execution_providers_l3 import (
 # =============================================================================
 # Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def basic_market_state() -> MarketState:
@@ -218,6 +220,7 @@ def minimal_l3_config() -> L3ExecutionConfig:
 # =============================================================================
 # L3 Configuration Tests
 # =============================================================================
+
 
 class TestL3ExecutionConfig:
     """Test L3ExecutionConfig creation and validation."""
@@ -453,6 +456,7 @@ class TestConfigConversion:
 # L3 Slippage Provider Tests
 # =============================================================================
 
+
 class TestL3SlippageProvider:
     """Test L3 slippage provider."""
 
@@ -495,9 +499,7 @@ class TestL3SlippageProvider:
         """Test buy vs sell slippage."""
         provider = L3SlippageProvider(asset_class=AssetClass.EQUITY)
 
-        buy_slippage = provider.compute_slippage_bps(
-            buy_market_order, market_state_with_lob, 0.001
-        )
+        buy_slippage = provider.compute_slippage_bps(buy_market_order, market_state_with_lob, 0.001)
         sell_slippage = provider.compute_slippage_bps(
             sell_market_order, market_state_with_lob, 0.001
         )
@@ -513,12 +515,8 @@ class TestL3SlippageProvider:
         small_order = Order("AAPL", "BUY", 100.0, "MARKET", asset_class=AssetClass.EQUITY)
         large_order = Order("AAPL", "BUY", 10000.0, "MARKET", asset_class=AssetClass.EQUITY)
 
-        small_slippage = provider.compute_slippage_bps(
-            small_order, market_state_with_lob, 0.0001
-        )
-        large_slippage = provider.compute_slippage_bps(
-            large_order, market_state_with_lob, 0.01
-        )
+        small_slippage = provider.compute_slippage_bps(small_order, market_state_with_lob, 0.0001)
+        large_slippage = provider.compute_slippage_bps(large_order, market_state_with_lob, 0.01)
 
         # Large order should have more slippage
         assert large_slippage >= small_slippage
@@ -545,6 +543,7 @@ class TestL3SlippageProvider:
 # L3 Fill Provider Tests
 # =============================================================================
 
+
 class TestL3FillProvider:
     """Test L3 fill provider."""
 
@@ -561,9 +560,7 @@ class TestL3FillProvider:
         )
         assert provider._config == equity_l3_config
 
-    def test_market_order_fill(
-        self, buy_market_order, basic_market_state, basic_bar
-    ):
+    def test_market_order_fill(self, buy_market_order, basic_market_state, basic_bar):
         """Test market order always fills."""
         provider = L3FillProvider(asset_class=AssetClass.EQUITY)
         fill = provider.try_fill(buy_market_order, basic_market_state, basic_bar)
@@ -572,9 +569,7 @@ class TestL3FillProvider:
         assert fill.qty == buy_market_order.qty
         assert fill.liquidity == "taker"
 
-    def test_market_order_with_lob(
-        self, buy_market_order, market_state_with_lob, basic_bar
-    ):
+    def test_market_order_with_lob(self, buy_market_order, market_state_with_lob, basic_bar):
         """Test market order with LOB depth."""
         provider = L3FillProvider(asset_class=AssetClass.EQUITY)
         fill = provider.try_fill(buy_market_order, market_state_with_lob, basic_bar)
@@ -593,9 +588,7 @@ class TestL3FillProvider:
         assert fill.liquidity == "taker"
         assert fill.metadata.get("crosses_spread") is True
 
-    def test_passive_limit_may_not_fill(
-        self, buy_limit_order, basic_market_state, basic_bar
-    ):
+    def test_passive_limit_may_not_fill(self, buy_limit_order, basic_market_state, basic_bar):
         """Test passive limit order may not fill."""
         # Adjust bar so limit price is touched
         bar_touching_limit = BarData(
@@ -617,9 +610,7 @@ class TestL3FillProvider:
         assert fill is not None
         assert fill.liquidity == "maker"
 
-    def test_limit_not_touched_no_fill(
-        self, buy_limit_order, basic_market_state
-    ):
+    def test_limit_not_touched_no_fill(self, buy_limit_order, basic_market_state):
         """Test limit order not filled if price not touched."""
         bar_not_touching = BarData(
             open=100.0,
@@ -635,9 +626,7 @@ class TestL3FillProvider:
 
         assert fill is None
 
-    def test_fill_probability_estimation(
-        self, buy_limit_order, market_state_with_lob, basic_bar
-    ):
+    def test_fill_probability_estimation(self, buy_limit_order, market_state_with_lob, basic_bar):
         """Test fill probability estimation."""
         config = L3ExecutionConfig.for_equity()
         provider = L3FillProvider(
@@ -689,6 +678,7 @@ class TestL3FillProvider:
 # L3 Execution Provider Tests
 # =============================================================================
 
+
 class TestL3ExecutionProvider:
     """Test L3 execution provider."""
 
@@ -710,9 +700,7 @@ class TestL3ExecutionProvider:
         )
         assert provider.config.enabled is True
 
-    def test_execute_market_order(
-        self, buy_market_order, basic_market_state, basic_bar
-    ):
+    def test_execute_market_order(self, buy_market_order, basic_market_state, basic_bar):
         """Test executing market order."""
         provider = L3ExecutionProvider(asset_class=AssetClass.EQUITY)
         fill = provider.execute(buy_market_order, basic_market_state, basic_bar)
@@ -721,9 +709,7 @@ class TestL3ExecutionProvider:
         assert fill.qty == buy_market_order.qty
         assert fill.fee >= 0
 
-    def test_execute_limit_order(
-        self, buy_limit_order, basic_market_state, basic_bar
-    ):
+    def test_execute_limit_order(self, buy_limit_order, basic_market_state, basic_bar):
         """Test executing limit order."""
         provider = L3ExecutionProvider(
             asset_class=AssetClass.EQUITY,
@@ -751,9 +737,7 @@ class TestL3ExecutionProvider:
         assert "total_cost" in estimate
         assert estimate["total_cost"] > 0
 
-    def test_get_fill_probability(
-        self, buy_limit_order, market_state_with_lob, basic_bar
-    ):
+    def test_get_fill_probability(self, buy_limit_order, market_state_with_lob, basic_bar):
         """Test fill probability estimation through provider."""
         config = L3ExecutionConfig.for_equity()
         provider = L3ExecutionProvider(
@@ -770,9 +754,7 @@ class TestL3ExecutionProvider:
         assert prob is not None
         assert 0.0 <= prob.prob_fill <= 1.0
 
-    def test_statistics_tracking(
-        self, buy_market_order, basic_market_state, basic_bar
-    ):
+    def test_statistics_tracking(self, buy_market_order, basic_market_state, basic_bar):
         """Test execution statistics tracking."""
         provider = L3ExecutionProvider(asset_class=AssetClass.EQUITY)
 
@@ -785,9 +767,7 @@ class TestL3ExecutionProvider:
         assert stats["filled_orders"] == 5
         assert stats["fill_rate"] == 1.0
 
-    def test_reset_statistics(
-        self, buy_market_order, basic_market_state, basic_bar
-    ):
+    def test_reset_statistics(self, buy_market_order, basic_market_state, basic_bar):
         """Test resetting statistics."""
         provider = L3ExecutionProvider(asset_class=AssetClass.EQUITY)
 
@@ -815,6 +795,7 @@ class TestL3ExecutionProvider:
 # =============================================================================
 # Factory Function Tests
 # =============================================================================
+
 
 class TestFactoryFunctions:
     """Test factory function integration with L3."""
@@ -869,6 +850,7 @@ class TestFactoryFunctions:
 # =============================================================================
 # Backward Compatibility Tests
 # =============================================================================
+
 
 class TestBackwardCompatibility:
     """Test backward compatibility with L2 and crypto paths."""
@@ -949,6 +931,7 @@ class TestBackwardCompatibility:
 # Integration Tests
 # =============================================================================
 
+
 class TestIntegration:
     """Integration tests for L3 execution."""
 
@@ -1005,7 +988,10 @@ class TestIntegration:
 
         # Execute limit order
         limit_order = Order(
-            "AAPL", "BUY", 100.0, "LIMIT",
+            "AAPL",
+            "BUY",
+            100.0,
+            "LIMIT",
             limit_price=149.90,
             asset_class=AssetClass.EQUITY,
         )
@@ -1045,7 +1031,7 @@ class TestIntegration:
         config = L3ExecutionConfig.for_equity()
 
         # Create temp file and close it before writing (Windows compatibility)
-        fd, temp_path = tempfile.mkstemp(suffix='.yaml')
+        fd, temp_path = tempfile.mkstemp(suffix=".yaml")
         os.close(fd)  # Close the file descriptor immediately
 
         try:
@@ -1064,6 +1050,7 @@ class TestIntegration:
 # Edge Cases
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -1080,8 +1067,8 @@ class TestEdgeCases:
         """Test handling of NaN prices in market state."""
         nan_market = MarketState(
             timestamp=1700000000000,
-            bid=float('nan'),
-            ask=float('nan'),
+            bid=float("nan"),
+            ask=float("nan"),
         )
 
         provider = L3ExecutionProvider(asset_class=AssetClass.EQUITY)
@@ -1120,7 +1107,10 @@ class TestEdgeCases:
     def test_limit_order_without_price(self, basic_market_state, basic_bar):
         """Test handling of limit order without limit price."""
         bad_limit = Order(
-            "AAPL", "BUY", 100.0, "LIMIT",
+            "AAPL",
+            "BUY",
+            100.0,
+            "LIMIT",
             limit_price=None,  # Missing!
             asset_class=AssetClass.EQUITY,
         )
@@ -1132,7 +1122,9 @@ class TestEdgeCases:
     def test_very_large_order(self, basic_market_state, basic_bar):
         """Test handling of very large order relative to ADV."""
         large_order = Order(
-            "AAPL", "BUY", 1_000_000.0,  # 1M shares
+            "AAPL",
+            "BUY",
+            1_000_000.0,  # 1M shares
             "MARKET",
             asset_class=AssetClass.EQUITY,
         )
@@ -1152,6 +1144,7 @@ class TestEdgeCases:
 # =============================================================================
 # Bug Fix Tests (Stage 7.1)
 # =============================================================================
+
 
 class TestBugFixes:
     """Tests for bug fixes identified in code review."""
@@ -1195,8 +1188,9 @@ class TestBugFixes:
             results_seed_42.append(fill is not None)
 
         # All results with same seed should be identical
-        assert all(r == results_seed_42[0] for r in results_seed_42), \
-            "Seeded RNG should produce identical results"
+        assert all(
+            r == results_seed_42[0] for r in results_seed_42
+        ), "Seeded RNG should produce identical results"
 
     def test_different_seeds_may_differ(self, market_state_with_lob, basic_bar):
         """Test that different seeds can produce different results."""
@@ -1342,6 +1336,7 @@ class TestBugFixes:
 # =============================================================================
 # Performance Tests (Optional)
 # =============================================================================
+
 
 class TestPerformance:
     """Performance tests for L3 execution."""

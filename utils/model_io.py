@@ -131,7 +131,9 @@ def save_sidecar_metadata(
             "name": base_path.name,
             "size": artefact_stats.st_size,
             "sha256": _compute_sha256(base_path),
-            "modified_at": datetime.fromtimestamp(artefact_stats.st_mtime, tz=timezone.utc).isoformat(),
+            "modified_at": datetime.fromtimestamp(
+                artefact_stats.st_mtime, tz=timezone.utc
+            ).isoformat(),
         },
         "runtime": {
             "python": platform.python_version(),
@@ -206,9 +208,7 @@ def check_model_compat(artifact_path: str | Path) -> None:
                 )
         recorded_size = artifact_info.get("size")
         if isinstance(recorded_size, int) and recorded_size != base_path.stat().st_size:
-            raise RuntimeError(
-                f"Artefact size mismatch detected for {base_path}."
-            )
+            raise RuntimeError(f"Artefact size mismatch detected for {base_path}.")
 
     runtime_info = metadata.get("runtime")
     if isinstance(runtime_info, Mapping):

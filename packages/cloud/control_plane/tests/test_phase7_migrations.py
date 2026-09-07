@@ -114,8 +114,9 @@ class TestMigrationContent:
             "runs",
         ]
         for table in tenant_tables:
-            assert f'"{table}"' in content or f"'{table}'" in content, \
-                f"Table {table} should have RLS enabled"
+            assert (
+                f'"{table}"' in content or f"'{table}'" in content
+            ), f"Table {table} should have RLS enabled"
 
     def test_rls_migration_has_downgrade(self):
         """Test that RLS migration can be rolled back."""
@@ -138,6 +139,7 @@ class TestRLSTenantIsolation:
 
         # Import the migration module
         import importlib.util
+
         spec = importlib.util.spec_from_file_location("rls_migration", migration_file)
         rls_module = importlib.util.module_from_spec(spec)
 
@@ -205,7 +207,7 @@ class TestDatabaseHelperFunctions:
         mock_session.execute.assert_called_once()
         # Get the actual TextClause and check its text
         call_args = mock_session.execute.call_args[0][0]
-        sql_text = str(call_args.text) if hasattr(call_args, 'text') else str(call_args)
+        sql_text = str(call_args.text) if hasattr(call_args, "text") else str(call_args)
         assert "app.current_workspace_id" in sql_text
         assert str(workspace_id) in sql_text
 
@@ -222,7 +224,7 @@ class TestDatabaseHelperFunctions:
         mock_session.execute.assert_called_once()
         # Get the actual TextClause and check its text
         call_args = mock_session.execute.call_args[0][0]
-        sql_text = str(call_args.text) if hasattr(call_args, 'text') else str(call_args)
+        sql_text = str(call_args.text) if hasattr(call_args, "text") else str(call_args)
         assert "app.current_workspace_id" in sql_text
         assert "''" in sql_text  # Empty string
 

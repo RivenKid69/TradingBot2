@@ -15,6 +15,7 @@ import logging
 from unittest.mock import Mock
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 from torch import Tensor
@@ -350,7 +351,7 @@ def test_bug2_kl_divergence_in_compute_adversarial_loss():
         robust_kl_coef=0.1,
         warmup_updates=0,
         attack_policy=False,  # Disable attack to avoid perturbation generation issues
-        attack_value=False,   # Disable value attack (Mock predict_values has no grad)
+        attack_value=False,  # Disable value attack (Mock predict_values has no grad)
         adversarial_ratio=0.5,
     )
     model = MockModel()

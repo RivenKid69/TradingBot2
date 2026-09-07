@@ -119,12 +119,13 @@ def env_factory(
 # ``_update_bar_interval``
 # ---------------------------------------------------------------------------
 
-def test_update_bar_interval_uses_row_values(env_factory: Callable[..., trading_patchnew.TradingEnv]) -> None:
+
+def test_update_bar_interval_uses_row_values(
+    env_factory: Callable[..., trading_patchnew.TradingEnv]
+) -> None:
     """Row-level interval columns should take precedence over previous values."""
 
-    df = _make_intrabar_dataframe().assign(
-        bar_interval_ms=[45_000, 30_000, 30_000, 30_000]
-    )
+    df = _make_intrabar_dataframe().assign(bar_interval_ms=[45_000, 30_000, 30_000, 30_000])
     env = env_factory(df=df)
 
     # initial inference picks the first valid entry (45 seconds)
@@ -139,8 +140,10 @@ def test_update_bar_interval_falls_back_to_index_diffs(
 ) -> None:
     """Interval should be inferred from neighbouring timestamp deltas when needed."""
 
-    df = _make_intrabar_dataframe().drop(columns=["intrabar_points"]).drop(
-        columns=["intrabar_path"], errors="ignore"
+    df = (
+        _make_intrabar_dataframe()
+        .drop(columns=["intrabar_points"])
+        .drop(columns=["intrabar_path"], errors="ignore")
     )
     df = df.assign(bar_interval_ms=np.nan, bar_timeframe_ms=np.nan)
     env = env_factory(df=df)
@@ -159,7 +162,7 @@ def test_update_bar_interval_falls_back_to_index_diffs(
     "payload, expected",
     [
         pytest.param(b"[1, 2, null]", [1, 2], id="bytes_json_array"),
-        pytest.param("{\"points\": [3, 4, null]}", [3, 4], id="json_string_dict"),
+        pytest.param('{"points": [3, 4, null]}', [3, 4], id="json_string_dict"),
         pytest.param(pd.Series([5.0, np.nan, 6.0]), [5.0, 6.0], id="pandas_series"),
         pytest.param(np.array([7.0, np.nan, 8.0]), [7.0, 8.0], id="numpy_array"),
         pytest.param(b"not-json", None, id="malformed_bytes"),

@@ -21,12 +21,26 @@ def _read_table(path: str) -> pd.DataFrame:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Сформировать baseline для дрифт-контроля (PSI) по выбранным фичам.")
-    ap.add_argument("--data", required=True, help="Файл CSV/Parquet (обычно валид. срез последнего фолда).")
-    ap.add_argument("--features", default="", help="Через запятую список колонок. Если пусто — автодетект (f_* и score).")
-    ap.add_argument("--bins", type=int, default=10, help="Число бинов для числовых фичей (квантили).")
-    ap.add_argument("--top_k_cats", type=int, default=20, help="Top-K категорий (остальные → OTHER).")
-    ap.add_argument("--out", default="models/drift_baseline.json", help="Куда сохранить baseline JSON.")
+    ap = argparse.ArgumentParser(
+        description="Сформировать baseline для дрифт-контроля (PSI) по выбранным фичам."
+    )
+    ap.add_argument(
+        "--data", required=True, help="Файл CSV/Parquet (обычно валид. срез последнего фолда)."
+    )
+    ap.add_argument(
+        "--features",
+        default="",
+        help="Через запятую список колонок. Если пусто — автодетект (f_* и score).",
+    )
+    ap.add_argument(
+        "--bins", type=int, default=10, help="Число бинов для числовых фичей (квантили)."
+    )
+    ap.add_argument(
+        "--top_k_cats", type=int, default=20, help="Top-K категорий (остальные → OTHER)."
+    )
+    ap.add_argument(
+        "--out", default="models/drift_baseline.json", help="Куда сохранить baseline JSON."
+    )
     args = ap.parse_args()
 
     df = _read_table(args.data)
@@ -38,7 +52,9 @@ def main():
         if not feats:
             raise ValueError("Не удалось автодетектить фичи. Укажи их через --features.")
 
-    spec = make_baseline(df, feats, bins=int(args.bins), categorical=None, top_k_cats=int(args.top_k_cats))
+    spec = make_baseline(
+        df, feats, bins=int(args.bins), categorical=None, top_k_cats=int(args.top_k_cats)
+    )
     save_baseline_json(spec, args.out)
 
     print(f"Готово. Baseline сохранён: {args.out}")

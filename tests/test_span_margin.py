@@ -63,6 +63,7 @@ from core_futures import (
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def es_spec() -> FuturesContractSpec:
     """E-mini S&P 500 contract spec."""
@@ -150,6 +151,7 @@ def calculator(es_spec, gc_spec, eur_spec) -> SPANMarginCalculator:
 # Test ProductGroup Mapping
 # =============================================================================
 
+
 class TestProductGroupMapping:
     """Tests for product group classification."""
 
@@ -192,6 +194,7 @@ class TestProductGroupMapping:
 # =============================================================================
 # Test ScanningRangeConfig
 # =============================================================================
+
 
 class TestScanningRangeConfig:
     """Tests for scanning range configuration."""
@@ -249,43 +252,50 @@ class TestScanningRangeConfig:
 # Test Inter-Commodity Spread Credits
 # =============================================================================
 
+
 class TestInterCommodityCredits:
     """Tests for inter-commodity spread credits."""
 
     def test_es_nq_spread_credit(self):
         """ES/NQ spread gets 50% credit."""
-        credit = next(c for c in INTER_COMMODITY_CREDITS
-                      if set([c.product1, c.product2]) == {"ES", "NQ"})
+        credit = next(
+            c for c in INTER_COMMODITY_CREDITS if set([c.product1, c.product2]) == {"ES", "NQ"}
+        )
         assert credit.credit_rate == Decimal("0.50")
 
     def test_es_ym_spread_credit(self):
         """ES/YM spread gets 55% credit."""
-        credit = next(c for c in INTER_COMMODITY_CREDITS
-                      if set([c.product1, c.product2]) == {"ES", "YM"})
+        credit = next(
+            c for c in INTER_COMMODITY_CREDITS if set([c.product1, c.product2]) == {"ES", "YM"}
+        )
         assert credit.credit_rate == Decimal("0.55")
 
     def test_gc_si_spread_credit(self):
         """Gold/Silver spread gets 35% credit."""
-        credit = next(c for c in INTER_COMMODITY_CREDITS
-                      if set([c.product1, c.product2]) == {"GC", "SI"})
+        credit = next(
+            c for c in INTER_COMMODITY_CREDITS if set([c.product1, c.product2]) == {"GC", "SI"}
+        )
         assert credit.credit_rate == Decimal("0.35")
 
     def test_micro_standard_spread_credit(self):
         """Micro/Standard spread gets 90% credit."""
-        credit = next(c for c in INTER_COMMODITY_CREDITS
-                      if set([c.product1, c.product2]) == {"ES", "MES"})
+        credit = next(
+            c for c in INTER_COMMODITY_CREDITS if set([c.product1, c.product2]) == {"ES", "MES"}
+        )
         assert credit.credit_rate == Decimal("0.90")
 
     def test_crack_spread_credit(self):
         """CL/RB crack spread gets 60% credit."""
-        credit = next(c for c in INTER_COMMODITY_CREDITS
-                      if set([c.product1, c.product2]) == {"CL", "RB"})
+        credit = next(
+            c for c in INTER_COMMODITY_CREDITS if set([c.product1, c.product2]) == {"CL", "RB"}
+        )
         assert credit.credit_rate == Decimal("0.60")
 
 
 # =============================================================================
 # Test Calendar Spread Credits
 # =============================================================================
+
 
 class TestCalendarSpreadCredits:
     """Tests for calendar spread credits."""
@@ -318,6 +328,7 @@ class TestCalendarSpreadCredits:
 # =============================================================================
 # Test SPANMarginCalculator - Basic Operations
 # =============================================================================
+
 
 class TestSPANCalculatorBasic:
     """Tests for basic SPAN calculator operations."""
@@ -368,6 +379,7 @@ class TestSPANCalculatorBasic:
 # =============================================================================
 # Test Single Position Margin
 # =============================================================================
+
 
 class TestSinglePositionMargin:
     """Tests for single position margin calculations."""
@@ -464,6 +476,7 @@ class TestSinglePositionMargin:
 # Test Delivery Month Charges
 # =============================================================================
 
+
 class TestDeliveryMonthCharges:
     """Tests for delivery month margin charges."""
 
@@ -523,6 +536,7 @@ class TestDeliveryMonthCharges:
 # =============================================================================
 # Test Portfolio Margin
 # =============================================================================
+
 
 class TestPortfolioMargin:
     """Tests for portfolio margin calculations."""
@@ -596,14 +610,20 @@ class TestPortfolioMargin:
         )
 
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         calc = SPANMarginCalculator(contract_specs={"ES": es_spec, "NQ": nq_spec})
@@ -623,22 +643,35 @@ class TestPortfolioMargin:
     def test_spread_credit_in_details(self, calculator, es_spec):
         """Spread credits appear in result details."""
         nq_spec = FuturesContractSpec(
-            symbol="NQ", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="NDX", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("20"),
-            tick_size=Decimal("0.25"), tick_value=Decimal("5"),
+            symbol="NQ",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="NDX",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("20"),
+            tick_size=Decimal("0.25"),
+            tick_value=Decimal("5"),
         )
 
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         calc = SPANMarginCalculator(contract_specs={"ES": es_spec, "NQ": nq_spec})
@@ -656,9 +689,12 @@ class TestPortfolioMargin:
     def test_missing_price_skipped(self, calculator, es_spec):
         """Position with missing price is skipped."""
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calculator.calculate_portfolio_margin(
@@ -674,15 +710,19 @@ class TestPortfolioMargin:
 # Test Margin Impact Estimation
 # =============================================================================
 
+
 class TestMarginImpactEstimation:
     """Tests for margin impact estimation."""
 
     def test_estimate_new_position_impact(self, calculator, es_spec):
         """Estimate impact of adding new position."""
         new_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         impact, new_total = calculator.estimate_margin_impact(
@@ -699,22 +739,35 @@ class TestMarginImpactEstimation:
     def test_estimate_spread_impact(self, calculator, es_spec):
         """Estimate impact with spread credit."""
         nq_spec = FuturesContractSpec(
-            symbol="NQ", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="NDX", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("20"),
-            tick_size=Decimal("0.25"), tick_value=Decimal("5"),
+            symbol="NQ",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="NDX",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("20"),
+            tick_size=Decimal("0.25"),
+            tick_value=Decimal("5"),
         )
 
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         calc = SPANMarginCalculator(contract_specs={"ES": es_spec, "NQ": nq_spec})
@@ -726,9 +779,7 @@ class TestMarginImpactEstimation:
         )
 
         # Impact should be less than NQ standalone due to spread credit
-        nq_standalone = calc.calculate_margin(
-            nq_pos, Decimal("15000"), nq_spec
-        ).initial_margin
+        nq_standalone = calc.calculate_margin(nq_pos, Decimal("15000"), nq_spec).initial_margin
 
         assert impact < nq_standalone
 
@@ -737,15 +788,19 @@ class TestMarginImpactEstimation:
 # Test Margin Call Detection
 # =============================================================================
 
+
 class TestMarginCallDetection:
     """Tests for margin call detection."""
 
     def test_no_margin_call_sufficient_equity(self, calculator, es_spec):
         """No margin call when equity is sufficient."""
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         is_call, excess, status = calculator.check_margin_call(
@@ -762,9 +817,12 @@ class TestMarginCallDetection:
     def test_margin_call_low_equity(self, calculator, es_spec):
         """Margin call when equity below maintenance."""
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         is_call, deficit, status = calculator.check_margin_call(
@@ -781,9 +839,12 @@ class TestMarginCallDetection:
     def test_warning_status(self, calculator, es_spec):
         """Warning when equity is low but above maintenance."""
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         # Maintenance is ~11,880, 150% would be ~17,820
@@ -813,6 +874,7 @@ class TestMarginCallDetection:
 # =============================================================================
 # Test SPANMarginResult Properties
 # =============================================================================
+
 
 class TestSPANMarginResultProperties:
     """Tests for SPANMarginResult computed properties."""
@@ -881,6 +943,7 @@ class TestSPANMarginResultProperties:
 # Test Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctions:
     """Tests for factory and convenience functions."""
 
@@ -923,6 +986,7 @@ class TestFactoryFunctions:
 # Test Error Handling
 # =============================================================================
 
+
 class TestErrorHandling:
     """Tests for error handling."""
 
@@ -930,9 +994,12 @@ class TestErrorHandling:
         """Missing contract spec raises ValueError."""
         calc = SPANMarginCalculator()
         position = FuturesPosition(
-            symbol="UNKNOWN", qty=Decimal("1"),
-            entry_price=Decimal("100"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="UNKNOWN",
+            qty=Decimal("1"),
+            entry_price=Decimal("100"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         with pytest.raises(ValueError, match="No contract spec"):
@@ -942,21 +1009,23 @@ class TestErrorHandling:
         """Negative price produces valid margin."""
         # This shouldn't happen in practice but test robustness
         position = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         # Should not raise - abs() is used on notional
-        result = calculator.calculate_margin(
-            position, Decimal("-4500"), es_spec
-        )
+        result = calculator.calculate_margin(position, Decimal("-4500"), es_spec)
         assert result.scanning_risk >= 0
 
 
 # =============================================================================
 # Test Position Margin Detail
 # =============================================================================
+
 
 class TestPositionMarginDetail:
     """Tests for PositionMarginDetail dataclass."""
@@ -996,6 +1065,7 @@ class TestPositionMarginDetail:
 # Test Approximate Margins Preset
 # =============================================================================
 
+
 class TestApproximateMarginsPreset:
     """Tests for approximate margin presets."""
 
@@ -1028,6 +1098,7 @@ class TestApproximateMarginsPreset:
 # =============================================================================
 # Test Scanning Risk Calculation
 # =============================================================================
+
 
 class TestScanningRiskCalculation:
     """Tests for scanning risk calculation."""
@@ -1070,20 +1141,27 @@ class TestScanningRiskCalculation:
 # Test Integration Scenarios
 # =============================================================================
 
+
 class TestIntegrationScenarios:
     """Integration tests for realistic scenarios."""
 
     def test_typical_retail_portfolio(self, calculator, es_spec, gc_spec):
         """Typical retail portfolio with multiple products."""
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("2"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("2"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         gc_pos = FuturesPosition(
-            symbol="GC", qty=Decimal("1"),
-            entry_price=Decimal("2000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="GC",
+            qty=Decimal("1"),
+            entry_price=Decimal("2000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calculator.calculate_portfolio_margin(
@@ -1100,25 +1178,38 @@ class TestIntegrationScenarios:
     def test_hedge_portfolio_gets_credit(self, es_spec):
         """Hedged portfolio receives spread credit."""
         nq_spec = FuturesContractSpec(
-            symbol="NQ", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="NDX", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("20"),
-            tick_size=Decimal("0.25"), tick_value=Decimal("5"),
+            symbol="NQ",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="NDX",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("20"),
+            tick_size=Decimal("0.25"),
+            tick_value=Decimal("5"),
         )
 
         calc = SPANMarginCalculator(contract_specs={"ES": es_spec, "NQ": nq_spec})
 
         # Long ES, Short NQ (hedge)
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.SHORT,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.SHORT,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calc.calculate_portfolio_margin(
@@ -1132,9 +1223,12 @@ class TestIntegrationScenarios:
     def test_large_position_margin(self, calculator, es_spec):
         """Large position scales correctly."""
         position = FuturesPosition(
-            symbol="ES", qty=Decimal("100"),  # 100 contracts
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("100"),  # 100 contracts
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calculator.calculate_margin(
@@ -1152,6 +1246,7 @@ class TestIntegrationScenarios:
 # Additional Coverage Tests
 # =============================================================================
 
+
 class TestCoverageEdgeCases:
     """Tests for edge cases to achieve 100% coverage."""
 
@@ -1159,11 +1254,18 @@ class TestCoverageEdgeCases:
     def es_spec(self):
         """ES contract spec for tests."""
         return FuturesContractSpec(
-            symbol="ES", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="SPX", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("50"),
-            tick_size=Decimal("0.25"), tick_value=Decimal("12.50"),
+            symbol="ES",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="SPX",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("50"),
+            tick_size=Decimal("0.25"),
+            tick_value=Decimal("12.50"),
         )
 
     def test_default_scanning_range_fallback(self):
@@ -1188,14 +1290,20 @@ class TestCoverageEdgeCases:
 
         # ES has spec, NQ does not
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calc.calculate_portfolio_margin(
@@ -1211,23 +1319,36 @@ class TestCoverageEdgeCases:
     def test_portfolio_margin_skips_missing_price(self, es_spec):
         """Test portfolio margin skips positions without prices."""
         nq_spec = FuturesContractSpec(
-            symbol="NQ", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="NDX", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("20"),
-            tick_size=Decimal("0.25"), tick_value=Decimal("5"),
+            symbol="NQ",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="NDX",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("20"),
+            tick_size=Decimal("0.25"),
+            tick_value=Decimal("5"),
         )
         calc = SPANMarginCalculator(contract_specs={"ES": es_spec, "NQ": nq_spec})
 
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calc.calculate_portfolio_margin(
@@ -1242,18 +1363,32 @@ class TestCoverageEdgeCases:
     def test_inter_commodity_credit_skips_used_symbols(self, es_spec):
         """Test inter-commodity credit doesn't double-count symbols."""
         nq_spec = FuturesContractSpec(
-            symbol="NQ", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="NDX", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("20"),
-            tick_size=Decimal("0.25"), tick_value=Decimal("5"),
+            symbol="NQ",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="NDX",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("20"),
+            tick_size=Decimal("0.25"),
+            tick_value=Decimal("5"),
         )
         ym_spec = FuturesContractSpec(
-            symbol="YM", exchange=Exchange.CME,
-            futures_type=FuturesType.INDEX_FUTURES, contract_type=ContractType.CURRENT_QUARTER,
-            settlement_type=SettlementType.CASH, base_asset="DJI", quote_asset="USD",
-            margin_asset="USD", contract_size=Decimal("1"), multiplier=Decimal("5"),
-            tick_size=Decimal("1"), tick_value=Decimal("5"),
+            symbol="YM",
+            exchange=Exchange.CME,
+            futures_type=FuturesType.INDEX_FUTURES,
+            contract_type=ContractType.CURRENT_QUARTER,
+            settlement_type=SettlementType.CASH,
+            base_asset="DJI",
+            quote_asset="USD",
+            margin_asset="USD",
+            contract_size=Decimal("1"),
+            multiplier=Decimal("5"),
+            tick_size=Decimal("1"),
+            tick_value=Decimal("5"),
         )
         calc = SPANMarginCalculator(contract_specs={"ES": es_spec, "NQ": nq_spec, "YM": ym_spec})
 
@@ -1262,19 +1397,28 @@ class TestCoverageEdgeCases:
         # ES/YM are also correlated (0.50 credit)
         # But ES can only be used once in credit calculation
         es_pos = FuturesPosition(
-            symbol="ES", qty=Decimal("1"),
-            entry_price=Decimal("4500"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="ES",
+            qty=Decimal("1"),
+            entry_price=Decimal("4500"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         nq_pos = FuturesPosition(
-            symbol="NQ", qty=Decimal("1"),
-            entry_price=Decimal("15000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="NQ",
+            qty=Decimal("1"),
+            entry_price=Decimal("15000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
         ym_pos = FuturesPosition(
-            symbol="YM", qty=Decimal("1"),
-            entry_price=Decimal("35000"), side=PositionSide.LONG,
-            leverage=1, margin_mode=MarginMode.SPAN,
+            symbol="YM",
+            qty=Decimal("1"),
+            entry_price=Decimal("35000"),
+            side=PositionSide.LONG,
+            leverage=1,
+            margin_mode=MarginMode.SPAN,
         )
 
         result = calc.calculate_portfolio_margin(

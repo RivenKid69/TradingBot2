@@ -26,17 +26,14 @@ from distributional_ppo import DistributionalPPO
 # Test Environment
 # =============================================================================
 
+
 class MinimalEnv(gymnasium.Env):
     """Minimal environment for coverage tests."""
 
     def __init__(self, seed: int = 42, max_steps: int = 10):
         super().__init__()
-        self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(4,), dtype=np.float32
-        )
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self._rng = np.random.default_rng(seed)
         self._step_count = 0
         self._max_steps = max_steps
@@ -50,7 +47,7 @@ class MinimalEnv(gymnasium.Env):
     def step(self, action):
         self._step_count += 1
         obs = self._rng.uniform(-1, 1, size=4).astype(np.float32)
-        reward = float(-np.sum(obs ** 2) * 0.01)
+        reward = float(-np.sum(obs**2) * 0.01)
         terminated = self._step_count >= self._max_steps
         return obs, reward, terminated, False, {"step": self._step_count}
 
@@ -63,6 +60,7 @@ def make_vec_env(n_envs=1, seed=42):
 # =============================================================================
 # Tests for KL Early Stopping
 # =============================================================================
+
 
 class TestKLEarlyStopping:
     """Tests for KL early stopping branches."""
@@ -122,6 +120,7 @@ class TestKLEarlyStopping:
 # Tests for VF Coefficient Warmup
 # =============================================================================
 
+
 class TestVFCoefWarmup:
     """Tests for VF coefficient warmup."""
 
@@ -163,6 +162,7 @@ class TestVFCoefWarmup:
 # =============================================================================
 # Tests for CVaR Constraint
 # =============================================================================
+
 
 class TestCVaRConstraint:
     """Tests for CVaR constraint."""
@@ -229,6 +229,7 @@ class TestCVaRConstraint:
 # Tests for Advantage Normalization
 # =============================================================================
 
+
 class TestAdvantageNormalization:
     """Tests for advantage normalization."""
 
@@ -268,6 +269,7 @@ class TestAdvantageNormalization:
 # =============================================================================
 # Tests for Entropy Coefficient
 # =============================================================================
+
 
 class TestEntropyCoefficient:
     """Tests for entropy coefficient."""
@@ -309,6 +311,7 @@ class TestEntropyCoefficient:
 # Tests for Multiple Epochs
 # =============================================================================
 
+
 class TestMultipleEpochs:
     """Tests for training with multiple epochs."""
 
@@ -346,6 +349,7 @@ class TestMultipleEpochs:
 # =============================================================================
 # Tests for Max Grad Norm
 # =============================================================================
+
 
 class TestMaxGradNorm:
     """Tests for gradient clipping."""
@@ -387,6 +391,7 @@ class TestMaxGradNorm:
 # Tests for GAE Lambda
 # =============================================================================
 
+
 class TestGAELambda:
     """Tests for GAE lambda variations."""
 
@@ -427,6 +432,7 @@ class TestGAELambda:
 # Tests for Gamma
 # =============================================================================
 
+
 class TestGamma:
     """Tests for gamma (discount factor)."""
 
@@ -466,6 +472,7 @@ class TestGamma:
 # =============================================================================
 # Tests for Clip Range
 # =============================================================================
+
 
 class TestClipRange:
     """Tests for clip range variations."""

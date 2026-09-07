@@ -216,7 +216,9 @@ def test_build_spread_seasonality_split(tmp_path, monkeypatch):
         ts = start_ms + i * 3_600_000
         rows.append({"timestamp": ts, "high": 102.0 + i, "low": 100.0 + i})
     rows.append({"timestamp": end_ms, "high": 200.0, "low": 199.0})
-    rows.append({"timestamp": parse_time_to_ms("2022-08-01T00:00:00Z"), "high": 150.0, "low": 149.0})
+    rows.append(
+        {"timestamp": parse_time_to_ms("2022-08-01T00:00:00Z"), "high": 150.0, "low": 149.0}
+    )
     pd.DataFrame(rows).to_csv(data_path, index=False)
 
     config_path = tmp_path / "offline.yaml"

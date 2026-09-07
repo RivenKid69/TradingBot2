@@ -76,6 +76,7 @@ DEFAULT_NEUTRAL_RATE: Decimal = Decimal("0.0001")  # 0.01% = 1 bps
 # FUNDING RATE RECORD
 # ============================================================================
 
+
 @dataclass(frozen=True)
 class FundingRateRecord:
     """
@@ -88,6 +89,7 @@ class FundingRateRecord:
         mark_price: Mark price at funding time
         index_price: Index price at funding time (optional)
     """
+
     symbol: str
     timestamp_ms: int
     funding_rate: Decimal
@@ -125,6 +127,7 @@ class FundingRateRecord:
 # FUNDING STATISTICS
 # ============================================================================
 
+
 @dataclass
 class FundingStatistics:
     """
@@ -132,6 +135,7 @@ class FundingStatistics:
 
     Useful for analyzing funding trends and estimating costs.
     """
+
     symbol: str
     period_hours: int
     count: int
@@ -167,6 +171,7 @@ class FundingStatistics:
 # ============================================================================
 # FUNDING RATE TRACKER
 # ============================================================================
+
 
 class FundingRateTracker:
     """
@@ -631,10 +636,7 @@ class FundingRateTracker:
 
         # Next funding is tomorrow at first funding time
         next_dt = (dt + timedelta(days=1)).replace(
-            hour=self._funding_times[0],
-            minute=0,
-            second=0,
-            microsecond=0
+            hour=self._funding_times[0], minute=0, second=0, microsecond=0
         )
         return int(next_dt.timestamp() * 1000)
 
@@ -658,10 +660,7 @@ class FundingRateTracker:
 
         # Previous funding was yesterday at last funding time
         prev_dt = (dt - timedelta(days=1)).replace(
-            hour=self._funding_times[-1],
-            minute=0,
-            second=0,
-            microsecond=0
+            hour=self._funding_times[-1], minute=0, second=0, microsecond=0
         )
         return int(prev_dt.timestamp() * 1000)
 
@@ -722,10 +721,7 @@ class FundingRateTracker:
         else:
             # All funding times today are before start, go to tomorrow
             next_dt = (current_dt + timedelta(days=1)).replace(
-                hour=self._funding_times[0],
-                minute=0,
-                second=0,
-                microsecond=0
+                hour=self._funding_times[0], minute=0, second=0, microsecond=0
             )
             current_ms = int(next_dt.timestamp() * 1000)
 
@@ -831,6 +827,7 @@ class FundingRateTracker:
 
         if current_ts_ms is None:
             import time
+
             current_ts_ms = int(time.time() * 1000)
 
         start_ms = current_ts_ms - (lookback_hours * 60 * 60 * 1000)
@@ -864,6 +861,7 @@ class FundingRateTracker:
 
         if current_ts_ms is None:
             import time
+
             current_ts_ms = int(time.time() * 1000)
 
         start_ms = current_ts_ms - (lookback_hours * 60 * 60 * 1000)
@@ -896,7 +894,9 @@ class FundingRateTracker:
 
         # Calculate standard deviation
         variance = sum((r - avg_rate) ** 2 for r in rates) / Decimal(len(rates))
-        std_rate = variance.sqrt() if hasattr(variance, 'sqrt') else Decimal(str(float(variance) ** 0.5))
+        std_rate = (
+            variance.sqrt() if hasattr(variance, "sqrt") else Decimal(str(float(variance) ** 0.5))
+        )
 
         positive_count = sum(1 for r in rates if r > 0)
         negative_count = sum(1 for r in rates if r < 0)
@@ -991,13 +991,15 @@ class FundingRateTracker:
 
         for sym in symbols:
             for record in self._history.get(sym, []):
-                result.append({
-                    "symbol": record.symbol,
-                    "timestamp_ms": record.timestamp_ms,
-                    "funding_rate": str(record.funding_rate),
-                    "mark_price": str(record.mark_price),
-                    "index_price": str(record.index_price),
-                })
+                result.append(
+                    {
+                        "symbol": record.symbol,
+                        "timestamp_ms": record.timestamp_ms,
+                        "funding_rate": str(record.funding_rate),
+                        "mark_price": str(record.mark_price),
+                        "index_price": str(record.index_price),
+                    }
+                )
 
         return result
 
@@ -1033,6 +1035,7 @@ class FundingRateTracker:
 # ============================================================================
 # FUNDING RATE SIMULATOR
 # ============================================================================
+
 
 class FundingRateSimulator:
     """
@@ -1081,6 +1084,7 @@ class FundingRateSimulator:
         self._current_rate: Dict[str, Decimal] = {}
 
         import random
+
         self._rng = random.Random(seed)
 
     def get_funding_rate(
@@ -1180,6 +1184,7 @@ class FundingRateSimulator:
 # FACTORY FUNCTIONS
 # ============================================================================
 
+
 def create_funding_tracker(
     max_history: int = 10000,
 ) -> FundingRateTracker:
@@ -1224,6 +1229,7 @@ def create_funding_simulator(
 # ============================================================================
 # CONVENIENCE FUNCTIONS
 # ============================================================================
+
 
 def calculate_funding_payment_simple(
     position_qty: Decimal,

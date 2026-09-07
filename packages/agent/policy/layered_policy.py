@@ -27,8 +27,9 @@ from typing import Any, Callable, Dict, Final, List, Optional, Set, Tuple, Union
 # Policy source priority (higher = more authority)
 class PolicySource(Enum):
     """Sources of policy, in priority order (highest first)."""
+
     LOCAL = 100  # User's local config - HIGHEST priority
-    CLOUD = 50   # Cloud-pushed policy
+    CLOUD = 50  # Cloud-pushed policy
     MANIFEST = 10  # Strategy manifest defaults
     DEFAULT = 0  # System defaults - LOWEST priority
 
@@ -38,6 +39,7 @@ class PolicyValue:
     """
     A policy value with its source and metadata.
     """
+
     key: str
     value: Any
     source: PolicySource
@@ -62,6 +64,7 @@ class PolicyConflict:
     """
     Record of a policy conflict resolution.
     """
+
     key: str
     winner_source: PolicySource
     winner_value: Any
@@ -84,10 +87,11 @@ class PolicyConflict:
 # Policy merge strategies
 class MergeStrategy(Enum):
     """How to merge policy values."""
+
     REPLACE = auto()  # Higher priority replaces lower
-    MIN = auto()      # Take minimum (for limits)
-    MAX = auto()      # Take maximum (for thresholds)
-    UNION = auto()    # Union of lists/sets
+    MIN = auto()  # Take minimum (for limits)
+    MAX = auto()  # Take maximum (for thresholds)
+    UNION = auto()  # Union of lists/sets
     INTERSECT = auto()  # Intersection of lists/sets
 
 
@@ -100,20 +104,16 @@ DEFAULT_MERGE_STRATEGIES: Dict[str, MergeStrategy] = {
     "max_drawdown": MergeStrategy.MIN,
     "max_leverage": MergeStrategy.MIN,
     "max_orders_per_second": MergeStrategy.MIN,
-
     # Allowlists - intersection (most restrictive)
     "allowed_symbols": MergeStrategy.INTERSECT,
     "allowed_exchanges": MergeStrategy.INTERSECT,
     "egress_allowlist": MergeStrategy.INTERSECT,
-
     # Blocklists - union (combine all blocks)
     "blocked_symbols": MergeStrategy.UNION,
     "blocked_strategies": MergeStrategy.UNION,
-
     # Timeouts - take minimum
     "timeout_seconds": MergeStrategy.MIN,
     "max_execution_time": MergeStrategy.MIN,
-
     # Memory/CPU limits - take minimum
     "max_memory_mb": MergeStrategy.MIN,
     "max_cpu_percent": MergeStrategy.MIN,
@@ -125,27 +125,32 @@ class LayeredPolicyConfig:
     """
     Configuration for the layered policy engine.
     """
+
     # Merge strategies by key pattern
     merge_strategies: Dict[str, MergeStrategy] = field(
         default_factory=lambda: DEFAULT_MERGE_STRATEGIES.copy()
     )
 
     # Keys that local policy can lock (prevent cloud override)
-    lockable_keys: Set[str] = field(default_factory=lambda: {
-        "max_position",
-        "max_daily_loss",
-        "allowed_symbols",
-        "blocked_strategies",
-        "kill_switch_triggers",
-    })
+    lockable_keys: Set[str] = field(
+        default_factory=lambda: {
+            "max_position",
+            "max_daily_loss",
+            "allowed_symbols",
+            "blocked_strategies",
+            "kill_switch_triggers",
+        }
+    )
 
     # Keys that cloud cannot set at all
-    local_only_keys: Set[str] = field(default_factory=lambda: {
-        "vault_master_key",
-        "local_credentials",
-        "keychain_config",
-        "auto_approve_commands",
-    })
+    local_only_keys: Set[str] = field(
+        default_factory=lambda: {
+            "vault_master_key",
+            "local_credentials",
+            "keychain_config",
+            "auto_approve_commands",
+        }
+    )
 
     # Audit all policy changes
     audit_enabled: bool = True
@@ -226,26 +231,21 @@ class LayeredPolicyEngine:
             # Risk defaults (conservative)
             "max_position": 1000000,  # $1M max position
             "max_order_size": 100000,  # $100K max order
-            "max_daily_loss": 50000,   # $50K max daily loss
-            "max_drawdown": 0.10,      # 10% max drawdown
-            "max_leverage": 1.0,       # No leverage by default
-
+            "max_daily_loss": 50000,  # $50K max daily loss
+            "max_drawdown": 0.10,  # 10% max drawdown
+            "max_leverage": 1.0,  # No leverage by default
             # Rate limits
             "max_orders_per_second": 10,
             "max_orders_per_minute": 100,
-
             # Timeouts
             "timeout_seconds": 30,
             "max_execution_time": 3600,
-
             # Resource limits
             "max_memory_mb": 512,
             "max_cpu_percent": 100.0,
-
             # Network
             "network_enabled": False,
             "egress_allowlist": [],
-
             # Permissions
             "filesystem_readonly": True,
         }

@@ -22,11 +22,12 @@ References:
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -165,6 +166,7 @@ from services.dora.third_party_incidents import (
 # Article 17: Incident Management Tests
 # =============================================================================
 
+
 class TestIncidentManagementCreation:
     """Tests for DORAIncidentManagement creation and initialization."""
 
@@ -184,9 +186,9 @@ class TestIncidentManagementCreation:
     def test_incident_management_has_required_methods(self):
         """Test incident management has required methods."""
         manager = create_incident_management()
-        assert hasattr(manager, 'create_incident')
-        assert hasattr(manager, 'classify_incident')
-        assert hasattr(manager, 'escalate_incident')
+        assert hasattr(manager, "create_incident")
+        assert hasattr(manager, "classify_incident")
+        assert hasattr(manager, "escalate_incident")
 
 
 class TestICTEventTypes:
@@ -383,7 +385,7 @@ class TestEarlyWarningIndicator:
         ewi = EarlyWarningIndicator(
             name="CPU Utilization",
             monitored_system="Trading Server",
-            monitored_metric="cpu_percent"
+            monitored_metric="cpu_percent",
         )
         assert ewi.name == "CPU Utilization"
         assert ewi.indicator_id.startswith("EWI-")
@@ -397,6 +399,7 @@ class TestEarlyWarningIndicator:
 # =============================================================================
 # Article 18: Incident Classification Tests
 # =============================================================================
+
 
 class TestIncidentClassificationCreation:
     """Tests for DORAIncidentClassification creation."""
@@ -416,7 +419,7 @@ class TestIncidentClassificationCreation:
     def test_classifier_has_classify_method(self):
         """Test classifier has classify_incident method."""
         classifier = create_incident_classification()
-        assert hasattr(classifier, 'classify_incident')
+        assert hasattr(classifier, "classify_incident")
 
 
 class TestClassificationThresholds:
@@ -458,16 +461,12 @@ class TestClientImpactAssessment:
 
     def test_client_impact_exceeds_threshold(self):
         """Test client impact threshold detection."""
-        assessment = ClientImpactAssessment(
-            retail_clients_affected=6000
-        )
+        assessment = ClientImpactAssessment(retail_clients_affected=6000)
         assert assessment.exceeds_threshold == True
 
     def test_client_impact_below_threshold(self):
         """Test client impact below threshold."""
-        assessment = ClientImpactAssessment(
-            retail_clients_affected=1000
-        )
+        assessment = ClientImpactAssessment(retail_clients_affected=1000)
         assert assessment.exceeds_threshold == False
 
 
@@ -476,23 +475,17 @@ class TestDurationAssessment:
 
     def test_create_duration_assessment(self):
         """Test creating duration assessment."""
-        assessment = DurationAssessment(
-            total_duration_hours=5.0
-        )
+        assessment = DurationAssessment(total_duration_hours=5.0)
         assert assessment.total_duration_hours == 5.0
 
     def test_duration_exceeds_threshold(self):
         """Test duration exceeds 4-hour threshold."""
-        assessment = DurationAssessment(
-            total_duration_hours=6.0
-        )
+        assessment = DurationAssessment(total_duration_hours=6.0)
         assert assessment.exceeds_threshold == True
 
     def test_duration_below_threshold(self):
         """Test duration below threshold."""
-        assessment = DurationAssessment(
-            total_duration_hours=2.0
-        )
+        assessment = DurationAssessment(total_duration_hours=2.0)
         assert assessment.exceeds_threshold == False
 
 
@@ -501,23 +494,17 @@ class TestGeographicAssessment:
 
     def test_create_geographic_assessment(self):
         """Test creating geographic assessment."""
-        assessment = GeographicAssessment(
-            member_states_affected=["DE", "FR", "IT"]
-        )
+        assessment = GeographicAssessment(member_states_affected=["DE", "FR", "IT"])
         assert len(assessment.member_states_affected) == 3
 
     def test_geographic_exceeds_threshold(self):
         """Test geographic threshold exceeded."""
-        assessment = GeographicAssessment(
-            member_states_affected=["DE", "FR"]
-        )
+        assessment = GeographicAssessment(member_states_affected=["DE", "FR"])
         assert assessment.exceeds_threshold == True
 
     def test_geographic_below_threshold(self):
         """Test geographic below threshold."""
-        assessment = GeographicAssessment(
-            member_states_affected=["DE"]
-        )
+        assessment = GeographicAssessment(member_states_affected=["DE"])
         assert assessment.exceeds_threshold == False
 
 
@@ -526,17 +513,12 @@ class TestDataLossAssessment:
 
     def test_create_data_loss_assessment(self):
         """Test creating data loss assessment."""
-        assessment = DataLossAssessment(
-            data_compromised=True,
-            records_affected=1000
-        )
+        assessment = DataLossAssessment(data_compromised=True, records_affected=1000)
         assert assessment.data_compromised == True
 
     def test_data_loss_is_material(self):
         """Test data loss materiality."""
-        assessment = DataLossAssessment(
-            data_compromised=True
-        )
+        assessment = DataLossAssessment(data_compromised=True)
         assert assessment.is_material == True
 
 
@@ -546,8 +528,7 @@ class TestEconomicImpactAssessment:
     def test_create_economic_assessment(self):
         """Test creating economic impact assessment."""
         assessment = EconomicImpactAssessment(
-            direct_financial_losses_eur=50000.0,
-            remediation_costs_eur=30000.0
+            direct_financial_losses_eur=50000.0, remediation_costs_eur=30000.0
         )
         assert assessment.direct_financial_losses_eur == 50000.0
 
@@ -565,7 +546,9 @@ class TestMajorIncidentTriggers:
 
     def test_geographic_trigger(self):
         """Test geographic spread trigger."""
-        assert MajorIncidentTrigger.GEOGRAPHIC_SPREAD_THRESHOLD.value == "geographic_spread_threshold"
+        assert (
+            MajorIncidentTrigger.GEOGRAPHIC_SPREAD_THRESHOLD.value == "geographic_spread_threshold"
+        )
 
     def test_data_breach_trigger(self):
         """Test data breach trigger."""
@@ -600,6 +583,7 @@ class TestIncidentClassificationTypes:
 # Article 19: Incident Reporting Tests
 # =============================================================================
 
+
 class TestIncidentReporterCreation:
     """Tests for DORAIncidentReporter creation."""
 
@@ -612,8 +596,7 @@ class TestIncidentReporterCreation:
     def test_create_reporter_with_config(self):
         """Test reporter with custom config."""
         config = IncidentReportingConfig(
-            entity_name="Test Entity",
-            entity_lei="LEI123456789012345678"
+            entity_name="Test Entity", entity_lei="LEI123456789012345678"
         )
         reporter = create_incident_reporter(config)
         assert reporter is not None
@@ -660,7 +643,7 @@ class TestCompetentAuthority:
             authority_id="AUTH001",
             name="BaFin",
             authority_type=CompetentAuthorityType.NCA_PRIMARY,
-            country_code="DE"
+            country_code="DE",
         )
         assert authority.name == "BaFin"
         assert authority.country_code == "DE"
@@ -699,6 +682,7 @@ class TestRootCauseCategory:
 # Article 19(4): Cyber Threat Notification Tests
 # =============================================================================
 
+
 class TestCyberThreatServiceCreation:
     """Tests for CyberThreatNotificationService creation."""
 
@@ -710,9 +694,7 @@ class TestCyberThreatServiceCreation:
 
     def test_create_service_with_config(self):
         """Test service with custom config."""
-        config = CyberThreatNotificationConfig(
-            entity_name="Test Entity"
-        )
+        config = CyberThreatNotificationConfig(entity_name="Test Entity")
         service = create_cyber_threat_notification_service(config)
         assert service is not None
 
@@ -766,10 +748,7 @@ class TestThreatIndicator:
 
     def test_create_indicator(self):
         """Test creating threat indicator."""
-        indicator = ThreatIndicator(
-            indicator_type="ip_address",
-            indicator_value="192.168.1.100"
-        )
+        indicator = ThreatIndicator(indicator_type="ip_address", indicator_value="192.168.1.100")
         assert indicator.indicator_type == "ip_address"
         assert indicator.indicator_value == "192.168.1.100"
 
@@ -782,7 +761,7 @@ class TestCyberThreat:
         threat = CyberThreat(
             category=ThreatCategory.MALWARE,
             severity=ThreatSeverity.HIGH,
-            title="Banking Trojan Detected"
+            title="Banking Trojan Detected",
         )
         assert threat.category == ThreatCategory.MALWARE
         assert threat.severity == ThreatSeverity.HIGH
@@ -816,6 +795,7 @@ class TestThreatSignificance:
 # Article 20: Reporting Templates Tests
 # =============================================================================
 
+
 class TestReportingTemplatesCreation:
     """Tests for DORAReportingTemplates creation."""
 
@@ -831,7 +811,7 @@ class TestReportingTemplatesCreation:
             entity_lei="549300EXAMPLE0000",
             entity_name="Test Entity",
             entity_type="credit_institution",
-            entity_country="DE"
+            entity_country="DE",
         )
         assert templates.entity_lei == "549300EXAMPLE0000"
 
@@ -912,7 +892,7 @@ class TestTimelineEvent:
         event = TimelineEvent(
             timestamp=datetime.now(timezone.utc).isoformat(),
             event_type="detection",
-            description="Incident detected"
+            description="Incident detected",
         )
         assert event.event_type == "detection"
         assert event.event_id.startswith("EVT-")
@@ -972,7 +952,7 @@ class TestTemplateValidation:
             classification_datetime="2025-01-15T10:30:00Z",
             brief_description="Test incident",
             contact_person_email="test@example.com",
-            member_states_affected=["DE"]
+            member_states_affected=["DE"],
         )
         is_valid, errors = template.validate()
         assert is_valid == True
@@ -988,7 +968,7 @@ class TestTemplateExport:
             incident_reference="INC-001",
             detection_datetime="2025-01-15T10:00:00Z",
             classification_datetime="2025-01-15T10:30:00Z",
-            brief_description="Test incident"
+            brief_description="Test incident",
         )
         json_str = templates.export_to_json(initial)
         assert isinstance(json_str, str)
@@ -1001,7 +981,7 @@ class TestTemplateExport:
             incident_reference="INC-001",
             detection_datetime="2025-01-15T10:00:00Z",
             classification_datetime="2025-01-15T10:30:00Z",
-            brief_description="Test incident"
+            brief_description="Test incident",
         )
         data = templates.export_to_dict(initial)
         assert isinstance(data, dict)
@@ -1012,14 +992,14 @@ class TestTemplateExport:
 # Article 22: Supervisory Feedback Tests
 # =============================================================================
 
+
 class TestSupervisoryFeedbackCreation:
     """Tests for DORASupervisioryFeedback creation."""
 
     def test_create_feedback_handler(self):
         """Test supervisory feedback handler creation."""
         handler = create_supervisory_feedback(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
         assert handler is not None
         assert isinstance(handler, DORASupervisioryFeedback)
@@ -1027,8 +1007,7 @@ class TestSupervisoryFeedbackCreation:
     def test_feedback_handler_entity_info(self):
         """Test feedback handler stores entity info."""
         handler = create_supervisory_feedback(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
         assert handler.entity_id == "ENTITY001"
         assert handler.entity_name == "Test Financial Entity"
@@ -1128,15 +1107,14 @@ class TestFeedbackReception:
     def test_receive_feedback(self):
         """Test receiving supervisory feedback."""
         handler = create_supervisory_feedback(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
 
         authority = FeedbackCompetentAuthority(
             authority_id="AUTH001",
             name="BaFin",
             country_code="DE",
-            contact_email="feedback@bafin.de"
+            contact_email="feedback@bafin.de",
         )
 
         feedback = handler.receive_feedback(
@@ -1146,7 +1124,7 @@ class TestFeedbackReception:
             feedback_type=FeedbackType.CLARIFICATION_REQUEST,
             priority=FeedbackPriority.HIGH,
             subject="Clarification Required",
-            content="Please provide additional details"
+            content="Please provide additional details",
         )
 
         assert feedback is not None
@@ -1155,16 +1133,11 @@ class TestFeedbackReception:
     def test_feedback_auto_acknowledge(self):
         """Test feedback auto-acknowledgement."""
         handler = create_supervisory_feedback(
-            entity_id="ENTITY001",
-            entity_name="Test Entity",
-            auto_acknowledge=True
+            entity_id="ENTITY001", entity_name="Test Entity", auto_acknowledge=True
         )
 
         authority = FeedbackCompetentAuthority(
-            authority_id="AUTH001",
-            name="BaFin",
-            country_code="DE",
-            contact_email="test@bafin.de"
+            authority_id="AUTH001", name="BaFin", country_code="DE", contact_email="test@bafin.de"
         )
 
         feedback = handler.receive_feedback(
@@ -1174,7 +1147,7 @@ class TestFeedbackReception:
             feedback_type=FeedbackType.ACKNOWLEDGEMENT,
             priority=FeedbackPriority.LOW,
             subject="Acknowledgement",
-            content="Report received"
+            content="Report received",
         )
 
         assert feedback.status == FeedbackStatus.ACKNOWLEDGED
@@ -1185,16 +1158,10 @@ class TestCorrectiveActions:
 
     def test_create_corrective_action(self):
         """Test creating corrective action."""
-        handler = create_supervisory_feedback(
-            entity_id="ENTITY001",
-            entity_name="Test Entity"
-        )
+        handler = create_supervisory_feedback(entity_id="ENTITY001", entity_name="Test Entity")
 
         authority = FeedbackCompetentAuthority(
-            authority_id="AUTH001",
-            name="BaFin",
-            country_code="DE",
-            contact_email="test@bafin.de"
+            authority_id="AUTH001", name="BaFin", country_code="DE", contact_email="test@bafin.de"
         )
 
         feedback = handler.receive_feedback(
@@ -1204,7 +1171,7 @@ class TestCorrectiveActions:
             feedback_type=FeedbackType.CORRECTIVE_ACTION_REQUIRED,
             priority=FeedbackPriority.HIGH,
             subject="Corrective Action",
-            content="Please implement improvements"
+            content="Please implement improvements",
         )
 
         action = handler.create_corrective_action(
@@ -1212,7 +1179,7 @@ class TestCorrectiveActions:
             action_type=CorrectiveActionType.PROCESS_IMPROVEMENT,
             description="Improve incident detection",
             assigned_to="IT Security Team",
-            deadline=datetime.utcnow() + timedelta(days=30)
+            deadline=datetime.utcnow() + timedelta(days=30),
         )
 
         assert action is not None
@@ -1223,14 +1190,14 @@ class TestCorrectiveActions:
 # Article 23: Third-Party Incidents Tests
 # =============================================================================
 
+
 class TestThirdPartyIncidentsCreation:
     """Tests for DORAThirdPartyIncidents creation."""
 
     def test_create_manager(self):
         """Test third-party incidents manager creation."""
         manager = create_third_party_incidents(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
         assert manager is not None
         assert isinstance(manager, DORAThirdPartyIncidents)
@@ -1238,8 +1205,7 @@ class TestThirdPartyIncidentsCreation:
     def test_manager_entity_info(self):
         """Test manager stores entity info."""
         manager = create_third_party_incidents(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
         assert manager.entity_id == "ENTITY001"
 
@@ -1342,7 +1308,7 @@ class TestThirdPartyProvider:
             contract_reference="CONTRACT-001",
             primary_contact_name="John Doe",
             primary_contact_email="john@provider.com",
-            primary_contact_phone="+1-555-0123"
+            primary_contact_phone="+1-555-0123",
         )
         assert provider.name == "Cloud Provider Inc"
         assert provider.criticality == ThirdPartyCriticality.CRITICAL
@@ -1358,7 +1324,7 @@ class TestThirdPartyProvider:
             contract_reference="CONTRACT-001",
             primary_contact_name="Contact",
             primary_contact_email="contact@provider.com",
-            primary_contact_phone="+1-555-0000"
+            primary_contact_phone="+1-555-0000",
         )
         assert provider.is_critical_or_important == True
 
@@ -1373,7 +1339,7 @@ class TestThirdPartyProvider:
             contract_reference="CONTRACT-001",
             primary_contact_name="Contact",
             primary_contact_email="contact@provider.com",
-            primary_contact_phone="+1-555-0000"
+            primary_contact_phone="+1-555-0000",
         )
         assert provider.is_critical_or_important == False
 
@@ -1384,8 +1350,7 @@ class TestProviderRegistration:
     def test_register_provider(self):
         """Test registering a third-party provider."""
         manager = create_third_party_incidents(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
 
         provider = manager.register_provider(
@@ -1396,7 +1361,7 @@ class TestProviderRegistration:
             contract_reference="CONTRACT-001",
             primary_contact_name="Contact",
             primary_contact_email="contact@provider.com",
-            primary_contact_phone="+1-555-0000"
+            primary_contact_phone="+1-555-0000",
         )
 
         assert provider is not None
@@ -1409,8 +1374,7 @@ class TestThirdPartyIncidentReporting:
     def test_report_incident(self):
         """Test reporting a third-party incident."""
         manager = create_third_party_incidents(
-            entity_id="ENTITY001",
-            entity_name="Test Financial Entity"
+            entity_id="ENTITY001", entity_name="Test Financial Entity"
         )
 
         provider = manager.register_provider(
@@ -1421,7 +1385,7 @@ class TestThirdPartyIncidentReporting:
             contract_reference="CONTRACT-001",
             primary_contact_name="Contact",
             primary_contact_email="contact@provider.com",
-            primary_contact_phone="+1-555-0000"
+            primary_contact_phone="+1-555-0000",
         )
 
         incident = manager.report_incident(
@@ -1429,7 +1393,7 @@ class TestThirdPartyIncidentReporting:
             incident_type=ThirdPartyIncidentType.SERVICE_OUTAGE,
             severity=ThirdPartyIncidentSeverity.HIGH,
             title="Cloud Service Outage",
-            description="Cloud hosting service unavailable"
+            description="Cloud hosting service unavailable",
         )
 
         assert incident is not None
@@ -1437,10 +1401,7 @@ class TestThirdPartyIncidentReporting:
 
     def test_incident_requires_notification_for_critical_provider(self):
         """Test incident notification requirement for critical provider."""
-        manager = create_third_party_incidents(
-            entity_id="ENTITY001",
-            entity_name="Test Entity"
-        )
+        manager = create_third_party_incidents(entity_id="ENTITY001", entity_name="Test Entity")
 
         provider = manager.register_provider(
             name="Critical Cloud",
@@ -1450,7 +1411,7 @@ class TestThirdPartyIncidentReporting:
             contract_reference="CONTRACT-001",
             primary_contact_name="Contact",
             primary_contact_email="contact@provider.com",
-            primary_contact_phone="+1-555-0000"
+            primary_contact_phone="+1-555-0000",
         )
 
         incident = manager.report_incident(
@@ -1458,7 +1419,7 @@ class TestThirdPartyIncidentReporting:
             incident_type=ThirdPartyIncidentType.SERVICE_OUTAGE,
             severity=ThirdPartyIncidentSeverity.CRITICAL,
             title="Critical Outage",
-            description="Complete service failure"
+            description="Complete service failure",
         )
 
         # Critical severity + Critical provider = major incident
@@ -1495,6 +1456,7 @@ class TestCommunicationChannels:
 # =============================================================================
 # Integration Tests
 # =============================================================================
+
 
 class TestPhase2ModuleInstantiation:
     """Integration tests for Phase 2 module instantiation."""
@@ -1575,11 +1537,13 @@ class TestModuleImports:
     def test_dora_compliance_phase(self):
         """Test DORA compliance phase is set to 2."""
         from services.dora import __dora_compliance_phase__
+
         assert __dora_compliance_phase__ == 2
 
     def test_dora_version(self):
         """Test DORA version is 0.3.0."""
         from services.dora import __version__
+
         assert __version__ == "0.3.0"
 
 
@@ -1595,7 +1559,7 @@ class TestEndToEndWorkflow:
         incident = manager.create_incident(
             incident_type=ICTEventType.SYSTEM_FAILURE,
             title="Database Outage",
-            description="Primary database server unresponsive"
+            description="Primary database server unresponsive",
         )
 
         assert incident is not None
@@ -1605,8 +1569,7 @@ class TestEndToEndWorkflow:
     def test_reporting_workflow(self):
         """Test reporting workflow."""
         templates = create_reporting_templates(
-            entity_lei="549300EXAMPLE0000",
-            entity_name="Test Bank"
+            entity_lei="549300EXAMPLE0000", entity_name="Test Bank"
         )
 
         # Create initial notification
@@ -1614,7 +1577,7 @@ class TestEndToEndWorkflow:
             incident_reference="INC-001",
             detection_datetime="2025-01-15T10:00:00Z",
             classification_datetime="2025-01-15T10:30:00Z",
-            brief_description="System failure affecting trading"
+            brief_description="System failure affecting trading",
         )
 
         assert initial is not None
@@ -1622,10 +1585,7 @@ class TestEndToEndWorkflow:
 
     def test_third_party_incident_workflow(self):
         """Test third-party incident workflow."""
-        manager = create_third_party_incidents(
-            entity_id="E001",
-            entity_name="Test Bank"
-        )
+        manager = create_third_party_incidents(entity_id="E001", entity_name="Test Bank")
 
         # Register provider
         provider = manager.register_provider(
@@ -1636,7 +1596,7 @@ class TestEndToEndWorkflow:
             contract_reference="C001",
             primary_contact_name="John",
             primary_contact_email="john@cloud.com",
-            primary_contact_phone="+1-555-0000"
+            primary_contact_phone="+1-555-0000",
         )
 
         # Report incident
@@ -1645,7 +1605,7 @@ class TestEndToEndWorkflow:
             incident_type=ThirdPartyIncidentType.SERVICE_OUTAGE,
             severity=ThirdPartyIncidentSeverity.HIGH,
             title="Service Outage",
-            description="Cloud service unavailable"
+            description="Cloud service unavailable",
         )
 
         # Get metrics

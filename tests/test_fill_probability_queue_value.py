@@ -16,6 +16,7 @@ import time
 from typing import List
 
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob import (
@@ -161,14 +162,16 @@ def sample_trades() -> List[TradeRecord]:
     base_time = time.time_ns()
     trades = []
     for i in range(100):
-        trades.append(TradeRecord(
-            timestamp_ns=base_time + i * 1_000_000_000,  # 1 second apart
-            price=150.0 + (i % 10) * 0.01,
-            qty=10.0 + (i % 5) * 5.0,
-            side=Side.BUY if i % 2 == 0 else Side.SELL,
-            maker_queue_position=i % 10,
-            time_in_queue_sec=5.0 + (i % 20),
-        ))
+        trades.append(
+            TradeRecord(
+                timestamp_ns=base_time + i * 1_000_000_000,  # 1 second apart
+                price=150.0 + (i % 10) * 0.01,
+                qty=10.0 + (i % 5) * 5.0,
+                side=Side.BUY if i % 2 == 0 else Side.SELL,
+                maker_queue_position=i % 10,
+                time_in_queue_sec=5.0 + (i % 20),
+            )
+        )
     return trades
 
 
@@ -473,10 +476,12 @@ class TestCompositeFillProbabilityModel:
         poisson = AnalyticalPoissonModel()
         reactive = QueueReactiveModel()
 
-        model = CompositeFillProbabilityModel(models=[
-            (poisson, 0.6),
-            (reactive, 0.4),
-        ])
+        model = CompositeFillProbabilityModel(
+            models=[
+                (poisson, 0.6),
+                (reactive, 0.4),
+            ]
+        )
 
         result = model.compute_fill_probability(
             queue_position=5,
@@ -549,16 +554,12 @@ class TestQueueValueModel:
         sample_queue_state.qty_ahead = 0.0
         sample_queue_state.estimated_position = 0
 
-        result = model.compute_queue_value(
-            sample_limit_order, sample_lob_state, sample_queue_state
-        )
+        result = model.compute_queue_value(sample_limit_order, sample_lob_state, sample_queue_state)
 
         assert result.queue_value > 0
         assert result.decision == OrderDecision.HOLD
 
-    def test_value_decreases_with_position(
-        self, sample_limit_order, sample_lob_state
-    ):
+    def test_value_decreases_with_position(self, sample_limit_order, sample_lob_state):
         """Test that value decreases further back in queue."""
         model = QueueValueModel()
 
@@ -573,9 +574,7 @@ class TestQueueValueModel:
                 total_level_qty=(position + 1) * 100.0,
             )
 
-            result = model.compute_queue_value(
-                sample_limit_order, sample_lob_state, queue_state
-            )
+            result = model.compute_queue_value(sample_limit_order, sample_lob_state, queue_state)
             values.append(result.queue_value)
 
         # Value should decrease
@@ -596,9 +595,7 @@ class TestQueueValueModel:
             total_level_qty=100000.0,
         )
 
-        should_cancel = model.should_cancel(
-            sample_limit_order, sample_lob_state, queue_state
-        )
+        should_cancel = model.should_cancel(sample_limit_order, sample_lob_state, queue_state)
 
         # May or may not cancel depending on parameters
         assert isinstance(should_cancel, bool)
@@ -615,9 +612,7 @@ class TestQueueValueModel:
             qty_ahead=500.0,
         )
 
-        result = model.compute_queue_value(
-            sample_limit_order, sample_lob_state, queue_state
-        )
+        result = model.compute_queue_value(sample_limit_order, sample_lob_state, queue_state)
 
         assert result.adverse_selection_cost >= 0
         assert result.opportunity_cost >= 0
@@ -635,12 +630,8 @@ class TestDynamicQueueValueModel:
         """Test that volatility adjusts adverse selection."""
         model = DynamicQueueValueModel(volatility_adjustment=2.0)
 
-        low_vol_state = LOBState(
-            mid_price=150.0, spread_bps=5.0, volatility=0.01
-        )
-        high_vol_state = LOBState(
-            mid_price=150.0, spread_bps=5.0, volatility=0.05
-        )
+        low_vol_state = LOBState(mid_price=150.0, spread_bps=5.0, volatility=0.01)
+        high_vol_state = LOBState(mid_price=150.0, spread_bps=5.0, volatility=0.05)
 
         queue_state = QueueState(
             order_id="test",
@@ -649,12 +640,8 @@ class TestDynamicQueueValueModel:
             qty_ahead=500.0,
         )
 
-        result_low = model.compute_queue_value(
-            sample_limit_order, low_vol_state, queue_state
-        )
-        result_high = model.compute_queue_value(
-            sample_limit_order, high_vol_state, queue_state
-        )
+        result_low = model.compute_queue_value(sample_limit_order, low_vol_state, queue_state)
+        result_high = model.compute_queue_value(sample_limit_order, high_vol_state, queue_state)
 
         # Higher vol = higher adverse selection cost
         assert result_high.adverse_selection_cost >= result_low.adverse_selection_cost
@@ -977,20 +964,22 @@ class TestCrossValidation:
         pipeline = CalibrationPipeline()
 
         # Only 2 trades
-        pipeline.add_trades([
-            TradeRecord(
-                timestamp_ns=time.time_ns(),
-                price=150.0,
-                qty=100.0,
-                side=Side.BUY,
-            ),
-            TradeRecord(
-                timestamp_ns=time.time_ns() + 1_000_000_000,
-                price=150.01,
-                qty=50.0,
-                side=Side.SELL,
-            ),
-        ])
+        pipeline.add_trades(
+            [
+                TradeRecord(
+                    timestamp_ns=time.time_ns(),
+                    price=150.0,
+                    qty=100.0,
+                    side=Side.BUY,
+                ),
+                TradeRecord(
+                    timestamp_ns=time.time_ns() + 1_000_000_000,
+                    price=150.01,
+                    qty=50.0,
+                    side=Side.SELL,
+                ),
+            ]
+        )
 
         cv_result = pipeline.cross_validate(n_folds=5)
 
@@ -1006,9 +995,7 @@ class TestCrossValidation:
 class TestIntegrationWithLOB:
     """Tests for integration with existing LOB components."""
 
-    def test_compute_fill_probability_for_order(
-        self, sample_order_book, sample_queue_state
-    ):
+    def test_compute_fill_probability_for_order(self, sample_order_book, sample_queue_state):
         """Test convenience function with real OrderBook."""
         order = LimitOrder(
             order_id="test",
@@ -1019,9 +1006,7 @@ class TestIntegrationWithLOB:
             side=Side.SELL,
         )
 
-        result = compute_fill_probability_for_order(
-            sample_queue_state, order, sample_order_book
-        )
+        result = compute_fill_probability_for_order(sample_queue_state, order, sample_order_book)
 
         assert result.order_id == "test"
         assert 0.0 <= result.prob_fill <= 1.0
@@ -1255,18 +1240,22 @@ class TestHistoricalRateModelOrderInfo:
         model = HistoricalRateModel()
 
         # Add historical rates for both sides
-        model.add_historical_rate(HistoricalFillRate(
-            price=150.0,
-            side=Side.BUY,
-            avg_fill_rate=100.0,
-            fill_count=50,
-        ))
-        model.add_historical_rate(HistoricalFillRate(
-            price=150.0,
-            side=Side.SELL,
-            avg_fill_rate=200.0,  # Different rate for SELL
-            fill_count=50,
-        ))
+        model.add_historical_rate(
+            HistoricalFillRate(
+                price=150.0,
+                side=Side.BUY,
+                avg_fill_rate=100.0,
+                fill_count=50,
+            )
+        )
+        model.add_historical_rate(
+            HistoricalFillRate(
+                price=150.0,
+                side=Side.SELL,
+                avg_fill_rate=200.0,  # Different rate for SELL
+                fill_count=50,
+            )
+        )
 
         # Test with BUY side
         state_buy = LOBState(
@@ -1305,12 +1294,14 @@ class TestHistoricalRateModelOrderInfo:
         model = HistoricalRateModel()
 
         # Add historical rate at specific price
-        model.add_historical_rate(HistoricalFillRate(
-            price=149.0,
-            side=Side.BUY,
-            avg_fill_rate=300.0,
-            fill_count=50,
-        ))
+        model.add_historical_rate(
+            HistoricalFillRate(
+                price=149.0,
+                side=Side.BUY,
+                avg_fill_rate=300.0,
+                fill_count=50,
+            )
+        )
 
         # State with specific order_price
         state = LOBState(
@@ -1334,18 +1325,22 @@ class TestHistoricalRateModelOrderInfo:
         model = HistoricalRateModel()
 
         # Add rates for both sides
-        model.add_historical_rate(HistoricalFillRate(
-            price=150.0,
-            side=Side.BUY,
-            avg_fill_rate=100.0,
-            fill_count=50,
-        ))
-        model.add_historical_rate(HistoricalFillRate(
-            price=150.0,
-            side=Side.SELL,
-            avg_fill_rate=200.0,
-            fill_count=50,
-        ))
+        model.add_historical_rate(
+            HistoricalFillRate(
+                price=150.0,
+                side=Side.BUY,
+                avg_fill_rate=100.0,
+                fill_count=50,
+            )
+        )
+        model.add_historical_rate(
+            HistoricalFillRate(
+                price=150.0,
+                side=Side.SELL,
+                avg_fill_rate=200.0,
+                fill_count=50,
+            )
+        )
 
         # Positive imbalance -> should use SELL side
         state_pos = LOBState(
@@ -1406,13 +1401,15 @@ class TestCalibrationEvaluateModel:
         base_time = time.time_ns()
         trades = []
         for i in range(20):
-            trades.append(TradeRecord(
-                timestamp_ns=base_time + i * 1_000_000_000,
-                price=150.0,
-                qty=100.0,
-                side=Side.BUY if i % 2 == 0 else Side.SELL,
-                time_in_queue_sec=30.0,  # All trades filled in 30 sec
-            ))
+            trades.append(
+                TradeRecord(
+                    timestamp_ns=base_time + i * 1_000_000_000,
+                    price=150.0,
+                    qty=100.0,
+                    side=Side.BUY if i % 2 == 0 else Side.SELL,
+                    time_in_queue_sec=30.0,  # All trades filled in 30 sec
+                )
+            )
 
         pipeline.add_trades(trades)
         results = pipeline.run_calibration()
@@ -1453,9 +1450,7 @@ class TestQueueValueModelDecisionMethods:
             total_level_qty=1000000.0,
         )
 
-        result = model.compute_queue_value(
-            sample_limit_order, sample_lob_state, queue_state
-        )
+        result = model.compute_queue_value(sample_limit_order, sample_lob_state, queue_state)
 
         if result.decision == OrderDecision.CANCEL:
             assert model.should_cancel(sample_limit_order, sample_lob_state, queue_state)
@@ -1483,9 +1478,7 @@ class TestQueueValueModelDecisionMethods:
             total_level_qty=100.0,
         )
 
-        result = model.compute_queue_value(
-            sample_limit_order, sample_lob_state, queue_state
-        )
+        result = model.compute_queue_value(sample_limit_order, sample_lob_state, queue_state)
 
         # Verify decision consistency
         if result.decision == OrderDecision.REPRICE:
@@ -1505,19 +1498,11 @@ class TestQueueValueModelDecisionMethods:
             qty_ahead=500.0,
         )
 
-        result = model.compute_queue_value(
-            sample_limit_order, sample_lob_state, queue_state
-        )
+        result = model.compute_queue_value(sample_limit_order, sample_lob_state, queue_state)
 
-        should_modify = model.should_modify(
-            sample_limit_order, sample_lob_state, queue_state
-        )
-        should_cancel = model.should_cancel(
-            sample_limit_order, sample_lob_state, queue_state
-        )
-        should_reprice = model.should_reprice(
-            sample_limit_order, sample_lob_state, queue_state
-        )
+        should_modify = model.should_modify(sample_limit_order, sample_lob_state, queue_state)
+        should_cancel = model.should_cancel(sample_limit_order, sample_lob_state, queue_state)
+        should_reprice = model.should_reprice(sample_limit_order, sample_lob_state, queue_state)
 
         # should_modify should be True if either cancel or reprice is True
         assert should_modify == (should_cancel or should_reprice)
@@ -1536,20 +1521,14 @@ class TestQueueValueModelDecisionMethods:
             total_level_qty=100.0,
         )
 
-        result = model.compute_queue_value(
-            sample_limit_order, sample_lob_state, sample_queue_state
-        )
+        result = model.compute_queue_value(sample_limit_order, sample_lob_state, sample_queue_state)
 
         if result.decision == OrderDecision.HOLD:
-            assert not model.should_cancel(
-                sample_limit_order, sample_lob_state, sample_queue_state
-            )
+            assert not model.should_cancel(sample_limit_order, sample_lob_state, sample_queue_state)
             assert not model.should_reprice(
                 sample_limit_order, sample_lob_state, sample_queue_state
             )
-            assert not model.should_modify(
-                sample_limit_order, sample_lob_state, sample_queue_state
-            )
+            assert not model.should_modify(sample_limit_order, sample_lob_state, sample_queue_state)
 
 
 # ==============================================================================

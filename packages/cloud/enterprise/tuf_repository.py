@@ -46,6 +46,7 @@ ROOT_EXPIRY_DAYS: Final[int] = 365
 
 class TUFRole(Enum):
     """TUF role types."""
+
     ROOT = "root"
     TIMESTAMP = "timestamp"
     SNAPSHOT = "snapshot"
@@ -54,6 +55,7 @@ class TUFRole(Enum):
 
 class KeyType(Enum):
     """Cryptographic key types."""
+
     ED25519 = "ed25519"
     RSA = "rsa-pkcs1v15-sha256"
     ECDSA = "ecdsa-sha2-nistp256"
@@ -62,6 +64,7 @@ class KeyType(Enum):
 @dataclass
 class TUFKey:
     """TUF public key."""
+
     key_id: str  # SHA256 of canonical key representation
     key_type: KeyType
     public_key: str  # Base64-encoded public key
@@ -91,6 +94,7 @@ class TUFKey:
 @dataclass
 class TUFSignature:
     """TUF signature."""
+
     key_id: str
     signature: str  # Base64-encoded signature
 
@@ -105,6 +109,7 @@ class TUFSignature:
 @dataclass
 class RoleInfo:
     """Role information in root metadata."""
+
     key_ids: List[str]
     threshold: int
 
@@ -119,6 +124,7 @@ class RoleInfo:
 @dataclass
 class TargetInfo:
     """Information about a target file."""
+
     length: int
     hashes: Dict[str, str]  # algorithm -> hash
     custom: Optional[Dict[str, Any]] = None
@@ -137,6 +143,7 @@ class TargetInfo:
 @dataclass
 class TUFMetadata:
     """Base TUF metadata."""
+
     version: int
     expires: datetime
     role: TUFRole = TUFRole.ROOT  # Default, overridden in subclasses
@@ -155,6 +162,7 @@ class TUFMetadata:
 @dataclass
 class RootMetadata(TUFMetadata):
     """Root metadata - trust anchor."""
+
     keys: Dict[str, TUFKey] = field(default_factory=dict)
     roles: Dict[str, RoleInfo] = field(default_factory=dict)
     consistent_snapshot: bool = True
@@ -165,17 +173,20 @@ class RootMetadata(TUFMetadata):
     def to_signed_dict(self) -> Dict[str, Any]:
         """Convert to TUF format."""
         base = super().to_signed_dict()
-        base.update({
-            "consistent_snapshot": self.consistent_snapshot,
-            "keys": {k: v.to_dict() for k, v in self.keys.items()},
-            "roles": {k: v.to_dict() for k, v in self.roles.items()},
-        })
+        base.update(
+            {
+                "consistent_snapshot": self.consistent_snapshot,
+                "keys": {k: v.to_dict() for k, v in self.keys.items()},
+                "roles": {k: v.to_dict() for k, v in self.roles.items()},
+            }
+        )
         return base
 
 
 @dataclass
 class TimestampMetadata(TUFMetadata):
     """Timestamp metadata - freshness."""
+
     snapshot_info: TargetInfo = field(default_factory=lambda: TargetInfo(0, {}))
 
     def __post_init__(self):
@@ -193,6 +204,7 @@ class TimestampMetadata(TUFMetadata):
 @dataclass
 class SnapshotMetadata(TUFMetadata):
     """Snapshot metadata - consistency."""
+
     meta: Dict[str, TargetInfo] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -208,6 +220,7 @@ class SnapshotMetadata(TUFMetadata):
 @dataclass
 class TargetsMetadata(TUFMetadata):
     """Targets metadata - list of available updates."""
+
     targets: Dict[str, TargetInfo] = field(default_factory=dict)
     delegations: Optional[Dict[str, Any]] = None
 
@@ -226,6 +239,7 @@ class TargetsMetadata(TUFMetadata):
 @dataclass
 class SignedMetadata:
     """Signed metadata container."""
+
     signed: Dict[str, Any]
     signatures: List[TUFSignature] = field(default_factory=list)
 
@@ -255,6 +269,7 @@ class SignedMetadata:
 @dataclass
 class TUFConfig:
     """Configuration for TUF repository."""
+
     # Storage
     repository_path: Path = field(default_factory=lambda: Path.home() / ".ccea" / "tuf")
 
@@ -464,9 +479,7 @@ class TUFRepository:
             )
 
             # Sign root metadata
-            self._signed_root = await self._sign_metadata(
-                self._root, TUFRole.ROOT
-            )
+            self._signed_root = await self._sign_metadata(self._root, TUFRole.ROOT)
 
             self._initialized = True
             self._dirty = True
@@ -632,9 +645,7 @@ class TUFRepository:
             self._targets.expires = now + timedelta(days=self.config.targets_expiry_days)
 
             # Sign targets
-            self._signed_targets = await self._sign_metadata(
-                self._targets, TUFRole.TARGETS
-            )
+            self._signed_targets = await self._sign_metadata(self._targets, TUFRole.TARGETS)
 
             # Compute targets hash for snapshot
             targets_bytes = json.dumps(self._signed_targets.to_dict()).encode()
@@ -649,9 +660,7 @@ class TUFRepository:
             )
 
             # Sign snapshot
-            self._signed_snapshot = await self._sign_metadata(
-                self._snapshot, TUFRole.SNAPSHOT
-            )
+            self._signed_snapshot = await self._sign_metadata(self._snapshot, TUFRole.SNAPSHOT)
 
             # Compute snapshot hash for timestamp
             snapshot_bytes = json.dumps(self._signed_snapshot.to_dict()).encode()
@@ -666,9 +675,7 @@ class TUFRepository:
             )
 
             # Sign timestamp
-            self._signed_timestamp = await self._sign_metadata(
-                self._timestamp, TUFRole.TIMESTAMP
-            )
+            self._signed_timestamp = await self._sign_metadata(self._timestamp, TUFRole.TIMESTAMP)
 
             # Write all metadata
             await self._write_metadata()
@@ -706,9 +713,7 @@ class TUFRepository:
         try:
             # Increment version
             self._root.version += 1
-            self._root.expires = datetime.utcnow() + timedelta(
-                days=self.config.root_expiry_days
-            )
+            self._root.expires = datetime.utcnow() + timedelta(days=self.config.root_expiry_days)
 
             # Update keys if provided
             if new_root_keys:
@@ -725,14 +730,10 @@ class TUFRepository:
                         self._signing_keys[TUFRole.ROOT] = []
                     self._signing_keys[TUFRole.ROOT].append(priv)
 
-                self._root.roles["root"] = RoleInfo(
-                    root_key_ids, self.config.root_threshold
-                )
+                self._root.roles["root"] = RoleInfo(root_key_ids, self.config.root_threshold)
 
             # Sign with both old and new keys (cross-signing)
-            self._signed_root = await self._sign_metadata(
-                self._root, TUFRole.ROOT
-            )
+            self._signed_root = await self._sign_metadata(self._root, TUFRole.ROOT)
 
             self._dirty = True
             logger.info(f"Root rotated to version {self._root.version}")
@@ -829,8 +830,7 @@ class TUFRepository:
             "key_count": len(self._keys),
             "versions": self.get_metadata_versions(),
             "expiry": {
-                k: v.isoformat() if v else None
-                for k, v in self.get_metadata_expiry().items()
+                k: v.isoformat() if v else None for k, v in self.get_metadata_expiry().items()
             },
             "config": self.config.to_dict(),
         }
@@ -862,10 +862,12 @@ class TUFRepository:
             # Note: In real implementation, derive key_id properly
             # For simplicity, we use first matching key
             for kid, key in self._keys.items():
-                signatures.append(TUFSignature(
-                    key_id=kid,
-                    signature=base64.b64encode(signature).decode(),
-                ))
+                signatures.append(
+                    TUFSignature(
+                        key_id=kid,
+                        signature=base64.b64encode(signature).decode(),
+                    )
+                )
                 break
 
         return SignedMetadata(signed=signed_dict, signatures=signatures)
@@ -885,6 +887,7 @@ class TUFRepository:
             from cryptography.hazmat.primitives.asymmetric.ed25519 import (
                 Ed25519PrivateKey,
             )
+
             try:
                 signer = Ed25519PrivateKey.from_private_bytes(private_key[:32])
                 return signer.sign(data)
@@ -892,8 +895,10 @@ class TUFRepository:
                 raise RuntimeError(f"TUF Ed25519 signing failed: {exc}")
 
         import os
+
         if os.environ.get("CCEA_TUF_DEVELOPMENT_MODE") == "ENABLED":
             import logging
+
             logging.getLogger(__name__).warning(
                 "SECURITY: placeholder TUF signing (DEVELOPMENT_MODE, no cryptography). "
                 "Not cryptographically secure. Tracking: CCEA-SEC-002"
@@ -901,8 +906,7 @@ class TUFRepository:
             return hashlib.sha256(private_key + data).digest()
 
         raise RuntimeError(
-            "TUF signing requires the cryptography library (Ed25519). "
-            "Tracking: CCEA-SEC-002"
+            "TUF signing requires the cryptography library (Ed25519). " "Tracking: CCEA-SEC-002"
         )
 
     async def _write_metadata(self) -> None:
@@ -955,8 +959,7 @@ class TUFRepository:
     def _parse_signed_metadata(self, data: Dict[str, Any]) -> SignedMetadata:
         """Parse signed metadata from JSON."""
         signatures = [
-            TUFSignature(key_id=s["keyid"], signature=s["sig"])
-            for s in data.get("signatures", [])
+            TUFSignature(key_id=s["keyid"], signature=s["sig"]) for s in data.get("signatures", [])
         ]
         return SignedMetadata(signed=data["signed"], signatures=signatures)
 
@@ -967,10 +970,7 @@ class TUFRepository:
             expires=datetime.strptime(data["expires"], "%Y-%m-%dT%H:%M:%SZ"),
             spec_version=data.get("spec_version", "1.0.0"),
             consistent_snapshot=data.get("consistent_snapshot", True),
-            keys={
-                kid: TUFKey.from_dict(kid, kdata)
-                for kid, kdata in data.get("keys", {}).items()
-            },
+            keys={kid: TUFKey.from_dict(kid, kdata) for kid, kdata in data.get("keys", {}).items()},
             roles={
                 role: RoleInfo(
                     key_ids=rdata["keyids"],

@@ -71,11 +71,13 @@ class TestVIXData:
         """Test get_vix returns data when available."""
         from services.macro_data import MacroDataService, MacroDataConfig
 
-        mock_fetch.return_value = pd.DataFrame({
-            "value": [15.5, 16.0, 14.8],
-            "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
-            "timestamp": [1704067200, 1704153600, 1704240000],
-        })
+        mock_fetch.return_value = pd.DataFrame(
+            {
+                "value": [15.5, 16.0, 14.8],
+                "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                "timestamp": [1704067200, 1704153600, 1704240000],
+            }
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config = MacroDataConfig(cache_dir=Path(tmpdir))
@@ -96,11 +98,13 @@ class TestVIXData:
             service = MacroDataService(config=config)
 
             # Pre-populate cache (uses dict-based cache)
-            test_data = pd.DataFrame({
-                "value": [15.5, 16.0],
-                "date": ["2024-01-01", "2024-01-02"],
-                "timestamp": [1704067200, 1704153600],
-            })
+            test_data = pd.DataFrame(
+                {
+                    "value": [15.5, 16.0],
+                    "date": ["2024-01-01", "2024-01-02"],
+                    "timestamp": [1704067200, 1704153600],
+                }
+            )
             service._data_cache["vix"] = test_data
             service._cache_timestamps["vix"] = datetime.now()
 
@@ -117,11 +121,13 @@ class TestDXYData:
         """Test get_dxy returns data when available."""
         from services.macro_data import MacroDataService, MacroDataConfig
 
-        mock_fetch.return_value = pd.DataFrame({
-            "value": [103.5, 104.0, 102.8],
-            "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
-            "timestamp": [1704067200, 1704153600, 1704240000],
-        })
+        mock_fetch.return_value = pd.DataFrame(
+            {
+                "value": [103.5, 104.0, 102.8],
+                "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                "timestamp": [1704067200, 1704153600, 1704240000],
+            }
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config = MacroDataConfig(cache_dir=Path(tmpdir))
@@ -141,11 +147,13 @@ class TestDXYData:
             service = MacroDataService(config=config)
 
             # Pre-populate cache
-            test_data = pd.DataFrame({
-                "value": [103.5, 104.0],
-                "date": ["2024-01-01", "2024-01-02"],
-                "timestamp": [1704067200, 1704153600],
-            })
+            test_data = pd.DataFrame(
+                {
+                    "value": [103.5, 104.0],
+                    "date": ["2024-01-01", "2024-01-02"],
+                    "timestamp": [1704067200, 1704153600],
+                }
+            )
             service._data_cache["dxy"] = test_data
             service._cache_timestamps["dxy"] = datetime.now()
 
@@ -161,11 +169,13 @@ class TestTreasuryYields:
         """Test get_treasury_yields returns data when available."""
         from services.macro_data import MacroDataService, MacroDataConfig
 
-        mock_fetch.return_value = pd.DataFrame({
-            "value": [4.5, 4.6, 4.4],
-            "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
-            "timestamp": [1704067200, 1704153600, 1704240000],
-        })
+        mock_fetch.return_value = pd.DataFrame(
+            {
+                "value": [4.5, 4.6, 4.4],
+                "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                "timestamp": [1704067200, 1704153600, 1704240000],
+            }
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config = MacroDataConfig(cache_dir=Path(tmpdir))
@@ -365,23 +375,27 @@ class TestAddMacroFeatures:
         from services.macro_data import MacroDataService, MacroDataConfig
 
         # Mock the get_all_macro response
-        mock_get_all.return_value = pd.DataFrame({
-            "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
-            "vix": [15.0, 16.0, 17.0],
-            "dxy": [102.0, 103.0, 104.0],
-            "treasury_10y": [4.0, 4.1, 4.2],
-            "treasury_30y": [4.5, 4.6, 4.7],
-        })
+        mock_get_all.return_value = pd.DataFrame(
+            {
+                "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                "vix": [15.0, 16.0, 17.0],
+                "dxy": [102.0, 103.0, 104.0],
+                "treasury_10y": [4.0, 4.1, 4.2],
+                "treasury_30y": [4.5, 4.6, 4.7],
+            }
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config = MacroDataConfig(cache_dir=Path(tmpdir))
             service = MacroDataService(config=config)
 
             # Input DataFrame with date column
-            df = pd.DataFrame({
-                "close": [100.0, 101.0, 102.0],
-                "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0, 101.0, 102.0],
+                    "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                }
+            )
 
             result = service.add_macro_features(df)
 
@@ -402,14 +416,16 @@ class TestAddMacroFeatures:
             config = MacroDataConfig(cache_dir=Path(tmpdir))
             service = MacroDataService(config=config)
 
-            df = pd.DataFrame({
-                "open": [100.0, 101.0],
-                "high": [105.0, 106.0],
-                "low": [95.0, 96.0],
-                "close": [102.0, 103.0],
-                "volume": [1000, 1100],
-                "date": ["2024-01-01", "2024-01-02"],
-            })
+            df = pd.DataFrame(
+                {
+                    "open": [100.0, 101.0],
+                    "high": [105.0, 106.0],
+                    "low": [95.0, 96.0],
+                    "close": [102.0, 103.0],
+                    "volume": [1000, 1100],
+                    "date": ["2024-01-01", "2024-01-02"],
+                }
+            )
 
             result = service.add_macro_features(df)
 
@@ -438,11 +454,13 @@ class TestModuleLevelFunctions:
 
         # Pre-populate cache (dict-based)
         service = get_service()
-        service._data_cache["vix"] = pd.DataFrame({
-            "value": [15.0],
-            "date": ["2024-01-01"],
-            "timestamp": [1704067200],
-        })
+        service._data_cache["vix"] = pd.DataFrame(
+            {
+                "value": [15.0],
+                "date": ["2024-01-01"],
+                "timestamp": [1704067200],
+            }
+        )
         service._cache_timestamps["vix"] = datetime.now()
 
         result = get_vix()
@@ -454,11 +472,13 @@ class TestModuleLevelFunctions:
 
         # Pre-populate cache (dict-based)
         service = get_service()
-        service._data_cache["dxy"] = pd.DataFrame({
-            "value": [103.0],
-            "date": ["2024-01-01"],
-            "timestamp": [1704067200],
-        })
+        service._data_cache["dxy"] = pd.DataFrame(
+            {
+                "value": [103.0],
+                "date": ["2024-01-01"],
+                "timestamp": [1704067200],
+            }
+        )
         service._cache_timestamps["dxy"] = datetime.now()
 
         result = get_dxy()
@@ -477,10 +497,12 @@ class TestCryptoBackwardCompatibility:
             service = MacroDataService(config=config)
 
             # Crypto DataFrame without timestamp column matching macro data
-            df = pd.DataFrame({
-                "close": [50000.0, 50100.0, 50200.0],
-                "volume": [1000, 1100, 1200],
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [50000.0, 50100.0, 50200.0],
+                    "volume": [1000, 1100, 1200],
+                }
+            )
 
             # Should not raise, should just return df with NaN or default values
             result = service.add_macro_features(df)
@@ -498,10 +520,12 @@ class TestCryptoBackwardCompatibility:
             service = MacroDataService(config=config)
 
             # Empty caches (no data)
-            df = pd.DataFrame({
-                "close": [100.0, 101.0],
-                "timestamp": pd.to_datetime(["2024-01-01", "2024-01-02"]),
-            })
+            df = pd.DataFrame(
+                {
+                    "close": [100.0, 101.0],
+                    "timestamp": pd.to_datetime(["2024-01-01", "2024-01-02"]),
+                }
+            )
 
             result = service.add_macro_features(df)
 

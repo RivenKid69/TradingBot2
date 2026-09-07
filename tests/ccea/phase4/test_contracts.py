@@ -23,6 +23,7 @@ import pytest
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def project_root() -> Path:
     """Get project root path."""
@@ -56,6 +57,7 @@ def schema(schema_path: Path) -> dict:
 # WI-PROTOCOL-01: Schema Version Negotiation Tests
 # ============================================================================
 
+
 class TestSchemaVersionNegotiation:
     """Tests for schema version negotiation mechanism."""
 
@@ -68,6 +70,7 @@ class TestSchemaVersionNegotiation:
     def test_schema_version_format(self, schema: dict):
         """Test that schema versions are valid semver."""
         import re
+
         semver_pattern = re.compile(r"^\d+\.\d+\.\d+$")
 
         assert semver_pattern.match(schema["x-schema-version"])
@@ -148,6 +151,7 @@ class TestSchemaVersionNegotiation:
 # WI-PROTOCOL-02: Command Type Allowlist Tests
 # ============================================================================
 
+
 class TestCommandTypeAllowlist:
     """Tests for command type allowlist consistency."""
 
@@ -217,6 +221,7 @@ class TestCommandTypeAllowlist:
 # WI-CONTRACTS-01: Enum/State-Machine Drift Tests
 # ============================================================================
 
+
 class TestContractEnums:
     """Tests for enum consistency between schema, models, and DB."""
 
@@ -225,9 +230,7 @@ class TestContractEnums:
         from ccea.models.protocol import CommandStatus
 
         # Extract from schema
-        schema_status = set(
-            schema.get("definitions", {}).get("command_status", {}).get("enum", [])
-        )
+        schema_status = set(schema.get("definitions", {}).get("command_status", {}).get("enum", []))
 
         # Extract from protocol models
         model_status = {e.value for e in CommandStatus}
@@ -253,9 +256,7 @@ class TestContractEnums:
         """Test run_state enum matches between schema and protocol models."""
         from ccea.models.protocol import RunState
 
-        schema_state = set(
-            schema.get("definitions", {}).get("run_state", {}).get("enum", [])
-        )
+        schema_state = set(schema.get("definitions", {}).get("run_state", {}).get("enum", []))
         model_state = {e.value for e in RunState}
 
         assert schema_state == model_state
@@ -301,9 +302,7 @@ class TestContractEnums:
         schema_approval_status = set(
             schema.get("definitions", {}).get("approval_status", {}).get("enum", [])
         )
-        schema_run_state = set(
-            schema.get("definitions", {}).get("run_state", {}).get("enum", [])
-        )
+        schema_run_state = set(schema.get("definitions", {}).get("run_state", {}).get("enum", []))
         schema_deployment_state = set(
             schema.get("definitions", {}).get("deployment_state", {}).get("enum", [])
         )
@@ -396,6 +395,7 @@ class TestContractValidation:
 # ============================================================================
 # Version Check Guardrail Tests
 # ============================================================================
+
 
 class TestVersionCheckGuardrail:
     """Tests for version_check.py guardrail."""

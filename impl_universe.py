@@ -69,13 +69,16 @@ class StaticUniverse:
         tradable_to_ms: Optional[int] = None,
     ) -> None:
         self.name = name
-        self._symbols = list(dict.fromkeys(str(s) for s in symbols))  # сохранить порядок, без дублей
+        self._symbols = list(
+            dict.fromkeys(str(s) for s in symbols)
+        )  # сохранить порядок, без дублей
         self._set = set(self._symbols)
         self.tradable_from_ms = tradable_from_ms
         self.tradable_to_ms = tradable_to_ms
         logger.info(
             "StaticUniverse '%s': %d symbols (survivorship_biased=True)",
-            name, len(self._symbols),
+            name,
+            len(self._symbols),
         )
 
     def _in_window(self, asof_ms: int) -> bool:
@@ -129,9 +132,7 @@ class IndexMembershipUniverse:
             snapshot = UniverseSnapshot(auto_load=False)
         self._snap = snapshot
         self._delist = delisting
-        logger.info(
-            "IndexMembershipUniverse '%s' (survivorship_biased=False)", self.name
-        )
+        logger.info("IndexMembershipUniverse '%s' (survivorship_biased=False)", self.name)
 
     # ---- builders / passthrough ----
     @classmethod

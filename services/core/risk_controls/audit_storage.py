@@ -461,11 +461,7 @@ class MemoryAuditStorage(AuditStorageBackend):
                 start_ns = int(start_time.timestamp() * 1e9) if start_time else 0
                 end_ns = int(end_time.timestamp() * 1e9) if end_time else time.time_ns()
 
-                records = [
-                    r
-                    for r in records
-                    if start_ns <= r.event_timestamp_ns <= end_ns
-                ]
+                records = [r for r in records if start_ns <= r.event_timestamp_ns <= end_ns]
 
             self._metrics.records_read += len(records)
             self._metrics.last_read_timestamp = time.time_ns()
@@ -565,15 +561,27 @@ class MemoryAuditStorage(AuditStorageBackend):
             try:
                 # Get matching records
                 records = []
-                start_ns = int(request.start_datetime.timestamp() * 1e9) if request.start_datetime else 0
-                end_ns = int(request.end_datetime.timestamp() * 1e9) if request.end_datetime else time.time_ns()
+                start_ns = (
+                    int(request.start_datetime.timestamp() * 1e9) if request.start_datetime else 0
+                )
+                end_ns = (
+                    int(request.end_datetime.timestamp() * 1e9)
+                    if request.end_datetime
+                    else time.time_ns()
+                )
 
                 for record in self._records:
                     if start_ns <= record.event_timestamp_ns <= end_ns:
                         if request.event_types is None or record.event_type in request.event_types:
                             if request.order_ids is None or record.order_id in request.order_ids:
-                                if request.algorithm_ids is None or record.algorithm_id in request.algorithm_ids:
-                                    if request.instrument_isins is None or record.instrument_isin in request.instrument_isins:
+                                if (
+                                    request.algorithm_ids is None
+                                    or record.algorithm_id in request.algorithm_ids
+                                ):
+                                    if (
+                                        request.instrument_isins is None
+                                        or record.instrument_isin in request.instrument_isins
+                                    ):
                                         records.append(record)
 
                 # Verify chain if requested
@@ -670,7 +678,8 @@ class SQLiteAuditStorage(AuditStorageBackend):
             cursor = conn.cursor()
 
             # Create main audit trail table
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 CREATE TABLE IF NOT EXISTS {self._table_name} (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     record_id TEXT UNIQUE NOT NULL,
@@ -698,41 +707,56 @@ class SQLiteAuditStorage(AuditStorageBackend):
                     record_hash TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Create indexes for fast retrieval
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 CREATE INDEX IF NOT EXISTS idx_{self._table_name}_event_timestamp
                 ON {self._table_name}(event_timestamp_ns)
-            """)
-            cursor.execute(f"""
+            """
+            )
+            cursor.execute(
+                f"""
                 CREATE INDEX IF NOT EXISTS idx_{self._table_name}_order_id
                 ON {self._table_name}(order_id)
-            """)
-            cursor.execute(f"""
+            """
+            )
+            cursor.execute(
+                f"""
                 CREATE INDEX IF NOT EXISTS idx_{self._table_name}_algorithm_id
                 ON {self._table_name}(algorithm_id)
-            """)
-            cursor.execute(f"""
+            """
+            )
+            cursor.execute(
+                f"""
                 CREATE INDEX IF NOT EXISTS idx_{self._table_name}_instrument_isin
                 ON {self._table_name}(instrument_isin)
-            """)
-            cursor.execute(f"""
+            """
+            )
+            cursor.execute(
+                f"""
                 CREATE INDEX IF NOT EXISTS idx_{self._table_name}_event_type
                 ON {self._table_name}(event_type)
-            """)
-            cursor.execute(f"""
+            """
+            )
+            cursor.execute(
+                f"""
                 CREATE INDEX IF NOT EXISTS idx_{self._table_name}_firm_lei
                 ON {self._table_name}(firm_lei)
-            """)
+            """
+            )
 
             conn.commit()
 
             # Get last hash
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT record_hash FROM {self._table_name}
                 ORDER BY id DESC LIMIT 1
-            """)
+            """
+            )
             row = cursor.fetchone()
             self._last_hash = row["record_hash"] if row else None
 
@@ -938,7 +962,11 @@ class SQLiteAuditStorage(AuditStorageBackend):
             notional_value=Decimal(row["notional_value"]) if row["notional_value"] else None,
             details=json.loads(row["details"]) if row["details"] else {},
             sequence_number=row["sequence_number"] or 0,
-            priority=AuditRecordPriority(row["priority"]) if row["priority"] else AuditRecordPriority.NORMAL,
+            priority=(
+                AuditRecordPriority(row["priority"])
+                if row["priority"]
+                else AuditRecordPriority.NORMAL
+            ),
             status=AuditRecordStatus(row["status"]) if row["status"] else AuditRecordStatus.WRITTEN,
             previous_record_hash=row["previous_record_hash"],
             record_hash=row["record_hash"],
@@ -1155,9 +1183,7 @@ class SQLiteAuditStorage(AuditStorageBackend):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute(
-                f"SELECT * FROM {self._table_name} ORDER BY id DESC LIMIT 1"
-            )
+            cursor.execute(f"SELECT * FROM {self._table_name} ORDER BY id DESC LIMIT 1")
             row = cursor.fetchone()
             return self._row_to_record(row) if row else None
         except Exception as e:
@@ -1331,9 +1357,7 @@ class SQLiteAuditStorage(AuditStorageBackend):
                 # Verify chain if requested
                 chain_status = None
                 if request.include_chain_verification:
-                    chain_status = self.verify_chain(
-                        request.start_datetime, request.end_datetime
-                    )
+                    chain_status = self.verify_chain(request.start_datetime, request.end_datetime)
 
                 return AuditExportResult(
                     request_id=request.request_id,

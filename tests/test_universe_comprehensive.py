@@ -43,9 +43,7 @@ class TestThrottledGet:
 
         _throttled_get("http://example.com/api", params={"key": "value"})
         mock_get.assert_called_once_with(
-            "http://example.com/api",
-            params={"key": "value"},
-            timeout=20
+            "http://example.com/api", params={"key": "value"}, timeout=20
         )
 
     @patch("requests.get")
@@ -72,7 +70,7 @@ class TestThrottledGet:
         mock_get.side_effect = [
             Exception("Network error"),
             Exception("Network error"),
-            Mock(status_code=200)  # Success on third attempt
+            Mock(status_code=200),  # Success on third attempt
         ]
 
         # Should succeed after retries
@@ -289,8 +287,18 @@ class TestRunFunction:
         """Test run() filters by liquidity threshold."""
         exchange_info = {
             "symbols": [
-                {"symbol": "BTCUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
-                {"symbol": "LOWLIQ", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
+                {
+                    "symbol": "BTCUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
+                {
+                    "symbol": "LOWLIQ",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
             ]
         }
 
@@ -317,9 +325,24 @@ class TestRunFunction:
         """Test run() returns sorted symbols."""
         exchange_info = {
             "symbols": [
-                {"symbol": "ZZUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
-                {"symbol": "AAUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
-                {"symbol": "MMUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
+                {
+                    "symbol": "ZZUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
+                {
+                    "symbol": "AAUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
+                {
+                    "symbol": "MMUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
             ]
         }
 
@@ -424,10 +447,7 @@ class TestGetSymbolsFunction:
 
                 get_symbols(out=cache_path, liquidity_threshold=1000000.0)
 
-                mock_run.assert_called_once_with(
-                    cache_path,
-                    liquidity_threshold=1000000.0
-                )
+                mock_run.assert_called_once_with(cache_path, liquidity_threshold=1000000.0)
 
 
 class TestIntegration:
@@ -438,8 +458,18 @@ class TestIntegration:
         """Test complete workflow without liquidity filter."""
         exchange_info = {
             "symbols": [
-                {"symbol": "BTCUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
-                {"symbol": "ETHUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
+                {
+                    "symbol": "BTCUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
+                {
+                    "symbol": "ETHUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
             ]
         }
 
@@ -465,8 +495,18 @@ class TestIntegration:
         """Test complete workflow with liquidity filter."""
         exchange_info = {
             "symbols": [
-                {"symbol": "BTCUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
-                {"symbol": "LOWLIQ", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
+                {
+                    "symbol": "BTCUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
+                {
+                    "symbol": "LOWLIQ",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
             ]
         }
 
@@ -528,7 +568,12 @@ class TestEdgeCases:
         exchange_info = {
             "symbols": [
                 {"symbol": "BTCUSDT", "status": "TRADING"},  # Missing quoteAsset and permissions
-                {"symbol": "ETHUSDT", "status": "TRADING", "quoteAsset": "USDT", "permissions": ["SPOT"]},
+                {
+                    "symbol": "ETHUSDT",
+                    "status": "TRADING",
+                    "quoteAsset": "USDT",
+                    "permissions": ["SPOT"],
+                },
             ]
         }
 

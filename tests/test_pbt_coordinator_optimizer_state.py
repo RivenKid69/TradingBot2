@@ -16,6 +16,7 @@ import tempfile
 from typing import Dict, Any, Optional, Tuple
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -37,22 +38,21 @@ class SimpleModel(nn.Module):
     def __init__(self, input_dim: int = 10, hidden_dim: int = 64, output_dim: int = 1):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim)
+            nn.Linear(input_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, output_dim)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
 
-    def get_parameters(self, include_optimizer: bool = False,
-                      optimizer: Optional[torch.optim.Optimizer] = None) -> Dict[str, Any]:
+    def get_parameters(
+        self, include_optimizer: bool = False, optimizer: Optional[torch.optim.Optimizer] = None
+    ) -> Dict[str, Any]:
         """Get model parameters in PBT-compatible format."""
         params = {
-            'policy': self.state_dict(),
+            "policy": self.state_dict(),
         }
         if include_optimizer and optimizer is not None:
-            params['optimizer_state'] = optimizer.state_dict()
+            params["optimizer_state"] = optimizer.state_dict()
         return params
 
 
@@ -98,10 +98,12 @@ class TestPBTCoordinatorResetStrategy:
         """
         # Create coordinator
         coordinator = PBTTrainingCoordinator(pbt_config_reset, seed=42)
-        population = coordinator.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = coordinator.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create two agents
         model1 = SimpleModel()
@@ -164,18 +166,19 @@ class TestPBTCoordinatorResetStrategy:
         assert checkpoint_format == "v2_full_parameters"
 
         # CRITICAL: optimizer_state should be REMOVED with RESET strategy
-        assert 'optimizer_state' not in new_params, \
-            "RESET strategy should REMOVE optimizer_state from returned parameters"
+        assert (
+            "optimizer_state" not in new_params
+        ), "RESET strategy should REMOVE optimizer_state from returned parameters"
 
         # Load new model weights
-        model1.load_state_dict(new_params['policy'])
+        model1.load_state_dict(new_params["policy"])
 
         # RESET optimizer (correct pattern for RESET strategy)
-        new_lr = new_hp['learning_rate']
+        new_lr = new_hp["learning_rate"]
         optimizer1 = torch.optim.Adam(model1.parameters(), lr=new_lr)
 
         # Verify optimizer has fresh state
-        optimizer_state = optimizer1.state_dict()['state']
+        optimizer_state = optimizer1.state_dict()["state"]
         assert len(optimizer_state) == 0, "Fresh optimizer should have empty state"
 
         # Continue training - should work without issues
@@ -192,8 +195,9 @@ class TestPBTCoordinatorResetStrategy:
             losses_after_reset.append(loss.item())
 
         # Loss should decrease (no performance issues after reset)
-        assert losses_after_reset[-1] < losses_after_reset[0], \
-            "Loss should decrease after optimizer reset"
+        assert (
+            losses_after_reset[-1] < losses_after_reset[0]
+        ), "Loss should decrease after optimizer reset"
 
         print("[OK] RESET strategy integration test passed")
         print(f"     - Optimizer state correctly removed")
@@ -244,10 +248,12 @@ class TestPBTCoordinatorCopyStrategy:
         """
         # Create coordinator
         coordinator = PBTTrainingCoordinator(pbt_config_copy, seed=42)
-        population = coordinator.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = coordinator.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         # Create two agents
         model1 = SimpleModel()
@@ -272,7 +278,7 @@ class TestPBTCoordinatorCopyStrategy:
             optimizer2.step()
 
         # Capture agent 2's optimizer momentum before saving
-        agent2_momentum_before = optimizer2.state_dict()['state'][0]['exp_avg'].clone()
+        agent2_momentum_before = optimizer2.state_dict()["state"][0]["exp_avg"].clone()
 
         # Set performance
         member1, member2 = population[0], population[1]
@@ -306,19 +312,19 @@ class TestPBTCoordinatorCopyStrategy:
         assert checkpoint_format == "v2_full_parameters"
 
         # CRITICAL: optimizer_state should be PRESERVED with COPY strategy
-        assert 'optimizer_state' in new_params, \
-            "COPY strategy should PRESERVE optimizer_state in returned parameters"
+        assert (
+            "optimizer_state" in new_params
+        ), "COPY strategy should PRESERVE optimizer_state in returned parameters"
 
         # Load new model weights AND optimizer state
-        model1.load_state_dict(new_params['policy'])
-        optimizer1.load_state_dict(new_params['optimizer_state'])
+        model1.load_state_dict(new_params["policy"])
+        optimizer1.load_state_dict(new_params["optimizer_state"])
 
         # Verify optimizer momentum was transferred
-        agent1_momentum_after = optimizer1.state_dict()['state'][0]['exp_avg']
+        agent1_momentum_after = optimizer1.state_dict()["state"][0]["exp_avg"]
         momentum_diff = torch.norm(agent1_momentum_after - agent2_momentum_before).item()
 
-        assert momentum_diff < 1e-6, \
-            f"Momentum should be transferred, but diff={momentum_diff}"
+        assert momentum_diff < 1e-6, f"Momentum should be transferred, but diff={momentum_diff}"
 
         # Continue training - momentum should help
         x_test = torch.randn(32, 10)
@@ -334,8 +340,9 @@ class TestPBTCoordinatorCopyStrategy:
             losses_after_copy.append(loss.item())
 
         # Loss should decrease
-        assert losses_after_copy[-1] < losses_after_copy[0], \
-            "Loss should decrease after copying optimizer state"
+        assert (
+            losses_after_copy[-1] < losses_after_copy[0]
+        ), "Loss should decrease after copying optimizer state"
 
         print("[OK] COPY strategy integration test passed")
         print(f"     - Optimizer state correctly preserved")
@@ -379,10 +386,12 @@ class TestPBTCoordinatorBackwardCompatibility:
         Note: This will log warnings about using deprecated format.
         """
         coordinator = PBTTrainingCoordinator(pbt_config, seed=42)
-        population = coordinator.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = coordinator.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         model1 = SimpleModel()
         model2 = SimpleModel()
@@ -415,8 +424,9 @@ class TestPBTCoordinatorBackwardCompatibility:
         # Note: In current implementation, we need to check if model_parameters
         # was passed to update_performance, not model_state_dict
         # So this test verifies backward compatibility at API level
-        assert new_params is not None or checkpoint_format is not None, \
-            "Old API should still work (may log warnings)"
+        assert (
+            new_params is not None or checkpoint_format is not None
+        ), "Old API should still work (may log warnings)"
 
         print("[OK] Backward compatibility test passed")
         print("     - Old API (model_state_dict) still works")
@@ -427,10 +437,12 @@ class TestPBTCoordinatorBackwardCompatibility:
         Test that new API (model_parameters) is preferred and works correctly.
         """
         coordinator = PBTTrainingCoordinator(pbt_config, seed=42)
-        population = coordinator.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = coordinator.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         model1 = SimpleModel()
         optimizer1 = torch.optim.Adam(model1.parameters(), lr=1e-4)
@@ -469,9 +481,9 @@ class TestPBTCoordinatorBackwardCompatibility:
         # Should work with v2 format
         assert new_params is not None, "Exploit should occur"
         assert checkpoint_format == "v2_full_parameters"
-        assert 'policy' in new_params
+        assert "policy" in new_params
         # optimizer_state removed by RESET strategy
-        assert 'optimizer_state' not in new_params
+        assert "optimizer_state" not in new_params
 
         print("[OK] New API test passed")
         print("     - model_parameters API works correctly")
@@ -511,10 +523,12 @@ class TestPBTCoordinatorEdgeCases:
         )
 
         coordinator = PBTTrainingCoordinator(config, seed=42)
-        population = coordinator.initialize_population([
-            {"learning_rate": 1e-4},
-            {"learning_rate": 2e-4},
-        ])
+        population = coordinator.initialize_population(
+            [
+                {"learning_rate": 1e-4},
+                {"learning_rate": 2e-4},
+            ]
+        )
 
         model1 = SimpleModel()
         model2 = SimpleModel()
@@ -525,7 +539,7 @@ class TestPBTCoordinatorEdgeCases:
 
         # Save checkpoint WITHOUT optimizer_state (even though strategy is COPY)
         agent2_parameters = {
-            'policy': model2.state_dict(),
+            "policy": model2.state_dict(),
             # optimizer_state NOT included!
         }
 
@@ -542,13 +556,14 @@ class TestPBTCoordinatorEdgeCases:
             member1,
             performance=0.5,
             step=config.pbt.perturbation_interval,
-            model_parameters={'policy': model1.state_dict()},
+            model_parameters={"policy": model1.state_dict()},
         )
 
         # Should return parameters but without optimizer_state
         assert new_params is not None
-        assert 'optimizer_state' not in new_params, \
-            "If checkpoint lacks optimizer_state, it should not appear in returned params"
+        assert (
+            "optimizer_state" not in new_params
+        ), "If checkpoint lacks optimizer_state, it should not appear in returned params"
 
         print("[OK] Edge case test passed")
         print("     - COPY strategy without optimizer_state handled correctly")

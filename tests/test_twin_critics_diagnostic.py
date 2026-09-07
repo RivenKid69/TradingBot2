@@ -14,6 +14,7 @@
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
@@ -33,13 +34,13 @@ class TestTwinCriticsDiagnostic:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'huber_kappa': 1.0,
-                'use_twin_critics': True,  # Enable twin critics
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "huber_kappa": 1.0,
+                "use_twin_critics": True,  # Enable twin critics
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -104,18 +105,22 @@ class TestTwinCriticsDiagnostic:
             expected_min = torch.min(value_1, value_2)
 
         # КРИТИЧЕСКАЯ ПРОВЕРКА: predict_values должен возвращать min(Q1, Q2)
-        assert torch.allclose(predicted_values, expected_min, atol=1e-6), \
-            "predict_values НЕ использует min(Q1, Q2)! Это критическая ошибка!"
+        assert torch.allclose(
+            predicted_values, expected_min, atol=1e-6
+        ), "predict_values НЕ использует min(Q1, Q2)! Это критическая ошибка!"
 
         # Дополнительная проверка: убеждаемся, что критики дают разные значения
-        assert not torch.allclose(value_1, value_2, atol=1e-4), \
-            "Оба критика дают одинаковые значения - возможно, используют одни параметры!"
+        assert not torch.allclose(
+            value_1, value_2, atol=1e-4
+        ), "Оба критика дают одинаковые значения - возможно, используют одни параметры!"
 
         # Проверяем, что минимум действительно меньше или равен обоим значениям
-        assert torch.all(predicted_values <= value_1 + 1e-6), \
-            "Возвращенное значение больше первого критика!"
-        assert torch.all(predicted_values <= value_2 + 1e-6), \
-            "Возвращенное значение больше второго критика!"
+        assert torch.all(
+            predicted_values <= value_1 + 1e-6
+        ), "Возвращенное значение больше первого критика!"
+        assert torch.all(
+            predicted_values <= value_2 + 1e-6
+        ), "Возвращенное значение больше второго критика!"
 
         print(f"[OK] predict_values correctly uses min(Q1, Q2)")
         print(f"  Average value_1: {value_1.mean().item():.4f}")
@@ -135,12 +140,14 @@ class TestTwinCriticsDiagnostic:
         head2_weight = policy.quantile_head_2.linear.weight
 
         # Разные адреса памяти
-        assert head1_weight.data_ptr() != head2_weight.data_ptr(), \
-            "Критики используют одни и те же параметры!"
+        assert (
+            head1_weight.data_ptr() != head2_weight.data_ptr()
+        ), "Критики используют одни и те же параметры!"
 
         # Инициализация должна быть случайной, поэтому значения разные
-        assert not torch.allclose(head1_weight, head2_weight, atol=1e-4), \
-            "Параметры критиков идентичны - возможно, ошибка инициализации!"
+        assert not torch.allclose(
+            head1_weight, head2_weight, atol=1e-4
+        ), "Параметры критиков идентичны - возможно, ошибка инициализации!"
 
         print(f"[OK] Critics have independent parameters")
 
@@ -161,8 +168,9 @@ class TestTwinCriticsDiagnostic:
             quantiles_2 = policy._get_value_logits_2(latent_vf)
 
         # Выходы должны отличаться
-        assert not torch.allclose(quantiles_1, quantiles_2, atol=1e-4), \
-            "Оба критика дают идентичные выходы!"
+        assert not torch.allclose(
+            quantiles_1, quantiles_2, atol=1e-4
+        ), "Оба критика дают идентичные выходы!"
 
         # Вычисляем корреляцию между выходами
         flat_q1 = quantiles_1.flatten()
@@ -172,8 +180,9 @@ class TestTwinCriticsDiagnostic:
         print(f"[OK] Critics produce different outputs (correlation: {correlation.item():.4f})")
 
         # Корреляция не должна быть близка к 1 (полная корреляция)
-        assert correlation.abs() < 0.99, \
-            f"Слишком высокая корреляция между критиками: {correlation.item():.4f}"
+        assert (
+            correlation.abs() < 0.99
+        ), f"Слишком высокая корреляция между критиками: {correlation.item():.4f}"
 
     def test_min_is_computed_correctly(self, policy_with_twin_critics):
         """
@@ -196,14 +205,13 @@ class TestTwinCriticsDiagnostic:
             value_2 = quantiles_2.mean(dim=-1, keepdim=True)
             expected_min = torch.min(value_1, value_2)
 
-        assert torch.allclose(min_values, expected_min, atol=1e-6), \
-            "_get_min_twin_values вычисляет минимум неправильно!"
+        assert torch.allclose(
+            min_values, expected_min, atol=1e-6
+        ), "_get_min_twin_values вычисляет минимум неправильно!"
 
         # Проверяем, что минимум действительно минимален
-        assert torch.all(min_values <= value_1 + 1e-6), \
-            "Минимум больше первого значения!"
-        assert torch.all(min_values <= value_2 + 1e-6), \
-            "Минимум больше второго значения!"
+        assert torch.all(min_values <= value_1 + 1e-6), "Минимум больше первого значения!"
+        assert torch.all(min_values <= value_2 + 1e-6), "Минимум больше второго значения!"
 
         print(f"[OK] _get_min_twin_values correctly computes min(Q1, Q2)")
 
@@ -215,12 +223,12 @@ class TestTwinCriticsDiagnostic:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'use_twin_critics': False,  # Explicitly disable
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "use_twin_critics": False,  # Explicitly disable
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -259,8 +267,9 @@ class TestTwinCriticsDiagnostic:
             quantiles_1 = policy._get_value_logits(latent_vf)
             expected_value = quantiles_1.mean(dim=-1, keepdim=True)
 
-        assert torch.allclose(predicted_values, expected_value, atol=1e-6), \
-            "predict_values работает неправильно когда twin critics отключены!"
+        assert torch.allclose(
+            predicted_values, expected_value, atol=1e-6
+        ), "predict_values работает неправильно когда twin critics отключены!"
 
         print(f"[OK] predict_values works correctly with single critic")
 
@@ -321,8 +330,7 @@ class TestTwinCriticsDiagnostic:
         print(f"  Difference (avg - min): {(avg_mean - min_mean):.4f}")
 
         # min должен быть меньше или равен среднему
-        assert min_mean <= avg_mean + 1e-6, \
-            "Минимум больше среднего - логическая ошибка!"
+        assert min_mean <= avg_mean + 1e-6, "Минимум больше среднего - логическая ошибка!"
 
     def test_forward_method_caches_latent_vf(self, policy_with_twin_critics):
         """
@@ -344,12 +352,12 @@ class TestTwinCriticsDiagnostic:
             )
 
             # Проверяем, что latent_vf был закэширован
-            assert policy._last_latent_vf is not None, \
-                "latent_vf не закэширован после forward()!"
+            assert policy._last_latent_vf is not None, "latent_vf не закэширован после forward()!"
 
             # Проверяем, что закэшированные quantiles существуют
-            assert policy._last_value_quantiles is not None, \
-                "value_quantiles не закэшированы после forward()!"
+            assert (
+                policy._last_value_quantiles is not None
+            ), "value_quantiles не закэшированы после forward()!"
 
         print(f"[OK] forward() correctly caches latent_vf")
 
@@ -368,13 +376,13 @@ class TestTwinCriticsTrainingIntegration:
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
         arch_params = {
-            'hidden_dim': 32,
-            'critic': {
-                'distributional': True,
-                'num_quantiles': 16,
-                'huber_kappa': 1.0,
-                'use_twin_critics': True,
-            }
+            "hidden_dim": 32,
+            "critic": {
+                "distributional": True,
+                "num_quantiles": 16,
+                "huber_kappa": 1.0,
+                "use_twin_critics": True,
+            },
         }
 
         policy = CustomActorCriticPolicy(
@@ -405,19 +413,19 @@ class TestTwinCriticsTrainingIntegration:
         total_loss.backward()
 
         # КРИТИЧЕСКАЯ ПРОВЕРКА: Оба критика должны иметь градиенты
-        assert policy.quantile_head.linear.weight.grad is not None, \
-            "Первый критик не получил градиенты!"
-        assert policy.quantile_head_2.linear.weight.grad is not None, \
-            "Второй критик не получил градиенты!"
+        assert (
+            policy.quantile_head.linear.weight.grad is not None
+        ), "Первый критик не получил градиенты!"
+        assert (
+            policy.quantile_head_2.linear.weight.grad is not None
+        ), "Второй критик не получил градиенты!"
 
         # Градиенты должны быть ненулевыми
         grad1_norm = policy.quantile_head.linear.weight.grad.norm().item()
         grad2_norm = policy.quantile_head_2.linear.weight.grad.norm().item()
 
-        assert grad1_norm > 1e-6, \
-            "Градиенты первого критика равны нулю!"
-        assert grad2_norm > 1e-6, \
-            "Градиенты второго критика равны нулю!"
+        assert grad1_norm > 1e-6, "Градиенты первого критика равны нулю!"
+        assert grad2_norm > 1e-6, "Градиенты второго критика равны нулю!"
 
         print(f"[OK] Both critics receive gradients:")
         print(f"  Gradient norm Q1: {grad1_norm:.6f}")
@@ -433,6 +441,7 @@ def run_diagnostic():
 
     # Создаем test suite
     import sys
+
     sys.exit(pytest.main([__file__, "-v", "--tb=short", "-s"]))
 
 

@@ -39,7 +39,9 @@ def generate_synthetic_ohlcv(
     """Generate synthetic 4h OHLCV data for testing (changed from 1h to 4h timeframe)."""
     np.random.seed(hash(symbol) % (2**32))
 
-    timestamps = [start_ts + i * 14400 for i in range(num_bars)]  # Changed from 3600 (1h) to 14400 (4h)
+    timestamps = [
+        start_ts + i * 14400 for i in range(num_bars)
+    ]  # Changed from 3600 (1h) to 14400 (4h)
 
     # Generate price walk
     returns = np.random.normal(0, volatility, num_bars)
@@ -49,27 +51,29 @@ def generate_synthetic_ohlcv(
     data = []
     for i, (ts, close) in enumerate(zip(timestamps, prices)):
         # Add intrabar volatility
-        high = close * (1 + abs(np.random.normal(0, volatility/4)))
-        low = close * (1 - abs(np.random.normal(0, volatility/4)))
-        open_ = prices[i-1] if i > 0 else close
+        high = close * (1 + abs(np.random.normal(0, volatility / 4)))
+        low = close * (1 - abs(np.random.normal(0, volatility / 4)))
+        open_ = prices[i - 1] if i > 0 else close
 
         # Volume varies with volatility
         volume = np.random.lognormal(10, 1) * (1 + abs(returns[i]))
         quote_volume = volume * close
 
-        data.append({
-            "timestamp": ts,
-            "symbol": symbol,
-            "open": open_,
-            "high": max(open_, close, high),
-            "low": min(open_, close, low),
-            "close": close,
-            "volume": volume,
-            "quote_asset_volume": quote_volume,
-            "number_of_trades": int(np.random.poisson(1000)),
-            "taker_buy_base_asset_volume": volume * np.random.uniform(0.4, 0.6),
-            "taker_buy_quote_asset_volume": quote_volume * np.random.uniform(0.4, 0.6),
-        })
+        data.append(
+            {
+                "timestamp": ts,
+                "symbol": symbol,
+                "open": open_,
+                "high": max(open_, close, high),
+                "low": min(open_, close, low),
+                "close": close,
+                "volume": volume,
+                "quote_asset_volume": quote_volume,
+                "number_of_trades": int(np.random.poisson(1000)),
+                "taker_buy_base_asset_volume": volume * np.random.uniform(0.4, 0.6),
+                "taker_buy_quote_asset_volume": quote_volume * np.random.uniform(0.4, 0.6),
+            }
+        )
 
     return pd.DataFrame(data)
 
@@ -77,7 +81,9 @@ def generate_synthetic_ohlcv(
 def generate_fear_greed(start_ts: int, num_bars: int) -> pd.DataFrame:
     """Generate synthetic Fear & Greed index (4h bars, changed from 1h)."""
     np.random.seed(42)
-    timestamps = [start_ts + i * 14400 for i in range(num_bars)]  # Changed from 3600 (1h) to 14400 (4h)
+    timestamps = [
+        start_ts + i * 14400 for i in range(num_bars)
+    ]  # Changed from 3600 (1h) to 14400 (4h)
 
     # Generate mean-reverting fear/greed
     values = []
@@ -87,11 +93,13 @@ def generate_fear_greed(start_ts: int, num_bars: int) -> pd.DataFrame:
         current = np.clip(current, 0, 100)
         values.append(current)
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "fear_greed_value": values,
-        "fear_greed_value_norm": np.array(values) / 100.0,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "fear_greed_value": values,
+            "fear_greed_value_norm": np.array(values) / 100.0,
+        }
+    )
 
 
 def main():

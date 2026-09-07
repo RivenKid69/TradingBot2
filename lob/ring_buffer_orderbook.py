@@ -118,9 +118,7 @@ class AggregatedLevel:
         old_total = self.total_qty
         self.total_qty += qty
         if self.total_qty > 0:
-            self.weighted_price = (
-                (old_total * self.weighted_price + qty * price) / self.total_qty
-            )
+            self.weighted_price = (old_total * self.weighted_price + qty * price) / self.total_qty
 
         self.num_levels += 1
         self.num_orders += order_count
@@ -212,6 +210,7 @@ class SnapshotLevel:
 
     Used for test API compatibility.
     """
+
     price: Union[float, Decimal]
     quantity: Union[float, Decimal]
     order_count: int = 1

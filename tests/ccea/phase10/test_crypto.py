@@ -48,7 +48,7 @@ class TestSigningKey:
         key = SigningKey(
             key_id="test",
             private_key_bytes=b"x" * KEY_SIZE,
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30)
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         # Note: is_valid also checks if key bytes are correct format
         # For this test, we just check the expiration logic structure
@@ -57,7 +57,7 @@ class TestSigningKey:
         expired_key = SigningKey(
             key_id="test-expired",
             public_key_bytes=b"y" * KEY_SIZE,
-            expires_at=datetime.now(timezone.utc) - timedelta(days=1)
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),
         )
         assert not expired_key.is_valid
 
@@ -447,17 +447,10 @@ class TestUtilityFunctions:
             # Save a trusted key
             signer_temp = Ed25519Signer()
             key = signer_temp.generate_key(key_id="trusted-1")
-            signer_temp.save_key(
-                key,
-                trusted_dir / "trusted-1.pem",
-                include_private=False
-            )
+            signer_temp.save_key(key, trusted_dir / "trusted-1.pem", include_private=False)
 
             # Create signer with trusted keys
-            signer = create_signer(
-                trusted_keys_dir=trusted_dir,
-                signer_id="factory-signer"
-            )
+            signer = create_signer(trusted_keys_dir=trusted_dir, signer_id="factory-signer")
 
             assert signer.default_signer_id == "factory-signer"
             assert len(signer.get_trusted_keys()) == 1

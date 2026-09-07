@@ -58,16 +58,19 @@ class ExportStatus(Enum):
 
 class ExportError(Exception):
     """Base exception for export errors."""
+
     pass
 
 
 class ExportNotFoundError(ExportError):
     """Raised when an export request is not found."""
+
     pass
 
 
 class ExportInProgressError(ExportError):
     """Raised when an export is already in progress."""
+
     pass
 
 
@@ -216,6 +219,7 @@ class InMemoryExportRequestStorage:
 @dataclass
 class MockUser:
     """Mock user for testing."""
+
     user_id: str
     email: str
     name: str
@@ -225,6 +229,7 @@ class MockUser:
 @dataclass
 class MockStrategy:
     """Mock strategy for testing."""
+
     strategy_id: str
     name: str
     description: str
@@ -236,6 +241,7 @@ class MockStrategy:
 @dataclass
 class MockBacktest:
     """Mock backtest for testing."""
+
     backtest_id: str
     strategy_name: str
     start_date: datetime
@@ -247,6 +253,7 @@ class MockBacktest:
 @dataclass
 class MockExecution:
     """Mock execution for testing."""
+
     order_id: str
     symbol: str
     side: str
@@ -260,6 +267,7 @@ class MockExecution:
 @dataclass
 class MockSettings:
     """Mock settings for testing."""
+
     user_id: str
     default_broker: str
     risk_parameters: Dict[str, Any]
@@ -427,9 +435,7 @@ class GDPRExportService:
         self._request_storage.save(request)
 
         logger.info(
-            f"EXPORT_REQUEST_CREATED | "
-            f"request_id={request.request_id} | "
-            f"user_id={user_id}"
+            f"EXPORT_REQUEST_CREATED | " f"request_id={request.request_id} | " f"user_id={user_id}"
         )
 
         return request
@@ -466,19 +472,13 @@ class GDPRExportService:
             zip_bytes = self._create_zip(package)
 
             logger.info(
-                f"EXPORT_COMPLETED | "
-                f"user_id={user_id} | "
-                f"size_bytes={len(zip_bytes)}"
+                f"EXPORT_COMPLETED | " f"user_id={user_id} | " f"size_bytes={len(zip_bytes)}"
             )
 
             return zip_bytes
 
         except Exception as e:
-            logger.error(
-                f"EXPORT_FAILED | "
-                f"user_id={user_id} | "
-                f"error={str(e)}"
-            )
+            logger.error(f"EXPORT_FAILED | " f"user_id={user_id} | " f"error={str(e)}")
             raise ExportError(f"Failed to export data for user {user_id}: {str(e)}") from e
 
     def _export_account(self, user_id: str) -> Optional[Dict[str, Any]]:
@@ -496,8 +496,11 @@ class GDPRExportService:
             "user_id": getattr(user, "user_id", user_id),
             "email": getattr(user, "email", None),
             "name": getattr(user, "name", None),
-            "created_at": getattr(user, "created_at", datetime.now(timezone.utc)).isoformat()
-            if hasattr(user, "created_at") else None,
+            "created_at": (
+                getattr(user, "created_at", datetime.now(timezone.utc)).isoformat()
+                if hasattr(user, "created_at")
+                else None
+            ),
             # Explicitly excluded: password_hash, internal IDs
         }
 
@@ -515,8 +518,11 @@ class GDPRExportService:
                 "description": getattr(s, "description", None),
                 "parameters": getattr(s, "parameters", {}),
                 "code": getattr(s, "code", None),  # User's own code
-                "created_at": getattr(s, "created_at", datetime.now(timezone.utc)).isoformat()
-                if hasattr(s, "created_at") else None,
+                "created_at": (
+                    getattr(s, "created_at", datetime.now(timezone.utc)).isoformat()
+                    if hasattr(s, "created_at")
+                    else None
+                ),
             }
             for s in strategies
         ]
@@ -532,13 +538,22 @@ class GDPRExportService:
             {
                 "backtest_id": getattr(b, "backtest_id", None),
                 "strategy_name": getattr(b, "strategy_name", None),
-                "start_date": getattr(b, "start_date", datetime.now(timezone.utc)).isoformat()
-                if hasattr(b, "start_date") else None,
-                "end_date": getattr(b, "end_date", datetime.now(timezone.utc)).isoformat()
-                if hasattr(b, "end_date") else None,
+                "start_date": (
+                    getattr(b, "start_date", datetime.now(timezone.utc)).isoformat()
+                    if hasattr(b, "start_date")
+                    else None
+                ),
+                "end_date": (
+                    getattr(b, "end_date", datetime.now(timezone.utc)).isoformat()
+                    if hasattr(b, "end_date")
+                    else None
+                ),
                 "results": getattr(b, "results", {}),
-                "ran_at": getattr(b, "ran_at", datetime.now(timezone.utc)).isoformat()
-                if hasattr(b, "ran_at") else None,
+                "ran_at": (
+                    getattr(b, "ran_at", datetime.now(timezone.utc)).isoformat()
+                    if hasattr(b, "ran_at")
+                    else None
+                ),
             }
             for b in backtests
         ]
@@ -558,8 +573,11 @@ class GDPRExportService:
                 "quantity": getattr(e, "quantity", None),
                 "price": getattr(e, "price", None),
                 "broker": getattr(e, "broker", None),
-                "executed_at": getattr(e, "executed_at", datetime.now(timezone.utc)).isoformat()
-                if hasattr(e, "executed_at") else None,
+                "executed_at": (
+                    getattr(e, "executed_at", datetime.now(timezone.utc)).isoformat()
+                    if hasattr(e, "executed_at")
+                    else None
+                ),
                 "status": getattr(e, "status", None),
             }
             for e in executions
@@ -598,10 +616,16 @@ class GDPRExportService:
         return [
             {
                 "acknowledgment_id": getattr(a, "acknowledgment_id", None),
-                "disclaimer_type": getattr(a, "disclaimer_type", None).value
-                if hasattr(getattr(a, "disclaimer_type", None), "value") else None,
-                "acknowledged_at": getattr(a, "acknowledged_at", datetime.now(timezone.utc)).isoformat()
-                if hasattr(a, "acknowledged_at") else None,
+                "disclaimer_type": (
+                    getattr(a, "disclaimer_type", None).value
+                    if hasattr(getattr(a, "disclaimer_type", None), "value")
+                    else None
+                ),
+                "acknowledged_at": (
+                    getattr(a, "acknowledged_at", datetime.now(timezone.utc)).isoformat()
+                    if hasattr(a, "acknowledged_at")
+                    else None
+                ),
             }
             for a in acks
         ]
@@ -791,11 +815,13 @@ Platform: AI-Powered Quantitative Research Platform
         file_details = []
         with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zf:
             for info in zf.infolist():
-                file_details.append({
-                    "filename": info.filename,
-                    "size_bytes": info.file_size,
-                    "compressed_size_bytes": info.compress_size,
-                })
+                file_details.append(
+                    {
+                        "filename": info.filename,
+                        "size_bytes": info.file_size,
+                        "compressed_size_bytes": info.compress_size,
+                    }
+                )
 
         return {
             "user_id": user_id,

@@ -12,6 +12,7 @@ import pytest
 try:
     pd.DataFrame().to_parquet  # Check if method exists
     import pyarrow  # noqa: F401
+
     HAS_PARQUET = True
 except (ImportError, AttributeError):
     HAS_PARQUET = False
@@ -148,11 +149,13 @@ class TestPrepareDataframe:
 
     def test_prepare_dataframe_basic(self):
         """Test basic dataframe preparation."""
-        df = pd.DataFrame({
-            "high": [102.0, 103.0],
-            "low": [98.0, 97.0],
-            "close": [100.0, 101.0],
-        })
+        df = pd.DataFrame(
+            {
+                "high": [102.0, 103.0],
+                "low": [98.0, 97.0],
+                "close": [100.0, 101.0],
+            }
+        )
         result = _prepare_dataframe(df, symbol=None, timeframe=None)
 
         assert "mid" in result.columns
@@ -161,12 +164,14 @@ class TestPrepareDataframe:
 
     def test_prepare_dataframe_filters_by_symbol(self):
         """Test filters by symbol when provided."""
-        df = pd.DataFrame({
-            "symbol": ["BTCUSDT", "ETHUSDT", "BTCUSDT"],
-            "high": [102.0, 103.0, 104.0],
-            "low": [98.0, 97.0, 96.0],
-            "close": [100.0, 101.0, 102.0],
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": ["BTCUSDT", "ETHUSDT", "BTCUSDT"],
+                "high": [102.0, 103.0, 104.0],
+                "low": [98.0, 97.0, 96.0],
+                "close": [100.0, 101.0, 102.0],
+            }
+        )
         result = _prepare_dataframe(df, symbol="BTCUSDT", timeframe=None)
 
         assert len(result) == 2
@@ -174,11 +179,13 @@ class TestPrepareDataframe:
 
     def test_prepare_dataframe_computes_range_ratio(self):
         """Test computes range_ratio_bps correctly."""
-        df = pd.DataFrame({
-            "high": [110.0],
-            "low": [90.0],
-            "close": [100.0],
-        })
+        df = pd.DataFrame(
+            {
+                "high": [110.0],
+                "low": [90.0],
+                "close": [100.0],
+            }
+        )
         result = _prepare_dataframe(df, symbol=None, timeframe=None)
 
         # Range = 20, mid = 100, ratio = 0.2, bps = 2000
@@ -192,11 +199,13 @@ class TestPrepareDataframe:
 
     def test_prepare_dataframe_filters_invalid_prices(self):
         """Test filters rows with invalid prices."""
-        df = pd.DataFrame({
-            "high": [102.0, np.nan, 104.0],
-            "low": [98.0, 97.0, np.inf],
-            "close": [100.0, 101.0, 102.0],
-        })
+        df = pd.DataFrame(
+            {
+                "high": [102.0, np.nan, 104.0],
+                "low": [98.0, 97.0, np.inf],
+                "close": [100.0, 101.0, 102.0],
+            }
+        )
         result = _prepare_dataframe(df, symbol=None, timeframe=None)
 
         # Only first row should remain
@@ -404,11 +413,15 @@ class TestParseArgs:
 
     def test_parse_args_with_bounds(self):
         """Test parsing with explicit bounds."""
-        args = parse_args([
-            "data.csv",
-            "--min-spread-bps", "5.0",
-            "--max-spread-bps", "50.0",
-        ])
+        args = parse_args(
+            [
+                "data.csv",
+                "--min-spread-bps",
+                "5.0",
+                "--max-spread-bps",
+                "50.0",
+            ]
+        )
         assert args.min_spread_bps == 5.0
         assert args.max_spread_bps == 50.0
 
@@ -424,13 +437,15 @@ class TestMainFunction:
     def test_main_with_valid_data(self):
         """Test main() runs successfully with valid data."""
         # Create test data
-        data = pd.DataFrame({
-            "high": [105.0] * 100,
-            "low": [95.0] * 100,
-            "close": [100.0] * 100,
-            "bid": [99.0] * 100,
-            "ask": [101.0] * 100,
-        })
+        data = pd.DataFrame(
+            {
+                "high": [105.0] * 100,
+                "low": [95.0] * 100,
+                "close": [100.0] * 100,
+                "bid": [99.0] * 100,
+                "ask": [101.0] * 100,
+            }
+        )
 
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
             path = Path(f.name)
@@ -444,11 +459,13 @@ class TestMainFunction:
 
     def test_main_with_output_file(self):
         """Test main() writes output YAML."""
-        data = pd.DataFrame({
-            "high": [105.0] * 100,
-            "low": [95.0] * 100,
-            "close": [100.0] * 100,
-        })
+        data = pd.DataFrame(
+            {
+                "high": [105.0] * 100,
+                "low": [95.0] * 100,
+                "close": [100.0] * 100,
+            }
+        )
 
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as data_file:
             data_path = Path(data_file.name)
@@ -467,6 +484,7 @@ class TestMainFunction:
 
             # Verify YAML structure
             import yaml
+
             with out_path.open("r") as f:
                 config = yaml.safe_load(f)
 
@@ -485,11 +503,13 @@ class TestMainFunction:
 
     def test_main_with_invalid_percentiles(self):
         """Test main() raises error for invalid percentiles."""
-        data = pd.DataFrame({
-            "high": [105.0],
-            "low": [95.0],
-            "close": [100.0],
-        })
+        data = pd.DataFrame(
+            {
+                "high": [105.0],
+                "low": [95.0],
+                "close": [100.0],
+            }
+        )
 
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
             path = Path(f.name)
@@ -503,11 +523,13 @@ class TestMainFunction:
 
     def test_main_with_target_spread(self):
         """Test main() uses target spread when provided."""
-        data = pd.DataFrame({
-            "high": [105.0] * 50,
-            "low": [95.0] * 50,
-            "close": [100.0] * 50,
-        })
+        data = pd.DataFrame(
+            {
+                "high": [105.0] * 50,
+                "low": [95.0] * 50,
+                "close": [100.0] * 50,
+            }
+        )
 
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
             path = Path(f.name)
@@ -525,11 +547,13 @@ class TestEdgeCases:
 
     def test_prepare_dataframe_with_negative_range(self):
         """Test handles inverted high/low gracefully."""
-        df = pd.DataFrame({
-            "high": [90.0],  # Lower than low
-            "low": [110.0],
-            "close": [100.0],
-        })
+        df = pd.DataFrame(
+            {
+                "high": [90.0],  # Lower than low
+                "low": [110.0],
+                "close": [100.0],
+            }
+        )
         result = _prepare_dataframe(df, symbol=None, timeframe=None)
 
         # Should handle gracefully (abs value)

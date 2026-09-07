@@ -160,30 +160,38 @@ class TestTestScenario:
         )
 
         # Add steps
-        scenario.add_setup_step(ScenarioStep(
-            step_id="S1",
-            description="Setup",
-            action="Initialize system",
-            expected_result="System ready",
-        ))
-        scenario.add_execution_step(ScenarioStep(
-            step_id="E1",
-            description="Execute",
-            action="Trigger kill switch",
-            expected_result="Kill switch activated",
-        ))
-        scenario.add_verification_step(ScenarioStep(
-            step_id="V1",
-            description="Verify",
-            action="Check orders cancelled",
-            expected_result="All orders cancelled",
-        ))
-        scenario.add_teardown_step(ScenarioStep(
-            step_id="T1",
-            description="Teardown",
-            action="Reset system",
-            expected_result="System reset",
-        ))
+        scenario.add_setup_step(
+            ScenarioStep(
+                step_id="S1",
+                description="Setup",
+                action="Initialize system",
+                expected_result="System ready",
+            )
+        )
+        scenario.add_execution_step(
+            ScenarioStep(
+                step_id="E1",
+                description="Execute",
+                action="Trigger kill switch",
+                expected_result="Kill switch activated",
+            )
+        )
+        scenario.add_verification_step(
+            ScenarioStep(
+                step_id="V1",
+                description="Verify",
+                action="Check orders cancelled",
+                expected_result="All orders cancelled",
+            )
+        )
+        scenario.add_teardown_step(
+            ScenarioStep(
+                step_id="T1",
+                description="Teardown",
+                action="Reset system",
+                expected_result="System reset",
+            )
+        )
 
         return scenario
 
@@ -323,28 +331,36 @@ class TestTestScenario:
     def test_evaluate_all_passed(self):
         """Test evaluation when all steps pass."""
         scenario = TestScenario()
-        scenario.add_execution_step(ScenarioStep(
-            step_id="E1",
-            passed=True,
-        ))
-        scenario.add_verification_step(ScenarioStep(
-            step_id="V1",
-            passed=True,
-        ))
+        scenario.add_execution_step(
+            ScenarioStep(
+                step_id="E1",
+                passed=True,
+            )
+        )
+        scenario.add_verification_step(
+            ScenarioStep(
+                step_id="V1",
+                passed=True,
+            )
+        )
 
         assert scenario.evaluate() is True
 
     def test_evaluate_with_failure(self):
         """Test evaluation when a step fails."""
         scenario = TestScenario()
-        scenario.add_execution_step(ScenarioStep(
-            step_id="E1",
-            passed=True,
-        ))
-        scenario.add_verification_step(ScenarioStep(
-            step_id="V1",
-            passed=False,
-        ))
+        scenario.add_execution_step(
+            ScenarioStep(
+                step_id="E1",
+                passed=True,
+            )
+        )
+        scenario.add_verification_step(
+            ScenarioStep(
+                step_id="V1",
+                passed=False,
+            )
+        )
 
         assert scenario.evaluate() is False
 
@@ -441,16 +457,20 @@ class TestScenarioExecutor:
             name="Test Scenario",
             category=TestCategory.KILL_SWITCH,
         )
-        scenario.add_execution_step(ScenarioStep(
-            step_id="E1",
-            action="Test action",
-            expected_result="Expected",
-        ))
-        scenario.add_verification_step(ScenarioStep(
-            step_id="V1",
-            action="Verify",
-            expected_result="Verified",
-        ))
+        scenario.add_execution_step(
+            ScenarioStep(
+                step_id="E1",
+                action="Test action",
+                expected_result="Expected",
+            )
+        )
+        scenario.add_verification_step(
+            ScenarioStep(
+                step_id="V1",
+                action="Verify",
+                expected_result="Verified",
+            )
+        )
 
         result = executor.execute_scenario(scenario, "tester")
 
@@ -524,18 +544,16 @@ class TestStandardScenarios:
 
         for scenario in scenarios:
             # Each scenario should have at least execution steps
-            assert len(scenario.execution_steps) > 0, (
-                f"Scenario {scenario.name} has no execution steps"
-            )
+            assert (
+                len(scenario.execution_steps) > 0
+            ), f"Scenario {scenario.name} has no execution steps"
 
     def test_scenarios_have_pass_criteria(self):
         """Test that standard scenarios have pass criteria."""
         scenarios = get_all_standard_scenarios()
 
         for scenario in scenarios:
-            assert len(scenario.pass_criteria) > 0, (
-                f"Scenario {scenario.name} has no pass criteria"
-            )
+            assert len(scenario.pass_criteria) > 0, f"Scenario {scenario.name} has no pass criteria"
 
 
 # =============================================================================
@@ -589,30 +607,38 @@ class TestIntegration:
         )
 
         # 2. Add steps
-        scenario.add_setup_step(ScenarioStep(
-            step_id="S1",
-            description="Initialize test environment",
-            action="Start test mode",
-            expected_result="Test mode active",
-        ))
-        scenario.add_execution_step(ScenarioStep(
-            step_id="E1",
-            description="Trigger kill switch",
-            action="Call kill_switch.trigger()",
-            expected_result="Kill switch activated",
-        ))
-        scenario.add_verification_step(ScenarioStep(
-            step_id="V1",
-            description="Verify orders cancelled",
-            action="Check order status",
-            expected_result="All orders in CANCELLED state",
-        ))
-        scenario.add_teardown_step(ScenarioStep(
-            step_id="T1",
-            description="Reset system",
-            action="Deactivate test mode",
-            expected_result="System reset to normal",
-        ))
+        scenario.add_setup_step(
+            ScenarioStep(
+                step_id="S1",
+                description="Initialize test environment",
+                action="Start test mode",
+                expected_result="Test mode active",
+            )
+        )
+        scenario.add_execution_step(
+            ScenarioStep(
+                step_id="E1",
+                description="Trigger kill switch",
+                action="Call kill_switch.trigger()",
+                expected_result="Kill switch activated",
+            )
+        )
+        scenario.add_verification_step(
+            ScenarioStep(
+                step_id="V1",
+                description="Verify orders cancelled",
+                action="Check order status",
+                expected_result="All orders in CANCELLED state",
+            )
+        )
+        scenario.add_teardown_step(
+            ScenarioStep(
+                step_id="T1",
+                description="Reset system",
+                action="Deactivate test mode",
+                expected_result="System reset to normal",
+            )
+        )
 
         scenario.pass_criteria = [
             "Kill switch activates within 1 second",

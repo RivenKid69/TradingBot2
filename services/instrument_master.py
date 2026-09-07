@@ -76,9 +76,13 @@ def is_valid_isin(isin: str) -> bool:
     return isin_check_digit(s[:11]) == int(s[11])
 
 
-_CUSIP_ALPHABET = {**{str(i): i for i in range(10)},
-                   **{chr(ord("A") + i): 10 + i for i in range(26)},
-                   "*": 36, "@": 37, "#": 38}
+_CUSIP_ALPHABET = {
+    **{str(i): i for i in range(10)},
+    **{chr(ord("A") + i): 10 + i for i in range(26)},
+    "*": 36,
+    "@": 37,
+    "#": 38,
+}
 
 
 def cusip_check_digit(body8: str) -> int:
@@ -154,7 +158,7 @@ def is_valid_figi(figi: str) -> bool:
 class OCCOption:
     root: str
     expiry: date
-    option_type: str   # "C" | "P"
+    option_type: str  # "C" | "P"
     strike: float
 
     @property
@@ -195,19 +199,19 @@ class InstrumentRecord:
     figi: str
     ticker: str
     name: str = ""
-    asset_class: str = "equity"     # equity | crypto | fx | future | option | etf | index
+    asset_class: str = "equity"  # equity | crypto | fx | future | option | etf | index
     exchange: str = ""
     currency: str = "USD"
     cusip: Optional[str] = None
     isin: Optional[str] = None
     sedol: Optional[str] = None
     occ_symbol: Optional[str] = None
-    underlying: Optional[str] = None      # for options/futures
-    expiry: Optional[str] = None          # ISO date (options/futures)
+    underlying: Optional[str] = None  # for options/futures
+    expiry: Optional[str] = None  # ISO date (options/futures)
     strike: Optional[float] = None
-    option_type: Optional[str] = None     # C | P
+    option_type: Optional[str] = None  # C | P
     lot_size: float = 1.0
-    multiplier: float = 1.0               # contract multiplier (futures/options)
+    multiplier: float = 1.0  # contract multiplier (futures/options)
     listing_date: Optional[str] = None
     delisting_date: Optional[str] = None
     aliases: List[str] = field(default_factory=list)
@@ -237,7 +241,7 @@ class InstrumentMaster:
     def __init__(self, *, seed: bool = True, mapping_files: Optional[List[Path]] = None) -> None:
         self._lock = threading.RLock()
         self._by_figi: Dict[str, InstrumentRecord] = {}
-        self._idx_ticker: Dict[str, str] = {}      # upper ticker/alias -> figi
+        self._idx_ticker: Dict[str, str] = {}  # upper ticker/alias -> figi
         self._idx_isin: Dict[str, str] = {}
         self._idx_cusip: Dict[str, str] = {}
         self._idx_sedol: Dict[str, str] = {}
@@ -245,7 +249,7 @@ class InstrumentMaster:
         if seed:
             for rec in _seed_instruments():
                 self.add(rec)
-        for f in (mapping_files or []):
+        for f in mapping_files or []:
             try:
                 self.load_json(f)
             except Exception as exc:  # pragma: no cover
@@ -276,7 +280,13 @@ class InstrumentMaster:
         with self._lock:
             if s in self._by_figi:
                 return self._by_figi[s]
-            for idx in (self._idx_isin, self._idx_cusip, self._idx_sedol, self._idx_occ, self._idx_ticker):
+            for idx in (
+                self._idx_isin,
+                self._idx_cusip,
+                self._idx_sedol,
+                self._idx_occ,
+                self._idx_ticker,
+            ):
                 figi = idx.get(s)
                 if figi:
                     return self._by_figi.get(figi)
@@ -293,8 +303,16 @@ class InstrumentMaster:
         out: List[InstrumentRecord] = []
         with self._lock:
             for rec in self._by_figi.values():
-                hay = " ".join([rec.ticker, rec.name, rec.figi, rec.isin or "",
-                                rec.cusip or "", " ".join(rec.aliases)]).lower()
+                hay = " ".join(
+                    [
+                        rec.ticker,
+                        rec.name,
+                        rec.figi,
+                        rec.isin or "",
+                        rec.cusip or "",
+                        " ".join(rec.aliases),
+                    ]
+                ).lower()
                 if ql in hay:
                     out.append(rec)
                 if len(out) >= limit:
@@ -322,26 +340,48 @@ class InstrumentMaster:
         return n
 
     def to_json(self, path: Path) -> None:
-        Path(path).write_text(json.dumps([r.to_dict() for r in self.all()], indent=2),
-                              encoding="utf-8")
+        Path(path).write_text(
+            json.dumps([r.to_dict() for r in self.all()], indent=2), encoding="utf-8"
+        )
 
     # ---- option helper ----
-    def register_option(self, root: str, expiry: date, option_type: str, strike: float,
-                        *, figi: Optional[str] = None, currency: str = "USD",
-                        multiplier: float = 100.0) -> InstrumentRecord:
+    def register_option(
+        self,
+        root: str,
+        expiry: date,
+        option_type: str,
+        strike: float,
+        *,
+        figi: Optional[str] = None,
+        currency: str = "USD",
+        multiplier: float = 100.0,
+    ) -> InstrumentRecord:
         occ = build_occ_symbol(root, expiry, option_type, strike)
         rec = InstrumentRecord(
             figi=figi or f"OPT{occ[:9]}",  # synthetic FIGI-like key if none supplied
-            ticker=occ, name=f"{root} {expiry.isoformat()} {option_type} {strike}",
-            asset_class="option", currency=currency, occ_symbol=occ,
-            underlying=root.upper(), expiry=expiry.isoformat(), strike=float(strike),
-            option_type=option_type.upper(), multiplier=multiplier, source="occ",
+            ticker=occ,
+            name=f"{root} {expiry.isoformat()} {option_type} {strike}",
+            asset_class="option",
+            currency=currency,
+            occ_symbol=occ,
+            underlying=root.upper(),
+            expiry=expiry.isoformat(),
+            strike=float(strike),
+            option_type=option_type.upper(),
+            multiplier=multiplier,
+            source="occ",
         )
         return self.add(rec)
 
     # ---- optional OpenFIGI enrichment (network, offline-first) ----
-    def openfigi_lookup(self, value: str, id_type: str = "TICKER",
-                        *, api_key: Optional[str] = None, timeout: float = 5.0) -> Optional[InstrumentRecord]:
+    def openfigi_lookup(
+        self,
+        value: str,
+        id_type: str = "TICKER",
+        *,
+        api_key: Optional[str] = None,
+        timeout: float = 5.0,
+    ) -> Optional[InstrumentRecord]:
         """Resolve via the free OpenFIGI API and register the result. Best-effort;
         returns None on any network/format error (callers stay offline-safe)."""
         import urllib.request
@@ -350,8 +390,9 @@ class InstrumentMaster:
         headers = {"Content-Type": "application/json"}
         if api_key:
             headers["X-OPENFIGI-APIKEY"] = api_key
-        req = urllib.request.Request("https://api.openfigi.com/v3/mapping",
-                                     data=body, headers=headers, method="POST")
+        req = urllib.request.Request(
+            "https://api.openfigi.com/v3/mapping", data=body, headers=headers, method="POST"
+        )
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310
                 payload = json.loads(r.read().decode("utf-8"))
@@ -360,9 +401,12 @@ class InstrumentMaster:
                 return None
             d = data[0]
             rec = InstrumentRecord(
-                figi=d.get("figi", ""), ticker=d.get("ticker", value),
-                name=d.get("name", ""), asset_class=(d.get("securityType2") or "equity").lower(),
-                exchange=d.get("exchCode", ""), source="openfigi",
+                figi=d.get("figi", ""),
+                ticker=d.get("ticker", value),
+                name=d.get("name", ""),
+                asset_class=(d.get("securityType2") or "equity").lower(),
+                exchange=d.get("exchCode", ""),
+                source="openfigi",
             )
             if rec.figi:
                 return self.add(rec)
@@ -378,30 +422,125 @@ def _seed_instruments() -> List[InstrumentRecord]:
     # FIGIs below are real composite/share-class FIGIs for the common US names; the
     # crypto/FX/futures use vendor-convention synthetic keys (no official FIGI).
     return [
-        InstrumentRecord("BBG000B9XRY4", "AAPL", "Apple Inc", "equity", "XNAS", "USD",
-                         cusip="037833100", isin="US0378331005", aliases=["AAPL.US"]),
-        InstrumentRecord("BBG000BPH459", "MSFT", "Microsoft Corp", "equity", "XNAS", "USD",
-                         cusip="594918104", isin="US5949181045"),
-        InstrumentRecord("BBG000H4FYBenc"[:12], "XOM", "Exxon Mobil Corp", "equity", "XNYS", "USD",
-                         cusip="30231G102", isin="US30231G1022"),
-        InstrumentRecord("BBG000DMBXR2", "JPM", "JPMorgan Chase & Co", "equity", "XNYS", "USD",
-                         cusip="46625H100", isin="US46625H1005"),
-        InstrumentRecord("BBG000BDTBL9", "NVDA", "NVIDIA Corp", "equity", "XNAS", "USD",
-                         cusip="67066G104", isin="US67066G1040"),
-        InstrumentRecord("BBG000C2V3D6", "SPY", "SPDR S&P 500 ETF Trust", "etf", "ARCX", "USD",
-                         cusip="78462F103", isin="US78462F1030"),
-        InstrumentRecord("BBG000BDQ325"[:12], "GBPUSD", "British Pound / US Dollar", "fx", "FX", "USD",
-                         aliases=["GBP/USD", "GBP_USD"]),
-        InstrumentRecord("FXEURUSD0001", "EURUSD", "Euro / US Dollar", "fx", "FX", "USD",
-                         aliases=["EUR/USD", "EUR_USD"]),
-        InstrumentRecord("CRYBTCUSDT01", "BTCUSDT", "Bitcoin / Tether", "crypto", "BINANCE", "USDT",
-                         aliases=["BTC/USDT", "BTC-USD", "XBTUSDT"]),
-        InstrumentRecord("CRYETHUSDT01", "ETHUSDT", "Ethereum / Tether", "crypto", "BINANCE", "USDT",
-                         aliases=["ETH/USDT", "ETH-USD"]),
-        InstrumentRecord("FUTESCME0001", "ES", "E-mini S&P 500 Future", "future", "XCME", "USD",
-                         underlying="SPX", multiplier=50.0, aliases=["ES1!", "/ES"]),
-        InstrumentRecord("FUTNQCME0001", "NQ", "E-mini Nasdaq-100 Future", "future", "XCME", "USD",
-                         underlying="NDX", multiplier=20.0, aliases=["NQ1!", "/NQ"]),
+        InstrumentRecord(
+            "BBG000B9XRY4",
+            "AAPL",
+            "Apple Inc",
+            "equity",
+            "XNAS",
+            "USD",
+            cusip="037833100",
+            isin="US0378331005",
+            aliases=["AAPL.US"],
+        ),
+        InstrumentRecord(
+            "BBG000BPH459",
+            "MSFT",
+            "Microsoft Corp",
+            "equity",
+            "XNAS",
+            "USD",
+            cusip="594918104",
+            isin="US5949181045",
+        ),
+        InstrumentRecord(
+            "BBG000H4FYBenc"[:12],
+            "XOM",
+            "Exxon Mobil Corp",
+            "equity",
+            "XNYS",
+            "USD",
+            cusip="30231G102",
+            isin="US30231G1022",
+        ),
+        InstrumentRecord(
+            "BBG000DMBXR2",
+            "JPM",
+            "JPMorgan Chase & Co",
+            "equity",
+            "XNYS",
+            "USD",
+            cusip="46625H100",
+            isin="US46625H1005",
+        ),
+        InstrumentRecord(
+            "BBG000BDTBL9",
+            "NVDA",
+            "NVIDIA Corp",
+            "equity",
+            "XNAS",
+            "USD",
+            cusip="67066G104",
+            isin="US67066G1040",
+        ),
+        InstrumentRecord(
+            "BBG000C2V3D6",
+            "SPY",
+            "SPDR S&P 500 ETF Trust",
+            "etf",
+            "ARCX",
+            "USD",
+            cusip="78462F103",
+            isin="US78462F1030",
+        ),
+        InstrumentRecord(
+            "BBG000BDQ325"[:12],
+            "GBPUSD",
+            "British Pound / US Dollar",
+            "fx",
+            "FX",
+            "USD",
+            aliases=["GBP/USD", "GBP_USD"],
+        ),
+        InstrumentRecord(
+            "FXEURUSD0001",
+            "EURUSD",
+            "Euro / US Dollar",
+            "fx",
+            "FX",
+            "USD",
+            aliases=["EUR/USD", "EUR_USD"],
+        ),
+        InstrumentRecord(
+            "CRYBTCUSDT01",
+            "BTCUSDT",
+            "Bitcoin / Tether",
+            "crypto",
+            "BINANCE",
+            "USDT",
+            aliases=["BTC/USDT", "BTC-USD", "XBTUSDT"],
+        ),
+        InstrumentRecord(
+            "CRYETHUSDT01",
+            "ETHUSDT",
+            "Ethereum / Tether",
+            "crypto",
+            "BINANCE",
+            "USDT",
+            aliases=["ETH/USDT", "ETH-USD"],
+        ),
+        InstrumentRecord(
+            "FUTESCME0001",
+            "ES",
+            "E-mini S&P 500 Future",
+            "future",
+            "XCME",
+            "USD",
+            underlying="SPX",
+            multiplier=50.0,
+            aliases=["ES1!", "/ES"],
+        ),
+        InstrumentRecord(
+            "FUTNQCME0001",
+            "NQ",
+            "E-mini Nasdaq-100 Future",
+            "future",
+            "XCME",
+            "USD",
+            underlying="NDX",
+            multiplier=20.0,
+            aliases=["NQ1!", "/NQ"],
+        ),
     ]
 
 
@@ -420,8 +559,16 @@ def get_default_master() -> InstrumentMaster:
 
 
 __all__ = [
-    "InstrumentRecord", "InstrumentMaster", "OCCOption",
-    "is_valid_isin", "is_valid_cusip", "is_valid_sedol", "is_valid_figi",
-    "isin_check_digit", "cusip_check_digit",
-    "build_occ_symbol", "parse_occ_symbol", "get_default_master",
+    "InstrumentRecord",
+    "InstrumentMaster",
+    "OCCOption",
+    "is_valid_isin",
+    "is_valid_cusip",
+    "is_valid_sedol",
+    "is_valid_figi",
+    "isin_check_digit",
+    "cusip_check_digit",
+    "build_occ_symbol",
+    "parse_occ_symbol",
+    "get_default_master",
 ]

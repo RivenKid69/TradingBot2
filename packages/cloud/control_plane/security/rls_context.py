@@ -70,13 +70,12 @@ def rls_context(
         # Set workspace context
         connection.execute(
             text("SET app.current_workspace_id = :workspace_id"),
-            {"workspace_id": str(workspace_id)}
+            {"workspace_id": str(workspace_id)},
         )
 
         # Set admin flag
         connection.execute(
-            text("SET app.is_admin = :is_admin"),
-            {"is_admin": str(is_admin).lower()}
+            text("SET app.is_admin = :is_admin"), {"is_admin": str(is_admin).lower()}
         )
 
         logger.debug(f"RLS context set: workspace={workspace_id}, admin={is_admin}")
@@ -122,13 +121,12 @@ async def async_rls_context(
         # Set workspace context
         await session.execute(
             text("SET app.current_workspace_id = :workspace_id"),
-            {"workspace_id": str(workspace_id)}
+            {"workspace_id": str(workspace_id)},
         )
 
         # Set admin flag
         await session.execute(
-            text("SET app.is_admin = :is_admin"),
-            {"is_admin": str(is_admin).lower()}
+            text("SET app.is_admin = :is_admin"), {"is_admin": str(is_admin).lower()}
         )
 
         logger.debug(f"Async RLS context set: workspace={workspace_id}, admin={is_admin}")
@@ -228,11 +226,15 @@ async def verify_rls_context(session: AsyncSession) -> dict:
     Returns:
         Dict with current workspace_id and is_admin values
     """
-    result = await session.execute(text("""
+    result = await session.execute(
+        text(
+            """
         SELECT
             current_setting('app.current_workspace_id', true) as workspace_id,
             current_setting('app.is_admin', true) as is_admin
-    """))
+    """
+        )
+    )
     row = result.fetchone()
 
     return {
@@ -243,11 +245,15 @@ async def verify_rls_context(session: AsyncSession) -> dict:
 
 def verify_rls_context_sync(session: Session) -> dict:
     """Synchronous version of verify_rls_context."""
-    result = session.execute(text("""
+    result = session.execute(
+        text(
+            """
         SELECT
             current_setting('app.current_workspace_id', true) as workspace_id,
             current_setting('app.is_admin', true) as is_admin
-    """))
+    """
+        )
+    )
     row = result.fetchone()
 
     return {

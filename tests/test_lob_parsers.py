@@ -12,6 +12,7 @@ import io
 import struct
 import tempfile
 import pytest
+
 pytest.importorskip("sortedcontainers")
 
 from lob.parsers import (
@@ -182,7 +183,7 @@ class TestLOBSTERParser:
 34200.3,4,1001,50,1000000,1
 34200.4,3,1001,50,1000000,1"""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write(content)
             f.flush()
             filepath = f.name
@@ -196,12 +197,9 @@ class TestLOBSTERParser:
 
     def test_parse_file_max_messages(self):
         """Test max_messages limit."""
-        content = "\n".join([
-            f"34200.{i},1,{1000+i},100,1000000,1"
-            for i in range(100)
-        ])
+        content = "\n".join([f"34200.{i},1,{1000+i},100,1000000,1" for i in range(100)])
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write(content)
             f.flush()
             filepath = f.name
@@ -230,7 +228,7 @@ class TestLOBSTERParser:
         # Format: ask_price_1, ask_size_1, bid_price_1, bid_size_1, ...
         content = "1000100,100,1000000,200,1000200,150,999900,250"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write(content)
             f.flush()
             filepath = f.name
@@ -271,9 +269,9 @@ class TestITCHParser:
         data += struct.pack(">H", 0)  # Tracking number
         data += self._make_timestamp(1000000000)
         data += struct.pack(">Q", order_ref)
-        data += side.encode('ascii')
+        data += side.encode("ascii")
         data += struct.pack(">I", shares)
-        data += stock.ljust(8).encode('ascii')
+        data += stock.ljust(8).encode("ascii")
         data += struct.pack(">I", price)
         return data
 
@@ -442,10 +440,7 @@ class TestITCHParser:
 
     def test_parse_stream_max_messages(self):
         """Test max_messages limit in stream parsing."""
-        messages = [
-            self._make_add_order(1000 + i, "B", 100, "AAPL", 1500000)
-            for i in range(10)
-        ]
+        messages = [self._make_add_order(1000 + i, "B", 100, "AAPL", 1500000) for i in range(10)]
 
         stream_data = b""
         for msg in messages:
@@ -478,10 +473,10 @@ class TestParserIntegration:
 
         # Simulate message sequence
         messages = [
-            "34200.1,1,1001,100,1000000,1",   # Add bid
+            "34200.1,1,1001,100,1000000,1",  # Add bid
             "34200.2,1,1002,100,1000100,-1",  # Add ask
-            "34200.3,1,1003,50,999900,1",     # Add lower bid
-            "34200.4,4,1001,50,1000000,1",    # Execute 50 of bid
+            "34200.3,1,1003,50,999900,1",  # Add lower bid
+            "34200.4,4,1001,50,1000000,1",  # Execute 50 of bid
         ]
 
         for line in messages:

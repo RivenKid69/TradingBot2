@@ -37,16 +37,16 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class XSBacktestConfig:
-    rebalance_every: int = 1          # ребаланс каждые N дат сетки панели
-    cov_lookback: int = 60            # окно доходностей для риск-модели
-    min_cov_obs: int = 5              # минимум наблюдений для риск-модели
-    alpha_min_train: int = 1          # минимум тренировочных срезов для fit alpha
-    alpha_refit_every: int = 1        # переобучать alpha раз в N ребалансов (perf)
-    embargo: int = 0                  # purge: gap (в шагах сетки) перед ребалансом
-    cost_bps: float = 5.0             # линейные косты на оборот, bps
+    rebalance_every: int = 1  # ребаланс каждые N дат сетки панели
+    cov_lookback: int = 60  # окно доходностей для риск-модели
+    min_cov_obs: int = 5  # минимум наблюдений для риск-модели
+    alpha_min_train: int = 1  # минимум тренировочных срезов для fit alpha
+    alpha_refit_every: int = 1  # переобучать alpha раз в N ребалансов (perf)
+    embargo: int = 0  # purge: gap (в шагах сетки) перед ребалансом
+    cost_bps: float = 5.0  # линейные косты на оборот, bps
     price_col: str = "close"
     periods_per_year: float = 252.0
-    min_names: int = 2                # минимум имён для оптимизации
+    min_names: int = 2  # минимум имён для оптимизации
 
 
 class CrossSectionalBacktest:
@@ -103,7 +103,8 @@ class CrossSectionalBacktest:
         for k, t in enumerate(reb_dates):
             # --- universe (PIT) ---
             U = [
-                s for s in self.universe.constituents(t)
+                s
+                for s in self.universe.constituents(t)
                 if s in price_wide.columns and np.isfinite(price_wide.at[t, s])
             ]
             if len(U) < cfg.min_names:
@@ -135,8 +136,13 @@ class CrossSectionalBacktest:
             reb_count += 1
             do_fit = (not alpha_fitted) or (reb_count % max(1, cfg.alpha_refit_every) == 0)
             mu, fitted_now = self._alpha_mu(
-                signals_panel, fwd_grid, reb_dates, k, cs,
-                do_fit=do_fit, already_fitted=alpha_fitted,
+                signals_panel,
+                fwd_grid,
+                reb_dates,
+                k,
+                cs,
+                do_fit=do_fit,
+                already_fitted=alpha_fitted,
             )
             alpha_fitted = alpha_fitted or fitted_now
             mu = mu.replace([np.inf, -np.inf], np.nan).dropna()
@@ -188,11 +194,14 @@ class CrossSectionalBacktest:
         cfg = self.cfg
         # тренировочные ребалансы: target s→s_next реализован к (k - embargo)
         train_dates = [
-            reb_dates[j] for j in range(0, k)
+            reb_dates[j]
+            for j in range(0, k)
             if (j + 1) <= (k - cfg.embargo) and reb_dates[j] in fwd_grid
         ]
         if do_fit and len(train_dates) >= cfg.alpha_min_train:
-            sig_train = signals_panel[signals_panel.index.get_level_values(TS_LEVEL).isin(train_dates)]
+            sig_train = signals_panel[
+                signals_panel.index.get_level_values(TS_LEVEL).isin(train_dates)
+            ]
             fwd_train = self._stack_fwd(fwd_grid, train_dates)
             try:
                 self.alpha_model.fit(sig_train, fwd_train)
@@ -238,18 +247,24 @@ class CrossSectionalBacktest:
             returns = nav = turnover = costs = gross = net = empty
 
         if weights_hist:
-            weights = pd.DataFrame(
-                {ts: w for ts, w in weights_hist.items()}
-            ).T.sort_index()
+            weights = pd.DataFrame({ts: w for ts, w in weights_hist.items()}).T.sort_index()
             weights.index.name = "ts"
         else:
             weights = pd.DataFrame()
 
         metrics = compute_metrics(
-            returns, periods_per_year=self.cfg.periods_per_year, benchmark=benchmark)
+            returns, periods_per_year=self.cfg.periods_per_year, benchmark=benchmark
+        )
         return XSBacktestResult(
-            returns=returns, weights=weights, turnover=turnover, costs=costs,
-            gross=gross, net=net, nav=nav, metrics=metrics, benchmark=benchmark,
+            returns=returns,
+            weights=weights,
+            turnover=turnover,
+            costs=costs,
+            gross=gross,
+            net=net,
+            nav=nav,
+            metrics=metrics,
+            benchmark=benchmark,
             meta={"config": self.cfg.__dict__},
         )
 

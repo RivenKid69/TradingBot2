@@ -72,8 +72,10 @@ logger = logging.getLogger(__name__)
 # OANDA Order Types
 # =========================
 
+
 class OandaOrderType(str, Enum):
     """OANDA order types."""
+
     MARKET = "MARKET"
     LIMIT = "LIMIT"
     STOP = "STOP"
@@ -85,15 +87,17 @@ class OandaOrderType(str, Enum):
 
 class OandaTimeInForce(str, Enum):
     """OANDA time-in-force options."""
-    GTC = "GTC"        # Good Till Cancelled
-    GTD = "GTD"        # Good Till Date
-    GFD = "GFD"        # Good For Day
-    FOK = "FOK"        # Fill Or Kill
-    IOC = "IOC"        # Immediate Or Cancel
+
+    GTC = "GTC"  # Good Till Cancelled
+    GTD = "GTD"  # Good Till Date
+    GFD = "GFD"  # Good For Day
+    FOK = "FOK"  # Fill Or Kill
+    IOC = "IOC"  # Immediate Or Cancel
 
 
 class OandaOrderState(str, Enum):
     """OANDA order states."""
+
     PENDING = "PENDING"
     FILLED = "FILLED"
     TRIGGERED = "TRIGGERED"
@@ -105,6 +109,7 @@ class OandaOrderState(str, Enum):
 # Order Configuration
 # =========================
 
+
 @dataclass
 class OandaOrderConfig:
     """
@@ -113,6 +118,7 @@ class OandaOrderConfig:
     Includes forex-specific options like take profit,
     stop loss, and trailing stop.
     """
+
     take_profit_price: Optional[float] = None
     stop_loss_price: Optional[float] = None
     trailing_stop_distance: Optional[float] = None  # In pips
@@ -205,6 +211,7 @@ class OandaOrderExecutionAdapter(OrderExecutionAdapter):
         """Ensure HTTP session is initialized."""
         if self._session is None:
             import requests
+
             self._session = requests.Session()
             self._session.headers.update(self._get_headers())
         return self._session
@@ -271,7 +278,11 @@ class OandaOrderExecutionAdapter(OrderExecutionAdapter):
         """
         # Determine order type
         order_type = order.order_type.upper() if order.order_type else "MARKET"
-        oanda_type = OandaOrderType(order_type) if order_type in [e.value for e in OandaOrderType] else OandaOrderType.MARKET
+        oanda_type = (
+            OandaOrderType(order_type)
+            if order_type in [e.value for e in OandaOrderType]
+            else OandaOrderType.MARKET
+        )
 
         # Units: positive for buy, negative for sell
         is_buy = order.side == Side.BUY or str(order.side).upper() == "BUY"
@@ -457,7 +468,9 @@ class OandaOrderExecutionAdapter(OrderExecutionAdapter):
             qty=Decimal(str(abs(int(order_data.get("units", "0"))))),
             filled_qty=filled_qty,
             status=state,
-            fill_price=Decimal(str(order_data.get("price", "0"))) if order_data.get("price") else None,
+            fill_price=(
+                Decimal(str(order_data.get("price", "0"))) if order_data.get("price") else None
+            ),
         )
 
     def get_open_orders(
@@ -503,7 +516,9 @@ class OandaOrderExecutionAdapter(OrderExecutionAdapter):
                 side=side,
                 qty=Decimal(str(abs(units))),
                 order_type=order_data.get("type", "LIMIT"),
-                price=Decimal(str(order_data.get("price", "0"))) if order_data.get("price") else None,
+                price=(
+                    Decimal(str(order_data.get("price", "0"))) if order_data.get("price") else None
+                ),
                 client_order_id=order_data.get("clientExtensions", {}).get("id"),
             )
             orders.append(order)
@@ -648,14 +663,10 @@ class OandaOrderExecutionAdapter(OrderExecutionAdapter):
             modifications["order"]["price"] = str(price)
 
         if stop_loss is not None:
-            modifications["order"]["stopLossOnFill"] = {
-                "price": str(stop_loss)
-            }
+            modifications["order"]["stopLossOnFill"] = {"price": str(stop_loss)}
 
         if take_profit is not None:
-            modifications["order"]["takeProfitOnFill"] = {
-                "price": str(take_profit)
-            }
+            modifications["order"]["takeProfitOnFill"] = {"price": str(take_profit)}
 
         if not modifications["order"]:
             return False

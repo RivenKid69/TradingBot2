@@ -98,9 +98,15 @@ class VaultCLI:
 
         # Vault info
         print(_color("Vault:", Colors.CYAN))
-        print(f"  Path:       {self._vault._db_path if hasattr(self._vault, '_db_path') else 'N/A'}")
-        print(f"  Initialized: {_color('Yes', Colors.GREEN) if self._vault._initialized else _color('No', Colors.RED)}")
-        print(f"  Locked:     {_color('Yes', Colors.YELLOW) if self._vault._locked else _color('No', Colors.GREEN)}")
+        print(
+            f"  Path:       {self._vault._db_path if hasattr(self._vault, '_db_path') else 'N/A'}"
+        )
+        print(
+            f"  Initialized: {_color('Yes', Colors.GREEN) if self._vault._initialized else _color('No', Colors.RED)}"
+        )
+        print(
+            f"  Locked:     {_color('Yes', Colors.YELLOW) if self._vault._locked else _color('No', Colors.GREEN)}"
+        )
         print()
 
         # Credentials count
@@ -123,9 +129,15 @@ class VaultCLI:
             print(_color("Keychain:", Colors.CYAN))
             info = self._keychain.get_key_info()
             print(f"  Platform:   {info['platform']}")
-            print(f"  Available:  {_color('Yes', Colors.GREEN) if info['keychain_available'] else _color('No', Colors.YELLOW)}")
-            print(f"  Has Key:    {_color('Yes', Colors.GREEN) if info.get('keychain_has_key') else _color('No', Colors.YELLOW)}")
-            print(f"  File Backup: {_color('Yes', Colors.GREEN) if info['key_file_exists'] else _color('No', Colors.DIM)}")
+            print(
+                f"  Available:  {_color('Yes', Colors.GREEN) if info['keychain_available'] else _color('No', Colors.YELLOW)}"
+            )
+            print(
+                f"  Has Key:    {_color('Yes', Colors.GREEN) if info.get('keychain_has_key') else _color('No', Colors.YELLOW)}"
+            )
+            print(
+                f"  File Backup: {_color('Yes', Colors.GREEN) if info['key_file_exists'] else _color('No', Colors.DIM)}"
+            )
             print()
 
         return {

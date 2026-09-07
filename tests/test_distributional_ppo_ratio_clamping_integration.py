@@ -18,10 +18,13 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+
 torch = pytest.importorskip("torch")
 
 # Import minimal test setup
-from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import (
+    test_distributional_ppo_raw_outliers,
+)  # noqa: F401  # ensure RL stubs are installed
 
 from distributional_ppo import DistributionalPPO
 
@@ -36,9 +39,7 @@ def _create_minimal_env():
             self.observation_space = gym.spaces.Box(
                 low=-1.0, high=1.0, shape=(4,), dtype=np.float32
             )
-            self.action_space = gym.spaces.Box(
-                low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-            )
+            self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
             self._step_count = 0
 
         def reset(self, seed=None, options=None):
@@ -111,14 +112,11 @@ def test_ratio_values_stay_reasonable_without_clamp():
     ratio_mean = ratio.mean().item()
     ratio_std = ratio.std().item()
 
-    assert 0.9 < ratio_mean < 1.1, \
-        f"ratio_mean should be ≈1.0 (logs show 1.0), got {ratio_mean}"
-    assert ratio_std < 0.1, \
-        f"ratio_std should be small (logs show 0.02-0.04), got {ratio_std}"
+    assert 0.9 < ratio_mean < 1.1, f"ratio_mean should be ≈1.0 (logs show 1.0), got {ratio_mean}"
+    assert ratio_std < 0.1, f"ratio_std should be small (logs show 0.02-0.04), got {ratio_std}"
 
     # Verify all ratios are finite
-    assert torch.all(torch.isfinite(ratio)), \
-        "All ratios should be finite"
+    assert torch.all(torch.isfinite(ratio)), "All ratios should be finite"
 
 
 def test_extreme_log_prob_difference_handling():
@@ -139,15 +137,16 @@ def test_extreme_log_prob_difference_handling():
     log_ratio = log_prob - old_log_prob
 
     # Some log_ratio values may be large
-    large_mask = (log_ratio.abs() > 2.0)
+    large_mask = log_ratio.abs() > 2.0
     has_large = large_mask.any()
 
     # Compute ratio WITHOUT clamping (CORRECT)
     ratio = torch.exp(log_ratio)
 
     # Verify all finite (for reasonable values, exp() should not overflow)
-    assert torch.all(torch.isfinite(ratio)), \
-        "All ratios should be finite for reasonable log_ratio values"
+    assert torch.all(
+        torch.isfinite(ratio)
+    ), "All ratios should be finite for reasonable log_ratio values"
 
     # PPO clipping will handle extreme ratios in the loss function
     clip_range = 0.1
@@ -159,8 +158,7 @@ def test_extreme_log_prob_difference_handling():
     policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
 
     # Verify loss is finite
-    assert torch.isfinite(policy_loss_ppo), \
-        "PPO loss should be finite even with large ratio values"
+    assert torch.isfinite(policy_loss_ppo), "PPO loss should be finite even with large ratio values"
 
 
 def test_no_log_ratio_clamping_with_ppo_clip_interaction():
@@ -172,11 +170,13 @@ def test_no_log_ratio_clamping_with_ppo_clip_interaction():
 
     # Generate diverse log_ratio values
     torch.manual_seed(123)
-    log_ratio = torch.cat([
-        torch.randn(batch_size // 2) * 0.05,  # Normal values
-        torch.randn(batch_size // 4) * 2.0,   # Moderately large
-        torch.randn(batch_size // 4) * 5.0,   # Large values
-    ])
+    log_ratio = torch.cat(
+        [
+            torch.randn(batch_size // 2) * 0.05,  # Normal values
+            torch.randn(batch_size // 4) * 2.0,  # Moderately large
+            torch.randn(batch_size // 4) * 5.0,  # Large values
+        ]
+    )
 
     # Compute ratio WITHOUT clamping (CORRECT)
     ratio = torch.exp(log_ratio)
@@ -190,16 +190,18 @@ def test_no_log_ratio_clamping_with_ppo_clip_interaction():
     policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
 
     # Verify loss is finite and reasonable
-    assert torch.isfinite(policy_loss_ppo), \
-        f"PPO loss should be finite, got {policy_loss_ppo.item()}"
+    assert torch.isfinite(
+        policy_loss_ppo
+    ), f"PPO loss should be finite, got {policy_loss_ppo.item()}"
 
     # Compute clip fraction (how often ratio was clipped)
     ratio_clipped = (ratio.sub(1.0).abs() > clip_range).float().mean()
 
     # With large log_ratio values, we expect significant clipping
     # This is CORRECT - the PPO clipping mechanism is working as intended
-    assert 0.0 <= ratio_clipped <= 1.0, \
-        f"Clip fraction should be in [0, 1], got {ratio_clipped.item()}"
+    assert (
+        0.0 <= ratio_clipped <= 1.0
+    ), f"Clip fraction should be in [0, 1], got {ratio_clipped.item()}"
 
 
 def test_no_clamping_correct_ppo_implementation():
@@ -232,10 +234,8 @@ def test_no_clamping_correct_ppo_implementation():
     ratio_std = all_ratios_tensor.std().item()
 
     # Should match training log statistics
-    assert 0.95 < ratio_mean < 1.05, \
-        f"Mean ratio across batches should be ≈1.0, got {ratio_mean}"
-    assert ratio_std < 0.15, \
-        f"Ratio std should be small, got {ratio_std}"
+    assert 0.95 < ratio_mean < 1.05, f"Mean ratio across batches should be ≈1.0, got {ratio_mean}"
+    assert ratio_std < 0.15, f"Ratio std should be small, got {ratio_std}"
 
 
 def test_old_clamping_bug_is_fixed():
@@ -253,12 +253,14 @@ def test_old_clamping_bug_is_fixed():
     ratio_old = torch.exp(log_ratio_old)
 
     # NEW allows ratio = exp(15) ≈ 3.3M
-    assert ratio_new[0].item() > 3e6, \
-        f"New (correct) implementation allows exp(15), got {ratio_new[0].item()}"
+    assert (
+        ratio_new[0].item() > 3e6
+    ), f"New (correct) implementation allows exp(15), got {ratio_new[0].item()}"
 
     # OLD clamped to exp(10) ≈ 22k
-    assert ratio_old[0].item() < 23000, \
-        f"Old (buggy) implementation clamped to exp(10), got {ratio_old[0].item()}"
+    assert (
+        ratio_old[0].item() < 23000
+    ), f"Old (buggy) implementation clamped to exp(10), got {ratio_old[0].item()}"
 
     # The key insight: PPO clipping in the loss handles this, no need for pre-emptive clamping
     clip_range = 0.1
@@ -271,8 +273,9 @@ def test_old_clamping_bug_is_fixed():
 
     # The loss will select the clipped term (policy_loss_2)
     # This is CORRECT PPO behavior
-    assert torch.allclose(policy_loss_ppo, -advantage * 1.1, rtol=1e-5), \
-        "PPO loss should clip extreme ratio to 1+ε"
+    assert torch.allclose(
+        policy_loss_ppo, -advantage * 1.1, rtol=1e-5
+    ), "PPO loss should clip extreme ratio to 1+ε"
 
 
 def test_gradient_flow_without_clamping():
@@ -301,8 +304,7 @@ def test_gradient_flow_without_clamping():
 
     # Check gradients exist and are finite
     assert log_prob.grad is not None
-    assert torch.all(torch.isfinite(log_prob.grad)), \
-        "Gradients should be finite"
+    assert torch.all(torch.isfinite(log_prob.grad)), "Gradients should be finite"
 
     # For extreme values where PPO clips in the loss, gradients will be 0
     # This is CORRECT - it's the PPO clipping mechanism working as intended
@@ -318,28 +320,25 @@ def test_ratio_computation_consistency_across_devices():
     device = torch.device("cpu")
 
     log_ratio = torch.tensor(
-        [-15.0, -10.0, -5.0, 0.0, 5.0, 10.0, 15.0],
-        dtype=torch.float32,
-        device=device
+        [-15.0, -10.0, -5.0, 0.0, 5.0, 10.0, 15.0], dtype=torch.float32, device=device
     )
 
     # Compute ratio WITHOUT clamping
     ratio = torch.exp(log_ratio)
 
     # All should be finite
-    assert torch.all(torch.isfinite(ratio)), \
-        "All ratios should be finite"
+    assert torch.all(torch.isfinite(ratio)), "All ratios should be finite"
 
     # Verify correct exponential values
     expected = torch.tensor(
-        [math.exp(-15), math.exp(-10), math.exp(-5), 1.0,
-         math.exp(5), math.exp(10), math.exp(15)],
+        [math.exp(-15), math.exp(-10), math.exp(-5), 1.0, math.exp(5), math.exp(10), math.exp(15)],
         dtype=torch.float32,
-        device=device
+        device=device,
     )
 
-    assert torch.allclose(ratio, expected, rtol=1e-5), \
-        "Ratio computation should match expected exponential values"
+    assert torch.allclose(
+        ratio, expected, rtol=1e-5
+    ), "Ratio computation should match expected exponential values"
 
 
 def test_ratio_with_realistic_training_scenario():
@@ -364,10 +363,8 @@ def test_ratio_with_realistic_training_scenario():
     ratio_mean = ratio.mean().item()
     ratio_std = ratio.std().item()
 
-    assert 0.98 < ratio_mean < 1.02, \
-        f"ratio_mean should be ≈1.0, got {ratio_mean}"
-    assert ratio_std < 0.05, \
-        f"ratio_std should be small, got {ratio_std}"
+    assert 0.98 < ratio_mean < 1.02, f"ratio_mean should be ≈1.0, got {ratio_mean}"
+    assert ratio_std < 0.05, f"ratio_std should be small, got {ratio_std}"
 
     # Compute PPO loss
     advantages = torch.randn(batch_size, dtype=torch.float32)
@@ -376,13 +373,13 @@ def test_ratio_with_realistic_training_scenario():
     policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
 
     # Verify loss is reasonable
-    assert torch.isfinite(policy_loss_ppo), \
-        "PPO loss should be finite"
+    assert torch.isfinite(policy_loss_ppo), "PPO loss should be finite"
 
     # Clip fraction should be low for realistic scenarios
     clip_fraction = (ratio.sub(1.0).abs() > clip_range).float().mean().item()
-    assert clip_fraction < 0.2, \
-        f"Clip fraction should be low for realistic scenario, got {clip_fraction}"
+    assert (
+        clip_fraction < 0.2
+    ), f"Clip fraction should be low for realistic scenario, got {clip_fraction}"
 
 
 def test_alignment_with_stable_baselines3():
@@ -411,8 +408,7 @@ def test_alignment_with_stable_baselines3():
 
     # Manually compute expected values
     ratio_expected = torch.exp(torch.tensor([0.5, -0.1, 0.2]))
-    assert torch.allclose(ratio, ratio_expected, rtol=1e-5), \
-        "Ratio should match expected values"
+    assert torch.allclose(ratio, ratio_expected, rtol=1e-5), "Ratio should match expected values"
 
 
 if __name__ == "__main__":

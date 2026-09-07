@@ -21,15 +21,19 @@ def _read_any(path: str) -> pd.DataFrame:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Сравнить оффлайн и онлайн расчёт фич на одном датасете.")
+        description="Сравнить оффлайн и онлайн расчёт фич на одном датасете."
+    )
     ap.add_argument("--data", required=True, help="CSV или Parquet с колонками ts_ms,symbol,price")
-    ap.add_argument("--threshold", type=float, default=1e-9,
-                    help="Допустимое абсолютное отклонение")
+    ap.add_argument(
+        "--threshold", type=float, default=1e-9, help="Допустимое абсолютное отклонение"
+    )
     ap.add_argument("--price-col", default="price", help="Имя колонки цены")
-    ap.add_argument("--lookbacks", default="240,720,1440",
-                    help="Окна SMA/ret через запятую (в минутах для 4h: 240=4h, 720=12h, 1440=24h)")
-    ap.add_argument("--rsi-period", type=int, default=14,
-                    help="Период RSI (Wilder)")
+    ap.add_argument(
+        "--lookbacks",
+        default="240,720,1440",
+        help="Окна SMA/ret через запятую (в минутах для 4h: 240=4h, 720=12h, 1440=24h)",
+    )
+    ap.add_argument("--rsi-period", type=int, default=14, help="Период RSI (Wilder)")
     args = ap.parse_args()
 
     df = _read_any(args.data)

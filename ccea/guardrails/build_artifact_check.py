@@ -32,40 +32,44 @@ from typing import Final, FrozenSet, List, Optional, Set, Tuple
 # ============================================================================
 
 # Module names that must NOT appear in Cloud build
-PROHIBITED_MODULES: Final[FrozenSet[str]] = frozenset([
-    # Order execution modules
-    "order_execution",
-    "options_execution",
-    "futures_order_execution",
-    # Live execution providers
-    "execution_providers",
-    "execution_providers_l3",
-    "execution_providers_futures",
-    "execution_providers_futures_l3",
-    "execution_providers_cme",
-    "execution_providers_cme_l3",
-    # Live runtime
-    "service_signal_runner",
-    "script_live",
-    "script_futures_live",
-    # Private trading
-    "binance_spot_private",
-    # Agent-only packages
-    "packages/agent/vault",
-    "packages/agent/execution",
-    "packages/agent/policy",
-])
+PROHIBITED_MODULES: Final[FrozenSet[str]] = frozenset(
+    [
+        # Order execution modules
+        "order_execution",
+        "options_execution",
+        "futures_order_execution",
+        # Live execution providers
+        "execution_providers",
+        "execution_providers_l3",
+        "execution_providers_futures",
+        "execution_providers_futures_l3",
+        "execution_providers_cme",
+        "execution_providers_cme_l3",
+        # Live runtime
+        "service_signal_runner",
+        "script_live",
+        "script_futures_live",
+        # Private trading
+        "binance_spot_private",
+        # Agent-only packages
+        "packages/agent/vault",
+        "packages/agent/execution",
+        "packages/agent/policy",
+    ]
+)
 
 # File patterns that indicate trading/execution code
-PROHIBITED_FILE_PATTERNS: Final[FrozenSet[str]] = frozenset([
-    "*order_execution*",
-    "*options_execution*",
-    "*_private*",
-    "*live_loop*",
-    "*broker_connector*",
-    "*vault/local*",
-    "*vault/credential*",
-])
+PROHIBITED_FILE_PATTERNS: Final[FrozenSet[str]] = frozenset(
+    [
+        "*order_execution*",
+        "*options_execution*",
+        "*_private*",
+        "*live_loop*",
+        "*broker_connector*",
+        "*vault/local*",
+        "*vault/credential*",
+    ]
+)
 
 # Code patterns that must not appear in Cloud
 PROHIBITED_CODE_PATTERNS: Final[List[Tuple[str, str]]] = [
@@ -83,26 +87,30 @@ PROHIBITED_CODE_PATTERNS: Final[List[Tuple[str, str]]] = [
 ]
 
 # Imports that indicate trading capability
-PROHIBITED_IMPORTS: Final[FrozenSet[str]] = frozenset([
-    "packages.agent.vault",
-    "packages.agent.execution",
-    "packages.agent.policy.firewall",
-    "adapters.alpaca.order_execution",
-    "adapters.binance.futures_order_execution",
-    "adapters.oanda.order_execution",
-    "adapters.ib.order_execution",
-    "execution_providers",
-    "service_signal_runner",
-])
+PROHIBITED_IMPORTS: Final[FrozenSet[str]] = frozenset(
+    [
+        "packages.agent.vault",
+        "packages.agent.execution",
+        "packages.agent.policy.firewall",
+        "adapters.alpaca.order_execution",
+        "adapters.binance.futures_order_execution",
+        "adapters.oanda.order_execution",
+        "adapters.ib.order_execution",
+        "execution_providers",
+        "service_signal_runner",
+    ]
+)
 
 
 # ============================================================================
 # Data Classes
 # ============================================================================
 
+
 @dataclass
 class ArtifactViolation:
     """Represents a violation found in build artifact."""
+
     file_path: str
     violation_type: str
     description: str
@@ -123,6 +131,7 @@ class ArtifactViolation:
 @dataclass
 class ArtifactCheckResult:
     """Result of artifact check."""
+
     violations: List[ArtifactViolation] = field(default_factory=list)
     files_checked: int = 0
     passed: bool = True
@@ -136,6 +145,7 @@ class ArtifactCheckResult:
 # ============================================================================
 # Artifact Scanning
 # ============================================================================
+
 
 def check_file_name(file_path: str) -> List[ArtifactViolation]:
     """
@@ -152,11 +162,13 @@ def check_file_name(file_path: str) -> List[ArtifactViolation]:
 
     for prohibited in PROHIBITED_MODULES:
         if prohibited in file_path:
-            violations.append(ArtifactViolation(
-                file_path=file_path,
-                violation_type="prohibited_module",
-                description=f"file path contains prohibited module '{prohibited}'",
-            ))
+            violations.append(
+                ArtifactViolation(
+                    file_path=file_path,
+                    violation_type="prohibited_module",
+                    description=f"file path contains prohibited module '{prohibited}'",
+                )
+            )
             break
 
     return violations
@@ -180,13 +192,15 @@ def check_file_content(file_path: str, content: str) -> List[ArtifactViolation]:
     for pattern, description in PROHIBITED_CODE_PATTERNS:
         for i, line in enumerate(lines, 1):
             if re.search(pattern, line):
-                violations.append(ArtifactViolation(
-                    file_path=file_path,
-                    violation_type="prohibited_code",
-                    description=description,
-                    line_number=i,
-                    code_snippet=line.strip(),
-                ))
+                violations.append(
+                    ArtifactViolation(
+                        file_path=file_path,
+                        violation_type="prohibited_code",
+                        description=description,
+                        line_number=i,
+                        code_snippet=line.strip(),
+                    )
+                )
 
     return violations
 
@@ -213,32 +227,38 @@ def check_imports(file_path: str, content: str) -> List[ArtifactViolation]:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 if alias.name in PROHIBITED_IMPORTS:
-                    violations.append(ArtifactViolation(
-                        file_path=file_path,
-                        violation_type="prohibited_import",
-                        description=f"imports prohibited module '{alias.name}'",
-                        line_number=node.lineno,
-                    ))
+                    violations.append(
+                        ArtifactViolation(
+                            file_path=file_path,
+                            violation_type="prohibited_import",
+                            description=f"imports prohibited module '{alias.name}'",
+                            line_number=node.lineno,
+                        )
+                    )
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 full_module = node.module
                 if full_module in PROHIBITED_IMPORTS:
-                    violations.append(ArtifactViolation(
-                        file_path=file_path,
-                        violation_type="prohibited_import",
-                        description=f"imports from prohibited module '{full_module}'",
-                        line_number=node.lineno,
-                    ))
+                    violations.append(
+                        ArtifactViolation(
+                            file_path=file_path,
+                            violation_type="prohibited_import",
+                            description=f"imports from prohibited module '{full_module}'",
+                            line_number=node.lineno,
+                        )
+                    )
                 # Check specific imports
                 for alias in node.names:
                     full_import = f"{full_module}.{alias.name}"
                     if full_import in PROHIBITED_IMPORTS:
-                        violations.append(ArtifactViolation(
-                            file_path=file_path,
-                            violation_type="prohibited_import",
-                            description=f"imports '{alias.name}' from prohibited module",
-                            line_number=node.lineno,
-                        ))
+                        violations.append(
+                            ArtifactViolation(
+                                file_path=file_path,
+                                violation_type="prohibited_import",
+                                description=f"imports '{alias.name}' from prohibited module",
+                                line_number=node.lineno,
+                            )
+                        )
 
     return violations
 
@@ -256,11 +276,13 @@ def scan_wheel_artifact(wheel_path: Path) -> ArtifactCheckResult:
     result = ArtifactCheckResult(artifact_path=str(wheel_path))
 
     if not wheel_path.exists():
-        result.add_violation(ArtifactViolation(
-            file_path=str(wheel_path),
-            violation_type="not_found",
-            description="Artifact file not found",
-        ))
+        result.add_violation(
+            ArtifactViolation(
+                file_path=str(wheel_path),
+                violation_type="not_found",
+                description="Artifact file not found",
+            )
+        )
         return result
 
     try:
@@ -291,11 +313,13 @@ def scan_wheel_artifact(wheel_path: Path) -> ArtifactCheckResult:
                         pass  # Skip binary files
 
     except zipfile.BadZipFile:
-        result.add_violation(ArtifactViolation(
-            file_path=str(wheel_path),
-            violation_type="invalid_artifact",
-            description="Invalid wheel file format",
-        ))
+        result.add_violation(
+            ArtifactViolation(
+                file_path=str(wheel_path),
+                violation_type="invalid_artifact",
+                description="Invalid wheel file format",
+            )
+        )
 
     return result
 
@@ -313,11 +337,13 @@ def scan_directory(directory: Path) -> ArtifactCheckResult:
     result = ArtifactCheckResult(artifact_path=str(directory))
 
     if not directory.exists():
-        result.add_violation(ArtifactViolation(
-            file_path=str(directory),
-            violation_type="not_found",
-            description="Directory not found",
-        ))
+        result.add_violation(
+            ArtifactViolation(
+                file_path=str(directory),
+                violation_type="not_found",
+                description="Directory not found",
+            )
+        )
         return result
 
     # Find all Python files
@@ -372,11 +398,13 @@ def verify_cloud_artifact(
         result = scan_directory(artifact_path)
     else:
         result = ArtifactCheckResult(artifact_path=str(artifact_path))
-        result.add_violation(ArtifactViolation(
-            file_path=str(artifact_path),
-            violation_type="unsupported",
-            description="Unsupported artifact type (must be .whl or directory)",
-        ))
+        result.add_violation(
+            ArtifactViolation(
+                file_path=str(artifact_path),
+                violation_type="unsupported",
+                description="Unsupported artifact type (must be .whl or directory)",
+            )
+        )
 
     return result
 
@@ -384,6 +412,7 @@ def verify_cloud_artifact(
 # ============================================================================
 # Pre-Build Verification
 # ============================================================================
+
 
 def verify_cloud_source(
     source_directory: Path,
@@ -422,6 +451,7 @@ def verify_cloud_source(
 # Manifest Verification
 # ============================================================================
 
+
 def verify_cloud_manifest(manifest: dict) -> ArtifactCheckResult:
     """
     Verify a Cloud build manifest.
@@ -442,11 +472,13 @@ def verify_cloud_manifest(manifest: dict) -> ArtifactCheckResult:
     for module in modules:
         for prohibited in PROHIBITED_MODULES:
             if prohibited in module:
-                result.add_violation(ArtifactViolation(
-                    file_path="manifest",
-                    violation_type="prohibited_module",
-                    description=f"manifest includes prohibited module '{module}'",
-                ))
+                result.add_violation(
+                    ArtifactViolation(
+                        file_path="manifest",
+                        violation_type="prohibited_module",
+                        description=f"manifest includes prohibited module '{module}'",
+                    )
+                )
 
     # Check entry points
     entry_points = manifest.get("entry_points", {})
@@ -454,11 +486,13 @@ def verify_cloud_manifest(manifest: dict) -> ArtifactCheckResult:
         for name, target in points.items():
             for prohibited in PROHIBITED_IMPORTS:
                 if prohibited in target:
-                    result.add_violation(ArtifactViolation(
-                        file_path="manifest",
-                        violation_type="prohibited_entry_point",
-                        description=f"entry point '{name}' references prohibited module",
-                    ))
+                    result.add_violation(
+                        ArtifactViolation(
+                            file_path="manifest",
+                            violation_type="prohibited_entry_point",
+                            description=f"entry point '{name}' references prohibited module",
+                        )
+                    )
 
     # Check dependencies
     dependencies = manifest.get("dependencies", [])
@@ -466,11 +500,13 @@ def verify_cloud_manifest(manifest: dict) -> ArtifactCheckResult:
     for dep in dependencies:
         dep_name = dep.split(">=")[0].split("==")[0].split("<")[0].strip()
         if dep_name in prohibited_deps:
-            result.add_violation(ArtifactViolation(
-                file_path="manifest",
-                violation_type="prohibited_dependency",
-                description=f"manifest includes prohibited dependency '{dep_name}'",
-            ))
+            result.add_violation(
+                ArtifactViolation(
+                    file_path="manifest",
+                    violation_type="prohibited_dependency",
+                    description=f"manifest includes prohibited dependency '{dep_name}'",
+                )
+            )
 
     return result
 
@@ -479,14 +515,13 @@ def verify_cloud_manifest(manifest: dict) -> ArtifactCheckResult:
 # CLI Interface
 # ============================================================================
 
+
 def main() -> int:
     """CLI entry point."""
     import argparse
     import json
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Build Artifact Check"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Build Artifact Check")
     parser.add_argument(
         "--artifact",
         type=Path,

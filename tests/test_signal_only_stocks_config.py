@@ -96,21 +96,19 @@ class TestConfigFileExistence:
 
     def test_signal_only_stocks_config_exists(self, signal_only_stocks_config_path: Path):
         """Test that signal-only stocks config file exists."""
-        assert signal_only_stocks_config_path.exists(), (
-            f"Config file not found: {signal_only_stocks_config_path}"
-        )
+        assert (
+            signal_only_stocks_config_path.exists()
+        ), f"Config file not found: {signal_only_stocks_config_path}"
 
     def test_signal_only_crypto_config_exists(self, signal_only_crypto_config_path: Path):
         """Test that signal-only crypto config file exists."""
-        assert signal_only_crypto_config_path.exists(), (
-            f"Config file not found: {signal_only_crypto_config_path}"
-        )
+        assert (
+            signal_only_crypto_config_path.exists()
+        ), f"Config file not found: {signal_only_crypto_config_path}"
 
     def test_stocks_config_exists(self, stocks_config_path: Path):
         """Test that regular stocks config file exists."""
-        assert stocks_config_path.exists(), (
-            f"Config file not found: {stocks_config_path}"
-        )
+        assert stocks_config_path.exists(), f"Config file not found: {stocks_config_path}"
 
 
 # =============================================================================
@@ -195,9 +193,7 @@ class TestSignalOnlyStocksConfig:
         spread = slippage.get("default_spread_bps", 5.0)
         assert spread <= 2.0  # Crypto typically 2-5 bps
 
-    def test_turnover_penalty_lower_than_crypto(
-        self, signal_only_stocks_config: Dict[str, Any]
-    ):
+    def test_turnover_penalty_lower_than_crypto(self, signal_only_stocks_config: Dict[str, Any]):
         """Test turnover penalty is lower (commission-free trading)."""
         model = signal_only_stocks_config.get("model", {})
         params = model.get("params", {})
@@ -285,14 +281,10 @@ class TestConfigConsistency:
     ):
         """Test both configs have same gamma for reward shaping consistency."""
         stocks_gamma = (
-            signal_only_stocks_config.get("model", {})
-            .get("params", {})
-            .get("gamma", 0.0)
+            signal_only_stocks_config.get("model", {}).get("params", {}).get("gamma", 0.0)
         )
         crypto_gamma = (
-            signal_only_crypto_config.get("model", {})
-            .get("params", {})
-            .get("gamma", 0.0)
+            signal_only_crypto_config.get("model", {}).get("params", {}).get("gamma", 0.0)
         )
         assert stocks_gamma == 0.99
         assert crypto_gamma == 0.99
@@ -304,14 +296,10 @@ class TestConfigConsistency:
     ):
         """Test both configs have long_only action space."""
         stocks_long_only = (
-            signal_only_stocks_config.get("algo", {})
-            .get("actions", {})
-            .get("long_only", False)
+            signal_only_stocks_config.get("algo", {}).get("actions", {}).get("long_only", False)
         )
         crypto_long_only = (
-            signal_only_crypto_config.get("algo", {})
-            .get("actions", {})
-            .get("long_only", False)
+            signal_only_crypto_config.get("algo", {}).get("actions", {}).get("long_only", False)
         )
         assert stocks_long_only is True
         assert crypto_long_only is True
@@ -386,15 +374,11 @@ class TestUniverseFiles:
 
     def test_crypto_symbols_file_exists(self, crypto_symbols_path: Path):
         """Test crypto symbols file exists."""
-        assert crypto_symbols_path.exists(), (
-            f"Crypto symbols file not found: {crypto_symbols_path}"
-        )
+        assert crypto_symbols_path.exists(), f"Crypto symbols file not found: {crypto_symbols_path}"
 
     def test_alpaca_symbols_file_exists(self, alpaca_symbols_path: Path):
         """Test Alpaca symbols file exists."""
-        assert alpaca_symbols_path.exists(), (
-            f"Alpaca symbols file not found: {alpaca_symbols_path}"
-        )
+        assert alpaca_symbols_path.exists(), f"Alpaca symbols file not found: {alpaca_symbols_path}"
 
     def test_crypto_symbols_is_valid_json(self, crypto_symbols_path: Path):
         """Test crypto symbols file is valid JSON."""
@@ -487,21 +471,15 @@ class TestBackwardCompatibility:
         assert config is not None
         assert config.get("mode") == "train"
 
-    def test_crypto_config_unchanged_asset_class(
-        self, signal_only_crypto_config: Dict[str, Any]
-    ):
+    def test_crypto_config_unchanged_asset_class(self, signal_only_crypto_config: Dict[str, Any]):
         """Test crypto config still has crypto asset class."""
         assert signal_only_crypto_config["asset_class"] == "crypto"
 
-    def test_crypto_config_unchanged_vendor(
-        self, signal_only_crypto_config: Dict[str, Any]
-    ):
+    def test_crypto_config_unchanged_vendor(self, signal_only_crypto_config: Dict[str, Any]):
         """Test crypto config still has binance vendor."""
         assert signal_only_crypto_config["data_vendor"] == "binance"
 
-    def test_crypto_config_unchanged_tif(
-        self, signal_only_crypto_config: Dict[str, Any]
-    ):
+    def test_crypto_config_unchanged_tif(self, signal_only_crypto_config: Dict[str, Any]):
         """Test crypto config still has GTC TIF."""
         exec_params = signal_only_crypto_config.get("execution_params", {})
         assert exec_params.get("tif") == "GTC"
@@ -526,9 +504,7 @@ class TestBackwardCompatibility:
 class TestConfigSchemaValidity:
     """Tests for config schema validity."""
 
-    def test_stocks_config_has_required_sections(
-        self, signal_only_stocks_config: Dict[str, Any]
-    ):
+    def test_stocks_config_has_required_sections(self, signal_only_stocks_config: Dict[str, Any]):
         """Test stocks config has all required sections."""
         required_sections = [
             "mode",
@@ -542,13 +518,9 @@ class TestConfigSchemaValidity:
             "training",
         ]
         for section in required_sections:
-            assert section in signal_only_stocks_config, (
-                f"Missing required section: {section}"
-            )
+            assert section in signal_only_stocks_config, f"Missing required section: {section}"
 
-    def test_model_params_has_required_fields(
-        self, signal_only_stocks_config: Dict[str, Any]
-    ):
+    def test_model_params_has_required_fields(self, signal_only_stocks_config: Dict[str, Any]):
         """Test model.params has required fields."""
         params = signal_only_stocks_config.get("model", {}).get("params", {})
         required_fields = [
@@ -570,9 +542,7 @@ class TestConfigSchemaValidity:
         for field in required_fields:
             assert field in data, f"Missing required data field: {field}"
 
-    def test_training_has_required_fields(
-        self, signal_only_stocks_config: Dict[str, Any]
-    ):
+    def test_training_has_required_fields(self, signal_only_stocks_config: Dict[str, Any]):
         """Test training section has required fields."""
         training = signal_only_stocks_config.get("training", {})
         required_fields = ["total_timesteps", "n_envs"]
@@ -596,9 +566,7 @@ class TestUniverseLoadingIntegration:
         assert isinstance(symbols, list)
         assert all(isinstance(s, str) for s in symbols)
 
-    def test_alpaca_universe_symbols_can_be_extracted(
-        self, alpaca_symbols_path: Path
-    ):
+    def test_alpaca_universe_symbols_can_be_extracted(self, alpaca_symbols_path: Path):
         """Test Alpaca universe symbols can be extracted from the dict."""
         with open(alpaca_symbols_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -607,9 +575,7 @@ class TestUniverseLoadingIntegration:
         assert isinstance(symbols, list)
         assert all(isinstance(s, str) for s in symbols)
 
-    def test_universes_have_no_overlap(
-        self, crypto_symbols_path: Path, alpaca_symbols_path: Path
-    ):
+    def test_universes_have_no_overlap(self, crypto_symbols_path: Path, alpaca_symbols_path: Path):
         """Test crypto and stock universes don't overlap."""
         with open(crypto_symbols_path, "r", encoding="utf-8") as f:
             crypto_symbols = set(json.load(f))

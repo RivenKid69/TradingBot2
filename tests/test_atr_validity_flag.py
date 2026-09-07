@@ -36,6 +36,7 @@ import math
 
 try:
     from obs_builder import build_observation_vector
+
     HAVE_OBS_BUILDER = True
 except ImportError:
     HAVE_OBS_BUILDER = False
@@ -93,13 +94,15 @@ class TestATRValidityFlag:
         assert obs[15] == pytest.approx(15.0), f"ATR value should be 15.0, got {obs[15]}"
 
         # Index 16: atr_valid flag
-        assert obs[16] == pytest.approx(1.0), f"atr_valid should be 1.0 when ATR is valid, got {obs[16]}"
+        assert obs[16] == pytest.approx(
+            1.0
+        ), f"atr_valid should be 1.0 when ATR is valid, got {obs[16]}"
 
         print("✓ Test 1 passed: ATR valid → atr_valid = 1.0")
 
     def test_atr_invalid_when_atr_is_nan(self, valid_params):
         """Test 2: When ATR is NaN, atr_valid flag = 0.0 and fallback is used."""
-        valid_params["atr"] = float('nan')  # Simulate warmup period
+        valid_params["atr"] = float("nan")  # Simulate warmup period
 
         obs = np.zeros(63, dtype=np.float32)
         norm_cols = np.zeros(21, dtype=np.float32)
@@ -110,12 +113,14 @@ class TestATRValidityFlag:
 
         # Index 15: ATR fallback (1% of price)
         expected_fallback = valid_params["price"] * 0.01  # 1000.0 * 0.01 = 10.0
-        assert obs[15] == pytest.approx(expected_fallback), \
-            f"ATR fallback should be {expected_fallback}, got {obs[15]}"
+        assert obs[15] == pytest.approx(
+            expected_fallback
+        ), f"ATR fallback should be {expected_fallback}, got {obs[15]}"
 
         # Index 16: atr_valid flag
-        assert obs[16] == pytest.approx(0.0), \
-            f"atr_valid should be 0.0 when ATR is NaN, got {obs[16]}"
+        assert obs[16] == pytest.approx(
+            0.0
+        ), f"atr_valid should be 0.0 when ATR is NaN, got {obs[16]}"
 
         print("✓ Test 2 passed: ATR NaN → atr_valid = 0.0, fallback used")
 
@@ -126,7 +131,7 @@ class TestATRValidityFlag:
         This is the PRIMARY bug fix being tested. Before adding atr_valid flag,
         vol_proxy would become NaN during warmup, violating the "no NaN" guarantee.
         """
-        valid_params["atr"] = float('nan')  # Simulate warmup period
+        valid_params["atr"] = float("nan")  # Simulate warmup period
 
         obs = np.zeros(63, dtype=np.float32)
         norm_cols = np.zeros(21, dtype=np.float32)
@@ -138,19 +143,20 @@ class TestATRValidityFlag:
         # Index 22: vol_proxy (after ret_bar at index 21)
         vol_proxy = obs[22]
 
-        assert not np.isnan(vol_proxy), \
-            f"vol_proxy MUST NOT be NaN when ATR is NaN! Got {vol_proxy}"
+        assert not np.isnan(
+            vol_proxy
+        ), f"vol_proxy MUST NOT be NaN when ATR is NaN! Got {vol_proxy}"
 
-        assert np.isfinite(vol_proxy), \
-            f"vol_proxy must be finite, got {vol_proxy}"
+        assert np.isfinite(vol_proxy), f"vol_proxy must be finite, got {vol_proxy}"
 
         # Expected: vol_proxy calculated with fallback ATR
         # fallback ATR = 1000.0 * 0.01 = 10.0
         # vol_proxy = tanh(log1p(10.0 / 1000.0)) = tanh(log1p(0.01)) ≈ tanh(0.00995) ≈ 0.00995
         expected_vol_proxy = math.tanh(math.log1p(10.0 / 1000.0))
 
-        assert abs(vol_proxy - expected_vol_proxy) < 0.001, \
-            f"vol_proxy should be ~{expected_vol_proxy} (calculated with fallback ATR), got {vol_proxy}"
+        assert (
+            abs(vol_proxy - expected_vol_proxy) < 0.001
+        ), f"vol_proxy should be ~{expected_vol_proxy} (calculated with fallback ATR), got {vol_proxy}"
 
         print(f"✓ Test 3 passed: vol_proxy = {vol_proxy} (NOT NaN, uses fallback ATR)")
 
@@ -170,8 +176,9 @@ class TestATRValidityFlag:
         # Expected: vol_proxy = tanh(log1p(15.0 / 1000.0)) = tanh(log1p(0.015)) ≈ tanh(0.01489) ≈ 0.01488
         expected_vol_proxy = math.tanh(math.log1p(15.0 / 1000.0))
 
-        assert abs(vol_proxy - expected_vol_proxy) < 0.0001, \
-            f"vol_proxy should be ~{expected_vol_proxy} (calculated with real ATR), got {vol_proxy}"
+        assert (
+            abs(vol_proxy - expected_vol_proxy) < 0.0001
+        ), f"vol_proxy should be ~{expected_vol_proxy} (calculated with real ATR), got {vol_proxy}"
 
         print(f"✓ Test 4 passed: vol_proxy = {vol_proxy} (calculated with real ATR = 15.0)")
 
@@ -208,7 +215,7 @@ class TestATRValidityFlag:
         for price in [100.0, 1000.0, 10000.0, 50000.0]:
             valid_params["price"] = price
             valid_params["prev_price"] = price
-            valid_params["atr"] = float('nan')
+            valid_params["atr"] = float("nan")
 
             obs = np.zeros(63, dtype=np.float32)
             norm_cols = np.zeros(21, dtype=np.float32)
@@ -220,8 +227,9 @@ class TestATRValidityFlag:
             expected_fallback = price * 0.01
             actual_atr = obs[15]
 
-            assert actual_atr == pytest.approx(expected_fallback), \
-                f"For price={price}, ATR fallback should be {expected_fallback}, got {actual_atr}"
+            assert actual_atr == pytest.approx(
+                expected_fallback
+            ), f"For price={price}, ATR fallback should be {expected_fallback}, got {actual_atr}"
 
         print("✓ Test 6 passed: ATR fallback is proportional to price (1%)")
 
@@ -245,7 +253,7 @@ class TestATRValidityFlag:
             params = valid_params.copy()
 
             # Make this indicator invalid
-            params[indicator_name] = float('nan')
+            params[indicator_name] = float("nan")
 
             obs = np.zeros(63, dtype=np.float32)
             norm_cols = np.zeros(21, dtype=np.float32)
@@ -255,12 +263,14 @@ class TestATRValidityFlag:
             build_observation_vector(**params)
 
             # Check that validity flag is 0.0
-            assert obs[flag_idx] == pytest.approx(0.0), \
-                f"{indicator_name}_valid (index {flag_idx}) should be 0.0 when {indicator_name} is NaN"
+            assert obs[flag_idx] == pytest.approx(
+                0.0
+            ), f"{indicator_name}_valid (index {flag_idx}) should be 0.0 when {indicator_name} is NaN"
 
             # Check that value has fallback (not NaN)
-            assert not np.isnan(obs[value_idx]), \
-                f"{indicator_name} value (index {value_idx}) should NOT be NaN (fallback should be used)"
+            assert not np.isnan(
+                obs[value_idx]
+            ), f"{indicator_name} value (index {value_idx}) should NOT be NaN (fallback should be used)"
 
         print("✓ Test 7 passed: ATR follows consistent pattern with other indicators")
 
@@ -268,17 +278,17 @@ class TestATRValidityFlag:
         """Test 8: Comprehensive check - NO feature in observation should be NaN."""
         # Test during "warmup" period - all indicators are NaN
         warmup_params = valid_params.copy()
-        warmup_params["ma5"] = float('nan')
-        warmup_params["ma20"] = float('nan')
-        warmup_params["rsi14"] = float('nan')
-        warmup_params["macd"] = float('nan')
-        warmup_params["macd_signal"] = float('nan')
-        warmup_params["momentum"] = float('nan')
-        warmup_params["atr"] = float('nan')  # CRITICAL: ATR is NaN
-        warmup_params["cci"] = float('nan')
-        warmup_params["obv"] = float('nan')
-        warmup_params["bb_lower"] = float('nan')
-        warmup_params["bb_upper"] = float('nan')
+        warmup_params["ma5"] = float("nan")
+        warmup_params["ma20"] = float("nan")
+        warmup_params["rsi14"] = float("nan")
+        warmup_params["macd"] = float("nan")
+        warmup_params["macd_signal"] = float("nan")
+        warmup_params["momentum"] = float("nan")
+        warmup_params["atr"] = float("nan")  # CRITICAL: ATR is NaN
+        warmup_params["cci"] = float("nan")
+        warmup_params["obv"] = float("nan")
+        warmup_params["bb_lower"] = float("nan")
+        warmup_params["bb_upper"] = float("nan")
 
         obs = np.zeros(63, dtype=np.float32)
         norm_cols = np.zeros(21, dtype=np.float32)
@@ -293,8 +303,9 @@ class TestATRValidityFlag:
             if np.isnan(obs[i]):
                 nan_indices.append(i)
 
-        assert len(nan_indices) == 0, \
-            f"Found NaN at indices: {nan_indices}. Observation MUST NOT contain NaN!"
+        assert (
+            len(nan_indices) == 0
+        ), f"Found NaN at indices: {nan_indices}. Observation MUST NOT contain NaN!"
 
         print(f"✓ Test 8 passed: No NaN in entire observation (checked all 63 features)")
 
@@ -316,21 +327,41 @@ class TestATRValidityFlag:
             (10, {"ma5": True, "momentum": True}),
             (14, {"ma5": True, "momentum": True, "atr": True}),  # ATR now valid!
             (15, {"ma5": True, "momentum": True, "atr": True, "rsi14": True}),
-            (20, {"ma5": True, "ma20": True, "momentum": True, "atr": True, "rsi14": True, "cci": True}),
+            (
+                20,
+                {
+                    "ma5": True,
+                    "ma20": True,
+                    "momentum": True,
+                    "atr": True,
+                    "rsi14": True,
+                    "cci": True,
+                },
+            ),
         ]
 
         for bar, valid_indicators in scenarios:
             params = valid_params.copy()
 
             # Set indicators based on validity
-            for indicator in ["ma5", "ma20", "rsi14", "macd", "macd_signal", "momentum", "atr", "cci", "obv"]:
+            for indicator in [
+                "ma5",
+                "ma20",
+                "rsi14",
+                "macd",
+                "macd_signal",
+                "momentum",
+                "atr",
+                "cci",
+                "obv",
+            ]:
                 if indicator not in valid_indicators:
-                    params[indicator] = float('nan')
+                    params[indicator] = float("nan")
 
             # Bollinger Bands
             if bar < 20:
-                params["bb_lower"] = float('nan')
-                params["bb_upper"] = float('nan')
+                params["bb_lower"] = float("nan")
+                params["bb_upper"] = float("nan")
 
             obs = np.zeros(63, dtype=np.float32)
             norm_cols = np.zeros(21, dtype=np.float32)
@@ -341,8 +372,9 @@ class TestATRValidityFlag:
 
             # Critical check: vol_proxy (index 22) must NEVER be NaN
             vol_proxy = obs[22]
-            assert not np.isnan(vol_proxy), \
-                f"Bar {bar}: vol_proxy is NaN! This should NEVER happen."
+            assert not np.isnan(
+                vol_proxy
+            ), f"Bar {bar}: vol_proxy is NaN! This should NEVER happen."
 
             # Check ATR validity flag
             atr_valid = obs[16]
@@ -369,11 +401,20 @@ if __name__ == "__main__":
     tests = [
         ("Test 1: ATR valid case", test_instance.test_atr_valid_when_atr_is_valid),
         ("Test 2: ATR invalid (NaN) case", test_instance.test_atr_invalid_when_atr_is_nan),
-        ("Test 3: vol_proxy NOT NaN (CRITICAL)", test_instance.test_vol_proxy_not_nan_when_atr_is_nan),
-        ("Test 4: vol_proxy with valid ATR", test_instance.test_vol_proxy_calculation_with_valid_atr),
+        (
+            "Test 3: vol_proxy NOT NaN (CRITICAL)",
+            test_instance.test_vol_proxy_not_nan_when_atr_is_nan,
+        ),
+        (
+            "Test 4: vol_proxy with valid ATR",
+            test_instance.test_vol_proxy_calculation_with_valid_atr,
+        ),
         ("Test 5: Correct indices", test_instance.test_atr_indices_are_correct),
         ("Test 6: Fallback reasonableness", test_instance.test_atr_fallback_is_reasonable),
-        ("Test 7: Consistency with other indicators", test_instance.test_consistency_with_other_indicators),
+        (
+            "Test 7: Consistency with other indicators",
+            test_instance.test_consistency_with_other_indicators,
+        ),
         ("Test 8: No NaN in entire observation", test_instance.test_no_nan_in_entire_observation),
         ("Test 9: Warmup sequence simulation", test_instance.test_warmup_sequence_simulation),
     ]

@@ -9,6 +9,7 @@ Tests the CORRECTED approach:
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
@@ -16,6 +17,7 @@ import numpy as np
 
 class DeepTestResults:
     """Track deep test results."""
+
     def __init__(self):
         self.passed = 0
         self.failed = 0
@@ -91,7 +93,7 @@ def test_critical_range_v2():
                 all_normalized = False
                 results.record_warning(
                     "normalization_mean_nonzero",
-                    f"std={std:.1e}: mean={norm_mean:.2e} (should be ~0)"
+                    f"std={std:.1e}: mean={norm_mean:.2e} (should be ~0)",
                 )
 
         assert all_normalized, "Some ranges have non-zero mean"
@@ -131,8 +133,7 @@ def test_ppo_contract_always_satisfied():
             if abs(norm_mean) > 1e-6:
                 all_valid = False
                 results.record_warning(
-                    "ppo_contract_violation",
-                    f"{name}: mean={norm_mean:.2e} (PPO expects ~0)"
+                    "ppo_contract_violation", f"{name}: mean={norm_mean:.2e} (PPO expects ~0)"
                 )
 
         assert all_valid, "PPO contract violated in some cases"
@@ -170,10 +171,7 @@ def test_gradient_explosion_prevented():
 
         # New should be much safer
         if max_new > 10:
-            results.record_warning(
-                "gradient_still_large",
-                f"max={max_new:.2e} is still > 10"
-            )
+            results.record_warning("gradient_still_large", f"max={max_new:.2e} is still > 10")
 
         results.record_pass("test_gradient_explosion_prevented")
     except Exception as e:
@@ -260,8 +258,7 @@ def test_real_world_comprehensive():
 
         if not all_valid:
             results.record_warning(
-                "real_world_validation_issues",
-                "Some real-world scenarios produced warnings"
+                "real_world_validation_issues", "Some real-world scenarios produced warnings"
             )
 
         results.record_pass("test_real_world_comprehensive")

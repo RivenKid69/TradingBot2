@@ -77,27 +77,27 @@ DEFAULT_MAX_ACCOUNT_LEVERAGE = 20
 DEFAULT_MAX_SYMBOL_LEVERAGE = 125
 
 # Margin ratio thresholds (margin / maintenance_margin)
-MARGIN_RATIO_HEALTHY = Decimal("2.0")       # > 200%: Safe
-MARGIN_RATIO_WARNING = Decimal("1.5")        # 150-200%: Warning
-MARGIN_RATIO_DANGER = Decimal("1.2")         # 120-150%: Danger
-MARGIN_RATIO_CRITICAL = Decimal("1.05")      # 105-120%: Critical
-MARGIN_RATIO_LIQUIDATION = Decimal("1.0")    # <= 100%: Liquidation
+MARGIN_RATIO_HEALTHY = Decimal("2.0")  # > 200%: Safe
+MARGIN_RATIO_WARNING = Decimal("1.5")  # 150-200%: Warning
+MARGIN_RATIO_DANGER = Decimal("1.2")  # 120-150%: Danger
+MARGIN_RATIO_CRITICAL = Decimal("1.05")  # 105-120%: Critical
+MARGIN_RATIO_LIQUIDATION = Decimal("1.0")  # <= 100%: Liquidation
 
 # Funding rate thresholds
-FUNDING_RATE_WARNING_THRESHOLD = Decimal("0.0005")   # 0.05% per 8h = ~5.5% APR
-FUNDING_RATE_DANGER_THRESHOLD = Decimal("0.001")     # 0.1% per 8h = ~11% APR
-FUNDING_RATE_EXTREME_THRESHOLD = Decimal("0.003")    # 0.3% per 8h = ~33% APR
+FUNDING_RATE_WARNING_THRESHOLD = Decimal("0.0005")  # 0.05% per 8h = ~5.5% APR
+FUNDING_RATE_DANGER_THRESHOLD = Decimal("0.001")  # 0.1% per 8h = ~11% APR
+FUNDING_RATE_EXTREME_THRESHOLD = Decimal("0.003")  # 0.3% per 8h = ~33% APR
 
 # Max daily funding cost (in bps)
 MAX_DAILY_FUNDING_COST_BPS = 30  # 0.3% max daily funding cost
 
 # Concentration limits
-DEFAULT_CONCENTRATION_LIMIT = 0.5   # Max 50% in single symbol
-DEFAULT_CORRELATED_LIMIT = 0.7      # Max 70% in correlated symbols
+DEFAULT_CONCENTRATION_LIMIT = 0.5  # Max 50% in single symbol
+DEFAULT_CORRELATED_LIMIT = 0.7  # Max 70% in correlated symbols
 
 # ADL risk thresholds
-ADL_WARNING_PERCENTILE = 70.0   # Top 30%
-ADL_DANGER_PERCENTILE = 85.0    # Top 15%
+ADL_WARNING_PERCENTILE = 70.0  # Top 30%
+ADL_DANGER_PERCENTILE = 85.0  # Top 15%
 ADL_CRITICAL_PERCENTILE = 95.0  # Top 5%
 
 # Notification cooldown (seconds)
@@ -117,7 +117,7 @@ BINANCE_LEVERAGE_BRACKETS: Dict[str, List[Dict[str, Any]]] = {
         {"notional_cap": 200_000_000, "max_leverage": 4},
         {"notional_cap": 300_000_000, "max_leverage": 3},
         {"notional_cap": 500_000_000, "max_leverage": 2},
-        {"notional_cap": float('inf'), "max_leverage": 1},
+        {"notional_cap": float("inf"), "max_leverage": 1},
     ],
     "ETHUSDT": [
         {"notional_cap": 50_000, "max_leverage": 100},
@@ -129,7 +129,7 @@ BINANCE_LEVERAGE_BRACKETS: Dict[str, List[Dict[str, Any]]] = {
         {"notional_cap": 50_000_000, "max_leverage": 4},
         {"notional_cap": 100_000_000, "max_leverage": 3},
         {"notional_cap": 200_000_000, "max_leverage": 2},
-        {"notional_cap": float('inf'), "max_leverage": 1},
+        {"notional_cap": float("inf"), "max_leverage": 1},
     ],
     "BNBUSDT": [
         {"notional_cap": 25_000, "max_leverage": 75},
@@ -138,7 +138,7 @@ BINANCE_LEVERAGE_BRACKETS: Dict[str, List[Dict[str, Any]]] = {
         {"notional_cap": 1_000_000, "max_leverage": 10},
         {"notional_cap": 5_000_000, "max_leverage": 5},
         {"notional_cap": 10_000_000, "max_leverage": 2},
-        {"notional_cap": float('inf'), "max_leverage": 1},
+        {"notional_cap": float("inf"), "max_leverage": 1},
     ],
 }
 
@@ -151,6 +151,7 @@ BINANCE_LEVERAGE_BRACKETS: Dict[str, List[Dict[str, Any]]] = {
 @dataclass
 class LeverageConfig:
     """Configuration for FuturesLeverageGuard."""
+
     max_account_leverage: float = 20.0
     default_leverage: int = 10
     use_tiered_brackets: bool = True
@@ -161,15 +162,17 @@ class LeverageConfig:
 @dataclass
 class MarginGuardConfig:
     """Configuration for FuturesMarginGuard."""
-    warning_threshold: float = 2.0      # 200% margin ratio
-    danger_threshold: float = 1.5       # 150% margin ratio
-    critical_threshold: float = 1.2     # 120% margin ratio
-    liquidation_threshold: float = 1.05 # 105% margin ratio
+
+    warning_threshold: float = 2.0  # 200% margin ratio
+    danger_threshold: float = 1.5  # 150% margin ratio
+    critical_threshold: float = 1.2  # 120% margin ratio
+    liquidation_threshold: float = 1.05  # 105% margin ratio
 
 
 @dataclass
 class NotifierConfig:
     """Configuration for MarginCallNotifier."""
+
     cooldown_seconds: float = 300.0
     escalation_enabled: bool = True
     escalation_cooldown_multiplier: float = 0.5
@@ -178,14 +181,16 @@ class NotifierConfig:
 @dataclass
 class FundingGuardConfig:
     """Configuration for FundingExposureGuard."""
+
     max_funding_exposure_pct: float = 0.1  # 10% of equity
     warning_rate_threshold: float = 0.001  # 0.1% per interval
-    danger_rate_threshold: float = 0.003   # 0.3% per interval
+    danger_rate_threshold: float = 0.003  # 0.3% per interval
 
 
 @dataclass
 class ConcentrationConfig:
     """Configuration for ConcentrationGuard."""
+
     max_single_symbol_pct: float = 0.25
     max_correlated_group_pct: float = 0.40
 
@@ -193,6 +198,7 @@ class ConcentrationConfig:
 @dataclass
 class ADLConfig:
     """Configuration for ADLRiskGuard."""
+
     warning_percentile: float = 70.0
     critical_percentile: float = 90.0
 
@@ -204,11 +210,12 @@ class ADLConfig:
 
 class MarginCallLevel(str, Enum):
     """Margin call severity levels."""
-    NONE = "none"                  # > 200% margin ratio
-    WARNING = "warning"            # 150-200% margin ratio
-    DANGER = "danger"              # 120-150% margin ratio
-    CRITICAL = "critical"          # 105-120% margin ratio
-    LIQUIDATION = "liquidation"    # <= 100% margin ratio
+
+    NONE = "none"  # > 200% margin ratio
+    WARNING = "warning"  # 150-200% margin ratio
+    DANGER = "danger"  # 120-150% margin ratio
+    CRITICAL = "critical"  # 105-120% margin ratio
+    LIQUIDATION = "liquidation"  # <= 100% margin ratio
 
     @property
     def severity(self) -> int:
@@ -229,32 +236,36 @@ class MarginCallLevel(str, Enum):
 
 class LeverageViolationType(str, Enum):
     """Types of leverage violations."""
+
     NONE = "none"
-    EXCEEDED_SYMBOL_MAX = "exceeded_symbol_max"       # Over symbol max leverage
-    EXCEEDED_BRACKET_MAX = "exceeded_bracket_max"     # Over bracket max for notional
-    EXCEEDED_ACCOUNT_MAX = "exceeded_account_max"     # Over account-wide max
-    CONCENTRATION = "concentration"                    # Single symbol concentration
-    CORRELATED_EXPOSURE = "correlated_exposure"        # Correlated pairs exposure
+    EXCEEDED_SYMBOL_MAX = "exceeded_symbol_max"  # Over symbol max leverage
+    EXCEEDED_BRACKET_MAX = "exceeded_bracket_max"  # Over bracket max for notional
+    EXCEEDED_ACCOUNT_MAX = "exceeded_account_max"  # Over account-wide max
+    CONCENTRATION = "concentration"  # Single symbol concentration
+    CORRELATED_EXPOSURE = "correlated_exposure"  # Correlated pairs exposure
 
 
 class FundingExposureLevel(str, Enum):
     """Funding rate exposure levels."""
-    NORMAL = "normal"           # Acceptable funding cost
-    WARNING = "warning"         # Elevated funding cost
-    EXCESSIVE = "excessive"     # Very high funding cost
-    EXTREME = "extreme"         # Funding rate at extremes
+
+    NORMAL = "normal"  # Acceptable funding cost
+    WARNING = "warning"  # Elevated funding cost
+    EXCESSIVE = "excessive"  # Very high funding cost
+    EXTREME = "extreme"  # Funding rate at extremes
 
 
 class ADLRiskLevel(str, Enum):
     """ADL risk levels based on queue position."""
-    LOW = "low"           # Bottom 70% (ADL rank 1-2)
-    MEDIUM = "medium"     # 70-85% (ADL rank 3)
-    HIGH = "high"         # 85-95% (ADL rank 4)
-    CRITICAL = "critical" # Top 5% (ADL rank 5)
+
+    LOW = "low"  # Bottom 70% (ADL rank 1-2)
+    MEDIUM = "medium"  # 70-85% (ADL rank 3)
+    HIGH = "high"  # 85-95% (ADL rank 4)
+    CRITICAL = "critical"  # Top 5% (ADL rank 5)
 
 
 class MarginStatus(str, Enum):
     """Overall margin status."""
+
     HEALTHY = "healthy"
     WARNING = "warning"
     DANGER = "danger"
@@ -281,6 +292,7 @@ class LeverageCheckResult:
         current_account_leverage: Current account-wide leverage
         max_allowed_leverage: Maximum allowed leverage
     """
+
     is_valid: bool
     violation_type: LeverageViolationType = LeverageViolationType.NONE
     error_message: Optional[str] = None
@@ -304,6 +316,7 @@ class MarginCheckResult:
         shortfall: Amount needed to reach safe level
         time_to_liquidation: Estimated time to liquidation (optional)
     """
+
     status: MarginStatus
     margin_ratio: Decimal
     margin_level: MarginCallLevel = MarginCallLevel.NONE
@@ -360,6 +373,7 @@ class MarginCallEvent:
         auto_action_triggered: True if auto-reduce was triggered
         previous_level: Previous margin call level (for escalation)
     """
+
     timestamp_ms: int
     symbol: str
     level: MarginCallLevel
@@ -442,6 +456,7 @@ class FundingExposureResult:
         is_position_direction_favorable: True if position benefits from funding
         recommendation: Action recommendation
     """
+
     level: FundingExposureLevel
     current_rate: Decimal
     expected_8h_cost: Decimal
@@ -463,6 +478,7 @@ class ConcentrationCheckResult:
         largest_positions: Top positions by notional
         recommendation: Action recommendation
     """
+
     is_valid: bool
     symbol_concentration: float
     correlated_concentration: float
@@ -484,6 +500,7 @@ class ADLRiskResult:
         estimated_adl_qty: Estimated quantity if ADL triggered
         recommendation: Action recommendation
     """
+
     level: ADLRiskLevel
     adl_rank: int
     queue_percentile: float
@@ -500,6 +517,7 @@ class FuturesRiskSummary:
 
     Combines all risk checks into a single summary.
     """
+
     timestamp_ms: int
     symbol: Optional[str]
 
@@ -663,9 +681,7 @@ class FuturesLeverageGuard:
             LeverageCheckResult with validation status and suggestions
         """
         with self._lock:
-            return self._validate_internal(
-                proposed_position, current_positions, account_balance
-            )
+            return self._validate_internal(proposed_position, current_positions, account_balance)
 
     def _validate_internal(
         self,
@@ -710,8 +726,7 @@ class FuturesLeverageGuard:
 
         # Check 3: Account-wide leverage
         total_notional = sum(
-            abs(Decimal(str(getattr(p, "entry_price", "0"))) *
-                Decimal(str(getattr(p, "qty", "0"))))
+            abs(Decimal(str(getattr(p, "entry_price", "0"))) * Decimal(str(getattr(p, "qty", "0"))))
             for p in current
         )
         total_after = total_notional + proposed_notional
@@ -829,8 +844,7 @@ class FuturesLeverageGuard:
 
         # Calculate existing notional
         current_notional = sum(
-            abs(Decimal(str(getattr(p, "entry_price", "0"))) *
-                Decimal(str(getattr(p, "qty", "0"))))
+            abs(Decimal(str(getattr(p, "entry_price", "0"))) * Decimal(str(getattr(p, "qty", "0"))))
             for p in current_positions
         )
 
@@ -841,8 +855,7 @@ class FuturesLeverageGuard:
         # Max from concentration limit
         total_after = current_notional + available_notional
         symbol_current = sum(
-            abs(Decimal(str(getattr(p, "entry_price", "0"))) *
-                Decimal(str(getattr(p, "qty", "0"))))
+            abs(Decimal(str(getattr(p, "entry_price", "0"))) * Decimal(str(getattr(p, "qty", "0"))))
             for p in current_positions
             if getattr(p, "symbol", "") == symbol
         )
@@ -941,9 +954,7 @@ class FuturesMarginGuard:
         ts = timestamp_ms or int(time.time() * 1000)
 
         with self._lock:
-            ratio = self._calculator.calculate_margin_ratio(
-                position, mark_price, wallet_balance
-            )
+            ratio = self._calculator.calculate_margin_ratio(position, mark_price, wallet_balance)
 
             symbol = getattr(position, "symbol", "UNKNOWN")
             self._margin_history.append((ts, symbol, ratio))
@@ -1081,17 +1092,14 @@ class FuturesMarginGuard:
             "improving", "stable", or "deteriorating"
         """
         with self._lock:
-            history = [
-                ratio for ts, sym, ratio in self._margin_history
-                if sym == symbol
-            ]
+            history = [ratio for ts, sym, ratio in self._margin_history if sym == symbol]
 
             if len(history) < lookback_periods:
                 return None
 
             recent = history[-lookback_periods:]
-            first_half = sum(recent[:len(recent)//2]) / (len(recent)//2)
-            second_half = sum(recent[len(recent)//2:]) / (len(recent) - len(recent)//2)
+            first_half = sum(recent[: len(recent) // 2]) / (len(recent) // 2)
+            second_half = sum(recent[len(recent) // 2 :]) / (len(recent) - len(recent) // 2)
 
             diff = float(second_half - first_half)
             if diff > 0.1:
@@ -1230,9 +1238,7 @@ class MarginCallNotifier:
         leverage = int(getattr(position, "leverage", 1))
         margin_mode = getattr(position, "margin_mode", None)
 
-        ratio = margin_calculator.calculate_margin_ratio(
-            position, mark_price, wallet_balance
-        )
+        ratio = margin_calculator.calculate_margin_ratio(position, mark_price, wallet_balance)
 
         # Determine level
         level = self._determine_level(ratio)
@@ -1281,10 +1287,7 @@ class MarginCallNotifier:
         )
 
         # Check if auto-reduce should trigger
-        if (
-            self._enable_auto_reduce
-            and level.severity >= self._auto_reduce_level.severity
-        ):
+        if self._enable_auto_reduce and level.severity >= self._auto_reduce_level.severity:
             event = MarginCallEvent(
                 timestamp_ms=event.timestamp_ms,
                 symbol=event.symbol,
@@ -1293,8 +1296,8 @@ class MarginCallNotifier:
                 required_margin=event.required_margin,
                 current_margin=event.current_margin,
                 shortfall=event.shortfall,
-                recommended_action=event.recommended_action +
-                    f" [AUTO-REDUCE {self._auto_reduce_pct*100:.0f}% TRIGGERED]",
+                recommended_action=event.recommended_action
+                + f" [AUTO-REDUCE {self._auto_reduce_pct*100:.0f}% TRIGGERED]",
                 position_qty=event.position_qty,
                 mark_price=event.mark_price,
                 liquidation_price=event.liquidation_price,
@@ -1388,10 +1391,7 @@ class MarginCallNotifier:
     def get_active_margin_calls(self) -> List[MarginCallEvent]:
         """Get all active margin calls, sorted by severity."""
         with self._lock:
-            return sorted(
-                list(self._active_margin_calls.values()),
-                key=lambda e: -e.severity_score
-            )
+            return sorted(list(self._active_margin_calls.values()), key=lambda e: -e.severity_score)
 
     def get_notification_history(
         self,
@@ -1497,8 +1497,9 @@ class FundingExposureGuard:
 
         # Is position direction favorable?
         is_long = qty > 0
-        is_favorable = (current_funding_rate < 0 and is_long) or \
-                       (current_funding_rate > 0 and not is_long)
+        is_favorable = (current_funding_rate < 0 and is_long) or (
+            current_funding_rate > 0 and not is_long
+        )
 
         # Calculate expected costs
         expected_8h_cost = position_value * abs(current_funding_rate)
@@ -1508,8 +1509,7 @@ class FundingExposureGuard:
         # Estimate daily cost
         if predicted_funding_rates:
             avg_rate = (
-                abs(current_funding_rate) +
-                sum(abs(r) for r in predicted_funding_rates)
+                abs(current_funding_rate) + sum(abs(r) for r in predicted_funding_rates)
             ) / (1 + len(predicted_funding_rates))
         else:
             avg_rate = abs(current_funding_rate)
@@ -1658,7 +1658,9 @@ class ConcentrationGuard:
         self._single_limit = single_symbol_limit
         self._correlated_limit = correlated_group_limit
         # Use explicit None check to allow empty dict to mean "no correlations"
-        self._correlations = correlation_groups if correlation_groups is not None else self.DEFAULT_CORRELATIONS
+        self._correlations = (
+            correlation_groups if correlation_groups is not None else self.DEFAULT_CORRELATIONS
+        )
         self._lock = threading.Lock()
 
     def check_concentration(
@@ -1721,16 +1723,12 @@ class ConcentrationGuard:
             max_corr_conc = max(max_corr_conc, group_conc)
 
         # Top positions
-        sorted_positions = sorted(
-            notionals.items(),
-            key=lambda x: -float(x[1])
-        )[:5]
+        sorted_positions = sorted(notionals.items(), key=lambda x: -float(x[1]))[:5]
         largest = [(sym, float(not_ / total)) for sym, not_ in sorted_positions]
 
         # Check limits
         is_valid = (
-            float(max_conc) <= self._single_limit and
-            float(max_corr_conc) <= self._correlated_limit
+            float(max_conc) <= self._single_limit and float(max_corr_conc) <= self._correlated_limit
         )
 
         recommendation = None
@@ -2031,9 +2029,7 @@ class FuturesRiskGuard:
         leverage_percentile: float,
     ) -> ADLRiskResult:
         """Check ADL risk (delegates to ADL guard)."""
-        return self._adl_guard.check_adl_risk(
-            position, pnl_percentile, leverage_percentile
-        )
+        return self._adl_guard.check_adl_risk(position, pnl_percentile, leverage_percentile)
 
     def get_risk_summary(
         self,
@@ -2083,12 +2079,12 @@ class FuturesRiskGuard:
         if margin_result.margin_level != MarginCallLevel.NONE:
             risks.append(("margin", margin_result.margin_level.severity))
             if margin_result.shortfall > 0:
-                recommendations.append(
-                    f"Add ${float(margin_result.shortfall):,.2f} margin"
-                )
+                recommendations.append(f"Add ${float(margin_result.shortfall):,.2f} margin")
 
         if funding_result.level != FundingExposureLevel.NORMAL:
-            risks.append(("funding", 2 if funding_result.level == FundingExposureLevel.EXCESSIVE else 1))
+            risks.append(
+                ("funding", 2 if funding_result.level == FundingExposureLevel.EXCESSIVE else 1)
+            )
             recommendations.append(funding_result.recommendation)
 
         if not concentration_result.is_valid:

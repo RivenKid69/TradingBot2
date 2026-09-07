@@ -47,8 +47,15 @@ def _realized_vol(panel: Panel, price_col: str, window: int) -> pd.Series:
 class Trend(BaseSignal):
     """Time-series momentum: price[t] / price[t-lookback] − 1 (опц. /реализованная vol)."""
 
-    def __init__(self, name: str = "trend", *, lookback: int = 100, price_col: str = "close",
-                 vol_normalize: bool = False, vol_window: int = 60) -> None:
+    def __init__(
+        self,
+        name: str = "trend",
+        *,
+        lookback: int = 100,
+        price_col: str = "close",
+        vol_normalize: bool = False,
+        vol_window: int = 60,
+    ) -> None:
         self.name = name
         self.lookback = int(lookback)
         self.price_col = price_col
@@ -73,9 +80,15 @@ class Carry(BaseSignal):
     → лонг. Знак: положительный carry = лонг. Если есть готовая колонка — берём как есть.
     """
 
-    def __init__(self, name: str = "carry", *, carry_col: str = "carry",
-                 roll_yield_col: str = "roll_yield", front_col: str = "front",
-                 back_col: str = "back") -> None:
+    def __init__(
+        self,
+        name: str = "carry",
+        *,
+        carry_col: str = "carry",
+        roll_yield_col: str = "roll_yield",
+        front_col: str = "front",
+        back_col: str = "back",
+    ) -> None:
         self.name = name
         self.carry_col = carry_col
         self.roll_yield_col = roll_yield_col
@@ -96,7 +109,9 @@ class Carry(BaseSignal):
 class FuturesValue(BaseSignal):
     """Value (long-horizon mean-reversion): −(price[t] / price[t-lookback] − 1)."""
 
-    def __init__(self, name: str = "fut_value", *, lookback: int = 1000, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "fut_value", *, lookback: int = 1000, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.lookback = int(lookback)
         self.price_col = price_col
@@ -111,7 +126,9 @@ class FuturesValue(BaseSignal):
 class RealizedVolInv(BaseSignal):
     """Обратная реализованная волатильность (vol-target сайзинг): 1/σ (сырое, нормирует трансформ)."""
 
-    def __init__(self, name: str = "inv_vol", *, window: int = 60, price_col: str = "close") -> None:
+    def __init__(
+        self, name: str = "inv_vol", *, window: int = 60, price_col: str = "close"
+    ) -> None:
         self.name = name
         self.window = int(window)
         self.price_col = price_col
@@ -141,6 +158,10 @@ def build_futures_signal(kind: str, name: str, **kwargs: Any) -> BaseSignal:
 FUTURES_SIGNAL_KINDS = tuple(_KINDS.keys())
 
 __all__ = [
-    "Trend", "Carry", "FuturesValue", "RealizedVolInv",
-    "build_futures_signal", "FUTURES_SIGNAL_KINDS",
+    "Trend",
+    "Carry",
+    "FuturesValue",
+    "RealizedVolInv",
+    "build_futures_signal",
+    "FUTURES_SIGNAL_KINDS",
 ]

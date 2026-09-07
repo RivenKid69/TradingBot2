@@ -72,9 +72,7 @@ class BinanceExchangeInfoAdapter(ExchangeInfoAdapter):
                 filters = data.get("filters", data)
                 for symbol, raw_filter in filters.items():
                     if isinstance(raw_filter, dict):
-                        self._symbols_cache[symbol] = self._parse_symbol_info(
-                            symbol, raw_filter
-                        )
+                        self._symbols_cache[symbol] = self._parse_symbol_info(symbol, raw_filter)
 
                 self._exchange_info_raw = data
                 logger.debug(f"Loaded {len(self._symbols_cache)} symbols from cache")
@@ -206,11 +204,10 @@ class BinanceExchangeInfoAdapter(ExchangeInfoAdapter):
 
                     self._exchange_info_raw = exchange_info
                     import time
+
                     self._last_refresh_ts = int(time.time() * 1000)
 
-                    logger.info(
-                        f"Refreshed exchange info: {len(self._symbols_cache)} symbols"
-                    )
+                    logger.info(f"Refreshed exchange info: {len(self._symbols_cache)} symbols")
                     return True
 
             finally:
@@ -405,6 +402,7 @@ class BinanceExchangeInfoAdapter(ExchangeInfoAdapter):
                 }
 
             import time
+
             data = {
                 "metadata": {
                     "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

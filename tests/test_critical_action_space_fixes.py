@@ -15,6 +15,7 @@ All tests verify that the fixes prevent:
 import pytest
 import numpy as np
 from dataclasses import replace
+
 gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 
@@ -27,6 +28,7 @@ from wrappers.action_space import LongOnlyActionWrapper, ScoreActionWrapper
 # ============================================================================
 # TEST FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def risk_config():
@@ -46,6 +48,7 @@ def risk_guard(risk_config):
 
 class MockState:
     """Mock state object for testing."""
+
     def __init__(self, units=0.0, cash=10000.0, max_position=100.0):
         self.units = units
         self.cash = cash
@@ -55,6 +58,7 @@ class MockState:
 
 class MockEnv(gym.Env):
     """Mock environment for wrapper testing."""
+
     def __init__(self):
         super().__init__()
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
@@ -71,6 +75,7 @@ class MockEnv(gym.Env):
 # ============================================================================
 # CRITICAL #2: Position Semantics - TARGET not DELTA
 # ============================================================================
+
 
 class TestTargetPositionSemantics:
     """Test that volume_frac is interpreted as TARGET position, not DELTA."""
@@ -123,7 +128,7 @@ class TestTargetPositionSemantics:
 
         event2 = risk_guard.on_action_proposed(state2, proto2)
         assert event2 == RiskEvent.NONE  # With TARGET: 80 → 80 (no change, OK)
-                                          # With DELTA: 80 → 160 (violation!)
+        # With DELTA: 80 → 160 (violation!)
 
     def test_risk_guard_position_reduction_target(self, risk_guard):
         """
@@ -193,7 +198,6 @@ class TestTargetPositionSemantics:
         event3 = risk_guard.on_action_proposed(state, proto)
         assert event3 == RiskEvent.NONE  # Should still be OK with TARGET
 
-
     def test_risk_guard_violation_detection_with_target(self, risk_guard):
         """
         Verify that violations are still detected with TARGET semantics.
@@ -213,6 +217,7 @@ class TestTargetPositionSemantics:
 # CRITICAL #1: LongOnlyActionWrapper Preserves Reduction Signals
 # ============================================================================
 
+
 class TestLongOnlyWrapperFix:
     """Test that LongOnlyActionWrapper preserves position reduction signals."""
 
@@ -227,11 +232,11 @@ class TestLongOnlyWrapperFix:
 
         # Test mapping: [-1, 1] → [0, 1]
         test_cases = [
-            (-1.0, 0.0),   # Full exit
+            (-1.0, 0.0),  # Full exit
             (-0.5, 0.25),  # Reduce to 25%
-            (0.0, 0.5),    # 50% long
-            (0.5, 0.75),   # 75% long
-            (1.0, 1.0),    # 100% long
+            (0.0, 0.5),  # 50% long
+            (0.5, 0.75),  # 75% long
+            (1.0, 1.0),  # 100% long
         ]
 
         for input_val, expected_output in test_cases:
@@ -239,8 +244,9 @@ class TestLongOnlyWrapperFix:
             result = wrapper.action(proto)
 
             assert isinstance(result, ActionProto)
-            assert abs(result.volume_frac - expected_output) < 1e-6, \
-                f"Input {input_val} should map to {expected_output}, got {result.volume_frac}"
+            assert (
+                abs(result.volume_frac - expected_output) < 1e-6
+            ), f"Input {input_val} should map to {expected_output}, got {result.volume_frac}"
 
     def test_numpy_array_mapping(self):
         """Verify mapping works for numpy arrays."""
@@ -282,8 +288,9 @@ class TestLongOnlyWrapperFix:
             # Inverse mapping: x = 2*y - 1
             recovered = 2 * mapped_val - 1.0
 
-            assert abs(recovered - orig) < 1e-6, \
-                f"Information lost: {orig} → {mapped_val} → {recovered}"
+            assert (
+                abs(recovered - orig) < 1e-6
+            ), f"Information lost: {orig} → {mapped_val} → {recovered}"
 
     def test_no_signal_loss_edge_cases(self):
         """
@@ -304,8 +311,7 @@ class TestLongOnlyWrapperFix:
             outputs.append(result.volume_frac)
 
         # All outputs should be unique (no collapse to single value)
-        assert len(set(outputs)) == len(negatives), \
-            f"Signal loss detected: {negatives} → {outputs}"
+        assert len(set(outputs)) == len(negatives), f"Signal loss detected: {negatives} → {outputs}"
 
         # All outputs should be in [0, 0.5) (since inputs are negative)
         for out in outputs:
@@ -315,6 +321,7 @@ class TestLongOnlyWrapperFix:
 # ============================================================================
 # CRITICAL #3: Action Space Range Consistency
 # ============================================================================
+
 
 class TestActionSpaceRangeConsistency:
     """Test that [-1, 1] bounds are enforced consistently."""
@@ -381,6 +388,7 @@ class TestActionSpaceRangeConsistency:
 # ============================================================================
 # INTEGRATION TESTS
 # ============================================================================
+
 
 class TestIntegrationSemantics:
     """Integration tests combining multiple components."""
@@ -458,6 +466,7 @@ class TestIntegrationSemantics:
 # ============================================================================
 # EDGE CASES & ROBUSTNESS
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""

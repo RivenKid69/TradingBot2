@@ -20,19 +20,15 @@ _STATUS_ALIASES = {
     "new": OrderState.NEW,
     "accepted": OrderState.NEW,
     "open": OrderState.NEW,
-
     "partial": OrderState.PARTIAL,
     "partially_filled": OrderState.PARTIAL,
     "partially-filled": OrderState.PARTIAL,
-
     "filled": OrderState.FILLED,
     "done": OrderState.FILLED,
     "closed": OrderState.FILLED,
-
     "canceled": OrderState.CANCELED,
     "cancelled": OrderState.CANCELED,
     "void": OrderState.CANCELED,
-
     "rejected": OrderState.REJECTED,
     "reject": OrderState.REJECTED,
     "error": OrderState.REJECTED,
@@ -57,12 +53,13 @@ def _normalize_status(s: Any) -> OrderState:
 @dataclass
 class OrderRecord:
     state: OrderState = OrderState.UNKNOWN
-    last_ts: int = 0        # монотонный таймштамп события (если источник его передаёт)
-    updates: int = 0        # количество апдейтов
+    last_ts: int = 0  # монотонный таймштамп события (если источник его передаёт)
+    updates: int = 0  # количество апдейтов
 
 
 class OrderManager:
     """Лёгкий менеджер состояний ордеров по потокам событий."""
+
     def __init__(self) -> None:
         self._state: Dict[int, OrderRecord] = {}
 

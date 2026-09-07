@@ -39,8 +39,10 @@ from ccea.models.protocol import TelemetryLevel
 # Contract Violation Types
 # ============================================================================
 
+
 class ContractViolationType(str, Enum):
     """Type of contract violation."""
+
     FORBIDDEN_FIELD = "forbidden_field"
     MISSING_REQUIRED_FIELD = "missing_required_field"
     INVALID_FIELD_TYPE = "invalid_field_type"
@@ -53,19 +55,22 @@ class ContractViolationType(str, Enum):
 
 class ViolationSeverity(str, Enum):
     """Severity of contract violation."""
+
     CRITICAL = "critical"  # Block immediately
-    HIGH = "high"          # Block with logging
-    MEDIUM = "medium"      # Warn and allow
-    LOW = "low"            # Log only
+    HIGH = "high"  # Block with logging
+    MEDIUM = "medium"  # Warn and allow
+    LOW = "low"  # Log only
 
 
 # ============================================================================
 # Contract Violation
 # ============================================================================
 
+
 @dataclass
 class ContractViolation:
     """A telemetry contract violation."""
+
     violation_type: ContractViolationType
     severity: ViolationSeverity
     field_path: str
@@ -91,9 +96,11 @@ class ContractViolation:
 # Contract Validation Result
 # ============================================================================
 
+
 @dataclass
 class ContractValidationResult:
     """Result of telemetry contract validation."""
+
     valid: bool
     telemetry_level: str
     violations: List[ContractViolation] = field(default_factory=list)
@@ -132,109 +139,282 @@ class ContractValidationResult:
 # ============================================================================
 
 # Fields allowed at AGGREGATED level
-AGGREGATED_ALLOWED_FIELDS: FrozenSet[str] = frozenset({
-    # Temporal
-    "timestamp", "event_time", "start_time", "end_time",
-    "period", "window", "interval", "duration_seconds",
-    # Aggregates
-    "count", "sum", "avg", "min", "max", "median",
-    "p50", "p90", "p95", "p99", "stddev", "variance",
-    "histogram", "buckets",
-    # System metrics
-    "cpu_percent", "cpu_usage", "memory_percent", "memory_usage",
-    "memory_mb", "disk_usage", "disk_percent",
-    "network_bytes_sent", "network_bytes_recv",
-    "latency_ms", "latency_p50", "latency_p95", "latency_p99",
-    # Trading metrics (aggregated)
-    "trade_count", "order_count", "fill_rate", "win_rate",
-    "sharpe_ratio", "sortino_ratio", "max_drawdown",
-    "daily_return", "cumulative_return", "volatility",
-    "alpha", "beta", "information_ratio",
-    # Identifiers
-    "strategy_id", "strategy_name", "run_id", "deployment_id",
-    "agent_id", "workspace_id", "version", "status", "state",
-    "is_paper_trading",
-    # Error metrics
-    "error_count", "error_rate", "warning_count",
-    "success_count", "failure_count", "retry_count", "timeout_count",
-    # Resource usage
-    "active_connections", "queue_depth", "processing_time_ms",
-    "request_count", "response_count", "cache_hit_rate", "cache_miss_rate",
-})
+AGGREGATED_ALLOWED_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Temporal
+        "timestamp",
+        "event_time",
+        "start_time",
+        "end_time",
+        "period",
+        "window",
+        "interval",
+        "duration_seconds",
+        # Aggregates
+        "count",
+        "sum",
+        "avg",
+        "min",
+        "max",
+        "median",
+        "p50",
+        "p90",
+        "p95",
+        "p99",
+        "stddev",
+        "variance",
+        "histogram",
+        "buckets",
+        # System metrics
+        "cpu_percent",
+        "cpu_usage",
+        "memory_percent",
+        "memory_usage",
+        "memory_mb",
+        "disk_usage",
+        "disk_percent",
+        "network_bytes_sent",
+        "network_bytes_recv",
+        "latency_ms",
+        "latency_p50",
+        "latency_p95",
+        "latency_p99",
+        # Trading metrics (aggregated)
+        "trade_count",
+        "order_count",
+        "fill_rate",
+        "win_rate",
+        "sharpe_ratio",
+        "sortino_ratio",
+        "max_drawdown",
+        "daily_return",
+        "cumulative_return",
+        "volatility",
+        "alpha",
+        "beta",
+        "information_ratio",
+        # Identifiers
+        "strategy_id",
+        "strategy_name",
+        "run_id",
+        "deployment_id",
+        "agent_id",
+        "workspace_id",
+        "version",
+        "status",
+        "state",
+        "is_paper_trading",
+        # Error metrics
+        "error_count",
+        "error_rate",
+        "warning_count",
+        "success_count",
+        "failure_count",
+        "retry_count",
+        "timeout_count",
+        # Resource usage
+        "active_connections",
+        "queue_depth",
+        "processing_time_ms",
+        "request_count",
+        "response_count",
+        "cache_hit_rate",
+        "cache_miss_rate",
+    }
+)
 
 # Additional fields allowed at DETAILED_NON_SENSITIVE level
-DETAILED_ALLOWED_FIELDS: FrozenSet[str] = frozenset({
-    # Event details
-    "event_type", "event_name", "event_category",
-    "source", "component", "module", "function",
-    "level", "severity", "message", "description",
-    "details", "context", "metadata", "tags", "labels", "annotations",
-    # Error details
-    "error_type", "error_code", "error_class", "stack_trace_hash",
-    # Tracing
-    "operation", "operation_type", "resource_type", "resource_id",
-    "correlation_id", "trace_id", "span_id", "parent_span_id",
-})
+DETAILED_ALLOWED_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Event details
+        "event_type",
+        "event_name",
+        "event_category",
+        "source",
+        "component",
+        "module",
+        "function",
+        "level",
+        "severity",
+        "message",
+        "description",
+        "details",
+        "context",
+        "metadata",
+        "tags",
+        "labels",
+        "annotations",
+        # Error details
+        "error_type",
+        "error_code",
+        "error_class",
+        "stack_trace_hash",
+        # Tracing
+        "operation",
+        "operation_type",
+        "resource_type",
+        "resource_id",
+        "correlation_id",
+        "trace_id",
+        "span_id",
+        "parent_span_id",
+    }
+)
 
 # Additional fields allowed at RAW_ORDER_EVENTS level (enterprise only)
-RAW_ORDER_ALLOWED_FIELDS: FrozenSet[str] = frozenset({
-    # Order fields
-    "side", "quantity", "qty", "price", "order_type",
-    "limit_price", "stop_price", "order_id", "client_order_id",
-    "filled_qty", "remaining_qty", "average_price",
-    "fill_price", "fill_qty", "execution_id", "trade_id",
-    "commission", "slippage",
-    # Position fields
-    "position_side", "position_size", "entry_price", "exit_price",
-    "unrealized_pnl", "realized_pnl",
-    # Signal/Intent
-    "signal", "intent", "target_position", "target_qty",
-    # Order lifecycle
-    "order_status", "order_created_at", "order_submitted_at",
-    "order_filled_at", "order_cancelled_at",
-    # Execution timing
-    "signal_timestamp", "submit_timestamp", "ack_timestamp",
-    "fill_timestamp", "exchange_timestamp",
-})
+RAW_ORDER_ALLOWED_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Order fields
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "limit_price",
+        "stop_price",
+        "order_id",
+        "client_order_id",
+        "filled_qty",
+        "remaining_qty",
+        "average_price",
+        "fill_price",
+        "fill_qty",
+        "execution_id",
+        "trade_id",
+        "commission",
+        "slippage",
+        # Position fields
+        "position_side",
+        "position_size",
+        "entry_price",
+        "exit_price",
+        "unrealized_pnl",
+        "realized_pnl",
+        # Signal/Intent
+        "signal",
+        "intent",
+        "target_position",
+        "target_qty",
+        # Order lifecycle
+        "order_status",
+        "order_created_at",
+        "order_submitted_at",
+        "order_filled_at",
+        "order_cancelled_at",
+        # Execution timing
+        "signal_timestamp",
+        "submit_timestamp",
+        "ack_timestamp",
+        "fill_timestamp",
+        "exchange_timestamp",
+    }
+)
 
 # Fields ALWAYS forbidden (credentials, even in RAW)
-ALWAYS_FORBIDDEN_FIELDS: FrozenSet[str] = frozenset({
-    # Credentials
-    "api_key", "api_secret", "secret_key", "private_key",
-    "access_token", "refresh_token", "bearer_token",
-    "password", "passphrase",
-    # Broker-specific
-    "binance_key", "binance_secret", "binance_token",
-    "alpaca_key", "alpaca_secret", "alpaca_token",
-    "deribit_key", "deribit_secret", "deribit_token",
-    "oanda_key", "oanda_secret", "oanda_token",
-    "ib_key", "ib_secret", "ib_token",
-    "interactive_brokers_key", "interactive_brokers_secret",
-})
+ALWAYS_FORBIDDEN_FIELDS: FrozenSet[str] = frozenset(
+    {
+        # Credentials
+        "api_key",
+        "api_secret",
+        "secret_key",
+        "private_key",
+        "access_token",
+        "refresh_token",
+        "bearer_token",
+        "password",
+        "passphrase",
+        # Broker-specific
+        "binance_key",
+        "binance_secret",
+        "binance_token",
+        "alpaca_key",
+        "alpaca_secret",
+        "alpaca_token",
+        "deribit_key",
+        "deribit_secret",
+        "deribit_token",
+        "oanda_key",
+        "oanda_secret",
+        "oanda_token",
+        "ib_key",
+        "ib_secret",
+        "ib_token",
+        "interactive_brokers_key",
+        "interactive_brokers_secret",
+    }
+)
 
 # PII fields - forbidden unless aggregated/hashed
-PII_FIELDS: FrozenSet[str] = frozenset({
-    "email", "phone", "phone_number", "address",
-    "ssn", "social_security", "tax_id",
-    "passport", "driver_license",
-    "credit_card", "card_number", "cvv",
-    "account_number", "routing_number", "iban", "swift", "bank_account",
-    "date_of_birth", "dob",
-    "ip_address", "mac_address", "device_id", "user_agent",
-})
+PII_FIELDS: FrozenSet[str] = frozenset(
+    {
+        "email",
+        "phone",
+        "phone_number",
+        "address",
+        "ssn",
+        "social_security",
+        "tax_id",
+        "passport",
+        "driver_license",
+        "credit_card",
+        "card_number",
+        "cvv",
+        "account_number",
+        "routing_number",
+        "iban",
+        "swift",
+        "bank_account",
+        "date_of_birth",
+        "dob",
+        "ip_address",
+        "mac_address",
+        "device_id",
+        "user_agent",
+    }
+)
 
 # Order-like fields - forbidden in non-RAW telemetry
-ORDER_LIKE_FIELDS: FrozenSet[str] = frozenset({
-    "side", "quantity", "qty", "price", "order_type",
-    "limit_price", "stop_price", "take_profit", "stop_loss",
-    "order_id", "client_order_id", "filled_qty", "remaining_qty",
-    "average_price", "commission", "fills",
-    "intent", "signal", "target_position", "target_qty", "target_allocation",
-    "execute_order", "place_order", "submit_order", "cancel_order", "modify_order",
-    "position_side", "position_size", "entry_price", "exit_price",
-    "unrealized_pnl", "realized_pnl",
-    "execution_id", "trade_id", "fill_price", "fill_qty", "slippage",
-})
+ORDER_LIKE_FIELDS: FrozenSet[str] = frozenset(
+    {
+        "side",
+        "quantity",
+        "qty",
+        "price",
+        "order_type",
+        "limit_price",
+        "stop_price",
+        "take_profit",
+        "stop_loss",
+        "order_id",
+        "client_order_id",
+        "filled_qty",
+        "remaining_qty",
+        "average_price",
+        "commission",
+        "fills",
+        "intent",
+        "signal",
+        "target_position",
+        "target_qty",
+        "target_allocation",
+        "execute_order",
+        "place_order",
+        "submit_order",
+        "cancel_order",
+        "modify_order",
+        "position_side",
+        "position_size",
+        "entry_price",
+        "exit_price",
+        "unrealized_pnl",
+        "realized_pnl",
+        "execution_id",
+        "trade_id",
+        "fill_price",
+        "fill_qty",
+        "slippage",
+    }
+)
 
 # Credential detection patterns
 CREDENTIAL_PATTERNS: List[Tuple[re.Pattern, str]] = [
@@ -247,16 +427,20 @@ CREDENTIAL_PATTERNS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"bearer[_-]?token", re.IGNORECASE), "Bearer token"),
     (re.compile(r"password", re.IGNORECASE), "Password"),
     (re.compile(r"passphrase", re.IGNORECASE), "Passphrase"),
-    (re.compile(
-        r"(binance|alpaca|deribit|oanda|interactive_brokers|ib)[_-]?(key|secret|token)",
-        re.IGNORECASE
-    ), "Broker credential"),
+    (
+        re.compile(
+            r"(binance|alpaca|deribit|oanda|interactive_brokers|ib)[_-]?(key|secret|token)",
+            re.IGNORECASE,
+        ),
+        "Broker credential",
+    ),
 ]
 
 
 # ============================================================================
 # Telemetry Level Contract
 # ============================================================================
+
 
 @dataclass
 class TelemetryLevelContract:
@@ -307,9 +491,7 @@ class TelemetryLevelContract:
         return cls(
             level=TelemetryLevel.RAW_ORDER_EVENTS,
             allowed_fields=(
-                AGGREGATED_ALLOWED_FIELDS |
-                DETAILED_ALLOWED_FIELDS |
-                RAW_ORDER_ALLOWED_FIELDS
+                AGGREGATED_ALLOWED_FIELDS | DETAILED_ALLOWED_FIELDS | RAW_ORDER_ALLOWED_FIELDS
             ),
             # Even RAW cannot include credentials
             forbidden_fields=ALWAYS_FORBIDDEN_FIELDS,
@@ -336,6 +518,7 @@ class TelemetryLevelContract:
 # ============================================================================
 # Enterprise Opt-In Record
 # ============================================================================
+
 
 @dataclass
 class EnterpriseRawOptIn:
@@ -372,6 +555,7 @@ class EnterpriseRawOptIn:
 # ============================================================================
 # RAW Order Events Gate
 # ============================================================================
+
 
 class RawOrderEventsGate:
     """
@@ -522,9 +706,7 @@ class RawOrderEventsGate:
         errors = []
 
         # Check enterprise license
-        license_ok, license_error = self.check_enterprise_license(
-            workspace_id, organization_id
-        )
+        license_ok, license_error = self.check_enterprise_license(workspace_id, organization_id)
         if not license_ok:
             errors.append(license_error or "Enterprise license required")
 
@@ -539,6 +721,7 @@ class RawOrderEventsGate:
 # ============================================================================
 # Telemetry Contract Validator
 # ============================================================================
+
 
 class TelemetryContractValidator:
     """
@@ -592,14 +775,16 @@ class TelemetryContractValidator:
         try:
             contract = TelemetryLevelContract.get_contract(telemetry_level)
         except ValueError as e:
-            violations.append(ContractViolation(
-                violation_type=ContractViolationType.LEVEL_NOT_ALLOWED,
-                severity=ViolationSeverity.CRITICAL,
-                field_path="telemetry_level",
-                message=str(e),
-                telemetry_level=str(telemetry_level),
-                blocked=True,
-            ))
+            violations.append(
+                ContractViolation(
+                    violation_type=ContractViolationType.LEVEL_NOT_ALLOWED,
+                    severity=ViolationSeverity.CRITICAL,
+                    field_path="telemetry_level",
+                    message=str(e),
+                    telemetry_level=str(telemetry_level),
+                    blocked=True,
+                )
+            )
             return ContractValidationResult(
                 valid=False,
                 telemetry_level=str(telemetry_level),
@@ -609,19 +794,19 @@ class TelemetryContractValidator:
 
         # Check enterprise requirement
         if contract.requires_enterprise:
-            gate_ok, gate_errors = self._raw_gate.validate_gate(
-                workspace_id, organization_id
-            )
+            gate_ok, gate_errors = self._raw_gate.validate_gate(workspace_id, organization_id)
             if not gate_ok:
                 for error in gate_errors:
-                    violations.append(ContractViolation(
-                        violation_type=ContractViolationType.ENTERPRISE_REQUIRED,
-                        severity=ViolationSeverity.CRITICAL,
-                        field_path="telemetry_level",
-                        message=error,
-                        telemetry_level=telemetry_level.value,
-                        blocked=True,
-                    ))
+                    violations.append(
+                        ContractViolation(
+                            violation_type=ContractViolationType.ENTERPRISE_REQUIRED,
+                            severity=ViolationSeverity.CRITICAL,
+                            field_path="telemetry_level",
+                            message=error,
+                            telemetry_level=telemetry_level.value,
+                            blocked=True,
+                        )
+                    )
                 blocked = True
             else:
                 enterprise_verified = True
@@ -629,17 +814,19 @@ class TelemetryContractValidator:
 
         # Check redaction requirement
         if contract.requires_redaction and not redaction_applied:
-            violations.append(ContractViolation(
-                violation_type=ContractViolationType.REDACTION_MISSING,
-                severity=ViolationSeverity.CRITICAL,
-                field_path="redaction_applied",
-                message=(
-                    f"Telemetry level {telemetry_level.value} requires redaction. "
-                    "Set redaction_applied=True after applying redaction."
-                ),
-                telemetry_level=telemetry_level.value,
-                blocked=True,
-            ))
+            violations.append(
+                ContractViolation(
+                    violation_type=ContractViolationType.REDACTION_MISSING,
+                    severity=ViolationSeverity.CRITICAL,
+                    field_path="redaction_applied",
+                    message=(
+                        f"Telemetry level {telemetry_level.value} requires redaction. "
+                        "Set redaction_applied=True after applying redaction."
+                    ),
+                    telemetry_level=telemetry_level.value,
+                    blocked=True,
+                )
+            )
             blocked = True
             redaction_verified = False
 
@@ -683,26 +870,26 @@ class TelemetryContractValidator:
 
                 # Check if field is forbidden
                 if key_lower in contract.forbidden_fields:
-                    violations.append(ContractViolation(
-                        violation_type=ContractViolationType.FORBIDDEN_FIELD,
-                        severity=ViolationSeverity.CRITICAL,
-                        field_path=current_path,
-                        message=(
-                            f"Field '{key}' is forbidden at telemetry level "
-                            f"{contract.level.value}. See TELEMETRY_DATA_DICTIONARY.md."
-                        ),
-                        telemetry_level=contract.level.value,
-                        blocked=True,
-                    ))
+                    violations.append(
+                        ContractViolation(
+                            violation_type=ContractViolationType.FORBIDDEN_FIELD,
+                            severity=ViolationSeverity.CRITICAL,
+                            field_path=current_path,
+                            message=(
+                                f"Field '{key}' is forbidden at telemetry level "
+                                f"{contract.level.value}. See TELEMETRY_DATA_DICTIONARY.md."
+                            ),
+                            telemetry_level=contract.level.value,
+                            blocked=True,
+                        )
+                    )
 
                 # Recurse into nested structures
                 violations.extend(self._scan_payload(value, contract, current_path))
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                violations.extend(
-                    self._scan_payload(item, contract, f"{path}[{i}]")
-                )
+                violations.extend(self._scan_payload(item, contract, f"{path}[{i}]"))
 
         return violations
 
@@ -722,36 +909,36 @@ class TelemetryContractValidator:
                 # Check key against credential patterns
                 for pattern, desc in self._compiled_patterns:
                     if pattern.search(key):
-                        violations.append(ContractViolation(
-                            violation_type=ContractViolationType.CREDENTIAL_DETECTED,
-                            severity=ViolationSeverity.CRITICAL,
-                            field_path=current_path,
-                            message=f"Potential credential detected: {desc}",
-                            telemetry_level=telemetry_level.value,
-                            blocked=True,
-                        ))
+                        violations.append(
+                            ContractViolation(
+                                violation_type=ContractViolationType.CREDENTIAL_DETECTED,
+                                severity=ViolationSeverity.CRITICAL,
+                                field_path=current_path,
+                                message=f"Potential credential detected: {desc}",
+                                telemetry_level=telemetry_level.value,
+                                blocked=True,
+                            )
+                        )
 
                 # Check if value looks like a credential
                 if isinstance(value, str) and self._looks_like_credential(value):
-                    violations.append(ContractViolation(
-                        violation_type=ContractViolationType.CREDENTIAL_DETECTED,
-                        severity=ViolationSeverity.CRITICAL,
-                        field_path=current_path,
-                        message="Value appears to be a credential or token",
-                        telemetry_level=telemetry_level.value,
-                        blocked=True,
-                    ))
+                    violations.append(
+                        ContractViolation(
+                            violation_type=ContractViolationType.CREDENTIAL_DETECTED,
+                            severity=ViolationSeverity.CRITICAL,
+                            field_path=current_path,
+                            message="Value appears to be a credential or token",
+                            telemetry_level=telemetry_level.value,
+                            blocked=True,
+                        )
+                    )
 
                 # Recurse
-                violations.extend(
-                    self._scan_credentials(value, telemetry_level, current_path)
-                )
+                violations.extend(self._scan_credentials(value, telemetry_level, current_path))
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                violations.extend(
-                    self._scan_credentials(item, telemetry_level, f"{path}[{i}]")
-                )
+                violations.extend(self._scan_credentials(item, telemetry_level, f"{path}[{i}]"))
 
         return violations
 
@@ -761,11 +948,11 @@ class TelemetryContractValidator:
             return False
 
         patterns = [
-            r'^[A-Za-z0-9+/]{32,}={0,2}$',  # Base64
-            r'^[a-f0-9]{32,}$',              # Hex
-            r'^sk-[a-zA-Z0-9]{20,}$',        # API key pattern
-            r'^pk-[a-zA-Z0-9]{20,}$',        # Public key pattern
-            r'^[A-Z0-9]{20,}$',              # AWS-style key
+            r"^[A-Za-z0-9+/]{32,}={0,2}$",  # Base64
+            r"^[a-f0-9]{32,}$",  # Hex
+            r"^sk-[a-zA-Z0-9]{20,}$",  # API key pattern
+            r"^pk-[a-zA-Z0-9]{20,}$",  # Public key pattern
+            r"^[A-Z0-9]{20,}$",  # AWS-style key
         ]
 
         for pattern in patterns:
@@ -778,6 +965,7 @@ class TelemetryContractValidator:
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def validate_telemetry_contract(
     payload: Dict[str, Any],
@@ -807,14 +995,16 @@ def validate_telemetry_contract(
         return ContractValidationResult(
             valid=False,
             telemetry_level=telemetry_level,
-            violations=[ContractViolation(
-                violation_type=ContractViolationType.LEVEL_NOT_ALLOWED,
-                severity=ViolationSeverity.CRITICAL,
-                field_path="telemetry_level",
-                message=f"Invalid telemetry level: {telemetry_level}",
-                telemetry_level=telemetry_level,
-                blocked=True,
-            )],
+            violations=[
+                ContractViolation(
+                    violation_type=ContractViolationType.LEVEL_NOT_ALLOWED,
+                    severity=ViolationSeverity.CRITICAL,
+                    field_path="telemetry_level",
+                    message=f"Invalid telemetry level: {telemetry_level}",
+                    telemetry_level=telemetry_level,
+                    blocked=True,
+                )
+            ],
             blocked=True,
         )
 

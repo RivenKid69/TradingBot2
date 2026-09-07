@@ -24,11 +24,12 @@ References:
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -59,6 +60,7 @@ from services.dora.resilience_testing import (
 # =============================================================================
 # Article 24(1)(a): Test Category Tests
 # =============================================================================
+
 
 class TestTestCategories:
     """Tests for test categories per Article 24(1)(a)."""
@@ -120,6 +122,7 @@ class TestTestCategories:
 # Test Frequency Tests
 # =============================================================================
 
+
 class TestTestFrequency:
     """Tests for test frequency enumeration."""
 
@@ -160,6 +163,7 @@ class TestTestFrequency:
 # Test Status Tests
 # =============================================================================
 
+
 class TestTestStatus:
     """Tests for test status enumeration."""
 
@@ -192,6 +196,7 @@ class TestTestStatus:
 # Test Result Tests
 # =============================================================================
 
+
 class TestTestResult:
     """Tests for test result enumeration."""
 
@@ -215,6 +220,7 @@ class TestTestResult:
 # =============================================================================
 # Finding Severity Tests
 # =============================================================================
+
 
 class TestFindingSeverity:
     """Tests for finding severity enumeration."""
@@ -244,6 +250,7 @@ class TestFindingSeverity:
 # Finding Status Tests
 # =============================================================================
 
+
 class TestFindingStatus:
     """Tests for finding status enumeration."""
 
@@ -272,6 +279,7 @@ class TestFindingStatus:
 # Tester Type Tests (Article 24(4))
 # =============================================================================
 
+
 class TestTesterType:
     """Tests for tester type per Article 24(4)."""
 
@@ -291,6 +299,7 @@ class TestTesterType:
 # =============================================================================
 # System Criticality Tests
 # =============================================================================
+
 
 class TestSystemCriticality:
     """Tests for system criticality levels."""
@@ -316,6 +325,7 @@ class TestSystemCriticality:
 # Test Scope Tests (Article 24(3))
 # =============================================================================
 
+
 class TestTestScope:
     """Tests for test scope definition per Article 24(3)."""
 
@@ -331,7 +341,7 @@ class TestTestScope:
         scope = TestScope(
             name="Critical Systems Scope",
             description="Testing of critical ICT systems",
-            systems=["trading_platform", "risk_engine"]
+            systems=["trading_platform", "risk_engine"],
         )
         assert scope.name == "Critical Systems Scope"
         assert "trading_platform" in scope.systems
@@ -352,6 +362,7 @@ class TestTestScope:
 # Test Definition Tests
 # =============================================================================
 
+
 class TestTestDefinition:
     """Tests for test definition structure."""
 
@@ -364,17 +375,13 @@ class TestTestDefinition:
     def test_definition_with_category(self):
         """Test definition with specific category."""
         definition = TestDefinition(
-            name="Network Security Scan",
-            category=TestCategory.NETWORK_SECURITY
+            name="Network Security Scan", category=TestCategory.NETWORK_SECURITY
         )
         assert definition.category == TestCategory.NETWORK_SECURITY
 
     def test_definition_with_frequency(self):
         """Test definition with specific frequency."""
-        definition = TestDefinition(
-            name="Quarterly Pentest",
-            frequency=TestFrequency.QUARTERLY
-        )
+        definition = TestDefinition(name="Quarterly Pentest", frequency=TestFrequency.QUARTERLY)
         assert definition.frequency == TestFrequency.QUARTERLY
 
     def test_definition_auto_generates_id(self):
@@ -388,6 +395,7 @@ class TestTestDefinition:
 # Test Execution Tests
 # =============================================================================
 
+
 class TestTestExecution:
     """Tests for test execution structure."""
 
@@ -399,17 +407,12 @@ class TestTestExecution:
 
     def test_execution_with_status(self):
         """Test execution with specific status."""
-        execution = TestExecution(
-            status=TestStatus.IN_PROGRESS
-        )
+        execution = TestExecution(status=TestStatus.IN_PROGRESS)
         assert execution.status == TestStatus.IN_PROGRESS
 
     def test_execution_with_result(self):
         """Test execution with specific result."""
-        execution = TestExecution(
-            status=TestStatus.COMPLETED,
-            result=TestResult.PASSED
-        )
+        execution = TestExecution(status=TestStatus.COMPLETED, result=TestResult.PASSED)
         assert execution.result == TestResult.PASSED
 
     def test_execution_auto_generates_id(self):
@@ -422,6 +425,7 @@ class TestTestExecution:
 # =============================================================================
 # Test Finding Tests
 # =============================================================================
+
 
 class TestTestFinding:
     """Tests for test finding structure."""
@@ -436,17 +440,13 @@ class TestTestFinding:
     def test_finding_with_severity(self):
         """Test finding with specific severity."""
         finding = TestFinding(
-            title="SQL Injection Vulnerability",
-            severity=FindingSeverity.CRITICAL
+            title="SQL Injection Vulnerability", severity=FindingSeverity.CRITICAL
         )
         assert finding.severity == FindingSeverity.CRITICAL
 
     def test_finding_with_status(self):
         """Test finding with specific status."""
-        finding = TestFinding(
-            title="Resolved Issue",
-            status=FindingStatus.RESOLVED
-        )
+        finding = TestFinding(title="Resolved Issue", status=FindingStatus.RESOLVED)
         assert finding.status == FindingStatus.RESOLVED
 
     def test_finding_auto_generates_id(self):
@@ -460,6 +460,7 @@ class TestTestFinding:
 # Testing Programme Tests
 # =============================================================================
 
+
 class TestTestingProgramme:
     """Tests for testing programme structure."""
 
@@ -472,9 +473,7 @@ class TestTestingProgramme:
 
     def test_programme_with_name(self):
         """Test programme with specific name."""
-        programme = TestingProgramme(
-            name="2025 Digital Resilience Testing Programme"
-        )
+        programme = TestingProgramme(name="2025 Digital Resilience Testing Programme")
         assert programme.name == "2025 Digital Resilience Testing Programme"
 
     def test_programme_auto_generates_id(self):
@@ -488,6 +487,7 @@ class TestTestingProgramme:
 # Testing Cycle Tests
 # =============================================================================
 
+
 class TestTestingCycle:
     """Tests for testing cycle structure."""
 
@@ -498,10 +498,7 @@ class TestTestingCycle:
 
     def test_cycle_with_year(self):
         """Test cycle with specific year."""
-        cycle = TestingCycle(
-            cycle_year=2025,
-            name="Annual Testing Cycle 2025"
-        )
+        cycle = TestingCycle(cycle_year=2025, name="Annual Testing Cycle 2025")
         assert cycle.cycle_year == 2025
 
     def test_cycle_auto_generates_id(self):
@@ -515,6 +512,7 @@ class TestTestingCycle:
 # Resilience Testing Config Tests
 # =============================================================================
 
+
 class TestResilienceTestingConfig:
     """Tests for resilience testing configuration."""
 
@@ -526,13 +524,14 @@ class TestResilienceTestingConfig:
     def test_config_has_properties(self):
         """Test config has expected properties."""
         config = ResilienceTestingConfig()
-        assert hasattr(config, 'require_independent_testing')
-        assert hasattr(config, 'default_review_frequency_days')
+        assert hasattr(config, "require_independent_testing")
+        assert hasattr(config, "default_review_frequency_days")
 
 
 # =============================================================================
 # DORAResilienceTestingProgramme Creation Tests
 # =============================================================================
+
 
 class TestDORAResilienceTestingProgrammeCreation:
     """Tests for DORAResilienceTestingProgramme creation."""
@@ -553,14 +552,15 @@ class TestDORAResilienceTestingProgrammeCreation:
     def test_has_required_methods(self):
         """Test that programme has required methods."""
         programme = create_resilience_testing_programme()
-        assert hasattr(programme, 'create_programme')
-        assert hasattr(programme, 'create_test_definition')
-        assert hasattr(programme, 'execute_test')
+        assert hasattr(programme, "create_programme")
+        assert hasattr(programme, "create_test_definition")
+        assert hasattr(programme, "execute_test")
 
 
 # =============================================================================
 # DORAResilienceTestingProgramme Programme Management Tests
 # =============================================================================
+
 
 class TestDORAResilienceTestingProgrammeManagement:
     """Tests for programme management functionality."""
@@ -572,7 +572,7 @@ class TestDORAResilienceTestingProgrammeManagement:
             name="2025 Resilience Testing",
             entity_name="Test Financial Entity",
             entity_type="investment_firm",
-            description="Annual testing programme"
+            description="Annual testing programme",
         )
         assert programme is not None
         assert programme.name == "2025 Resilience Testing"
@@ -581,9 +581,7 @@ class TestDORAResilienceTestingProgrammeManagement:
         """Test retrieving a programme."""
         programme_mgr = create_resilience_testing_programme()
         created = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
         retrieved = programme_mgr.get_programme(created.programme_id)
         assert retrieved is not None
@@ -601,6 +599,7 @@ class TestDORAResilienceTestingProgrammeManagement:
 # DORAResilienceTestingProgramme Test Definition Tests
 # =============================================================================
 
+
 class TestDORAResilienceTestingDefinitions:
     """Tests for test definition management."""
 
@@ -610,7 +609,7 @@ class TestDORAResilienceTestingDefinitions:
         definition = programme_mgr.create_test_definition(
             name="Vulnerability Scan",
             category=TestCategory.VULNERABILITY_ASSESSMENT,
-            frequency=TestFrequency.MONTHLY
+            frequency=TestFrequency.MONTHLY,
         )
         assert definition is not None
         assert definition.name == "Vulnerability Scan"
@@ -619,8 +618,7 @@ class TestDORAResilienceTestingDefinitions:
         """Test retrieving test definitions by category."""
         programme_mgr = create_resilience_testing_programme()
         programme_mgr.create_test_definition(
-            name="Test 1",
-            category=TestCategory.VULNERABILITY_ASSESSMENT
+            name="Test 1", category=TestCategory.VULNERABILITY_ASSESSMENT
         )
         definitions = programme_mgr.get_test_definitions_by_category(
             TestCategory.VULNERABILITY_ASSESSMENT
@@ -632,6 +630,7 @@ class TestDORAResilienceTestingDefinitions:
 # DORAResilienceTestingProgramme Test Execution Tests
 # =============================================================================
 
+
 class TestDORAResilienceTestingExecution:
     """Tests for test execution management."""
 
@@ -639,22 +638,14 @@ class TestDORAResilienceTestingExecution:
         """Test executing a test."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
-        scope = programme_mgr.create_scope(
-            name="Test Scope",
-            systems=["trading_system"]
-        )
+        scope = programme_mgr.create_scope(name="Test Scope", systems=["trading_system"])
         definition = programme_mgr.create_test_definition(
-            name="Pentest",
-            category=TestCategory.PENETRATION_TESTING
+            name="Pentest", category=TestCategory.PENETRATION_TESTING
         )
         execution = programme_mgr.execute_test(
-            test_id=definition.test_id,
-            scope_id=scope.scope_id,
-            tester_type=TesterType.EXTERNAL
+            test_id=definition.test_id, scope_id=scope.scope_id, tester_type=TesterType.EXTERNAL
         )
         assert execution is not None
 
@@ -662,19 +653,13 @@ class TestDORAResilienceTestingExecution:
         """Test getting test execution."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
         scope = programme_mgr.create_scope(name="Test Scope")
         definition = programme_mgr.create_test_definition(
-            name="Test",
-            category=TestCategory.VULNERABILITY_ASSESSMENT
+            name="Test", category=TestCategory.VULNERABILITY_ASSESSMENT
         )
-        execution = programme_mgr.execute_test(
-            test_id=definition.test_id,
-            scope_id=scope.scope_id
-        )
+        execution = programme_mgr.execute_test(test_id=definition.test_id, scope_id=scope.scope_id)
         retrieved = programme_mgr.get_execution(execution.execution_id)
         assert retrieved is not None
 
@@ -682,22 +667,15 @@ class TestDORAResilienceTestingExecution:
         """Test completing a test execution."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
         scope = programme_mgr.create_scope(name="Test Scope")
         definition = programme_mgr.create_test_definition(
-            name="Test",
-            category=TestCategory.VULNERABILITY_ASSESSMENT
+            name="Test", category=TestCategory.VULNERABILITY_ASSESSMENT
         )
-        execution = programme_mgr.execute_test(
-            test_id=definition.test_id,
-            scope_id=scope.scope_id
-        )
+        execution = programme_mgr.execute_test(test_id=definition.test_id, scope_id=scope.scope_id)
         completed = programme_mgr.complete_execution(
-            execution_id=execution.execution_id,
-            result=TestResult.PASSED
+            execution_id=execution.execution_id, result=TestResult.PASSED
         )
         assert completed.status == TestStatus.COMPLETED
 
@@ -706,6 +684,7 @@ class TestDORAResilienceTestingExecution:
 # DORAResilienceTestingProgramme Finding Tests
 # =============================================================================
 
+
 class TestDORAResilienceTestingFindings:
     """Tests for finding management."""
 
@@ -713,24 +692,18 @@ class TestDORAResilienceTestingFindings:
         """Test recording a finding from a test execution."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
         scope = programme_mgr.create_scope(name="Test Scope")
         definition = programme_mgr.create_test_definition(
-            name="Test",
-            category=TestCategory.PENETRATION_TESTING
+            name="Test", category=TestCategory.PENETRATION_TESTING
         )
-        execution = programme_mgr.execute_test(
-            test_id=definition.test_id,
-            scope_id=scope.scope_id
-        )
+        execution = programme_mgr.execute_test(test_id=definition.test_id, scope_id=scope.scope_id)
         finding = programme_mgr.record_finding(
             execution_id=execution.execution_id,
             title="XSS Vulnerability",
             description="Cross-site scripting found in login form",
-            severity=FindingSeverity.HIGH
+            severity=FindingSeverity.HIGH,
         )
         assert finding is not None
         assert finding.title == "XSS Vulnerability"
@@ -753,6 +726,7 @@ class TestDORAResilienceTestingFindings:
 # DORAResilienceTestingProgramme Testing Cycle Tests
 # =============================================================================
 
+
 class TestDORAResilienceTestingCycle:
     """Tests for testing cycle management."""
 
@@ -760,14 +734,10 @@ class TestDORAResilienceTestingCycle:
         """Test creating a testing cycle."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
         cycle = programme_mgr.create_testing_cycle(
-            programme_id=programme.programme_id,
-            cycle_year=2025,
-            name="Q1 2025 Testing"
+            programme_id=programme.programme_id, cycle_year=2025, name="Q1 2025 Testing"
         )
         assert cycle is not None
         assert cycle.cycle_year == 2025
@@ -776,13 +746,10 @@ class TestDORAResilienceTestingCycle:
         """Test retrieving a testing cycle."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Test Programme",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Test Programme", entity_name="Test Entity", entity_type="investment_firm"
         )
         cycle = programme_mgr.create_testing_cycle(
-            programme_id=programme.programme_id,
-            cycle_year=2025
+            programme_id=programme.programme_id, cycle_year=2025
         )
         retrieved = programme_mgr.get_cycle(cycle.cycle_id)
         assert retrieved is not None
@@ -791,6 +758,7 @@ class TestDORAResilienceTestingCycle:
 # =============================================================================
 # Annual Testing Requirements Tests (Article 24)
 # =============================================================================
+
 
 class TestAnnualTestingRequirements:
     """Tests for annual testing requirements per Article 24."""
@@ -801,7 +769,7 @@ class TestAnnualTestingRequirements:
         definition = programme_mgr.create_test_definition(
             name="Critical System Test",
             category=TestCategory.END_TO_END,
-            frequency=TestFrequency.ANNUAL
+            frequency=TestFrequency.ANNUAL,
         )
         assert definition.frequency == TestFrequency.ANNUAL
 
@@ -817,6 +785,7 @@ class TestAnnualTestingRequirements:
 # Risk-Based Testing Tests (Article 24(1))
 # =============================================================================
 
+
 class TestRiskBasedTesting:
     """Tests for risk-based testing approach per Article 24(1)."""
 
@@ -824,9 +793,7 @@ class TestRiskBasedTesting:
         """Test that risk-based approach is enabled by default."""
         programme_mgr = create_resilience_testing_programme()
         programme = programme_mgr.create_programme(
-            name="Risk-Based Testing",
-            entity_name="Test Entity",
-            entity_type="investment_firm"
+            name="Risk-Based Testing", entity_name="Test Entity", entity_type="investment_firm"
         )
         assert programme.risk_based_approach == True
 
@@ -834,6 +801,7 @@ class TestRiskBasedTesting:
 # =============================================================================
 # Reporting and Export Tests
 # =============================================================================
+
 
 class TestResilienceTestingReporting:
     """Tests for reporting and export functionality."""

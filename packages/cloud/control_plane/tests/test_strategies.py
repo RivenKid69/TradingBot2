@@ -266,7 +266,11 @@ class TestCreateStrategy:
         db_session.add(perm)
         await db_session.commit()
 
-        role = Role(name="strat-creator", description="Strategy Creator", organization_id=sample_organization.id)
+        role = Role(
+            name="strat-creator",
+            description="Strategy Creator",
+            organization_id=sample_organization.id,
+        )
         role.permissions.append(perm)
         db_session.add(role)
         await db_session.commit()
@@ -510,7 +514,9 @@ class TestUpdateStrategy:
         db_session.add(perm)
         await db_session.commit()
 
-        role = Role(name="strat-writer", description="Writer", organization_id=sample_organization.id)
+        role = Role(
+            name="strat-writer", description="Writer", organization_id=sample_organization.id
+        )
         role.permissions.append(perm)
         db_session.add(role)
         await db_session.commit()

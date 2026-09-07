@@ -19,8 +19,8 @@ from datetime import datetime, timedelta
 import traceback
 
 # Fix encoding issues on Windows
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -62,16 +62,18 @@ def test_data_download() -> bool:
     print(f"Found {len(parquet_files)} parquet files:")
     for f in parquet_files:
         df = pd.read_parquet(f)
-        print(f"  {f.name}: {len(df)} rows, price range {df['close'].min():.2f}-{df['close'].max():.2f}")
+        print(
+            f"  {f.name}: {len(df)} rows, price range {df['close'].min():.2f}-{df['close'].max():.2f}"
+        )
 
         # Validate columns
-        required_cols = {'timestamp', 'open', 'high', 'low', 'close', 'volume'}
+        required_cols = {"timestamp", "open", "high", "low", "close", "volume"}
         if not required_cols.issubset(set(df.columns)):
             print(f"  FAIL: Missing columns {required_cols - set(df.columns)}")
             return False
 
         # Validate data
-        if df['close'].isna().all():
+        if df["close"].isna().all():
             print(f"  FAIL: All close prices are NaN")
             return False
 
@@ -143,12 +145,12 @@ def test_feature_pipeline() -> bool:
         pipeline = FeaturePipeline()
 
         # Add required columns if missing
-        if 'timestamp' not in df.columns:
-            df['timestamp'] = range(len(df))
+        if "timestamp" not in df.columns:
+            df["timestamp"] = range(len(df))
 
         # Process using fit + transform
         df_with_symbol = df.copy()
-        df_with_symbol['symbol'] = 'SPY'
+        df_with_symbol["symbol"] = "SPY"
 
         # Fit pipeline on data first
         dfs_dict = {"SPY": df_with_symbol}
@@ -264,8 +266,8 @@ def test_trading_env() -> bool:
         df = pd.read_parquet("data/raw_stocks/SPY.parquet")
 
         # Add basic features needed by TradingEnv
-        df['return_1'] = df['close'].pct_change()
-        df['volume_ma'] = df['volume'].rolling(20).mean()
+        df["return_1"] = df["close"].pct_change()
+        df["volume_ma"] = df["volume"].rolling(20).mean()
         df = df.dropna().reset_index(drop=True)
 
         # Limit to 500 rows for testing
@@ -323,8 +325,8 @@ def test_model_create() -> bool:
 
         # Load and prepare stock data
         df = pd.read_parquet("data/raw_stocks/SPY.parquet")
-        df['return_1'] = df['close'].pct_change()
-        df['volume_ma'] = df['volume'].rolling(20).mean()
+        df["return_1"] = df["close"].pct_change()
+        df["volume_ma"] = df["volume"].rolling(20).mean()
         df = df.dropna().reset_index(drop=True).head(500)
 
         # Create env
@@ -379,8 +381,8 @@ def test_short_training() -> bool:
 
         # Load and prepare stock data
         df = pd.read_parquet("data/raw_stocks/SPY.parquet")
-        df['return_1'] = df['close'].pct_change()
-        df['volume_ma'] = df['volume'].rolling(20).mean()
+        df["return_1"] = df["close"].pct_change()
+        df["volume_ma"] = df["volume"].rolling(20).mean()
         df = df.dropna().reset_index(drop=True).head(500)
 
         # Create env
@@ -438,8 +440,8 @@ def test_backtest_simulation() -> bool:
 
         # Load stock data
         df = pd.read_parquet("data/raw_stocks/SPY.parquet")
-        df['return_1'] = df['close'].pct_change()
-        df['volume_ma'] = df['volume'].rolling(20).mean()
+        df["return_1"] = df["close"].pct_change()
+        df["volume_ma"] = df["volume"].rolling(20).mean()
         df = df.dropna().reset_index(drop=True).head(200)
 
         # Create env (not signal-only for real backtest)
@@ -461,7 +463,7 @@ def test_backtest_simulation() -> bool:
         for step in range(len(df) - 60):  # Leave some buffer
             # Simple momentum strategy: buy if recent return positive
             if step > 0:
-                recent_return = df['return_1'].iloc[step + 60]
+                recent_return = df["return_1"].iloc[step + 60]
                 if recent_return > 0:
                     action = np.array([0.5])  # 50% position
                 else:
@@ -472,8 +474,8 @@ def test_backtest_simulation() -> bool:
             obs, reward, terminated, truncated, info = env.step(action)
             total_reward += reward
 
-            if 'net_worth' in info:
-                equity_curve.append(info['net_worth'])
+            if "net_worth" in info:
+                equity_curve.append(info["net_worth"])
 
             if terminated or truncated:
                 break
@@ -481,7 +483,11 @@ def test_backtest_simulation() -> bool:
         print(f"Backtest results:")
         print(f"  Steps: {step + 1}")
         print(f"  Total reward: {total_reward:.4f}")
-        print(f"  Final equity: ${equity_curve[-1]:,.2f}" if len(equity_curve) > 1 else "  Final equity: N/A")
+        print(
+            f"  Final equity: ${equity_curve[-1]:,.2f}"
+            if len(equity_curve) > 1
+            else "  Final equity: N/A"
+        )
 
         if len(equity_curve) > 1:
             returns = np.diff(equity_curve) / equity_curve[:-1]
@@ -544,10 +550,10 @@ def test_multi_symbol() -> bool:
 
 def main() -> int:
     """Run all E2E tests."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("   STOCK PIPELINE END-TO-END TEST")
     print("   " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print("="*60)
+    print("=" * 60)
 
     tests = [
         ("Data Download", test_data_download),

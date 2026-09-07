@@ -45,7 +45,9 @@ def test_edge_cases():
     print("\n[TEST 1] Normal case: net_worth = prev_net_worth = 10000")
     net_worth = 10000.0
     penalty_old = compute_risk_penalty_old(units, atr, risk_aversion_variance, net_worth)
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth, peak_value
+    )
     print(f"  OLD: {penalty_old:.6f}")
     print(f"  NEW: {penalty_new:.6f}")
     print(f"  DELTA: {abs(penalty_old - penalty_new):.6f}")
@@ -55,27 +57,41 @@ def test_edge_cases():
     print("\n[TEST 2] Drawdown: net_worth = 1000 (90% loss)")
     net_worth = 1000.0
     penalty_old = compute_risk_penalty_old(units, atr, risk_aversion_variance, net_worth)
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth, peak_value
+    )
     print(f"  OLD: {penalty_old:.6f} [!!] (penalty EXPLODES)")
     print(f"  NEW: {penalty_new:.6f} [OK] (penalty STABLE)")
     print(f"  Ratio (OLD/NEW): {abs(penalty_old / penalty_new):.1f}x")
-    print(f"  [OK] PASS: NEW is 10x more stable" if abs(penalty_old / penalty_new) > 5 else "  [!!] FAIL")
+    print(
+        f"  [OK] PASS: NEW is 10x more stable"
+        if abs(penalty_old / penalty_new) > 5
+        else "  [!!] FAIL"
+    )
 
     # Test 3: Near-bankruptcy (net_worth = 100)
     print("\n[TEST 3] Near-bankruptcy: net_worth = 100 (99% loss)")
     net_worth = 100.0
     penalty_old = compute_risk_penalty_old(units, atr, risk_aversion_variance, net_worth)
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth, peak_value
+    )
     print(f"  OLD: {penalty_old:.6f} [!!] (penalty CATASTROPHIC)")
     print(f"  NEW: {penalty_new:.6f} [OK] (penalty STABLE)")
     print(f"  Ratio (OLD/NEW): {abs(penalty_old / penalty_new):.1f}x")
-    print(f"  [OK] PASS: NEW is 100x more stable" if abs(penalty_old / penalty_new) > 50 else "  [!!] FAIL")
+    print(
+        f"  [OK] PASS: NEW is 100x more stable"
+        if abs(penalty_old / penalty_new) > 50
+        else "  [!!] FAIL"
+    )
 
     # Test 4: Negative net_worth
     print("\n[TEST 4] Negative net_worth: net_worth = -1000 (bankruptcy)")
     net_worth = -1000.0
     penalty_old = compute_risk_penalty_old(units, atr, risk_aversion_variance, net_worth)
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth, peak_value
+    )
     print(f"  OLD: {penalty_old:.6f} (uses abs, but still unstable)")
     print(f"  NEW: {penalty_new:.6f} [OK] (penalty STABLE)")
     print(f"  [OK] PASS: NEW handles negative net_worth correctly")
@@ -84,37 +100,57 @@ def test_edge_cases():
     print("\n[TEST 5] Edge case: prev_net_worth = 0, peak_value = 10000")
     net_worth = 5000.0
     prev_net_worth_zero = 0.0
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth_zero, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth_zero, peak_value
+    )
     expected = -risk_aversion_variance * units * atr / (peak_value + 1e-9)
     print(f"  NEW: {penalty_new:.6f}")
     print(f"  Expected (using peak_value): {expected:.6f}")
-    print(f"  [OK] PASS: Fallback to peak_value works" if abs(penalty_new - expected) < 1e-9 else "  [!!] FAIL")
+    print(
+        f"  [OK] PASS: Fallback to peak_value works"
+        if abs(penalty_new - expected) < 1e-9
+        else "  [!!] FAIL"
+    )
 
     # Test 6: Edge case - both zero, use 1.0 last resort
     print("\n[TEST 6] Edge case: prev_net_worth = 0, peak_value = 0 (catastrophic)")
     net_worth = 100.0
     prev_net_worth_zero = 0.0
     peak_value_zero = 0.0
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth_zero, peak_value_zero)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth_zero, peak_value_zero
+    )
     expected = -risk_aversion_variance * units * atr / (1.0 + 1e-9)
     print(f"  NEW: {penalty_new:.6f}")
     print(f"  Expected (using 1.0 fallback): {expected:.6f}")
-    print(f"  [OK] PASS: Last resort fallback works" if abs(penalty_new - expected) < 1e-9 else "  [!!] FAIL")
+    print(
+        f"  [OK] PASS: Last resort fallback works"
+        if abs(penalty_new - expected) < 1e-9
+        else "  [!!] FAIL"
+    )
 
     # Test 7: Zero position - no penalty
     print("\n[TEST 7] Zero position: units = 0")
     units_zero = 0.0
     penalty_old = compute_risk_penalty_old(units_zero, atr, risk_aversion_variance, 10000.0)
-    penalty_new = compute_risk_penalty_new(units_zero, atr, risk_aversion_variance, prev_net_worth, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units_zero, atr, risk_aversion_variance, prev_net_worth, peak_value
+    )
     print(f"  OLD: {penalty_old:.6f}")
     print(f"  NEW: {penalty_new:.6f}")
-    print(f"  [OK] PASS: Both return 0.0" if penalty_old == 0.0 and penalty_new == 0.0 else "  [!!] FAIL")
+    print(
+        f"  [OK] PASS: Both return 0.0"
+        if penalty_old == 0.0 and penalty_new == 0.0
+        else "  [!!] FAIL"
+    )
 
     # Test 8: Removed net_worth > 1e-9 check
     print("\n[TEST 8] Verify OLD check was removed: net_worth = 1e-10 (tiny)")
     net_worth = 1e-10
     penalty_old = compute_risk_penalty_old(units, atr, risk_aversion_variance, net_worth)
-    penalty_new = compute_risk_penalty_new(units, atr, risk_aversion_variance, prev_net_worth, peak_value)
+    penalty_new = compute_risk_penalty_new(
+        units, atr, risk_aversion_variance, prev_net_worth, peak_value
+    )
     print(f"  OLD: {penalty_old:.6f} (check BLOCKS penalty due to net_worth < 1e-9)")
     print(f"  NEW: {penalty_new:.6f} (penalty COMPUTED using baseline)")
     print(f"  [OK] PASS: NEW removes unnecessary check" if penalty_new != 0.0 else "  [!!] FAIL")

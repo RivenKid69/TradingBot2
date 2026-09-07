@@ -640,14 +640,18 @@ class TestBusinessContinuityPlan:
     def test_get_scenarios_by_category(self):
         """Test filtering scenarios by category."""
         plan = BusinessContinuityPlan()
-        plan.add_scenario(BCPScenario(
-            name="System 1",
-            category=ScenarioCategory.SYSTEM_FAILURE,
-        ))
-        plan.add_scenario(BCPScenario(
-            name="Network 1",
-            category=ScenarioCategory.NETWORK_FAILURE,
-        ))
+        plan.add_scenario(
+            BCPScenario(
+                name="System 1",
+                category=ScenarioCategory.SYSTEM_FAILURE,
+            )
+        )
+        plan.add_scenario(
+            BCPScenario(
+                name="Network 1",
+                category=ScenarioCategory.NETWORK_FAILURE,
+            )
+        )
 
         system_scenarios = plan.get_scenarios_by_category(ScenarioCategory.SYSTEM_FAILURE)
         assert len(system_scenarios) == 1
@@ -656,16 +660,20 @@ class TestBusinessContinuityPlan:
     def test_get_high_risk_scenarios(self):
         """Test getting high-risk scenarios."""
         plan = BusinessContinuityPlan()
-        plan.add_scenario(BCPScenario(
-            name="High Risk",
-            impact=ImpactLevel.CRITICAL,
-            likelihood=LikelihoodLevel.HIGH,  # Score = 20
-        ))
-        plan.add_scenario(BCPScenario(
-            name="Low Risk",
-            impact=ImpactLevel.LOW,
-            likelihood=LikelihoodLevel.LOW,  # Score = 4
-        ))
+        plan.add_scenario(
+            BCPScenario(
+                name="High Risk",
+                impact=ImpactLevel.CRITICAL,
+                likelihood=LikelihoodLevel.HIGH,  # Score = 20
+            )
+        )
+        plan.add_scenario(
+            BCPScenario(
+                name="Low Risk",
+                impact=ImpactLevel.LOW,
+                likelihood=LikelihoodLevel.LOW,  # Score = 4
+            )
+        )
 
         high_risk = plan.get_high_risk_scenarios(min_score=15.0)
         assert len(high_risk) == 1
@@ -674,13 +682,17 @@ class TestBusinessContinuityPlan:
     def test_get_scenarios_needing_drill(self):
         """Test getting scenarios needing drill."""
         plan = BusinessContinuityPlan()
-        plan.add_scenario(BCPScenario(
-            name="Never Tested",
-        ))
-        plan.add_scenario(BCPScenario(
-            name="Recently Tested",
-            last_drill_date=date.today() - timedelta(days=30),
-        ))
+        plan.add_scenario(
+            BCPScenario(
+                name="Never Tested",
+            )
+        )
+        plan.add_scenario(
+            BCPScenario(
+                name="Recently Tested",
+                last_drill_date=date.today() - timedelta(days=30),
+            )
+        )
 
         needing_drill = plan.get_scenarios_needing_drill()
         assert len(needing_drill) == 1
@@ -707,14 +719,18 @@ class TestBusinessContinuityPlan:
     def test_get_contacts_for_category(self):
         """Test getting contacts for category."""
         plan = BusinessContinuityPlan()
-        plan.add_contact(EmergencyContact(
-            name="IT Contact",
-            categories=[ScenarioCategory.SYSTEM_FAILURE],
-        ))
-        plan.add_contact(EmergencyContact(
-            name="Compliance Contact",
-            categories=[ScenarioCategory.REGULATORY],
-        ))
+        plan.add_contact(
+            EmergencyContact(
+                name="IT Contact",
+                categories=[ScenarioCategory.SYSTEM_FAILURE],
+            )
+        )
+        plan.add_contact(
+            EmergencyContact(
+                name="Compliance Contact",
+                categories=[ScenarioCategory.REGULATORY],
+            )
+        )
 
         it_contacts = plan.get_contacts_for_category(ScenarioCategory.SYSTEM_FAILURE)
         assert len(it_contacts) == 1
@@ -807,10 +823,12 @@ class TestBusinessContinuityPlan:
     def test_get_plan_summary(self):
         """Test plan summary generation."""
         plan = BusinessContinuityPlan(firm_lei="5493001KJTIIGC8Y1R12")
-        plan.add_scenario(BCPScenario(
-            category=ScenarioCategory.SYSTEM_FAILURE,
-            impact=ImpactLevel.HIGH,
-        ))
+        plan.add_scenario(
+            BCPScenario(
+                category=ScenarioCategory.SYSTEM_FAILURE,
+                impact=ImpactLevel.HIGH,
+            )
+        )
         plan.add_contact(EmergencyContact(name="Contact", is_primary=True))
 
         summary = plan.get_plan_summary()
@@ -822,15 +840,19 @@ class TestBusinessContinuityPlan:
     def test_get_drill_schedule(self):
         """Test drill schedule generation."""
         plan = BusinessContinuityPlan()
-        plan.add_scenario(BCPScenario(
-            name="Tested",
-            last_drill_date=date.today() - timedelta(days=30),
-            next_drill_due=date.today() + timedelta(days=335),
-        ))
-        plan.add_scenario(BCPScenario(
-            name="Overdue",
-            last_drill_date=None,
-        ))
+        plan.add_scenario(
+            BCPScenario(
+                name="Tested",
+                last_drill_date=date.today() - timedelta(days=30),
+                next_drill_due=date.today() + timedelta(days=335),
+            )
+        )
+        plan.add_scenario(
+            BCPScenario(
+                name="Overdue",
+                last_drill_date=None,
+            )
+        )
 
         schedule = plan.get_drill_schedule()
         assert len(schedule) == 2
@@ -844,15 +866,19 @@ class TestBusinessContinuityPlan:
             firm_name="Test Firm",
             approved_by="CEO",
         )
-        plan.add_scenario(BCPScenario(
-            name="System Failure",
-            category=ScenarioCategory.SYSTEM_FAILURE,
-        ))
-        plan.add_contact(EmergencyContact(
-            name="IT Manager",
-            role="Head of IT",
-            is_primary=True,
-        ))
+        plan.add_scenario(
+            BCPScenario(
+                name="System Failure",
+                category=ScenarioCategory.SYSTEM_FAILURE,
+            )
+        )
+        plan.add_contact(
+            EmergencyContact(
+                name="IT Manager",
+                role="Head of IT",
+                is_primary=True,
+            )
+        )
 
         doc = plan.generate_bcp_document()
         assert "BUSINESS CONTINUITY PLAN" in doc
@@ -1011,8 +1037,9 @@ class TestStandardScenarios:
         scenarios = get_standard_bcp_scenarios()
 
         for scenario in scenarios:
-            assert len(scenario.immediate_actions) > 0, \
-                f"Scenario {scenario.name} missing immediate actions"
+            assert (
+                len(scenario.immediate_actions) > 0
+            ), f"Scenario {scenario.name} missing immediate actions"
 
     def test_template_scenario_ids_unique(self):
         """Test all scenario IDs are unique."""
@@ -1038,7 +1065,7 @@ class TestFileIO:
         )
         plan.add_scenario(BCPScenario(name="Test Scenario"))
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             file_path = f.name
 
         try:

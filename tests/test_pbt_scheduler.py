@@ -19,6 +19,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 
@@ -378,7 +379,9 @@ class TestPBTScheduler:
 
     def test_perturb_hyperparam_continuous(self, scheduler):
         """Test perturbing continuous hyperparameter."""
-        config = HyperparamConfig(name="lr", min_value=1e-5, max_value=1e-3, perturbation_factor=1.2)
+        config = HyperparamConfig(
+            name="lr", min_value=1e-5, max_value=1e-3, perturbation_factor=1.2
+        )
         current_value = 5e-4
 
         new_value = scheduler._perturb_hyperparam(config, current_value)
@@ -526,8 +529,7 @@ class TestPBTScheduler:
             member.performance = 0.5 + i * 0.1
             # Create dummy checkpoint
             checkpoint_path = os.path.join(
-                scheduler.config.checkpoint_dir,
-                f"member_{member.member_id}_step_0.pt"
+                scheduler.config.checkpoint_dir, f"member_{member.member_id}_step_0.pt"
             )
             torch.save({"dummy": torch.randn(5, 5)}, checkpoint_path)
             member.checkpoint_path = checkpoint_path

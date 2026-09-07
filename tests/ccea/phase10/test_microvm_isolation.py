@@ -187,7 +187,7 @@ class TestFirecrackerPrerequisites:
 
         result = CloudSandboxResult()
 
-        with patch('pathlib.Path.exists', return_value=False):
+        with patch("pathlib.Path.exists", return_value=False):
             result = sandbox._execute_microvm("main.py", result)
 
         assert result.state == CloudSandboxState.FAILED
@@ -209,7 +209,7 @@ class TestFirecrackerPrerequisites:
                 return False
             return True
 
-        with patch.object(Path, 'exists', path_exists_mock):
+        with patch.object(Path, "exists", path_exists_mock):
             result = sandbox._execute_microvm("main.py", result)
 
         # Should fail due to missing kernel
@@ -232,7 +232,7 @@ class TestFirecrackerPrerequisites:
                 return False
             return True
 
-        with patch.object(Path, 'exists', path_exists_mock):
+        with patch.object(Path, "exists", path_exists_mock):
             result = sandbox._execute_microvm("main.py", result)
 
         # Should fail due to missing rootfs
@@ -254,7 +254,7 @@ class TestRootfsOverlay:
         sandbox._scratch_dir = temp_dir
 
         # Mock subprocess to simulate successful reflink
-        with patch('subprocess.run') as mock_run:
+        with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
             sandbox._create_rootfs_overlay(base_rootfs, vm_rootfs, workspace)
@@ -274,8 +274,8 @@ class TestRootfsOverlay:
         sandbox._scratch_dir = temp_dir
 
         # Mock subprocess to fail (no reflink support)
-        with patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, 'cp')):
-            with patch('shutil.copy2') as mock_copy:
+        with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "cp")):
+            with patch("shutil.copy2") as mock_copy:
                 sandbox._create_rootfs_overlay(base_rootfs, vm_rootfs, workspace)
 
                 # Should have fallen back to shutil.copy2
@@ -292,7 +292,7 @@ class TestVMTermination:
 
         sandbox._scratch_dir = temp_dir
 
-        with patch('socket.socket') as mock_socket:
+        with patch("socket.socket") as mock_socket:
             mock_sock_instance = MagicMock()
             mock_socket.return_value = mock_sock_instance
 
@@ -394,13 +394,13 @@ class TestMicroVMExecution:
         mock_process.communicate.return_value = (b"success", b"")
         mock_process.returncode = 0
 
-        with patch.object(Path, 'exists', return_value=True):
-            with patch('subprocess.run', return_value=MagicMock(returncode=0)):
-                with patch('subprocess.Popen', return_value=mock_process):
-                    with patch.object(sandbox, '_create_rootfs_overlay'):
-                        with patch.object(sandbox, '_build_firecracker_config', return_value={}):
-                            with patch.object(sandbox, '_parse_vm_metrics'):
-                                with patch.object(sandbox, '_cleanup_firecracker_vm'):
+        with patch.object(Path, "exists", return_value=True):
+            with patch("subprocess.run", return_value=MagicMock(returncode=0)):
+                with patch("subprocess.Popen", return_value=mock_process):
+                    with patch.object(sandbox, "_create_rootfs_overlay"):
+                        with patch.object(sandbox, "_build_firecracker_config", return_value={}):
+                            with patch.object(sandbox, "_parse_vm_metrics"):
+                                with patch.object(sandbox, "_cleanup_firecracker_vm"):
                                     result = sandbox._execute_microvm("main.py", result)
 
         assert result.success is True
@@ -423,13 +423,13 @@ class TestMicroVMExecution:
         mock_process.kill = MagicMock()
         mock_process.returncode = -9
 
-        with patch.object(Path, 'exists', return_value=True):
-            with patch('subprocess.run', return_value=MagicMock(returncode=0)):
-                with patch('subprocess.Popen', return_value=mock_process):
-                    with patch.object(sandbox, '_create_rootfs_overlay'):
-                        with patch.object(sandbox, '_build_firecracker_config', return_value={}):
-                            with patch.object(sandbox, '_terminate_firecracker_vm'):
-                                with patch.object(sandbox, '_cleanup_firecracker_vm'):
+        with patch.object(Path, "exists", return_value=True):
+            with patch("subprocess.run", return_value=MagicMock(returncode=0)):
+                with patch("subprocess.Popen", return_value=mock_process):
+                    with patch.object(sandbox, "_create_rootfs_overlay"):
+                        with patch.object(sandbox, "_build_firecracker_config", return_value={}):
+                            with patch.object(sandbox, "_terminate_firecracker_vm"):
+                                with patch.object(sandbox, "_cleanup_firecracker_vm"):
                                     result = sandbox._execute_microvm("main.py", result)
 
         assert result.killed_by_timeout is True

@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import re
 
+
 class DataValidator:
     """
     Класс для строгой, атомарной верификации данных временных рядов (OHLCV).
@@ -36,7 +37,7 @@ class DataValidator:
 
     def _check_for_nulls(self, df: pd.DataFrame):
         """Проверяет наличие NaN или inf значений в ключевых колонках."""
-        key_columns = ['open', 'high', 'low', 'close', 'quote_asset_volume']
+        key_columns = ["open", "high", "low", "close", "quote_asset_volume"]
         # Проверяем только те колонки, которые существуют в df
         cols_to_check = [col for col in key_columns if col in df.columns]
 
@@ -52,7 +53,7 @@ class DataValidator:
 
     def _check_values_are_positive(self, df: pd.DataFrame):
         """Убеждается, что значения в колонках цен строго больше нуля, а объёмы больше или равны нулю."""
-        price_columns = ['open', 'high', 'low', 'close']
+        price_columns = ["open", "high", "low", "close"]
         price_cols_to_check = [col for col in price_columns if col in df.columns]
 
         price_violations = df[price_cols_to_check].le(0)
@@ -64,7 +65,7 @@ class DataValidator:
                 f"Первое нарушение в индексе {first_violation_idx}:\n{violation_details}"
             )
 
-        vol_columns = ['quote_asset_volume', 'volume']
+        vol_columns = ["quote_asset_volume", "volume"]
         vol_cols_to_check = [col for col in vol_columns if col in df.columns]
 
         vol_violations = df[vol_cols_to_check].lt(0)
@@ -78,27 +79,27 @@ class DataValidator:
 
     def _check_ohlc_invariants(self, df: pd.DataFrame):
         """Проверяет инварианты OHLC: high - максимальное значение, low - минимальное."""
-        required_columns = ['open', 'high', 'low', 'close']
+        required_columns = ["open", "high", "low", "close"]
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             raise ValueError(f"Отсутствуют обязательные OHLC-колонки: {', '.join(missing_columns)}")
         checks = {
-            "high >= low": (df['high'] < df['low']),
-            "high >= open": (df['high'] < df['open']),
-            "high >= close": (df['high'] < df['close']),
-            "low <= open": (df['low'] > df['open']),
-            "low <= close": (df['low'] > df['close']),
+            "high >= low": (df["high"] < df["low"]),
+            "high >= open": (df["high"] < df["open"]),
+            "high >= close": (df["high"] < df["close"]),
+            "low <= open": (df["low"] > df["open"]),
+            "low <= close": (df["low"] > df["close"]),
         }
 
         for description, violation_series in checks.items():
             if violation_series.any():
                 first_violation_idx = violation_series.idxmax()
-                violation_data = df.loc[first_violation_idx, ['open', 'high', 'low', 'close']]
+                violation_data = df.loc[first_violation_idx, ["open", "high", "low", "close"]]
                 raise ValueError(
                     f"Нарушение OHLC-инварианта '{description}'! "
                     f"Первое нарушение в индексе {first_violation_idx}:\n{violation_data}"
                 )
- 
+
     def _check_schema_and_order(self, df: pd.DataFrame):
         """
         Проверяет, что присутствуют ключевые колонки и что их порядок стабилен.
@@ -108,16 +109,27 @@ class DataValidator:
         Остальные колонки допускаются после базового префикса.
         """
         prefix = [
-            'timestamp','symbol','open','high','low','close','volume','quote_asset_volume',
-            'number_of_trades','taker_buy_base_asset_volume','taker_buy_quote_asset_volume'
+            "timestamp",
+            "symbol",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "quote_asset_volume",
+            "number_of_trades",
+            "taker_buy_base_asset_volume",
+            "taker_buy_quote_asset_volume",
         ]
         missing = [c for c in prefix if c not in df.columns]
         if missing:
             raise ValueError(f"Отсутствуют обязательные колонки: {missing}")
         # Проверяем порядок: первые len(prefix) колонок должны совпадать с prefix
-        head = list(df.columns[:len(prefix)])
+        head = list(df.columns[: len(prefix)])
         if head != prefix:
-            raise ValueError(f"Нарушен порядок колонок. Ожидается префикс {prefix}, получено {head}")
+            raise ValueError(
+                f"Нарушен порядок колонок. Ожидается префикс {prefix}, получено {head}"
+            )
 
     def _check_no_pii(self, df: pd.DataFrame):
         """Проверяет отсутствие очевидных персональных данных в строковых колонках."""
@@ -166,10 +178,14 @@ class DataValidator:
             return
         """Проверяет непрерывность временного ряда в DatetimeIndex."""
         if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError("Для проверки непрерывности индекс датафрейма должен быть pd.DatetimeIndex.")
-        
+            raise ValueError(
+                "Для проверки непрерывности индекс датафрейма должен быть pd.DatetimeIndex."
+            )
+
         if not df.index.is_monotonic_increasing:
-             raise ValueError("Нарушена монотонность временного ряда. Данные должны быть отсортированы по возрастанию времени.")
+            raise ValueError(
+                "Нарушена монотонность временного ряда. Данные должны быть отсортированы по возрастанию времени."
+            )
 
         if frequency is None:
             # Автоматическое определение частоты как моды разниц временных меток
@@ -178,8 +194,9 @@ class DataValidator:
                 # Если всего одна или ноль строк, разрывов нет
                 return
             frequency = diffs.mode()[0]
-            print(f"Автоматически определенная частота: {frequency}. Для принудительного задания используйте аргумент 'frequency'.")
-
+            print(
+                f"Автоматически определенная частота: {frequency}. Для принудительного задания используйте аргумент 'frequency'."
+            )
 
         # Создание идеального временного ряда
         ideal_index = pd.date_range(start=df.index.min(), end=df.index.max(), freq=frequency)

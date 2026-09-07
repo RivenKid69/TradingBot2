@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 
 class ConformityStatus(Enum):
     """Status of conformity assessment."""
+
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     PASSED = "passed"
@@ -61,6 +62,7 @@ class ConformityStatus(Enum):
 
 class ChecklistItemStatus(Enum):
     """Status of individual checklist items."""
+
     NOT_CHECKED = "not_checked"
     COMPLIANT = "compliant"
     PARTIALLY_COMPLIANT = "partially_compliant"
@@ -70,6 +72,7 @@ class ChecklistItemStatus(Enum):
 
 class RequirementCategory(Enum):
     """Categories of EU AI Act requirements."""
+
     RISK_MANAGEMENT = "risk_management"  # Article 9
     DATA_GOVERNANCE = "data_governance"  # Article 10
     TECHNICAL_DOCUMENTATION = "technical_documentation"  # Article 11
@@ -83,6 +86,7 @@ class RequirementCategory(Enum):
 
 class AssessmentPhase(Enum):
     """Phases of conformity assessment."""
+
     PRE_ASSESSMENT = "pre_assessment"
     DOCUMENTATION_REVIEW = "documentation_review"
     TECHNICAL_VERIFICATION = "technical_verification"
@@ -93,6 +97,7 @@ class AssessmentPhase(Enum):
 
 class GapSeverity(Enum):
     """Severity of compliance gaps."""
+
     CRITICAL = "critical"  # Blocks conformity
     MAJOR = "major"  # Significant gap
     MINOR = "minor"  # Small gap
@@ -111,6 +116,7 @@ class ChecklistItem:
 
     Each item maps to a specific requirement in the EU AI Act.
     """
+
     item_id: str = ""
     category: RequirementCategory = RequirementCategory.RISK_MANAGEMENT
     article_reference: str = ""
@@ -141,6 +147,7 @@ class ComplianceGap:
     """
     Identified compliance gap during assessment.
     """
+
     gap_id: str = ""
     category: RequirementCategory = RequirementCategory.RISK_MANAGEMENT
     severity: GapSeverity = GapSeverity.MINOR
@@ -181,6 +188,7 @@ class AssessmentReport:
     """
     Conformity assessment report.
     """
+
     report_id: str = ""
     assessment_date: str = ""
     assessor: str = ""
@@ -229,6 +237,7 @@ class EUDeclaration:
     """
     EU Declaration of Conformity per Article 47.
     """
+
     declaration_id: str = ""
     declaration_number: str = ""
     issue_date: str = ""
@@ -279,6 +288,7 @@ class InstructionsForUse:
     """
     Instructions for Use document per Article 13.
     """
+
     document_id: str = ""
     version: str = "1.0"
     issue_date: str = ""
@@ -337,6 +347,7 @@ class RegistrationInfo:
     """
     EU database registration information per Article 49.
     """
+
     registration_id: str = ""
     registration_status: str = "pending"  # pending, submitted, approved, rejected
     submission_date: str = ""
@@ -379,6 +390,7 @@ class RegistrationInfo:
 @dataclass
 class ConformityAssessmentConfig:
     """Configuration for conformity assessment."""
+
     # Organization info
     organization_name: str = ""
     organization_address: str = ""
@@ -492,8 +504,7 @@ class ConformitySelfAssessment:
     def get_checklist_by_category(self, category: RequirementCategory) -> List[ChecklistItem]:
         """Get checklist items by category."""
         with self._lock:
-            return [item for item in self._checklist.values()
-                    if item.category == category]
+            return [item for item in self._checklist.values() if item.category == category]
 
     def assess_item(
         self,
@@ -531,21 +542,29 @@ class ConformitySelfAssessment:
             item.notes = notes
 
             # Create gap if non-compliant
-            if status in (ChecklistItemStatus.NON_COMPLIANT,
-                         ChecklistItemStatus.PARTIALLY_COMPLIANT):
+            if status in (
+                ChecklistItemStatus.NON_COMPLIANT,
+                ChecklistItemStatus.PARTIALLY_COMPLIANT,
+            ):
                 self._create_gap_from_item(item)
 
-        self._log_event("item_assessed", {
-            "item_id": item_id,
-            "status": status.value,
-        })
+        self._log_event(
+            "item_assessed",
+            {
+                "item_id": item_id,
+                "status": status.value,
+            },
+        )
 
         return item
 
     def _create_gap_from_item(self, item: ChecklistItem) -> ComplianceGap:
         """Create a compliance gap from a non-compliant checklist item."""
-        severity = (GapSeverity.MAJOR if item.status == ChecklistItemStatus.NON_COMPLIANT
-                   else GapSeverity.MINOR)
+        severity = (
+            GapSeverity.MAJOR
+            if item.status == ChecklistItemStatus.NON_COMPLIANT
+            else GapSeverity.MINOR
+        )
 
         gap = ComplianceGap(
             category=item.category,
@@ -588,10 +607,13 @@ class ConformitySelfAssessment:
         with self._lock:
             self._gaps[gap.gap_id] = gap
 
-        self._log_event("gap_added", {
-            "gap_id": gap.gap_id,
-            "severity": severity.value,
-        })
+        self._log_event(
+            "gap_added",
+            {
+                "gap_id": gap.gap_id,
+                "severity": severity.value,
+            },
+        )
 
         return gap
 
@@ -626,8 +648,7 @@ class ConformitySelfAssessment:
     def get_blocking_gaps(self) -> List[ComplianceGap]:
         """Get gaps that block conformity."""
         with self._lock:
-            return [g for g in self._gaps.values()
-                    if g.blocks_conformity and not g.is_resolved]
+            return [g for g in self._gaps.values() if g.blocks_conformity and not g.is_resolved]
 
     # =========================================================================
     # Assessment Execution
@@ -672,14 +693,19 @@ class ConformitySelfAssessment:
         # Save report
         self._save_report(report)
 
-        self._log_event("assessment_completed", {
-            "report_id": report.report_id,
-            "status": report.overall_status.value,
-            "score": report.compliance_score,
-        })
+        self._log_event(
+            "assessment_completed",
+            {
+                "report_id": report.report_id,
+                "status": report.overall_status.value,
+                "score": report.compliance_score,
+            },
+        )
 
-        logger.info(f"Assessment completed: {report.overall_status.value} "
-                   f"(Score: {report.compliance_score:.1f}%)")
+        logger.info(
+            f"Assessment completed: {report.overall_status.value} "
+            f"(Score: {report.compliance_score:.1f}%)"
+        )
 
         return report
 
@@ -717,7 +743,9 @@ class ConformitySelfAssessment:
             score = 100.0
 
         # Count gaps
-        critical_gaps = sum(1 for g in gaps if g.severity == GapSeverity.CRITICAL and not g.is_resolved)
+        critical_gaps = sum(
+            1 for g in gaps if g.severity == GapSeverity.CRITICAL and not g.is_resolved
+        )
         major_gaps = sum(1 for g in gaps if g.severity == GapSeverity.MAJOR and not g.is_resolved)
 
         # Determine status
@@ -737,7 +765,9 @@ class ConformitySelfAssessment:
         for category in RequirementCategory:
             cat_items = [i for i in items if i.category == category]
             if cat_items:
-                cat_compliant = sum(1 for i in cat_items if i.status == ChecklistItemStatus.COMPLIANT)
+                cat_compliant = sum(
+                    1 for i in cat_items if i.status == ChecklistItemStatus.COMPLIANT
+                )
                 category_scores[category.value] = (cat_compliant / len(cat_items)) * 100
 
         # Generate conclusions
@@ -772,20 +802,28 @@ class ConformitySelfAssessment:
     ) -> str:
         """Generate assessment conclusions."""
         if status == ConformityStatus.PASSED:
-            return (f"The AI system has passed the internal conformity self-assessment "
-                   f"with a compliance score of {score:.1f}%. The system is designed to meet "
-                   f"requirements of the EU AI Act for high-risk AI systems (pending external audit).")
+            return (
+                f"The AI system has passed the internal conformity self-assessment "
+                f"with a compliance score of {score:.1f}%. The system is designed to meet "
+                f"requirements of the EU AI Act for high-risk AI systems (pending external audit)."
+            )
         elif status == ConformityStatus.CONDITIONAL:
-            return (f"The AI system has conditionally passed the conformity assessment "
-                   f"with a compliance score of {score:.1f}%. Minor remediation is "
-                   f"required before final conformity can be declared.")
+            return (
+                f"The AI system has conditionally passed the conformity assessment "
+                f"with a compliance score of {score:.1f}%. Minor remediation is "
+                f"required before final conformity can be declared."
+            )
         elif status == ConformityStatus.REQUIRES_REMEDIATION:
-            return (f"The AI system requires remediation before conformity can be declared. "
-                   f"There are {major_gaps} major gap(s) that must be addressed.")
+            return (
+                f"The AI system requires remediation before conformity can be declared. "
+                f"There are {major_gaps} major gap(s) that must be addressed."
+            )
         else:
-            return (f"The AI system has failed the conformity assessment with "
-                   f"{critical_gaps} critical gap(s). Significant remediation is "
-                   f"required before the system can be placed on the market.")
+            return (
+                f"The AI system has failed the conformity assessment with "
+                f"{critical_gaps} critical gap(s). Significant remediation is "
+                f"required before the system can be placed on the market."
+            )
 
     def _generate_recommendations(self, gaps: List[ComplianceGap]) -> List[str]:
         """Generate recommendations based on gaps."""
@@ -845,8 +883,10 @@ class ConformitySelfAssessment:
         # Check if assessment passed
         if self._reports:
             last_report = self._reports[-1]
-            if last_report.overall_status not in (ConformityStatus.PASSED,
-                                                   ConformityStatus.CONDITIONAL):
+            if last_report.overall_status not in (
+                ConformityStatus.PASSED,
+                ConformityStatus.CONDITIONAL,
+            ):
                 logger.warning("Generating declaration without passing assessment")
 
         declaration = EUDeclaration(
@@ -871,9 +911,12 @@ class ConformitySelfAssessment:
         # Save declaration
         self._save_declaration(declaration)
 
-        self._log_event("declaration_generated", {
-            "declaration_id": declaration.declaration_id,
-        })
+        self._log_event(
+            "declaration_generated",
+            {
+                "declaration_id": declaration.declaration_id,
+            },
+        )
 
         return declaration
 
@@ -959,9 +1002,12 @@ class ConformitySelfAssessment:
         # Save instructions
         self._save_instructions(instructions)
 
-        self._log_event("instructions_generated", {
-            "document_id": instructions.document_id,
-        })
+        self._log_event(
+            "instructions_generated",
+            {
+                "document_id": instructions.document_id,
+            },
+        )
 
         return instructions
 
@@ -999,8 +1045,14 @@ class ConformitySelfAssessment:
         return {
             "Sharpe Ratio": {"expected_range": [0.5, 2.0], "description": "Risk-adjusted return"},
             "Maximum Drawdown": {"limit": 0.20, "description": "Maximum peak-to-trough decline"},
-            "Win Rate": {"expected_range": [0.45, 0.65], "description": "Percentage of profitable trades"},
-            "Profit Factor": {"expected_range": [1.2, 2.0], "description": "Gross profit / Gross loss"},
+            "Win Rate": {
+                "expected_range": [0.45, 0.65],
+                "description": "Percentage of profitable trades",
+            },
+            "Profit Factor": {
+                "expected_range": [1.2, 2.0],
+                "description": "Gross profit / Gross loss",
+            },
         }
 
     def _get_default_risks(self) -> List[Dict[str, str]]:
@@ -1152,9 +1204,12 @@ class ConformitySelfAssessment:
         # Save registration
         self._save_registration(registration)
 
-        self._log_event("registration_prepared", {
-            "registration_id": registration.registration_id,
-        })
+        self._log_event(
+            "registration_prepared",
+            {
+                "registration_id": registration.registration_id,
+            },
+        )
 
         return registration
 
@@ -1186,29 +1241,44 @@ class ConformitySelfAssessment:
         # Export checklist
         checklist_path = output_path / "conformity_checklist.json"
         with open(checklist_path, "w", encoding="utf-8") as f:
-            json.dump({
-                "items": [asdict(item) for item in self._checklist.values()],
-                "export_date": datetime.now(timezone.utc).isoformat(),
-            }, f, indent=2, default=str)
+            json.dump(
+                {
+                    "items": [asdict(item) for item in self._checklist.values()],
+                    "export_date": datetime.now(timezone.utc).isoformat(),
+                },
+                f,
+                indent=2,
+                default=str,
+            )
         package["checklist"] = str(checklist_path)
 
         # Export gaps
         gaps_path = output_path / "compliance_gaps.json"
         with open(gaps_path, "w", encoding="utf-8") as f:
-            json.dump({
-                "gaps": [asdict(gap) for gap in self._gaps.values()],
-                "export_date": datetime.now(timezone.utc).isoformat(),
-            }, f, indent=2, default=str)
+            json.dump(
+                {
+                    "gaps": [asdict(gap) for gap in self._gaps.values()],
+                    "export_date": datetime.now(timezone.utc).isoformat(),
+                },
+                f,
+                indent=2,
+                default=str,
+            )
         package["gaps"] = str(gaps_path)
 
         # Export reports
         if self._reports:
             reports_path = output_path / "assessment_reports.json"
             with open(reports_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "reports": [asdict(r) for r in self._reports],
-                    "export_date": datetime.now(timezone.utc).isoformat(),
-                }, f, indent=2, default=str)
+                json.dump(
+                    {
+                        "reports": [asdict(r) for r in self._reports],
+                        "export_date": datetime.now(timezone.utc).isoformat(),
+                    },
+                    f,
+                    indent=2,
+                    default=str,
+                )
             package["reports"] = str(reports_path)
 
         logger.info(f"Exported conformity package to {output_path}")
@@ -1250,228 +1320,244 @@ class ConformitySelfAssessment:
         items = []
 
         # Article 9 - Risk Management
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.RISK_MANAGEMENT,
-                article_reference="Article 9(1)",
-                requirement_text="Establish and implement risk management system",
-                description="Continuous iterative process throughout AI system lifecycle",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.RISK_MANAGEMENT,
-                article_reference="Article 9(2)(a)",
-                requirement_text="Identify foreseeable risks during intended use",
-                description="Risk identification for normal operation scenarios",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.RISK_MANAGEMENT,
-                article_reference="Article 9(2)(b)",
-                requirement_text="Identify risks during reasonably foreseeable misuse",
-                description="Risk identification for misuse scenarios",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.RISK_MANAGEMENT,
-                article_reference="Article 9(4)",
-                requirement_text="Implement risk mitigation measures",
-                description="Measures to eliminate or reduce identified risks",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.RISK_MANAGEMENT,
-                article_reference="Article 9(6)",
-                requirement_text="Test against prior defined metrics",
-                description="Testing procedures with defined thresholds",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.RISK_MANAGEMENT,
+                    article_reference="Article 9(1)",
+                    requirement_text="Establish and implement risk management system",
+                    description="Continuous iterative process throughout AI system lifecycle",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.RISK_MANAGEMENT,
+                    article_reference="Article 9(2)(a)",
+                    requirement_text="Identify foreseeable risks during intended use",
+                    description="Risk identification for normal operation scenarios",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.RISK_MANAGEMENT,
+                    article_reference="Article 9(2)(b)",
+                    requirement_text="Identify risks during reasonably foreseeable misuse",
+                    description="Risk identification for misuse scenarios",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.RISK_MANAGEMENT,
+                    article_reference="Article 9(4)",
+                    requirement_text="Implement risk mitigation measures",
+                    description="Measures to eliminate or reduce identified risks",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.RISK_MANAGEMENT,
+                    article_reference="Article 9(6)",
+                    requirement_text="Test against prior defined metrics",
+                    description="Testing procedures with defined thresholds",
+                ),
+            ]
+        )
 
         # Article 10 - Data Governance
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.DATA_GOVERNANCE,
-                article_reference="Article 10(2)",
-                requirement_text="Ensure data quality for training/validation/testing",
-                description="Data must be relevant, representative, free of errors",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.DATA_GOVERNANCE,
-                article_reference="Article 10(2)(f)",
-                requirement_text="Examine data for possible biases",
-                description="Bias detection and mitigation in datasets",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.DATA_GOVERNANCE,
-                article_reference="Article 10(2)(g)",
-                requirement_text="Identify and address data gaps",
-                description="Gap analysis and remediation",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.DATA_GOVERNANCE,
+                    article_reference="Article 10(2)",
+                    requirement_text="Ensure data quality for training/validation/testing",
+                    description="Data must be relevant, representative, free of errors",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.DATA_GOVERNANCE,
+                    article_reference="Article 10(2)(f)",
+                    requirement_text="Examine data for possible biases",
+                    description="Bias detection and mitigation in datasets",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.DATA_GOVERNANCE,
+                    article_reference="Article 10(2)(g)",
+                    requirement_text="Identify and address data gaps",
+                    description="Gap analysis and remediation",
+                ),
+            ]
+        )
 
         # Article 11 - Technical Documentation
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.TECHNICAL_DOCUMENTATION,
-                article_reference="Article 11(1)",
-                requirement_text="Prepare technical documentation",
-                description="Documentation demonstrating compliance per Annex IV",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.TECHNICAL_DOCUMENTATION,
-                article_reference="Annex IV.1",
-                requirement_text="General description of AI system",
-                description="System identification, purpose, users",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.TECHNICAL_DOCUMENTATION,
-                article_reference="Annex IV.2",
-                requirement_text="Algorithm and data description",
-                description="Development methods, architecture, data requirements",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.TECHNICAL_DOCUMENTATION,
-                article_reference="Annex IV.3",
-                requirement_text="Monitoring and control description",
-                description="Capabilities, limitations, oversight measures",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.TECHNICAL_DOCUMENTATION,
+                    article_reference="Article 11(1)",
+                    requirement_text="Prepare technical documentation",
+                    description="Documentation demonstrating compliance per Annex IV",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.TECHNICAL_DOCUMENTATION,
+                    article_reference="Annex IV.1",
+                    requirement_text="General description of AI system",
+                    description="System identification, purpose, users",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.TECHNICAL_DOCUMENTATION,
+                    article_reference="Annex IV.2",
+                    requirement_text="Algorithm and data description",
+                    description="Development methods, architecture, data requirements",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.TECHNICAL_DOCUMENTATION,
+                    article_reference="Annex IV.3",
+                    requirement_text="Monitoring and control description",
+                    description="Capabilities, limitations, oversight measures",
+                ),
+            ]
+        )
 
         # Article 12 - Record-Keeping
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.RECORD_KEEPING,
-                article_reference="Article 12(1)",
-                requirement_text="Enable automatic recording of events",
-                description="Logging capability for traceability",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.RECORD_KEEPING,
-                article_reference="Article 12(2)",
-                requirement_text="Log period of use and reference database",
-                description="Session tracking and data reference logging",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.RECORD_KEEPING,
-                article_reference="Article 19",
-                requirement_text="Retain logs for minimum 6 months",
-                description="Log retention policy compliance",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.RECORD_KEEPING,
+                    article_reference="Article 12(1)",
+                    requirement_text="Enable automatic recording of events",
+                    description="Logging capability for traceability",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.RECORD_KEEPING,
+                    article_reference="Article 12(2)",
+                    requirement_text="Log period of use and reference database",
+                    description="Session tracking and data reference logging",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.RECORD_KEEPING,
+                    article_reference="Article 19",
+                    requirement_text="Retain logs for minimum 6 months",
+                    description="Log retention policy compliance",
+                ),
+            ]
+        )
 
         # Article 13 - Transparency
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.TRANSPARENCY,
-                article_reference="Article 13(1)",
-                requirement_text="Design for transparency",
-                description="Enable deployers to interpret output and use appropriately",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.TRANSPARENCY,
-                article_reference="Article 13(3)(b)",
-                requirement_text="Provide instructions for use",
-                description="Clear instructions including capabilities and limitations",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.TRANSPARENCY,
+                    article_reference="Article 13(1)",
+                    requirement_text="Design for transparency",
+                    description="Enable deployers to interpret output and use appropriately",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.TRANSPARENCY,
+                    article_reference="Article 13(3)(b)",
+                    requirement_text="Provide instructions for use",
+                    description="Clear instructions including capabilities and limitations",
+                ),
+            ]
+        )
 
         # Article 14 - Human Oversight
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.HUMAN_OVERSIGHT,
-                article_reference="Article 14(1)",
-                requirement_text="Design for human oversight",
-                description="Enable effective oversight during use",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.HUMAN_OVERSIGHT,
-                article_reference="Article 14(4)(a)",
-                requirement_text="Enable understanding of capabilities",
-                description="Operators can understand system capacities and limitations",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.HUMAN_OVERSIGHT,
-                article_reference="Article 14(4)(b)",
-                requirement_text="Enable monitoring and anomaly detection",
-                description="Ability to detect anomalies and dysfunctions",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.HUMAN_OVERSIGHT,
-                article_reference="Article 14(4)(f)",
-                requirement_text="Enable intervention and stop function",
-                description="Ability to intervene or interrupt system operation",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.HUMAN_OVERSIGHT,
+                    article_reference="Article 14(1)",
+                    requirement_text="Design for human oversight",
+                    description="Enable effective oversight during use",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.HUMAN_OVERSIGHT,
+                    article_reference="Article 14(4)(a)",
+                    requirement_text="Enable understanding of capabilities",
+                    description="Operators can understand system capacities and limitations",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.HUMAN_OVERSIGHT,
+                    article_reference="Article 14(4)(b)",
+                    requirement_text="Enable monitoring and anomaly detection",
+                    description="Ability to detect anomalies and dysfunctions",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.HUMAN_OVERSIGHT,
+                    article_reference="Article 14(4)(f)",
+                    requirement_text="Enable intervention and stop function",
+                    description="Ability to intervene or interrupt system operation",
+                ),
+            ]
+        )
 
         # Article 15 - Accuracy, Robustness, Cybersecurity
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.ACCURACY_ROBUSTNESS,
-                article_reference="Article 15(1)",
-                requirement_text="Achieve appropriate accuracy levels",
-                description="Accuracy metrics declared and monitored",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.ACCURACY_ROBUSTNESS,
-                article_reference="Article 15(3)",
-                requirement_text="Be resilient to errors and inconsistencies",
-                description="Robustness measures and failsafe mechanisms",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.ACCURACY_ROBUSTNESS,
-                article_reference="Article 15(4)",
-                requirement_text="Address feedback loops",
-                description="Prevent biased outputs affecting subsequent operations",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.CYBERSECURITY,
-                article_reference="Article 15(5)",
-                requirement_text="Implement cybersecurity measures",
-                description="Protection against attacks specific to AI systems",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.CYBERSECURITY,
-                article_reference="Article 15(5)(a)",
-                requirement_text="Protect against data poisoning",
-                description="Measures to detect and prevent training data attacks",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.CYBERSECURITY,
-                article_reference="Article 15(5)(b)",
-                requirement_text="Protect against adversarial examples",
-                description="Resilience to adversarial inputs",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.ACCURACY_ROBUSTNESS,
+                    article_reference="Article 15(1)",
+                    requirement_text="Achieve appropriate accuracy levels",
+                    description="Accuracy metrics declared and monitored",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.ACCURACY_ROBUSTNESS,
+                    article_reference="Article 15(3)",
+                    requirement_text="Be resilient to errors and inconsistencies",
+                    description="Robustness measures and failsafe mechanisms",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.ACCURACY_ROBUSTNESS,
+                    article_reference="Article 15(4)",
+                    requirement_text="Address feedback loops",
+                    description="Prevent biased outputs affecting subsequent operations",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.CYBERSECURITY,
+                    article_reference="Article 15(5)",
+                    requirement_text="Implement cybersecurity measures",
+                    description="Protection against attacks specific to AI systems",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.CYBERSECURITY,
+                    article_reference="Article 15(5)(a)",
+                    requirement_text="Protect against data poisoning",
+                    description="Measures to detect and prevent training data attacks",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.CYBERSECURITY,
+                    article_reference="Article 15(5)(b)",
+                    requirement_text="Protect against adversarial examples",
+                    description="Resilience to adversarial inputs",
+                ),
+            ]
+        )
 
         # Article 17 - QMS
-        items.extend([
-            ChecklistItem(
-                category=RequirementCategory.QMS,
-                article_reference="Article 17(1)",
-                requirement_text="Establish quality management system",
-                description="QMS ensuring compliance with AI Act requirements",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.QMS,
-                article_reference="Article 17(1)(a)",
-                requirement_text="Strategy for regulatory compliance",
-                description="Documented compliance strategy and procedures",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.QMS,
-                article_reference="Article 17(1)(d)",
-                requirement_text="Testing and validation procedures",
-                description="Examination, test and validation before deployment",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.QMS,
-                article_reference="Article 17(1)(g)",
-                requirement_text="Post-market monitoring system",
-                description="System for monitoring performance post-deployment",
-            ),
-            ChecklistItem(
-                category=RequirementCategory.QMS,
-                article_reference="Article 17(1)(h)",
-                requirement_text="Incident reporting procedures",
-                description="Procedures for serious incident reporting",
-            ),
-        ])
+        items.extend(
+            [
+                ChecklistItem(
+                    category=RequirementCategory.QMS,
+                    article_reference="Article 17(1)",
+                    requirement_text="Establish quality management system",
+                    description="QMS ensuring compliance with AI Act requirements",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.QMS,
+                    article_reference="Article 17(1)(a)",
+                    requirement_text="Strategy for regulatory compliance",
+                    description="Documented compliance strategy and procedures",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.QMS,
+                    article_reference="Article 17(1)(d)",
+                    requirement_text="Testing and validation procedures",
+                    description="Examination, test and validation before deployment",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.QMS,
+                    article_reference="Article 17(1)(g)",
+                    requirement_text="Post-market monitoring system",
+                    description="System for monitoring performance post-deployment",
+                ),
+                ChecklistItem(
+                    category=RequirementCategory.QMS,
+                    article_reference="Article 17(1)(h)",
+                    requirement_text="Incident reporting procedures",
+                    description="Procedures for serious incident reporting",
+                ),
+            ]
+        )
 
         return items
 

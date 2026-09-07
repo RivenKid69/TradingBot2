@@ -33,6 +33,7 @@ class DataCategory(Enum):
     These categories help structure the training data summary
     in compliance with Article 53(1)(d).
     """
+
     MARKET_DATA = "market_data"  # Price, volume, order book
     TECHNICAL_INDICATORS = "technical_indicators"  # Computed features
     FUNDAMENTAL_DATA = "fundamental_data"  # Company financials
@@ -43,6 +44,7 @@ class DataCategory(Enum):
 
 class DataQualityLevel(Enum):
     """Quality assessment level for datasets."""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -73,6 +75,7 @@ class DatasetInfo:
         personal_data_included: Whether PII is included
         geographic_coverage: Geographic scope
     """
+
     name: str
     category: DataCategory
     description: str
@@ -158,6 +161,7 @@ class TrainingDataSummary:
         data_quality_measures: List of quality measures applied
         bias_mitigation_steps: List of bias mitigation steps
     """
+
     model_name: str
     model_version: str
     summary_date: datetime
@@ -180,21 +184,25 @@ class TrainingDataSummary:
         Returns:
             Markdown formatted summary document
         """
-        datasets_text = "\n".join([
-            f"- **{d.name}**: {d.description} "
-            f"({d.size_rows:,} samples, {d.time_range_start.year}-{d.time_range_end.year})"
-            for d in self.datasets
-        ])
+        datasets_text = "\n".join(
+            [
+                f"- **{d.name}**: {d.description} "
+                f"({d.size_rows:,} samples, {d.time_range_start.year}-{d.time_range_end.year})"
+                for d in self.datasets
+            ]
+        )
 
         category_counts = {}
         for d in self.datasets:
             cat = d.category.value
             category_counts[cat] = category_counts.get(cat, 0) + 1
 
-        category_table = "\n".join([
-            f"| {cat.replace('_', ' ').title()} | {count} dataset(s) |"
-            for cat, count in category_counts.items()
-        ])
+        category_table = "\n".join(
+            [
+                f"| {cat.replace('_', ' ').title()} | {count} dataset(s) |"
+                for cat, count in category_counts.items()
+            ]
+        )
 
         return f"""# Training Data Summary
 
@@ -379,12 +387,10 @@ contact: compliance@[company].com*
             data_quality_measures=data["data_quality_measures"],
             bias_mitigation_steps=data["bias_mitigation_steps"],
             personal_data_statement=data.get(
-                "personal_data_statement",
-                "No personal data is used for training."
+                "personal_data_statement", "No personal data is used for training."
             ),
             copyright_compliance_reference=data.get(
-                "copyright_compliance_reference",
-                "See COPYRIGHT_POLICY.md"
+                "copyright_compliance_reference", "See COPYRIGHT_POLICY.md"
             ),
         )
 
@@ -412,7 +418,7 @@ def create_default_summary() -> TrainingDataSummary:
                 "Outlier detection and removal (>5 sigma)",
                 "Gap filling using forward-fill (max 5 bars)",
                 "Volume normalization per asset",
-                "Z-score normalization for model input"
+                "Z-score normalization for model input",
             ],
             quality_level=DataQualityLevel.HIGH,
             personal_data_included=False,
@@ -434,7 +440,7 @@ def create_default_summary() -> TrainingDataSummary:
                 "Corporate actions adjustment (splits, dividends)",
                 "Exchange code normalization",
                 "Timestamp alignment to market hours",
-                "Duplicate removal"
+                "Duplicate removal",
             ],
             quality_level=DataQualityLevel.HIGH,
             personal_data_included=False,
@@ -452,11 +458,7 @@ def create_default_summary() -> TrainingDataSummary:
             assets_covered=["EUR/USD", "GBP/USD", "USD/JPY", "USD/CHF", "AUD/USD", "USD/CAD"],
             update_frequency="1-minute bars",
             source_provider="OANDA / Alpha Vantage",
-            preprocessing=[
-                "Weekend gap handling",
-                "Spread validation",
-                "Tick-to-bar aggregation"
-            ],
+            preprocessing=["Weekend gap handling", "Spread validation", "Tick-to-bar aggregation"],
             quality_level=DataQualityLevel.HIGH,
             personal_data_included=False,
             geographic_coverage="Global",
@@ -476,7 +478,7 @@ def create_default_summary() -> TrainingDataSummary:
                 "Rolling window calculation",
                 "Z-score normalization",
                 "Winsorization at 1st/99th percentile",
-                "NaN handling (forward-fill then backfill)"
+                "NaN handling (forward-fill then backfill)",
             ],
             quality_level=DataQualityLevel.HIGH,
             personal_data_included=False,
@@ -497,13 +499,13 @@ def create_default_summary() -> TrainingDataSummary:
             preprocessing=[
                 "Scenario validation against statistical bounds",
                 "Distribution alignment with real market moments",
-                "Extreme event calibration"
+                "Extreme event calibration",
             ],
             quality_level=DataQualityLevel.HIGH,
             personal_data_included=False,
             geographic_coverage="N/A (synthetic)",
             data_format="Numpy arrays",
-            sampling_methodology="Adversarial generation via learned perturbation policy"
+            sampling_methodology="Adversarial generation via learned perturbation policy",
         ),
     ]
 
@@ -523,7 +525,7 @@ def create_default_summary() -> TrainingDataSummary:
             "Cross-source reconciliation for overlapping data",
             "Feature distribution monitoring for data drift",
             "Unit tests for data pipeline integrity",
-            "Manual review of edge cases and anomalies"
+            "Manual review of edge cases and anomalies",
         ],
         bias_mitigation_steps=[
             "Temporal sampling across market regimes (bull/bear/sideways)",
@@ -532,7 +534,7 @@ def create_default_summary() -> TrainingDataSummary:
             "Look-ahead bias prevention in feature engineering (point-in-time data)",
             "Selection bias mitigation via stratified sampling",
             "Regular bias audits using statistical tests (KS, Chi-square)",
-            "Adversarial testing across demographic and market segments"
+            "Adversarial testing across demographic and market segments",
         ],
         personal_data_statement=(
             "No personal data is used for training. All training data consists of:\n"
@@ -567,7 +569,7 @@ def create_default_summary() -> TrainingDataSummary:
             "2. Risk penalties (drawdown, volatility)\n"
             "3. Constraint satisfaction (position limits, exposure)\n\n"
             "No human labeling or annotation is performed."
-        )
+        ),
     )
 
 
@@ -617,7 +619,7 @@ class TrainingDataSummaryManager:
                 "start": self.current_summary.training_period_start.isoformat(),
                 "end": self.current_summary.training_period_end.isoformat(),
             },
-            "article_reference": "EU AI Act Article 53(1)(d)"
+            "article_reference": "EU AI Act Article 53(1)(d)",
         }
 
     def get_datasets(self) -> List[Dict[str, Any]]:
@@ -644,10 +646,7 @@ class TrainingDataSummaryManager:
                 return dataset
         return None
 
-    def get_datasets_by_category(
-        self,
-        category: DataCategory
-    ) -> List[DatasetInfo]:
+    def get_datasets_by_category(self, category: DataCategory) -> List[DatasetInfo]:
         """
         Get datasets by category.
 
@@ -657,10 +656,7 @@ class TrainingDataSummaryManager:
         Returns:
             List of matching datasets
         """
-        return [
-            d for d in self.current_summary.datasets
-            if d.category == category
-        ]
+        return [d for d in self.current_summary.datasets if d.category == category]
 
     def add_dataset(self, dataset: DatasetInfo) -> None:
         """
@@ -733,9 +729,7 @@ class TrainingDataSummaryManager:
             "has_bias_mitigation": len(summary.bias_mitigation_steps) > 0,
             "has_personal_data_statement": bool(summary.personal_data_statement),
             "has_copyright_reference": bool(summary.copyright_compliance_reference),
-            "all_datasets_valid": all(
-                self._validate_dataset(d) for d in summary.datasets
-            ),
+            "all_datasets_valid": all(self._validate_dataset(d) for d in summary.datasets),
         }
 
         checks["all_valid"] = all(checks.values())
@@ -744,18 +738,20 @@ class TrainingDataSummaryManager:
             "compliant": checks["all_valid"],
             "checks": checks,
             "validation_date": datetime.utcnow().isoformat(),
-            "article_reference": "EU AI Act Article 53(1)(d)"
+            "article_reference": "EU AI Act Article 53(1)(d)",
         }
 
     def _validate_dataset(self, dataset: DatasetInfo) -> bool:
         """Validate a single dataset."""
-        return all([
-            bool(dataset.name),
-            bool(dataset.description),
-            dataset.size_rows > 0,
-            bool(dataset.source_provider),
-            len(dataset.preprocessing) > 0,
-        ])
+        return all(
+            [
+                bool(dataset.name),
+                bool(dataset.description),
+                dataset.size_rows > 0,
+                bool(dataset.source_provider),
+                len(dataset.preprocessing) > 0,
+            ]
+        )
 
     def _update_totals(self) -> None:
         """Update total counts after dataset changes."""
@@ -824,9 +820,9 @@ def validate_dataset_info(dataset: DatasetInfo) -> Dict[str, bool]:
         "has_valid_size": dataset.size_rows > 0 and dataset.size_gb > 0,
         "has_preprocessing": len(dataset.preprocessing) > 0,
         "has_time_range": (
-            dataset.time_range_start is not None and
-            dataset.time_range_end is not None and
-            dataset.time_range_start < dataset.time_range_end
+            dataset.time_range_start is not None
+            and dataset.time_range_end is not None
+            and dataset.time_range_start < dataset.time_range_end
         ),
         "has_assets": len(dataset.assets_covered) > 0,
     }

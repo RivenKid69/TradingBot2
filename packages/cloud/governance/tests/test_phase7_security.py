@@ -151,6 +151,7 @@ from packages.cloud.governance.evidence_pack import (
 # SecurityBaselineService Tests
 # =============================================================================
 
+
 class TestSecurityBaselineService:
     """Tests for SecurityBaselineService."""
 
@@ -467,7 +468,10 @@ class TestSecurityBaselineService:
     def test_expiring_secrets(self, service, workspace_id, user_id):
         """Test finding expiring secrets."""
         secret = service.register_secret(
-            workspace_id, "test", SecretType.API_KEY, user_id,
+            workspace_id,
+            "test",
+            SecretType.API_KEY,
+            user_id,
             expires_at=datetime.now(timezone.utc) + timedelta(days=7),
         )
 
@@ -547,6 +551,7 @@ class TestSecurityBaselineService:
 # SupplyChainService Tests
 # =============================================================================
 
+
 class TestSupplyChainService:
     """Tests for SupplyChainService."""
 
@@ -596,16 +601,26 @@ class TestSupplyChainService:
         """Test artifact registration with invalid digest."""
         with pytest.raises(ValueError, match="Invalid digest"):
             service.register_artifact(
-                workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-                "invalid-digest", "reg", "repo", "user",
+                workspace_id,
+                ArtifactType.CONTAINER_IMAGE,
+                "app",
+                "invalid-digest",
+                "reg",
+                "repo",
+                "user",
             )
 
     def test_register_artifact_latest_tag_denied(self, service, workspace_id, valid_digest):
         """Test that 'latest' tag is denied."""
         with pytest.raises(ValueError, match="latest.*not allowed"):
             service.register_artifact(
-                workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-                valid_digest, "reg", "repo", "user",
+                workspace_id,
+                ArtifactType.CONTAINER_IMAGE,
+                "app",
+                valid_digest,
+                "reg",
+                "repo",
+                "user",
                 tags=["latest"],
             )
 
@@ -613,15 +628,25 @@ class TestSupplyChainService:
         """Test signature requirement."""
         with pytest.raises(ValueError, match="signature is required"):
             strict_service.register_artifact(
-                workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-                valid_digest, "reg", "repo", "user",
+                workspace_id,
+                ArtifactType.CONTAINER_IMAGE,
+                "app",
+                valid_digest,
+                "reg",
+                "repo",
+                "user",
             )
 
     def test_get_artifact_by_digest(self, service, workspace_id, valid_digest):
         """Test artifact retrieval by digest."""
         artifact = service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
         )
 
         retrieved = service.get_artifact_by_digest(valid_digest)
@@ -634,12 +659,22 @@ class TestSupplyChainService:
         d2 = "sha256:" + "b" * 64
 
         service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app1",
-            d1, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app1",
+            d1,
+            "reg",
+            "repo",
+            "user",
         )
         service.register_artifact(
-            workspace_id, ArtifactType.BINARY, "app2",
-            d2, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.BINARY,
+            "app2",
+            d2,
+            "reg",
+            "repo",
+            "user",
         )
 
         all_artifacts = service.list_artifacts()
@@ -652,8 +687,13 @@ class TestSupplyChainService:
     def test_verify_signature_not_signed(self, service, workspace_id, valid_digest):
         """Test verification of unsigned artifact."""
         artifact = service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
         )
 
         result = service.verify_signature(artifact.artifact_id, workspace_id)
@@ -662,8 +702,13 @@ class TestSupplyChainService:
     def test_verify_signature_unknown_signer(self, service, workspace_id, valid_digest):
         """Test verification with unknown signer."""
         artifact = service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
             signature="sig123",
             signer_id="unknown-signer",
         )
@@ -681,8 +726,13 @@ class TestSupplyChainService:
         )
 
         artifact = service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
             signature="sig123",
             signer_id=signer.signer_id,
         )
@@ -693,14 +743,23 @@ class TestSupplyChainService:
     def test_verify_signature_revoked_signer(self, service, workspace_id, valid_digest):
         """Test verification with revoked signer."""
         signer = service.add_trusted_signer(
-            "signer", "key", SCSigningAlgorithm.ED25519, "admin",
+            "signer",
+            "key",
+            SCSigningAlgorithm.ED25519,
+            "admin",
         )
         service.revoke_signer(signer.signer_id, "admin", "Compromised")
 
         artifact = service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
-            signature="sig", signer_id=signer.signer_id,
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
+            signature="sig",
+            signer_id=signer.signer_id,
         )
 
         result = service.verify_signature(artifact.artifact_id, workspace_id)
@@ -726,15 +785,21 @@ class TestSupplyChainService:
         """Test pinning invalid digest."""
         with pytest.raises(ValueError):
             service.pin_digest(
-                workspace_id, ArtifactType.CONTAINER_IMAGE,
-                "app", "invalid", "user",
+                workspace_id,
+                ArtifactType.CONTAINER_IMAGE,
+                "app",
+                "invalid",
+                "user",
             )
 
     def test_get_pinned_digest(self, service, workspace_id, valid_digest):
         """Test retrieving pinned digest."""
         service.pin_digest(
-            workspace_id, ArtifactType.CONTAINER_IMAGE,
-            "my-app", valid_digest, "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "my-app",
+            valid_digest,
+            "user",
         )
 
         pin = service.get_pinned_digest(workspace_id, "my-app")
@@ -744,8 +809,11 @@ class TestSupplyChainService:
     def test_unpin_digest(self, service, workspace_id, valid_digest):
         """Test unpinning digest."""
         pin = service.pin_digest(
-            workspace_id, ArtifactType.CONTAINER_IMAGE,
-            "app", valid_digest, "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "user",
         )
 
         unpinned = service.unpin_digest(pin.pin_id, "user", "No longer needed")
@@ -754,8 +822,12 @@ class TestSupplyChainService:
     def test_expired_pins(self, service, workspace_id, valid_digest):
         """Test finding expired pins."""
         pin = service.pin_digest(
-            workspace_id, ArtifactType.CONTAINER_IMAGE,
-            "app", valid_digest, "user", expires_in_days=1,
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "user",
+            expires_in_days=1,
         )
 
         # Manually expire
@@ -832,9 +904,12 @@ class TestSupplyChainService:
         )
 
         sbom = service.upload_sbom(
-            workspace_id, valid_digest, SBOMFormat.CYCLONEDX_1_5,
+            workspace_id,
+            valid_digest,
+            SBOMFormat.CYCLONEDX_1_5,
             [SBOMComponent(name="lodash", version="4.17.0")],
-            "scanner", vulnerabilities=[vuln],
+            "scanner",
+            vulnerabilities=[vuln],
         )
 
         assert len(sbom.vulnerabilities) == 1
@@ -844,8 +919,11 @@ class TestSupplyChainService:
     def test_get_sbom_by_artifact_digest(self, service, workspace_id, valid_digest):
         """Test SBOM retrieval by artifact digest."""
         service.upload_sbom(
-            workspace_id, valid_digest, SBOMFormat.CYCLONEDX_1_5,
-            [], "scanner",
+            workspace_id,
+            valid_digest,
+            SBOMFormat.CYCLONEDX_1_5,
+            [],
+            "scanner",
         )
 
         sbom = service.get_sbom_by_artifact_digest(valid_digest)
@@ -855,11 +933,17 @@ class TestSupplyChainService:
         """Test vulnerability resolution."""
         vuln = Vulnerability(vuln_id="CVE-2023-12345", severity=VulnerabilitySeverity.HIGH)
         sbom = service.upload_sbom(
-            workspace_id, valid_digest, SBOMFormat.CYCLONEDX_1_5,
-            [], "scanner", vulnerabilities=[vuln],
+            workspace_id,
+            valid_digest,
+            SBOMFormat.CYCLONEDX_1_5,
+            [],
+            "scanner",
+            vulnerabilities=[vuln],
         )
 
-        updated = service.resolve_vulnerability(sbom.sbom_id, "CVE-2023-12345", workspace_id, "user")
+        updated = service.resolve_vulnerability(
+            sbom.sbom_id, "CVE-2023-12345", workspace_id, "user"
+        )
         assert updated.vulnerabilities[0].resolved is True
 
     # Trusted Signers Tests
@@ -889,9 +973,15 @@ class TestSupplyChainService:
         """Test artifact deployment validation."""
         signer = service.add_trusted_signer("key", "data", SCSigningAlgorithm.ED25519, "admin")
         service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
-            signature="sig", signer_id=signer.signer_id,
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
+            signature="sig",
+            signer_id=signer.signer_id,
         )
 
         valid, errors = service.validate_artifact_for_deployment(valid_digest, workspace_id)
@@ -901,8 +991,13 @@ class TestSupplyChainService:
     def test_get_stats(self, service, workspace_id, valid_digest):
         """Test supply chain statistics."""
         service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
         )
 
         stats = service.get_stats(workspace_id)
@@ -911,8 +1006,13 @@ class TestSupplyChainService:
     def test_export_inventory(self, service, workspace_id, valid_digest):
         """Test inventory export."""
         service.register_artifact(
-            workspace_id, ArtifactType.CONTAINER_IMAGE, "app",
-            valid_digest, "reg", "repo", "user",
+            workspace_id,
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            valid_digest,
+            "reg",
+            "repo",
+            "user",
         )
 
         export = service.export_inventory(workspace_id)
@@ -923,6 +1023,7 @@ class TestSupplyChainService:
 # =============================================================================
 # AgentUpdateService Tests
 # =============================================================================
+
 
 class TestAgentUpdateService:
     """Tests for AgentUpdateService."""
@@ -1030,8 +1131,12 @@ class TestAgentUpdateService:
 
         # Record successful update
         service.record_agent_update(
-            rollout.rollout_id, "agent-1", workspace_id,
-            "v0.9.0", "v1.0.0", UpdateResult.SUCCESS,
+            rollout.rollout_id,
+            "agent-1",
+            workspace_id,
+            "v0.9.0",
+            "v1.0.0",
+            UpdateResult.SUCCESS,
         )
 
         # Wait minimum time (force advance)
@@ -1093,7 +1198,9 @@ class TestAgentUpdateService:
         """Test rollback approval."""
         update = service.publish_update("v1.0.0", "sha256:" + "a" * 64, "user")
         rollout = service.create_rollout(update.update_id, "user")
-        rollback = service.request_rollback(rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1")
+        rollback = service.request_rollback(
+            rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1"
+        )
 
         approved = service.approve_rollback(rollback.rollback_id, "user-2")
 
@@ -1103,7 +1210,9 @@ class TestAgentUpdateService:
         """Test self-approval rejection."""
         update = service.publish_update("v1.0.0", "sha256:" + "a" * 64, "user")
         rollout = service.create_rollout(update.update_id, "user")
-        rollback = service.request_rollback(rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1")
+        rollback = service.request_rollback(
+            rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1"
+        )
 
         with pytest.raises(ValueError, match="Self-approval"):
             service.approve_rollback(rollback.rollback_id, "user-1")
@@ -1112,7 +1221,9 @@ class TestAgentUpdateService:
         """Test rollback execution."""
         update = service.publish_update("v1.0.0", "sha256:" + "a" * 64, "user")
         rollout = service.create_rollout(update.update_id, "user")
-        rollback = service.request_rollback(rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1")
+        rollback = service.request_rollback(
+            rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1"
+        )
         service.approve_rollback(rollback.rollback_id, "user-2")
 
         executed = service.execute_rollback(rollback.rollback_id, "user-2")
@@ -1123,7 +1234,9 @@ class TestAgentUpdateService:
         """Test rollback completion."""
         update = service.publish_update("v1.0.0", "sha256:" + "a" * 64, "user")
         rollout = service.create_rollout(update.update_id, "user")
-        rollback = service.request_rollback(rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1")
+        rollback = service.request_rollback(
+            rollout.rollout_id, "v0.9.0", "Critical bug found in production", "user-1"
+        )
         service.approve_rollback(rollback.rollback_id, "user-2")
         service.execute_rollback(rollback.rollback_id, "user-2")
 
@@ -1221,6 +1334,7 @@ class TestAgentUpdateService:
 # =============================================================================
 # ResearchSandboxService Tests
 # =============================================================================
+
 
 class TestResearchSandboxService:
     """Tests for ResearchSandboxService."""
@@ -1336,7 +1450,11 @@ class TestResearchSandboxService:
         service.set_egress_policy(workspace_id, policy, user_id)
 
         allowed, reason = service.check_egress(
-            "job-1", workspace_id, "evil.com", None, 443,
+            "job-1",
+            workspace_id,
+            "evil.com",
+            None,
+            443,
         )
 
         assert allowed is False
@@ -1450,8 +1568,12 @@ class TestResearchSandboxService:
         service.start_job(job.job_id)
 
         abuse = service.detect_abuse(
-            job.job_id, AbuseType.RESOURCE_ABUSE,
-            ["High resource"], {}, 0.6, AbuseAction.ALERT,
+            job.job_id,
+            AbuseType.RESOURCE_ABUSE,
+            ["High resource"],
+            {},
+            0.6,
+            AbuseAction.ALERT,
         )
 
         resolved = service.resolve_abuse_event(abuse.event_id, "admin")
@@ -1481,6 +1603,7 @@ class TestResearchSandboxService:
 # =============================================================================
 # BreachWorkflowService Tests
 # =============================================================================
+
 
 class TestBreachWorkflowService:
     """Tests for BreachWorkflowService."""
@@ -1514,8 +1637,11 @@ class TestBreachWorkflowService:
     def test_confirm_breach(self, service, workspace_id):
         """Test breach confirmation."""
         breach = service.report_breach(
-            workspace_id, "Test Breach", "Description",
-            BreachCategory.CONFIDENTIALITY, "reporter",
+            workspace_id,
+            "Test Breach",
+            "Description",
+            BreachCategory.CONFIDENTIALITY,
+            "reporter",
         )
 
         confirmed = service.confirm_breach(breach.breach_id, "investigator")
@@ -1525,8 +1651,11 @@ class TestBreachWorkflowService:
     def test_breach_deadline(self, service, workspace_id):
         """Test 72-hour deadline calculation."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         deadline = breach.get_authority_deadline()
@@ -1539,8 +1668,11 @@ class TestBreachWorkflowService:
     def test_assess_breach(self, service, workspace_id):
         """Test breach assessment."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         assessment = RiskAssessment(
@@ -1579,8 +1711,11 @@ class TestBreachWorkflowService:
     def test_make_notification_decision(self, service, workspace_id):
         """Test notification decision."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         assessment = RiskAssessment(
@@ -1590,7 +1725,8 @@ class TestBreachWorkflowService:
         service.assess_breach(breach.breach_id, assessment, "dpo")
 
         decided = service.make_notification_decision(
-            breach.breach_id, "dpo",
+            breach.breach_id,
+            "dpo",
         )
 
         assert decided.decision is not None
@@ -1599,8 +1735,11 @@ class TestBreachWorkflowService:
     def test_notification_decision_with_exemption(self, service, workspace_id):
         """Test notification decision with exemption."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         assessment = RiskAssessment(
@@ -1610,7 +1749,8 @@ class TestBreachWorkflowService:
         service.assess_breach(breach.breach_id, assessment, "dpo")
 
         decided = service.make_notification_decision(
-            breach.breach_id, "dpo",
+            breach.breach_id,
+            "dpo",
             exemption=ExemptionType.ENCRYPTION,
             exemption_justification="All data was encrypted",
         )
@@ -1621,8 +1761,11 @@ class TestBreachWorkflowService:
     def test_approve_decision(self, service, workspace_id):
         """Test decision approval."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
         assessment = RiskAssessment(data_sensitivity_score=0.5)
         service.assess_breach(breach.breach_id, assessment, "analyst")
@@ -1636,13 +1779,17 @@ class TestBreachWorkflowService:
     def test_create_authority_notification(self, service, workspace_id):
         """Test creating authority notification."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
             data_categories_affected=["email", "name"],
         )
 
         notification = service.create_authority_notification(
-            breach.breach_id, "dpo",
+            breach.breach_id,
+            "dpo",
         )
 
         assert notification.notification_id is not None
@@ -1652,13 +1799,18 @@ class TestBreachWorkflowService:
     def test_submit_authority_notification(self, service, workspace_id):
         """Test submitting authority notification."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
         service.create_authority_notification(breach.breach_id, "dpo")
 
         submitted = service.submit_authority_notification(
-            breach.breach_id, "dpo", submission_reference="ICO-2025-12345",
+            breach.breach_id,
+            "dpo",
+            submission_reference="ICO-2025-12345",
         )
 
         assert submitted.authority_notification.status == NotificationStatus.SUBMITTED
@@ -1668,13 +1820,17 @@ class TestBreachWorkflowService:
     def test_create_subject_notification(self, service, workspace_id):
         """Test creating subject notification."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
         breach.individuals_affected_count = 100
 
         notification = service.create_subject_notification(
-            breach.breach_id, "dpo",
+            breach.breach_id,
+            "dpo",
             plain_language_description="Your data may have been accessed.",
             recommendations=["Change your password", "Monitor accounts"],
         )
@@ -1685,13 +1841,18 @@ class TestBreachWorkflowService:
     def test_send_subject_notification(self, service, workspace_id):
         """Test sending subject notification."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
         service.create_subject_notification(breach.breach_id, "dpo", "Description")
 
         sent = service.send_subject_notification(
-            breach.breach_id, "dpo", subjects_notified_count=95,
+            breach.breach_id,
+            "dpo",
+            subjects_notified_count=95,
         )
 
         assert sent.subject_notification.status == NotificationStatus.COMPLETE
@@ -1701,8 +1862,11 @@ class TestBreachWorkflowService:
     def test_record_containment(self, service, workspace_id):
         """Test recording containment."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         contained = service.record_containment(
@@ -1717,8 +1881,11 @@ class TestBreachWorkflowService:
     def test_record_remediation(self, service, workspace_id):
         """Test recording remediation."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         remediated = service.record_remediation(
@@ -1734,8 +1901,11 @@ class TestBreachWorkflowService:
     def test_resolve_breach(self, service, workspace_id):
         """Test breach resolution."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         resolved = service.resolve_breach(
@@ -1750,8 +1920,11 @@ class TestBreachWorkflowService:
     def test_close_breach(self, service, workspace_id):
         """Test breach closure."""
         breach = service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
         service.resolve_breach(breach.breach_id, ["Lesson"], "dpo")
 
@@ -1786,7 +1959,9 @@ class TestBreachWorkflowService:
         """Test completing tabletop exercise."""
         scenarios = service.list_scenarios()
         exercise = service.create_exercise(
-            workspace_id, scenarios[0].scenario_id, "dpo",
+            workspace_id,
+            scenarios[0].scenario_id,
+            "dpo",
             ["security", "eng"],
         )
 
@@ -1814,11 +1989,21 @@ class TestBreachWorkflowService:
         # After exercise - not due
         scenarios = service.list_scenarios()
         exercise = service.create_exercise(
-            workspace_id, scenarios[0].scenario_id, "dpo", ["team"],
+            workspace_id,
+            scenarios[0].scenario_id,
+            "dpo",
+            ["team"],
         )
         service.complete_exercise(
-            exercise.exercise_id, "dpo", 60, True, 15,
-            {}, [], [], [],
+            exercise.exercise_id,
+            "dpo",
+            60,
+            True,
+            15,
+            {},
+            [],
+            [],
+            [],
         )
 
         assert service.is_tabletop_due(workspace_id) is False
@@ -1827,8 +2012,11 @@ class TestBreachWorkflowService:
     def test_get_stats(self, service, workspace_id):
         """Test breach statistics."""
         service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         stats = service.get_stats(workspace_id)
@@ -1838,8 +2026,11 @@ class TestBreachWorkflowService:
     def test_export_breach_records(self, service, workspace_id):
         """Test breach records export."""
         service.report_breach(
-            workspace_id, "Test", "Desc",
-            BreachCategory.CONFIDENTIALITY, "user",
+            workspace_id,
+            "Test",
+            "Desc",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         export = service.export_breach_records(workspace_id)
@@ -1850,6 +2041,7 @@ class TestBreachWorkflowService:
 # =============================================================================
 # EvidencePackService Tests
 # =============================================================================
+
 
 class TestEvidencePackService:
     """Tests for EvidencePackService."""
@@ -1888,7 +2080,8 @@ class TestEvidencePackService:
     def test_generate_pack(self, service, workspace_id):
         """Test pack generation."""
         request = service.request_export(
-            workspace_id, "auditor",
+            workspace_id,
+            "auditor",
             categories={EvidenceCategory.ACCESS_AUDIT},
         )
 
@@ -1951,6 +2144,7 @@ class TestEvidencePackService:
         # Verify it's a valid ZIP
         import io
         import zipfile
+
         with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
             assert "manifest.json" in zf.namelist()
 
@@ -2009,6 +2203,7 @@ class TestEvidencePackService:
 # Integration Tests
 # =============================================================================
 
+
 class TestPhase7Integration:
     """Integration tests for Phase 7 services."""
 
@@ -2049,7 +2244,9 @@ class TestPhase7Integration:
         # 5. Create and submit authority notification
         breach_service.create_authority_notification(breach.breach_id, "dpo")
         breach_service.submit_authority_notification(
-            breach.breach_id, "dpo", "AUTH-2025-001",
+            breach.breach_id,
+            "dpo",
+            "AUTH-2025-001",
         )
 
         # 6. Containment
@@ -2093,12 +2290,20 @@ class TestPhase7Integration:
         # Set up some data
         security_service.create_key("ws-1", KeyType.DATA_ENCRYPTION_KEY, "admin")
         supply_chain_service.register_artifact(
-            "ws-1", ArtifactType.CONTAINER_IMAGE, "app",
-            "sha256:" + "a" * 64, "gcr.io", "app", "admin",
+            "ws-1",
+            ArtifactType.CONTAINER_IMAGE,
+            "app",
+            "sha256:" + "a" * 64,
+            "gcr.io",
+            "app",
+            "admin",
         )
         breach_service.report_breach(
-            "ws-1", "Test Breach", "Description",
-            BreachCategory.CONFIDENTIALITY, "user",
+            "ws-1",
+            "Test Breach",
+            "Description",
+            BreachCategory.CONFIDENTIALITY,
+            "user",
         )
 
         # Create evidence pack service with connected services
@@ -2120,7 +2325,9 @@ class TestPhase7Integration:
 
         # Publish update
         update = update_service.publish_update(
-            "v2.0.0", "sha256:" + "a" * 64, "release-bot",
+            "v2.0.0",
+            "sha256:" + "a" * 64,
+            "release-bot",
         )
 
         # Create rollout with custom stages
@@ -2130,7 +2337,9 @@ class TestPhase7Integration:
             {"name": "general", "percentage": 100, "min_success_rate": 0.95},
         ]
         rollout = update_service.create_rollout(
-            update.update_id, "admin", stages=stages,
+            update.update_id,
+            "admin",
+            stages=stages,
         )
 
         # Start rollout
@@ -2139,8 +2348,12 @@ class TestPhase7Integration:
         # Simulate canary updates
         for i in range(10):
             update_service.record_agent_update(
-                rollout.rollout_id, f"agent-{i}", "ws-1",
-                "v1.9.0", "v2.0.0", UpdateResult.SUCCESS,
+                rollout.rollout_id,
+                f"agent-{i}",
+                "ws-1",
+                "v1.9.0",
+                "v2.0.0",
+                UpdateResult.SUCCESS,
             )
 
         # Advance to beta
@@ -2150,8 +2363,12 @@ class TestPhase7Integration:
         for i in range(90):
             result = UpdateResult.SUCCESS if i % 20 != 0 else UpdateResult.FAILED
             update_service.record_agent_update(
-                rollout.rollout_id, f"agent-beta-{i}", "ws-1",
-                "v1.9.0", "v2.0.0", result,
+                rollout.rollout_id,
+                f"agent-beta-{i}",
+                "ws-1",
+                "v1.9.0",
+                "v2.0.0",
+                result,
             )
 
         # Check rollout state

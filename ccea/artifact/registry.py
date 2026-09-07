@@ -29,6 +29,7 @@ from ccea.artifact.signer import SignatureInfo
 @dataclass
 class RegistryEntry:
     """Registry entry for an artifact."""
+
     artifact_id: str
     version: str
     digest: str

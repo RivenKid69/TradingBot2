@@ -24,6 +24,7 @@ from impl_bar_executor import DryRunExecutor, BarExecutor, ExecReport, ExecStatu
 # Mock Order class for testing
 # =============================================================================
 
+
 class MockOrder:
     """Mock order for testing."""
 
@@ -46,6 +47,7 @@ class MockOrder:
 # Mock Executor for testing delegation
 # =============================================================================
 
+
 class MockExecutor:
     """Mock executor to test delegation."""
 
@@ -58,6 +60,7 @@ class MockExecutor:
         """Execute order - should NOT be called in dry-run mode."""
         from core_models import Side, OrderType
         import time
+
         self.execute_called = True
         return ExecReport(
             ts=int(time.time() * 1000),
@@ -86,6 +89,7 @@ class MockExecutor:
 # =============================================================================
 # Tests: Basic DryRunExecutor functionality
 # =============================================================================
+
 
 class TestDryRunExecutorBasic:
     """Test basic DryRunExecutor functionality."""
@@ -152,6 +156,7 @@ class TestDryRunExecutorBasic:
 # =============================================================================
 # Tests: Logging
 # =============================================================================
+
 
 class TestDryRunExecutorLogging:
     """Test DryRunExecutor logging functionality."""
@@ -228,6 +233,7 @@ class TestDryRunExecutorLogging:
 # Tests: Delegation
 # =============================================================================
 
+
 class TestDryRunExecutorDelegation:
     """Test DryRunExecutor delegation to wrapped executor."""
 
@@ -274,6 +280,7 @@ class TestDryRunExecutorDelegation:
 # =============================================================================
 # Tests: Order attribute variations
 # =============================================================================
+
 
 class TestDryRunExecutorOrderVariations:
     """Test DryRunExecutor with various order attribute names."""
@@ -325,6 +332,7 @@ class TestDryRunExecutorOrderVariations:
 # Tests: Integration with BarExecutor
 # =============================================================================
 
+
 class TestDryRunExecutorBarExecutorIntegration:
     """Test DryRunExecutor integration with BarExecutor."""
 
@@ -359,6 +367,7 @@ class TestDryRunExecutorBarExecutorIntegration:
 # =============================================================================
 # Tests: Edge cases
 # =============================================================================
+
 
 class TestDryRunExecutorEdgeCases:
     """Test DryRunExecutor edge cases."""

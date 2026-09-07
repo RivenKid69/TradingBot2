@@ -92,7 +92,7 @@ YANG_ZHANG_WINDOWS = [12, 42, 180]
 
 YANG_ZHANG_NAMES = {
     12: "yang_zhang_48h",  # или yang_zhang_2d
-    42: "yang_zhang_7d",   # или yang_zhang_168h
+    42: "yang_zhang_7d",  # или yang_zhang_168h
     180: "yang_zhang_30d",  # или yang_zhang_720h
 }
 
@@ -109,7 +109,7 @@ PARKINSON_WINDOWS = [12, 42]
 
 PARKINSON_NAMES = {
     12: "parkinson_48h",  # или parkinson_2d
-    42: "parkinson_7d",   # или parkinson_168h
+    42: "parkinson_7d",  # или parkinson_168h
 }
 
 
@@ -215,20 +215,20 @@ CVD_NAMES = {
 # Вариант A: Свечные паттерны (рекомендуется)
 USE_CANDLESTICK_PATTERNS = True
 CANDLESTICK_PATTERNS = [
-    "doji",              # Доджи (неопределенность)
-    "hammer",            # Молот (разворот вверх)
-    "shooting_star",     # Падающая звезда (разворот вниз)
-    "engulfing_bull",    # Бычье поглощение
-    "engulfing_bear",    # Медвежье поглощение
-    "inside_bar",        # Внутренний бар (консолидация)
+    "doji",  # Доджи (неопределенность)
+    "hammer",  # Молот (разворот вверх)
+    "shooting_star",  # Падающая звезда (разворот вниз)
+    "engulfing_bull",  # Бычье поглощение
+    "engulfing_bear",  # Медвежье поглощение
+    "inside_bar",  # Внутренний бар (консолидация)
 ]
 
 # Вариант B: Макро-индикаторы
 USE_MACRO_INDICATORS = False
 MACRO_INDICATORS = [
     "price_to_sma_ratio",  # Отношение цены к SMA
-    "trend_strength",       # Сила тренда (ADX-подобный)
-    "regime_volatility",    # Режим волатильности (high/low)
+    "trend_strength",  # Сила тренда (ADX-подобный)
+    "regime_volatility",  # Режим волатильности (high/low)
 ]
 
 # Вариант C: Удалить (заполнить нулями)
@@ -237,9 +237,9 @@ MACRO_INDICATORS = [
 # Вариант D: Support/Resistance индикаторы
 USE_SUPPORT_RESISTANCE = False
 SUPPORT_RESISTANCE = [
-    "distance_to_support",    # Расстояние до ближайшей поддержки
-    "distance_to_resistance", # Расстояние до ближайшего сопротивления
-    "breakout_indicator",     # Индикатор пробоя
+    "distance_to_support",  # Расстояние до ближайшей поддержки
+    "distance_to_resistance",  # Расстояние до ближайшего сопротивления
+    "breakout_indicator",  # Индикатор пробоя
 ]
 
 
@@ -255,7 +255,7 @@ SUPPORT_RESISTANCE = [
 
 # Рекомендуемые значения для 4h:
 VOLUME_NORM_DIVISOR = 240e6  # 240 * 1e6 (примерно)
-REL_VOLUME_DIVISOR = 24000    # 240 * 100 (примерно)
+REL_VOLUME_DIVISOR = 24000  # 240 * 100 (примерно)
 
 # Эти значения нужно откалибровать на реальных 4h данных!
 # Используйте percentile-based calibration:
@@ -338,6 +338,7 @@ SUMMARY = """
 # ЭКСПОРТ КОНФИГУРАЦИИ ДЛЯ ИСПОЛЬЗОВАНИЯ В КОДЕ
 # =============================================================================
 
+
 def get_feature_spec_4h():
     """
     Возвращает FeatureSpec для 4h интервала.
@@ -374,7 +375,9 @@ def get_feature_spec_4h():
         parkinson_windows=[x * BAR_DURATION_MINUTES for x in PARKINSON_WINDOWS],
         garch_windows=[x * BAR_DURATION_MINUTES for x in GARCH_WINDOWS],
         taker_buy_ratio_windows=[x * BAR_DURATION_MINUTES for x in TAKER_BUY_RATIO_SMA_WINDOWS],
-        taker_buy_ratio_momentum=[x * BAR_DURATION_MINUTES for x in TAKER_BUY_RATIO_MOMENTUM_WINDOWS],
+        taker_buy_ratio_momentum=[
+            x * BAR_DURATION_MINUTES for x in TAKER_BUY_RATIO_MOMENTUM_WINDOWS
+        ],
         cvd_windows=[x * BAR_DURATION_MINUTES for x in CVD_WINDOWS],
         bar_duration_minutes=BAR_DURATION_MINUTES,  # КРИТИЧНО!
     )
@@ -405,7 +408,9 @@ def get_config_summary():
     print(f"\nTaker Buy Ratio SMA (bars): {TAKER_BUY_RATIO_SMA_WINDOWS}")
     print(f"  → Times: {[TAKER_BUY_RATIO_SMA_NAMES[w] for w in TAKER_BUY_RATIO_SMA_WINDOWS]}")
     print(f"\nTaker Buy Ratio Momentum (bars): {TAKER_BUY_RATIO_MOMENTUM_WINDOWS}")
-    print(f"  → Times: {[TAKER_BUY_RATIO_MOMENTUM_NAMES[w] for w in TAKER_BUY_RATIO_MOMENTUM_WINDOWS]}")
+    print(
+        f"  → Times: {[TAKER_BUY_RATIO_MOMENTUM_NAMES[w] for w in TAKER_BUY_RATIO_MOMENTUM_WINDOWS]}"
+    )
     print(f"\nCVD windows (bars): {CVD_WINDOWS}")
     print(f"  → Times: {[CVD_NAMES[w] for w in CVD_WINDOWS]}")
 
@@ -422,8 +427,8 @@ def get_config_summary():
 
 if __name__ == "__main__":
     get_config_summary()
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Для использования в коде:")
     print("  from config_4h_timeframe import get_feature_spec_4h")
     print("  spec = get_feature_spec_4h()")
-    print("="*70)
+    print("=" * 70)

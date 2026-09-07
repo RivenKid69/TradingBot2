@@ -16,7 +16,9 @@ class DynSpreadCfg(BaseModel):
     beta_illiquidity: float = 1.0
     vol_mode: str = "hl"
     liq_col: str = "number_of_trades"
-    liq_ref: float = 240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
+    liq_ref: float = (
+        240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
+    )
     min_bps: float = 1.0
     max_bps: float = 25.0
 
@@ -24,6 +26,7 @@ class DynSpreadCfg(BaseModel):
 def load_dyn_spread_config(path: str) -> DynSpreadCfg:
     import yaml
     import os
+
     if not path or not os.path.exists(path):
         return DynSpreadCfg()
     try:
@@ -40,7 +43,9 @@ def load_dyn_spread_config(path: str) -> DynSpreadCfg:
         return DynSpreadCfg()
 
 
-def _vol_factor(row: pd.Series, *, ref: float, vol_mode: str, last_ref: Optional[float]) -> Tuple[float, float]:
+def _vol_factor(
+    row: pd.Series, *, ref: float, vol_mode: str, last_ref: Optional[float]
+) -> Tuple[float, float]:
     """
     Возвращает (vol_factor, new_last_ref).
     vol_factor — безразмерный (доли), не bps.
@@ -133,7 +138,9 @@ def effective_return_series(
         sym = syms[i]
         last = last_ref_by_sym.get(sym)
         row = df.iloc[i]
-        spread_bps, new_last = dyn_spread_bps_row(row, cfg=cfg, last_ref=last, ref_price_col=ref_price_col)
+        spread_bps, new_last = dyn_spread_bps_row(
+            row, cfg=cfg, last_ref=last, ref_price_col=ref_price_col
+        )
         # как обсуждали: используем spread_bps как оценку round-trip спред-стоимости.
         slipp[i] = spread_bps if roundtrip_spread else (spread_bps * 0.5)
         last_ref_by_sym[sym] = new_last

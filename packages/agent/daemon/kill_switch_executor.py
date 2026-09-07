@@ -46,6 +46,7 @@ class KillSwitchExecutorConfig:
 
     Design Doc Section 9.4: Kill Switch configuration.
     """
+
     # Action settings
     cancel_on_trigger: bool = True  # Always cancel open orders
     flatten_on_trigger: bool = False  # Only if local policy allows
@@ -65,6 +66,7 @@ class ExecutionResult:
     """
     Result of kill switch execution.
     """
+
     success: bool
     orders_cancelled: int = 0
     orders_failed_to_cancel: int = 0
@@ -164,12 +166,15 @@ class KillSwitchExecutor:
 
         result = ExecutionResult(success=True)
 
-        self._log_action("halt_initiated", {
-            "action": action.value,
-            "reason_type": reason.reason_type.name,
-            "severity": reason.severity.value,
-            "message": reason.message,
-        })
+        self._log_action(
+            "halt_initiated",
+            {
+                "action": action.value,
+                "reason_type": reason.reason_type.name,
+                "severity": reason.severity.value,
+                "message": reason.message,
+            },
+        )
 
         # Step 1: Cancel all open orders (ALWAYS, unless HALT_ONLY)
         if action != HaltAction.HALT_ONLY:
@@ -192,9 +197,12 @@ class KillSwitchExecutor:
                 if flatten_result.positions_failed_to_flatten > 0:
                     result.success = False
             else:
-                self._log_action("flatten_skipped", {
-                    "reason": "flatten_on_trigger is disabled in local policy",
-                })
+                self._log_action(
+                    "flatten_skipped",
+                    {
+                        "reason": "flatten_on_trigger is disabled in local policy",
+                    },
+                )
 
         # Calculate execution time
         end_time = datetime.utcnow()
@@ -208,13 +216,16 @@ class KillSwitchExecutor:
         if len(self._execution_history) > 100:
             self._execution_history = self._execution_history[-100:]
 
-        self._log_action("halt_completed", {
-            "success": result.success,
-            "orders_cancelled": result.orders_cancelled,
-            "positions_flattened": result.positions_flattened,
-            "execution_time_ms": result.execution_time_ms,
-            "errors": result.errors,
-        })
+        self._log_action(
+            "halt_completed",
+            {
+                "success": result.success,
+                "orders_cancelled": result.orders_cancelled,
+                "positions_flattened": result.positions_flattened,
+                "execution_time_ms": result.execution_time_ms,
+                "errors": result.errors,
+            },
+        )
 
         return result
 
@@ -279,12 +290,15 @@ class KillSwitchExecutor:
                 result.orders_failed_to_cancel = cancel_result.total_failed
                 result.errors.extend(cancel_result.errors)
 
-                self._log_action("cancel_orders_result", {
-                    "attempt": attempt + 1,
-                    "total_open": total_open,
-                    "cancelled": cancel_result.total_cancelled,
-                    "failed": cancel_result.total_failed,
-                })
+                self._log_action(
+                    "cancel_orders_result",
+                    {
+                        "attempt": attempt + 1,
+                        "total_open": total_open,
+                        "cancelled": cancel_result.total_cancelled,
+                        "failed": cancel_result.total_failed,
+                    },
+                )
 
                 # Check if all cancelled
                 if cancel_result.total_failed == 0:
@@ -294,6 +308,7 @@ class KillSwitchExecutor:
                 # Retry if there were failures
                 if attempt < self._config.max_cancel_retries - 1:
                     import time
+
                     time.sleep(self._config.retry_delay_seconds)
 
             except Exception as e:
@@ -303,6 +318,7 @@ class KillSwitchExecutor:
 
                 if attempt < self._config.max_cancel_retries - 1:
                     import time
+
                     time.sleep(self._config.retry_delay_seconds)
 
         result.success = result.orders_failed_to_cancel == 0
@@ -346,12 +362,15 @@ class KillSwitchExecutor:
                     if not r.success and r.error_message:
                         result.errors.append(r.error_message)
 
-                self._log_action("flatten_positions_result", {
-                    "attempt": attempt + 1,
-                    "total_positions": len(positions),
-                    "flattened": successful,
-                    "failed": failed,
-                })
+                self._log_action(
+                    "flatten_positions_result",
+                    {
+                        "attempt": attempt + 1,
+                        "total_positions": len(positions),
+                        "flattened": successful,
+                        "failed": failed,
+                    },
+                )
 
                 # Check if all flattened
                 if failed == 0:
@@ -361,6 +380,7 @@ class KillSwitchExecutor:
                 # Retry if there were failures
                 if attempt < self._config.max_flatten_retries - 1:
                     import time
+
                     time.sleep(self._config.retry_delay_seconds)
 
             except Exception as e:
@@ -370,6 +390,7 @@ class KillSwitchExecutor:
 
                 if attempt < self._config.max_flatten_retries - 1:
                     import time
+
                     time.sleep(self._config.retry_delay_seconds)
 
         result.success = result.positions_failed_to_flatten == 0

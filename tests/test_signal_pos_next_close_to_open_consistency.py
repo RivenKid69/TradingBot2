@@ -15,6 +15,7 @@ Fix:
 
 Test count: 8 tests
 """
+
 from __future__ import annotations
 
 import math
@@ -31,8 +32,10 @@ from action_proto import ActionProto, ActionType
 # Minimal stub classes for testing without Cython dependencies
 # ============================================================================
 
+
 class _EnvState:
     """Minimal state stub for testing."""
+
     def __init__(self):
         self.cash = 1000.0
         self.units = 0.0
@@ -73,7 +76,7 @@ class _MediatorStub:
         obs = self._build_observation(
             row=self._env.df.iloc[state.step_idx] if len(self._env.df) > state.step_idx else None,
             state=state,
-            mark_price=100.0
+            mark_price=100.0,
         )
         state.step_idx += 1
         return obs, 0.0, False, False, {}
@@ -83,15 +86,17 @@ def _create_test_df(steps: int = 6) -> pd.DataFrame:
     """Create test dataframe with predictable price series."""
     idx = np.arange(steps, dtype=np.int64)
     base = np.linspace(100.0, 100.0 + steps * 0.5, steps)
-    return pd.DataFrame({
-        "ts_ms": idx * 60_000,
-        "open": base,
-        "high": base + 0.5,
-        "low": base - 0.5,
-        "close": base,
-        "price": base,
-        "quote_asset_volume": np.full(steps, 1000.0),
-    })
+    return pd.DataFrame(
+        {
+            "ts_ms": idx * 60_000,
+            "open": base,
+            "high": base + 0.5,
+            "low": base - 0.5,
+            "close": base,
+            "price": base,
+            "quote_asset_volume": np.full(steps, 1000.0),
+        }
+    )
 
 
 def _setup_mock_env(df, decision_mode=None, signal_only=True):
@@ -101,7 +106,7 @@ def _setup_mock_env(df, decision_mode=None, signal_only=True):
     if decision_mode is None:
         decision_mode = DecisionTiming.CLOSE_TO_OPEN
 
-    with patch.object(TradingEnv, '__init__', lambda self, *a, **k: None):
+    with patch.object(TradingEnv, "__init__", lambda self, *a, **k: None):
         env = TradingEnv.__new__(TradingEnv)
         env.df = df.copy()
         env.initial_cash = 1000.0
@@ -170,9 +175,9 @@ class TestSignalPosNextConsistency:
             f"In CLOSE_TO_OPEN, first step executes HOLD (pending from reset). "
             f"next_signal_pos should be 0.0, got {next_signal_pos}"
         )
-        assert agent_signal_pos == pytest.approx(1.0), (
-            f"Agent requested 100%, agent_signal_pos should be 1.0, got {agent_signal_pos}"
-        )
+        assert agent_signal_pos == pytest.approx(
+            1.0
+        ), f"Agent requested 100%, agent_signal_pos should be 1.0, got {agent_signal_pos}"
 
     def test_close_to_open_delayed_position_takes_effect(self):
         """Position requested in step N should appear in signal_pos_next at step N+1."""
@@ -198,9 +203,9 @@ class TestSignalPosNextConsistency:
         proto_1 = env._pending_action  # action_0 from Step 0
         executed_1 = env._signal_position_from_proto(proto_1, env._last_signal_position)
 
-        assert executed_1 == pytest.approx(0.75), (
-            f"Step 1: executed should be 0.75 (action from Step 0). Got {executed_1}"
-        )
+        assert executed_1 == pytest.approx(
+            0.75
+        ), f"Step 1: executed should be 0.75 (action from Step 0). Got {executed_1}"
 
     def test_signal_position_computation_consistency(self):
         """_signal_position_from_proto should correctly compute positions."""
@@ -232,9 +237,9 @@ class TestSignalPosNextConsistency:
         # Step 0: Request 100%
         action_0 = ActionProto(ActionType.MARKET, 1.0)
         agent_signal_pos_0 = env._signal_position_from_proto(action_0, 0.0)
-        assert agent_signal_pos_0 == pytest.approx(1.0), (
-            f"Agent requested 1.0, got {agent_signal_pos_0}"
-        )
+        assert agent_signal_pos_0 == pytest.approx(
+            1.0
+        ), f"Agent requested 1.0, got {agent_signal_pos_0}"
 
         # Store for next step and update state
         proto_0 = env._pending_action
@@ -249,12 +254,12 @@ class TestSignalPosNextConsistency:
         proto_1 = env._pending_action  # action_0 = MARKET(1.0)
         executed_1 = env._signal_position_from_proto(proto_1, env._last_signal_position)
 
-        assert agent_signal_pos_1 == pytest.approx(0.3), (
-            f"Agent requested 0.3, got {agent_signal_pos_1}"
-        )
-        assert executed_1 == pytest.approx(1.0), (
-            f"Executed should be 1.0 (from Step 0 pending), got {executed_1}"
-        )
+        assert agent_signal_pos_1 == pytest.approx(
+            0.3
+        ), f"Agent requested 0.3, got {agent_signal_pos_1}"
+        assert executed_1 == pytest.approx(
+            1.0
+        ), f"Executed should be 1.0 (from Step 0 pending), got {executed_1}"
 
     def test_non_close_to_open_no_delay(self):
         """In non-CLOSE_TO_OPEN modes with signal_only, position updates immediately."""
@@ -301,12 +306,12 @@ class TestSignalPosNextConsistency:
             info["signal_pos_next"] = float(next_signal_pos)  # FIXED: was agent_signal_pos
             info["signal_pos_requested"] = float(agent_signal_pos)  # NEW field
 
-        assert info["signal_pos_next"] == pytest.approx(0.0), (
-            "signal_pos_next should show actual position (0.0), not agent intention"
-        )
-        assert info["signal_pos_requested"] == pytest.approx(0.75), (
-            "signal_pos_requested should show agent's intention (0.75)"
-        )
+        assert info["signal_pos_next"] == pytest.approx(
+            0.0
+        ), "signal_pos_next should show actual position (0.0), not agent intention"
+        assert info["signal_pos_requested"] == pytest.approx(
+            0.75
+        ), "signal_pos_requested should show agent's intention (0.75)"
 
 
 class TestSignalPosNextNonSignalOnlyMode:
@@ -333,12 +338,12 @@ class TestSignalPosNextNonSignalOnlyMode:
             info["signal_pos_next"] = float(next_signal_pos)
             info["signal_pos_requested"] = float(agent_signal_pos)  # Also added
 
-        assert info["signal_pos_next"] == pytest.approx(0.0), (
-            "Non-signal_only: signal_pos_next should be actual position (0.0)"
-        )
-        assert info["signal_pos_requested"] == pytest.approx(0.5), (
-            "Non-signal_only: signal_pos_requested should be agent's intention (0.5)"
-        )
+        assert info["signal_pos_next"] == pytest.approx(
+            0.0
+        ), "Non-signal_only: signal_pos_next should be actual position (0.0)"
+        assert info["signal_pos_requested"] == pytest.approx(
+            0.5
+        ), "Non-signal_only: signal_pos_requested should be agent's intention (0.5)"
 
     def test_signal_pos_requested_always_available(self):
         """signal_pos_requested should be in info regardless of mode."""

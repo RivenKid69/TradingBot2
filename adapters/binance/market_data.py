@@ -143,6 +143,7 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
                 spread_bps = Decimal(str(spread))
 
             import time
+
             return Tick(
                 ts=int(time.time() * 1000),
                 symbol=symbol,
@@ -186,9 +187,7 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
 
         except ImportError:
             # Fallback to polling (not recommended for production)
-            logger.warning(
-                "WebSocket streaming not available, falling back to polling"
-            )
+            logger.warning("WebSocket streaming not available, falling back to polling")
 
             import time
 

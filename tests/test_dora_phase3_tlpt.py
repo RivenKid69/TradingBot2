@@ -28,11 +28,12 @@ References:
 
 
 import pytest
+
 pytest.skip(
     "Legacy DORA test - uses deprecated imports from services.dora.* "
     "These modules have been migrated to services.dora_integration.*. "
     "See tests/dora/ and tests/dora_integration/ for current tests.",
-    allow_module_level=True
+    allow_module_level=True,
 )
 
 
@@ -66,6 +67,7 @@ from services.dora.tlpt import (
 # TLPT Phase Tests (TIBER-EU Framework)
 # =============================================================================
 
+
 class TestTLPTPhase:
     """Tests for TLPT phases per TIBER-EU framework."""
 
@@ -93,6 +95,7 @@ class TestTLPTPhase:
 # =============================================================================
 # TLPT Status Tests
 # =============================================================================
+
 
 class TestTLPTStatus:
     """Tests for TLPT engagement status."""
@@ -134,6 +137,7 @@ class TestTLPTStatus:
 # Threat Actor Type Tests
 # =============================================================================
 
+
 class TestThreatActorType:
     """Tests for threat actor type enumeration."""
 
@@ -166,6 +170,7 @@ class TestThreatActorType:
 # Threat Actor Capability Tests
 # =============================================================================
 
+
 class TestThreatActorCapability:
     """Tests for threat actor capability enumeration."""
 
@@ -189,6 +194,7 @@ class TestThreatActorCapability:
 # =============================================================================
 # Attack Technique Tests (MITRE ATT&CK Aligned)
 # =============================================================================
+
 
 class TestAttackTechnique:
     """Tests for attack technique enumeration (MITRE ATT&CK aligned)."""
@@ -234,6 +240,7 @@ class TestAttackTechnique:
 # Attack Outcome Tests
 # =============================================================================
 
+
 class TestAttackOutcome:
     """Tests for attack outcome enumeration."""
 
@@ -257,6 +264,7 @@ class TestAttackOutcome:
 # =============================================================================
 # TLPT Finding Severity Tests
 # =============================================================================
+
 
 class TestTLPTFindingSeverity:
     """Tests for TLPT finding severity enumeration."""
@@ -286,6 +294,7 @@ class TestTLPTFindingSeverity:
 # Finding Category Tests
 # =============================================================================
 
+
 class TestFindingCategory:
     """Tests for finding category enumeration."""
 
@@ -314,6 +323,7 @@ class TestFindingCategory:
 # TLPT Scope Tests (Article 26(1))
 # =============================================================================
 
+
 class TestTLPTScope:
     """Tests for TLPT scope definition per Article 26(1)."""
 
@@ -327,7 +337,7 @@ class TestTLPTScope:
         """Test scope with specific name."""
         scope = TLPTScope(
             name="Production Trading Environment",
-            description="Full TLPT scope covering critical trading systems"
+            description="Full TLPT scope covering critical trading systems",
         )
         assert scope.name == "Production Trading Environment"
 
@@ -342,6 +352,7 @@ class TestTLPTScope:
 # Threat Intelligence Report Tests
 # =============================================================================
 
+
 class TestThreatIntelligenceReport:
     """Tests for threat intelligence report structure."""
 
@@ -354,7 +365,7 @@ class TestThreatIntelligenceReport:
         """Test report with threat actor profiles."""
         report = ThreatIntelligenceReport(
             title="Financial Sector Threat Landscape",
-            threat_actors=[ThreatActorType.NATION_STATE, ThreatActorType.ORGANIZED_CRIME]
+            threat_actors=[ThreatActorType.NATION_STATE, ThreatActorType.ORGANIZED_CRIME],
         )
         assert ThreatActorType.NATION_STATE in report.threat_actors
 
@@ -369,6 +380,7 @@ class TestThreatIntelligenceReport:
 # Red Team Scenario Tests
 # =============================================================================
 
+
 class TestRedTeamScenario:
     """Tests for red team scenario structure."""
 
@@ -382,7 +394,7 @@ class TestRedTeamScenario:
         scenario = RedTeamScenario(
             name="APT Simulation",
             threat_actor=ThreatActorType.NATION_STATE,
-            capability=ThreatActorCapability.ADVANCED
+            capability=ThreatActorCapability.ADVANCED,
         )
         assert scenario.threat_actor == ThreatActorType.NATION_STATE
 
@@ -397,6 +409,7 @@ class TestRedTeamScenario:
 # Attack Action Tests
 # =============================================================================
 
+
 class TestAttackAction:
     """Tests for attack action structure."""
 
@@ -407,10 +420,7 @@ class TestAttackAction:
 
     def test_action_with_technique(self):
         """Test action with specific technique."""
-        action = AttackAction(
-            name="Phishing Campaign",
-            technique=AttackTechnique.INITIAL_ACCESS
-        )
+        action = AttackAction(name="Phishing Campaign", technique=AttackTechnique.INITIAL_ACCESS)
         assert action.technique == AttackTechnique.INITIAL_ACCESS
 
     def test_action_with_outcome(self):
@@ -418,7 +428,7 @@ class TestAttackAction:
         action = AttackAction(
             name="Credential Dump",
             technique=AttackTechnique.CREDENTIAL_ACCESS,
-            outcome=AttackOutcome.SUCCESS
+            outcome=AttackOutcome.SUCCESS,
         )
         assert action.outcome == AttackOutcome.SUCCESS
 
@@ -433,6 +443,7 @@ class TestAttackAction:
 # TLPT Finding Tests
 # =============================================================================
 
+
 class TestTLPTFinding:
     """Tests for TLPT finding structure."""
 
@@ -445,17 +456,13 @@ class TestTLPTFinding:
     def test_finding_with_severity(self):
         """Test finding with specific severity."""
         finding = TLPTFinding(
-            title="Weak Network Segmentation",
-            severity=TLPTFindingSeverity.CRITICAL
+            title="Weak Network Segmentation", severity=TLPTFindingSeverity.CRITICAL
         )
         assert finding.severity == TLPTFindingSeverity.CRITICAL
 
     def test_finding_with_category(self):
         """Test finding with specific category."""
-        finding = TLPTFinding(
-            title="Missing MFA",
-            category=FindingCategory.ACCESS_CONTROL
-        )
+        finding = TLPTFinding(title="Missing MFA", category=FindingCategory.ACCESS_CONTROL)
         assert finding.category == FindingCategory.ACCESS_CONTROL
 
     def test_finding_auto_generates_id(self):
@@ -469,6 +476,7 @@ class TestTLPTFinding:
 # Purple Team Session Tests (Article 26(5))
 # =============================================================================
 
+
 class TestPurpleTeamSession:
     """Tests for purple team session per Article 26(5)."""
 
@@ -479,10 +487,7 @@ class TestPurpleTeamSession:
 
     def test_session_with_engagement_id(self):
         """Test session with engagement ID."""
-        session = PurpleTeamSession(
-            engagement_id="TLPT-001",
-            name="Purple Team Exercise Q1 2025"
-        )
+        session = PurpleTeamSession(engagement_id="TLPT-001", name="Purple Team Exercise Q1 2025")
         assert session.engagement_id == "TLPT-001"
 
     def test_session_auto_generates_id(self):
@@ -496,6 +501,7 @@ class TestPurpleTeamSession:
 # TLPT Engagement Tests
 # =============================================================================
 
+
 class TestTLPTEngagement:
     """Tests for TLPT engagement structure."""
 
@@ -508,17 +514,13 @@ class TestTLPTEngagement:
     def test_engagement_with_name(self):
         """Test engagement with specific name."""
         engagement = TLPTEngagement(
-            name="Annual TLPT 2025",
-            description="Mandatory TLPT per Article 26"
+            name="Annual TLPT 2025", description="Mandatory TLPT per Article 26"
         )
         assert engagement.name == "Annual TLPT 2025"
 
     def test_engagement_with_status(self):
         """Test engagement with specific status."""
-        engagement = TLPTEngagement(
-            name="TLPT Q1",
-            status=TLPTStatus.PLANNING
-        )
+        engagement = TLPTEngagement(name="TLPT Q1", status=TLPTStatus.PLANNING)
         assert engagement.status == TLPTStatus.PLANNING
 
     def test_engagement_auto_generates_id(self):
@@ -532,6 +534,7 @@ class TestTLPTEngagement:
 # TLPT Attestation Tests (Article 26(6))
 # =============================================================================
 
+
 class TestTLPTAttestation:
     """Tests for TLPT attestation per Article 26(6)."""
 
@@ -542,9 +545,7 @@ class TestTLPTAttestation:
 
     def test_attestation_with_engagement_id(self):
         """Test attestation with engagement ID."""
-        attestation = TLPTAttestation(
-            engagement_id="TLPT-001"
-        )
+        attestation = TLPTAttestation(engagement_id="TLPT-001")
         assert attestation.engagement_id == "TLPT-001"
 
     def test_attestation_auto_generates_id(self):
@@ -558,6 +559,7 @@ class TestTLPTAttestation:
 # TLPT Config Tests
 # =============================================================================
 
+
 class TestTLPTConfig:
     """Tests for TLPT configuration."""
 
@@ -568,15 +570,14 @@ class TestTLPTConfig:
 
     def test_config_with_entity_id(self):
         """Test config with entity ID."""
-        config = TLPTConfig(
-            entity_id="ENT-001"
-        )
+        config = TLPTConfig(entity_id="ENT-001")
         assert config.entity_id == "ENT-001"
 
 
 # =============================================================================
 # DORAThreadLedPenetrationTesting Creation Tests
 # =============================================================================
+
 
 class TestDORATLPTCreation:
     """Tests for DORAThreadLedPenetrationTesting creation."""
@@ -597,14 +598,15 @@ class TestDORATLPTCreation:
     def test_has_required_methods(self):
         """Test that TLPT has required methods."""
         tlpt = create_tlpt()
-        assert hasattr(tlpt, 'create_engagement')
-        assert hasattr(tlpt, 'define_scope')
-        assert hasattr(tlpt, 'add_threat_intelligence')
+        assert hasattr(tlpt, "create_engagement")
+        assert hasattr(tlpt, "define_scope")
+        assert hasattr(tlpt, "add_threat_intelligence")
 
 
 # =============================================================================
 # DORAThreadLedPenetrationTesting Engagement Tests
 # =============================================================================
+
 
 class TestDORATLPTEngagement:
     """Tests for TLPT engagement management."""
@@ -612,10 +614,7 @@ class TestDORATLPTEngagement:
     def test_create_engagement(self):
         """Test creating a TLPT engagement."""
         tlpt = create_tlpt()
-        engagement = tlpt.create_engagement(
-            name="TLPT 2025",
-            description="Annual TLPT engagement"
-        )
+        engagement = tlpt.create_engagement(name="TLPT 2025", description="Annual TLPT engagement")
         assert engagement is not None
         assert engagement.name == "TLPT 2025"
 
@@ -640,6 +639,7 @@ class TestDORATLPTEngagement:
 # DORAThreadLedPenetrationTesting Scope Tests
 # =============================================================================
 
+
 class TestDORATLPTScope:
     """Tests for TLPT scope management."""
 
@@ -650,7 +650,7 @@ class TestDORATLPTScope:
         scope = tlpt.define_scope(
             engagement_id=engagement.engagement_id,
             name="Production Environment",
-            systems=["trading_platform", "risk_engine"]
+            systems=["trading_platform", "risk_engine"],
         )
         assert scope is not None
         assert "trading_platform" in scope.systems
@@ -659,20 +659,15 @@ class TestDORATLPTScope:
         """Test updating TLPT scope."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="Update Scope Test")
-        scope = tlpt.define_scope(
-            engagement_id=engagement.engagement_id,
-            name="Initial Scope"
-        )
-        updated = tlpt.update_scope(
-            scope_id=scope.scope_id,
-            systems=["new_system"]
-        )
+        scope = tlpt.define_scope(engagement_id=engagement.engagement_id, name="Initial Scope")
+        updated = tlpt.update_scope(scope_id=scope.scope_id, systems=["new_system"])
         assert "new_system" in updated.systems
 
 
 # =============================================================================
 # DORAThreadLedPenetrationTesting Threat Intelligence Tests
 # =============================================================================
+
 
 class TestDORATLPTThreatIntelligence:
     """Tests for threat intelligence management."""
@@ -684,7 +679,7 @@ class TestDORATLPTThreatIntelligence:
         ti_report = tlpt.add_threat_intelligence(
             engagement_id=engagement.engagement_id,
             title="Financial Sector Threats Q1 2025",
-            threat_actors=[ThreatActorType.ORGANIZED_CRIME]
+            threat_actors=[ThreatActorType.ORGANIZED_CRIME],
         )
         assert ti_report is not None
         assert ThreatActorType.ORGANIZED_CRIME in ti_report.threat_actors
@@ -693,10 +688,7 @@ class TestDORATLPTThreatIntelligence:
         """Test retrieving threat intelligence for engagement."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="TI Retrieve Test")
-        tlpt.add_threat_intelligence(
-            engagement_id=engagement.engagement_id,
-            title="Threat Report"
-        )
+        tlpt.add_threat_intelligence(engagement_id=engagement.engagement_id, title="Threat Report")
         reports = tlpt.get_threat_intelligence(engagement.engagement_id)
         assert len(reports) >= 1
 
@@ -704,6 +696,7 @@ class TestDORATLPTThreatIntelligence:
 # =============================================================================
 # DORAThreadLedPenetrationTesting Red Team Tests
 # =============================================================================
+
 
 class TestDORATLPTRedTeam:
     """Tests for red team scenario management."""
@@ -716,7 +709,7 @@ class TestDORATLPTRedTeam:
             engagement_id=engagement.engagement_id,
             name="APT Simulation",
             threat_actor=ThreatActorType.NATION_STATE,
-            capability=ThreatActorCapability.ADVANCED
+            capability=ThreatActorCapability.ADVANCED,
         )
         assert scenario is not None
         assert scenario.threat_actor == ThreatActorType.NATION_STATE
@@ -725,15 +718,12 @@ class TestDORATLPTRedTeam:
         """Test adding an attack action to a scenario."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="Action Test TLPT")
-        scenario = tlpt.add_scenario(
-            engagement_id=engagement.engagement_id,
-            name="Test Scenario"
-        )
+        scenario = tlpt.add_scenario(engagement_id=engagement.engagement_id, name="Test Scenario")
         action = tlpt.add_attack_action(
             scenario_id=scenario.scenario_id,
             name="Spear Phishing",
             technique=AttackTechnique.INITIAL_ACCESS,
-            outcome=AttackOutcome.SUCCESS
+            outcome=AttackOutcome.SUCCESS,
         )
         assert action is not None
         assert action.technique == AttackTechnique.INITIAL_ACCESS
@@ -743,6 +733,7 @@ class TestDORATLPTRedTeam:
 # DORAThreadLedPenetrationTesting Purple Team Tests (Article 26(5))
 # =============================================================================
 
+
 class TestDORATLPTPurpleTeam:
     """Tests for purple team activities per Article 26(5)."""
 
@@ -751,8 +742,7 @@ class TestDORATLPTPurpleTeam:
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="Purple Team Test TLPT")
         session = tlpt.create_purple_team_session(
-            engagement_id=engagement.engagement_id,
-            name="Purple Team Exercise"
+            engagement_id=engagement.engagement_id, name="Purple Team Exercise"
         )
         assert session is not None
         assert session.engagement_id == engagement.engagement_id
@@ -770,6 +760,7 @@ class TestDORATLPTPurpleTeam:
 # DORAThreadLedPenetrationTesting Finding Tests
 # =============================================================================
 
+
 class TestDORATLPTFindings:
     """Tests for TLPT finding management."""
 
@@ -781,7 +772,7 @@ class TestDORATLPTFindings:
             engagement_id=engagement.engagement_id,
             title="Weak Network Segmentation",
             severity=TLPTFindingSeverity.HIGH,
-            category=FindingCategory.CONFIGURATION_WEAKNESS
+            category=FindingCategory.CONFIGURATION_WEAKNESS,
         )
         assert finding is not None
         assert finding.severity == TLPTFindingSeverity.HIGH
@@ -793,7 +784,7 @@ class TestDORATLPTFindings:
         tlpt.add_finding(
             engagement_id=engagement.engagement_id,
             title="Finding 1",
-            severity=TLPTFindingSeverity.MEDIUM
+            severity=TLPTFindingSeverity.MEDIUM,
         )
         findings = tlpt.get_findings(engagement.engagement_id)
         assert len(findings) >= 1
@@ -803,6 +794,7 @@ class TestDORATLPTFindings:
 # DORAThreadLedPenetrationTesting Attestation Tests (Article 26(6))
 # =============================================================================
 
+
 class TestDORATLPTAttestation:
     """Tests for TLPT attestation per Article 26(6)."""
 
@@ -810,9 +802,7 @@ class TestDORATLPTAttestation:
         """Test creating an attestation."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="Attestation Test TLPT")
-        attestation = tlpt.create_attestation(
-            engagement_id=engagement.engagement_id
-        )
+        attestation = tlpt.create_attestation(engagement_id=engagement.engagement_id)
         assert attestation is not None
         assert attestation.engagement_id == engagement.engagement_id
 
@@ -820,12 +810,9 @@ class TestDORATLPTAttestation:
         """Test submitting attestation to competent authority."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="Submit Attestation Test")
-        attestation = tlpt.create_attestation(
-            engagement_id=engagement.engagement_id
-        )
+        attestation = tlpt.create_attestation(engagement_id=engagement.engagement_id)
         result = tlpt.submit_attestation(
-            attestation_id=attestation.attestation_id,
-            authority_id="NCA-001"
+            attestation_id=attestation.attestation_id, authority_id="NCA-001"
         )
         assert result is not None
         assert "submitted" in str(result).lower() or result.get("status") == "submitted"
@@ -835,6 +822,7 @@ class TestDORATLPTAttestation:
 # DORAThreadLedPenetrationTesting Lifecycle Tests
 # =============================================================================
 
+
 class TestDORATLPTLifecycle:
     """Tests for complete TLPT engagement lifecycle."""
 
@@ -842,13 +830,9 @@ class TestDORATLPTLifecycle:
         """Test advancing engagement to TI phase."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="Lifecycle Test TLPT")
-        tlpt.define_scope(
-            engagement_id=engagement.engagement_id,
-            name="Test Scope"
-        )
+        tlpt.define_scope(engagement_id=engagement.engagement_id, name="Test Scope")
         advanced = tlpt.advance_phase(
-            engagement_id=engagement.engagement_id,
-            target_phase=TLPTPhase.THREAT_INTELLIGENCE
+            engagement_id=engagement.engagement_id, target_phase=TLPTPhase.THREAT_INTELLIGENCE
         )
         assert advanced.status == TLPTStatus.TI_PHASE
 
@@ -856,21 +840,13 @@ class TestDORATLPTLifecycle:
         """Test advancing engagement to red team phase."""
         tlpt = create_tlpt()
         engagement = tlpt.create_engagement(name="RT Phase Test TLPT")
-        tlpt.define_scope(
-            engagement_id=engagement.engagement_id,
-            name="Test Scope"
-        )
-        tlpt.add_threat_intelligence(
-            engagement_id=engagement.engagement_id,
-            title="TI Report"
-        )
+        tlpt.define_scope(engagement_id=engagement.engagement_id, name="Test Scope")
+        tlpt.add_threat_intelligence(engagement_id=engagement.engagement_id, title="TI Report")
         tlpt.advance_phase(
-            engagement_id=engagement.engagement_id,
-            target_phase=TLPTPhase.THREAT_INTELLIGENCE
+            engagement_id=engagement.engagement_id, target_phase=TLPTPhase.THREAT_INTELLIGENCE
         )
         advanced = tlpt.advance_phase(
-            engagement_id=engagement.engagement_id,
-            target_phase=TLPTPhase.RED_TEAM_TESTING
+            engagement_id=engagement.engagement_id, target_phase=TLPTPhase.RED_TEAM_TESTING
         )
         assert advanced.status == TLPTStatus.RT_PHASE
 
@@ -879,6 +855,7 @@ class TestDORATLPTLifecycle:
 # Three-Year Cycle Tests (Article 26(1))
 # =============================================================================
 
+
 class TestTLPTThreeYearCycle:
     """Tests for three-year TLPT cycle per Article 26(1)."""
 
@@ -886,12 +863,15 @@ class TestTLPTThreeYearCycle:
         """Test TLPT minimum frequency is every 3 years."""
         tlpt = create_tlpt()
         requirements = tlpt.get_tlpt_requirements()
-        assert requirements.get("minimum_cycle_years") == 3 or "3" in str(requirements.get("frequency", ""))
+        assert requirements.get("minimum_cycle_years") == 3 or "3" in str(
+            requirements.get("frequency", "")
+        )
 
 
 # =============================================================================
 # Reporting Tests
 # =============================================================================
+
 
 class TestTLPTReporting:
     """Tests for TLPT reporting functionality."""
@@ -911,7 +891,7 @@ class TestTLPTReporting:
         tlpt.add_finding(
             engagement_id=engagement.engagement_id,
             title="Test Finding",
-            severity=TLPTFindingSeverity.HIGH
+            severity=TLPTFindingSeverity.HIGH,
         )
         exported = tlpt.export_findings(engagement.engagement_id)
         assert isinstance(exported, (dict, list))

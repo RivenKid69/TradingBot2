@@ -31,6 +31,7 @@ DEFAULT_INIT_MODULE: Final[str] = "ccea"
 @dataclass
 class VersionCheckResult:
     """Result of version consistency check."""
+
     passed: bool = True
     schema_version: Optional[str] = None
     schema_min_version: Optional[str] = None
@@ -225,9 +226,7 @@ def main() -> int:
     """CLI entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="CCEA Version Consistency Check"
-    )
+    parser = argparse.ArgumentParser(description="CCEA Version Consistency Check")
     parser.add_argument(
         "--schema",
         type=Path,

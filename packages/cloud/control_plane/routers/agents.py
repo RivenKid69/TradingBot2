@@ -114,7 +114,7 @@ async def _get_agent_deployment_count(session, agent_id: UUID) -> int:
     # Use lowercase values matching DeploymentState enum values
     active_states = [
         DeploymentState.DEPLOYING.value,  # "deploying"
-        DeploymentState.DEPLOYED.value,    # "deployed"
+        DeploymentState.DEPLOYED.value,  # "deployed"
     ]
     count_q = select(func.count(Deployment.id)).where(
         Deployment.agent_id == agent_id,
@@ -195,8 +195,7 @@ async def create_enrollment_token(
         enrollment_token = AgentEnrollmentToken(
             workspace_id=request.workspace_id,
             token_hash=token_hash,
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(hours=request.expires_in_hours),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=request.expires_in_hours),
             created_by_user_id=current_user.id,
             name=request.description or f"Token {token_hash[:8]}",
         )
@@ -239,9 +238,7 @@ async def list_enrollment_tokens(
 
         if workspace_id:
             # Verify workspace access
-            ws_result = await session.execute(
-                select(Workspace).where(Workspace.id == workspace_id)
-            )
+            ws_result = await session.execute(select(Workspace).where(Workspace.id == workspace_id))
             workspace = ws_result.scalar_one_or_none()
 
             if workspace is None:
@@ -258,9 +255,7 @@ async def list_enrollment_tokens(
                     )
 
             query = query.where(AgentEnrollmentToken.workspace_id == workspace_id)
-            count_query = count_query.where(
-                AgentEnrollmentToken.workspace_id == workspace_id
-            )
+            count_query = count_query.where(AgentEnrollmentToken.workspace_id == workspace_id)
         elif not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -381,9 +376,7 @@ async def list_agents(
 
         if workspace_id:
             # Verify workspace access
-            ws_result = await session.execute(
-                select(Workspace).where(Workspace.id == workspace_id)
-            )
+            ws_result = await session.execute(select(Workspace).where(Workspace.id == workspace_id))
             workspace = ws_result.scalar_one_or_none()
 
             if workspace is None:
@@ -403,9 +396,7 @@ async def list_agents(
             count_query = count_query.where(Agent.workspace_id == workspace_id)
         elif not current_user.is_superuser:
             # Get all workspaces in user's org
-            ws_ids_q = select(Workspace.id).where(
-                Workspace.organization_id == current_user.org_id
-            )
+            ws_ids_q = select(Workspace.id).where(Workspace.organization_id == current_user.org_id)
             query = query.where(Agent.workspace_id.in_(ws_ids_q))
             count_query = count_query.where(Agent.workspace_id.in_(ws_ids_q))
 
@@ -529,9 +520,7 @@ async def update_agent(
 
         if request.trust_state is not None:
             # Trust state changes require special permission
-            if not current_user.is_superuser and not current_user.has_permission(
-                "agent:trust"
-            ):
+            if not current_user.is_superuser and not current_user.has_permission("agent:trust"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Permission required: agent:trust",
@@ -881,16 +870,10 @@ async def get_agent_key_info(
             "agent_id": str(agent.id),
             "key_version": agent.key_version or 1,
             "key_algorithm": agent.key_algorithm,
-            "public_key_fingerprint": hashlib.sha256(
-                agent.public_key.encode()
-            ).hexdigest()[:16],
+            "public_key_fingerprint": hashlib.sha256(agent.public_key.encode()).hexdigest()[:16],
             "rotation_in_progress": rotation_in_progress,
             "previous_key_valid_until": (
-                agent.key_rotation_grace_until.isoformat()
-                if rotation_in_progress
-                else None
+                agent.key_rotation_grace_until.isoformat() if rotation_in_progress else None
             ),
-            "last_rotation": (
-                agent.key_rotated_at.isoformat() if agent.key_rotated_at else None
-            ),
+            "last_rotation": (agent.key_rotated_at.isoformat() if agent.key_rotated_at else None),
         }

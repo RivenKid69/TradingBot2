@@ -10,6 +10,7 @@ These tests verify that the extraction maintained correct functionality.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import MagicMock, patch
@@ -175,7 +176,9 @@ class TestPrepareMinibatchIterator:
         mock = MagicMock()
         mock.rollout_buffer = MagicMock()
         # Bind the method to our mock instance
-        mock._prepare_minibatch_iterator = DistributionalPPO._prepare_minibatch_iterator.__get__(mock, DistributionalPPO)
+        mock._prepare_minibatch_iterator = DistributionalPPO._prepare_minibatch_iterator.__get__(
+            mock, DistributionalPPO
+        )
         return mock
 
     def test_returns_none_for_empty_buffer(self, mock_ppo):
@@ -322,7 +325,9 @@ class TestIntegration:
         symbols_batch2 = ["BNBUSDT"] * 5
         symbols_batch3 = []  # Empty batch
 
-        result = DistributionalPPO._concat_string_keys([symbols_batch1, symbols_batch2, symbols_batch3])
+        result = DistributionalPPO._concat_string_keys(
+            [symbols_batch1, symbols_batch2, symbols_batch3]
+        )
 
         assert result is not None
         assert len(result) == 25

@@ -121,9 +121,9 @@ async def _seed_enrollment_token(db_url: str, ttl_hours: int = 24) -> Dict[str, 
 class SupervisorConfig:
     data_dir: Path = field(default_factory=lambda: Path.home() / ".ccea_desktop")
     cp_host: str = "127.0.0.1"
-    cp_port: int = 0          # 0 => ephemeral
-    status_port: int = 0      # agent status HTTP port (0 => ephemeral)
-    paper: bool = True        # paper trading via SimBroker
+    cp_port: int = 0  # 0 => ephemeral
+    status_port: int = 0  # agent status HTTP port (0 => ephemeral)
+    paper: bool = True  # paper trading via SimBroker
     agent_name: str = "desktop-agent"
 
 
@@ -136,17 +136,17 @@ class CCEASupervisor:
         self._cp_server = None
         self._cp_thread: Optional[threading.Thread] = None
         self._daemon = None
-        self._broker = None          # active broker (paper SimBroker by default)
-        self._vault = None           # LocalVault (Agent zone) for broker credentials
+        self._broker = None  # active broker (paper SimBroker by default)
+        self._vault = None  # LocalVault (Agent zone) for broker credentials
         self._broker_name = "sim_paper"
-        self._paper_engine = None    # LiveExecutionEngine wired to the paper broker
-        self._live_engine = None     # LiveExecutionEngine wired to the active live broker
+        self._paper_engine = None  # LiveExecutionEngine wired to the paper broker
+        self._live_engine = None  # LiveExecutionEngine wired to the active live broker
         self._live_fill_handler = None
-        self._fill_handler = None    # FillHandler -> drives OMS + books P&L into ledger
-        self._books = None           # BooksAndRecords (ledger + blotter + cash + surveillance)
-        self._ledger = None          # PnLLedger alias (== self._books.ledger)
-        self._live_auth = None       # LiveTradingAuthorizationStore (Agent zone)
-        self._risk_monitor = None    # LiveRiskMonitor (intra-day circuit breaker)
+        self._fill_handler = None  # FillHandler -> drives OMS + books P&L into ledger
+        self._books = None  # BooksAndRecords (ledger + blotter + cash + surveillance)
+        self._ledger = None  # PnLLedger alias (== self._books.ledger)
+        self._live_auth = None  # LiveTradingAuthorizationStore (Agent zone)
+        self._risk_monitor = None  # LiveRiskMonitor (intra-day circuit breaker)
         self._last_paper: Optional[Dict[str, Any]] = None
         self._enroll: Dict[str, str] = {}
         self._cp_url: str = ""
@@ -295,6 +295,7 @@ class CCEASupervisor:
             hmac_key = None
             try:
                 from packages.agent.daemon.keychain import KeychainManager
+
                 hmac_key = KeychainManager(self._keychain_config).get_master_key()
             except Exception:
                 hmac_key = None
@@ -305,7 +306,7 @@ class CCEASupervisor:
                 strategy_id="desktop-demo",
                 hmac_key=hmac_key,
             )
-            self._ledger = self._books.ledger   # back-compat alias (status/eod_close)
+            self._ledger = self._books.ledger  # back-compat alias (status/eod_close)
             # SimBroker is in-memory; restore it from the durable Agent ledger so
             # positions/cash still reconcile after a desktop restart.
             if self._broker is not None and hasattr(self._broker, "restore_state"):
@@ -325,9 +326,11 @@ class CCEASupervisor:
             from packages.agent.approval.live_trading_authorization import (
                 LiveTradingAuthorizationStore,
             )
+
             _auth_key = None
             try:
                 from packages.agent.daemon.keychain import KeychainManager
+
                 _auth_key = KeychainManager(self._keychain_config).get_master_key()
             except Exception:
                 _auth_key = None
@@ -346,6 +349,7 @@ class CCEASupervisor:
         # by market moves without new orders.
         try:
             from services.live_risk_limits import LiveRiskMonitor
+
             self._risk_monitor = LiveRiskMonitor(
                 halt_callback=self._on_risk_breach,
                 peak_state_path=str(agent_dir / "live_risk_peak.json"),
@@ -366,6 +370,7 @@ class CCEASupervisor:
         просадки закрываем всё и останавливаем торговлю (kill switch)."""
         try:
             import services.ops_kill_switch as _oks
+
             _oks._trip()
         except Exception:
             pass
@@ -407,6 +412,7 @@ class CCEASupervisor:
             return {"status": "unavailable", "enforced": False}
         try:
             import services.ops_kill_switch as _oks
+
             st["kill_switch_tripped"] = bool(_oks.tripped())
         except Exception:
             st["kill_switch_tripped"] = None
@@ -423,10 +429,13 @@ class CCEASupervisor:
         pre-trade. Не заданные лимиты остаются на безопасных дефолтах."""
         try:
             from services.live_risk_limits import build_risk_checker, load_live_risk_limits
+
             eq = float(self._ledger.equity) if self._ledger is not None else 100_000.0
             return build_risk_checker(load_live_risk_limits(), equity=eq)
         except Exception:
-            logger.warning("live-risk: не удалось построить RiskChecker из lite_limits", exc_info=True)
+            logger.warning(
+                "live-risk: не удалось построить RiskChecker из lite_limits", exc_info=True
+            )
             return None
 
     def _ensure_paper_engine(self):
@@ -435,13 +444,17 @@ class CCEASupervisor:
         from packages.agent.execution.engine import LiveExecutionEngine, PriceCollarConfig
         from packages.agent.execution.fill_handler import FillHandler
         from packages.agent.execution.live_factory import (
-            make_broker_submit, make_broker_cancel, make_broker_replace)
+            make_broker_submit,
+            make_broker_cancel,
+            make_broker_replace,
+        )
         from packages.agent.reconciliation.journal import OrderJournal
 
         # Tamper-evident order journal (hash-chained audit log keyed by the books key).
         hmac_key = getattr(getattr(self._books, "blotter", None), "_key", None)
         journal = OrderJournal(
-            db_path=self.config.data_dir / "agent" / "paper_orders.db", hmac_key=hmac_key)
+            db_path=self.config.data_dir / "agent" / "paper_orders.db", hmac_key=hmac_key
+        )
         # Real OMS: PolicyFirewall + HardCapEnforcer + RiskChecker stack, journaled +
         # idempotent, with engine-level cancel/replace (FIX 35=G semantics) and a
         # fat-finger / price-collar pre-trade gate (P1 #10). RiskChecker is fed
@@ -466,13 +479,15 @@ class CCEASupervisor:
         on_fill = None
         if self._books is not None:
             on_fill = self._risk_wrapped_on_fill(
-                self._books.fill_handler_callback(strategy_id="desktop-demo"))
+                self._books.fill_handler_callback(strategy_id="desktop-demo")
+            )
         self._fill_handler = FillHandler(self._paper_engine, on_fill=on_fill)
         return self._paper_engine
 
     def _risk_wrapped_on_fill(self, inner):
         """Оборачивает books on_fill: после booking каждого fill'а прогоняет
         intra-day risk monitor (авто-halt при пробое дневного лимита/просадки)."""
+
         def _wrapped(*args, **kwargs):
             result = inner(*args, **kwargs) if inner is not None else None
             try:
@@ -480,6 +495,7 @@ class CCEASupervisor:
             except Exception:
                 logger.exception("live-risk: post-fill evaluate failed")
             return result
+
         return _wrapped
 
     def paper_trade(
@@ -523,9 +539,14 @@ class CCEASupervisor:
         if res.success and res.order is not None and self._books is not None:
             try:
                 self._books.on_order(
-                    symbol=symbol, side=str(res.order.side).upper(), action="NEW",
-                    quantity=float(res.order.quantity), price=float(entry_price),
-                    order_id=res.order.client_order_id, mid=float(entry_price))
+                    symbol=symbol,
+                    side=str(res.order.side).upper(),
+                    action="NEW",
+                    quantity=float(res.order.quantity),
+                    price=float(entry_price),
+                    order_id=res.order.client_order_id,
+                    mid=float(entry_price),
+                )
             except Exception:
                 pass
 
@@ -537,14 +558,16 @@ class CCEASupervisor:
 
                 info = self._broker.get_order(client_order_id=res.order.client_order_id)
                 if info is not None and info.filled_quantity and info.filled_quantity > 0:
-                    self._fill_handler.handle_event(FillEvent(
-                        client_order_id=res.order.client_order_id,
-                        event_type="fill",
-                        filled_qty=info.filled_quantity,
-                        avg_fill_price=info.avg_fill_price,
-                        broker_order_id=info.broker_order_id,
-                        cumulative=True,
-                    ))
+                    self._fill_handler.handle_event(
+                        FillEvent(
+                            client_order_id=res.order.client_order_id,
+                            event_type="fill",
+                            filled_qty=info.filled_quantity,
+                            avg_fill_price=info.avg_fill_price,
+                            broker_order_id=info.broker_order_id,
+                            cumulative=True,
+                        )
+                    )
             except Exception as exc:  # pragma: no cover - never break the paper run
                 self._error = f"ledger fill booking failed: {exc}"
 
@@ -560,9 +583,15 @@ class CCEASupervisor:
         if self._ledger is not None:
             snap = self._ledger.snapshot()
             positions = [
-                {"symbol": p["symbol"], "qty": p["quantity"], "avg_entry": p["avg_cost"],
-                 "price": p["mark"], "market_value": p["market_value"],
-                 "unrealized": p["unrealized_pnl"], "realized": p["realized_pnl"]}
+                {
+                    "symbol": p["symbol"],
+                    "qty": p["quantity"],
+                    "avg_entry": p["avg_cost"],
+                    "price": p["mark"],
+                    "market_value": p["market_value"],
+                    "unrealized": p["unrealized_pnl"],
+                    "realized": p["realized_pnl"],
+                }
                 for p in snap["positions"]
             ]
             pnl = round(snap["total_pnl"], 2)
@@ -571,9 +600,13 @@ class CCEASupervisor:
             reconciled = self._ledger.reconcile_against(broker_pos)["reconciled"]
         else:
             positions = [
-                {"symbol": p.symbol, "qty": float(p.quantity),
-                 "avg_entry": float(p.avg_entry_price), "price": float(p.current_price),
-                 "market_value": float(p.market_value)}
+                {
+                    "symbol": p.symbol,
+                    "qty": float(p.quantity),
+                    "avg_entry": float(p.avg_entry_price),
+                    "price": float(p.current_price),
+                    "market_value": float(p.market_value),
+                }
                 for p in self._broker.get_positions()
             ]
             pnl = round(float(acct.equity) - _PAPER_START_EQUITY, 2)
@@ -605,8 +638,11 @@ class CCEASupervisor:
         last_trade = None
         if self._books is not None:
             try:
-                surveillance_alerts = [a.to_dict() for a in self._books.surveillance.get_alerts()][-10:] \
-                    if self._books.surveillance is not None else []
+                surveillance_alerts = (
+                    [a.to_dict() for a in self._books.surveillance.get_alerts()][-10:]
+                    if self._books.surveillance is not None
+                    else []
+                )
                 integrity = self._books.verify_integrity()
                 trades = self._books.recent_trades(limit=1)
                 last_trade = trades[-1] if trades else None
@@ -658,25 +694,33 @@ class CCEASupervisor:
                 qty = float(p["quantity"])
                 if qty == 0:
                     continue
-                holdings.append({
-                    "symbol": p["symbol"], "qty": qty,
-                    "entry_price": float(p["avg_cost"]), "current_price": float(p["mark"]),
-                    "value": abs(float(p["market_value"])),
-                    "side": "LONG" if qty > 0 else "SHORT",
-                    "pnl": float(p["unrealized_pnl"]),
-                })
+                holdings.append(
+                    {
+                        "symbol": p["symbol"],
+                        "qty": qty,
+                        "entry_price": float(p["avg_cost"]),
+                        "current_price": float(p["mark"]),
+                        "value": abs(float(p["market_value"])),
+                        "side": "LONG" if qty > 0 else "SHORT",
+                        "pnl": float(p["unrealized_pnl"]),
+                    }
+                )
         else:
             for p in self._broker.get_positions() or []:
                 qty = float(p.quantity)
                 current = float(p.current_price or p.avg_entry_price or 0)
                 entry = float(p.avg_entry_price or current)
-                holdings.append({
-                    "symbol": p.symbol, "qty": qty, "entry_price": entry,
-                    "current_price": current,
-                    "value": abs(float(p.market_value or qty * current)),
-                    "side": "LONG" if qty > 0 else "SHORT",
-                    "pnl": (current - entry) * qty,
-                })
+                holdings.append(
+                    {
+                        "symbol": p.symbol,
+                        "qty": qty,
+                        "entry_price": entry,
+                        "current_price": current,
+                        "value": abs(float(p.market_value or qty * current)),
+                        "side": "LONG" if qty > 0 else "SHORT",
+                        "pnl": (current - entry) * qty,
+                    }
+                )
         gross = sum(float(h["value"]) for h in holdings)
         equity = float(account.equity)
         return {
@@ -718,6 +762,7 @@ class CCEASupervisor:
             from decimal import Decimal
             from packages.agent.execution.fill_handler import FillEvent
             from packages.shared.contracts.intent import IntentSide, IntentType, OrderIntent
+
             engine = self._ensure_live_engine()
             price = self._broker.get_last_price(symbol)
             if price is None or price <= 0:
@@ -728,7 +773,8 @@ class CCEASupervisor:
                 except Exception:
                     pass
             intent = OrderIntent(
-                strategy_id="desktop-manual-close", symbol=symbol,
+                strategy_id="desktop-manual-close",
+                symbol=symbol,
                 intent_type=IntentType.CLOSE_POSITION,
                 side=IntentSide.SHORT if cur > 0 else IntentSide.LONG,
                 target_quantity=Decimal(str(close_qty)),
@@ -739,14 +785,22 @@ class CCEASupervisor:
                 return {"ok": False, "error": result.error_message or "close rejected"}
             info = self._broker.get_order(client_order_id=result.order.client_order_id)
             if info is not None and info.filled_quantity and self._live_fill_handler is not None:
-                self._live_fill_handler.handle_event(FillEvent(
-                    client_order_id=result.order.client_order_id, event_type="fill",
-                    filled_qty=info.filled_quantity, avg_fill_price=info.avg_fill_price,
-                    broker_order_id=info.broker_order_id, cumulative=True))
+                self._live_fill_handler.handle_event(
+                    FillEvent(
+                        client_order_id=result.order.client_order_id,
+                        event_type="fill",
+                        filled_qty=info.filled_quantity,
+                        avg_fill_price=info.avg_fill_price,
+                        broker_order_id=info.broker_order_id,
+                        cumulative=True,
+                    )
+                )
             remaining = self._broker.get_position(symbol)
             return {
-                "ok": bool(result.success), "broker": self._broker_name,
-                "partial": partial, "closed_qty": close_qty,
+                "ok": bool(result.success),
+                "broker": self._broker_name,
+                "partial": partial,
+                "closed_qty": close_qty,
                 "broker_order_id": info.broker_order_id if info is not None else None,
                 "remaining_qty": float(remaining.quantity) if remaining is not None else 0.0,
                 "simulated": False,
@@ -763,7 +817,8 @@ class CCEASupervisor:
         if price is None or price <= 0:
             return {"ok": False, "error": f"no market mark for {symbol}"}
         intent = OrderIntent(
-            strategy_id="desktop-manual-close", symbol=symbol,
+            strategy_id="desktop-manual-close",
+            symbol=symbol,
             intent_type=IntentType.CLOSE_POSITION,
             side=IntentSide.SHORT if cur > 0 else IntentSide.LONG,
             target_quantity=Decimal(str(close_qty)),
@@ -774,18 +829,26 @@ class CCEASupervisor:
             return {"ok": False, "error": result.error_message or "close rejected"}
         info = self._broker.get_order(client_order_id=result.order.client_order_id)
         if info is not None and info.filled_quantity and self._fill_handler is not None:
-            self._fill_handler.handle_event(FillEvent(
-                client_order_id=result.order.client_order_id,
-                event_type="fill", filled_qty=info.filled_quantity,
-                avg_fill_price=info.avg_fill_price, broker_order_id=info.broker_order_id,
-                cumulative=True,
-            ))
+            self._fill_handler.handle_event(
+                FillEvent(
+                    client_order_id=result.order.client_order_id,
+                    event_type="fill",
+                    filled_qty=info.filled_quantity,
+                    avg_fill_price=info.avg_fill_price,
+                    broker_order_id=info.broker_order_id,
+                    cumulative=True,
+                )
+            )
         remaining = self._broker.get_position(symbol)
         return {
-            "ok": (remaining is None or abs(float(remaining.quantity)) < abs(cur) - 1e-12
-                   or float(remaining.quantity) == 0.0),
+            "ok": (
+                remaining is None
+                or abs(float(remaining.quantity)) < abs(cur) - 1e-12
+                or float(remaining.quantity) == 0.0
+            ),
             "broker": self._broker_name,
-            "partial": partial, "closed_qty": close_qty,
+            "partial": partial,
+            "closed_qty": close_qty,
             "broker_order_id": info.broker_order_id if info is not None else None,
             "remaining_qty": float(remaining.quantity) if remaining is not None else 0.0,
             "simulated": True,
@@ -793,22 +856,26 @@ class CCEASupervisor:
 
     # --------------------------------------------------- manual order ticket
     _INTENT_TYPE_MAP = {
-        ("market", "long"): "MARKET_ENTRY", ("market", "short"): "MARKET_ENTRY",
-        ("limit", "long"): "LIMIT_ENTRY", ("limit", "short"): "LIMIT_ENTRY",
-        ("stop", "long"): "STOP_ENTRY", ("stop", "short"): "STOP_ENTRY",
-        ("stop_limit", "long"): "STOP_ENTRY", ("stop_limit", "short"): "STOP_ENTRY",
+        ("market", "long"): "MARKET_ENTRY",
+        ("market", "short"): "MARKET_ENTRY",
+        ("limit", "long"): "LIMIT_ENTRY",
+        ("limit", "short"): "LIMIT_ENTRY",
+        ("stop", "long"): "STOP_ENTRY",
+        ("stop", "short"): "STOP_ENTRY",
+        ("stop_limit", "long"): "STOP_ENTRY",
+        ("stop_limit", "short"): "STOP_ENTRY",
     }
 
     def submit_manual_order(
         self,
         *,
         symbol: str,
-        side: str,                    # buy|sell|long|short
-        order_type: str = "market",   # market|limit|stop|stop_limit
+        side: str,  # buy|sell|long|short
+        order_type: str = "market",  # market|limit|stop|stop_limit
         quantity: float,
         limit_price: Optional[float] = None,
         stop_price: Optional[float] = None,
-        time_in_force: str = "GTC",   # GTC|DAY|IOC|FOK
+        time_in_force: str = "GTC",  # GTC|DAY|IOC|FOK
         reduce_only: bool = False,
         strategy_id: str = "desktop-manual",
     ) -> Dict[str, Any]:
@@ -857,7 +924,7 @@ class CCEASupervisor:
             if not reduces:
                 return {"ok": False, "error": "reduce_only: сторона ордера не уменьшает позицию"}
             if qty > abs(cur) + 1e-12:
-                qty = abs(cur)   # не даём перевернуть позицию в reduce-only
+                qty = abs(cur)  # не даём перевернуть позицию в reduce-only
 
         # Живой брокер: наращивание экспозиции требует мандата; reduce_only — нет.
         if not is_paper and not reduce_only:
@@ -865,7 +932,9 @@ class CCEASupervisor:
             if store is None:
                 return {"ok": False, "error": "live-брокер, но хранилище авторизаций недоступно"}
             # Ручной ордер авторизуется по стратегии/брокеру с оценкой нотионала.
-            ref_price = float(limit_price or stop_price or (self._broker.get_last_price(symbol) or 0) or 0)
+            ref_price = float(
+                limit_price or stop_price or (self._broker.get_last_price(symbol) or 0) or 0
+            )
             est_notional = qty * ref_price
             equity = 0.0
             try:
@@ -873,12 +942,20 @@ class CCEASupervisor:
             except Exception:
                 pass
             turnover = (est_notional / equity) if equity > 0 else 1.0
-            chk = store.check(strategy_id=strategy_id, config={"manual_order": True},
-                              broker=self._broker_name, turnover=turnover,
-                              notional=est_notional, n_orders=1)
+            chk = store.check(
+                strategy_id=strategy_id,
+                config={"manual_order": True},
+                broker=self._broker_name,
+                turnover=turnover,
+                notional=est_notional,
+                n_orders=1,
+            )
             if not chk.allowed:
-                return {"ok": False, "error": f"live-авторизация ручного ордера: {chk.reason}",
-                        "authorization": chk.to_dict()}
+                return {
+                    "ok": False,
+                    "error": f"live-авторизация ручного ордера: {chk.reason}",
+                    "authorization": chk.to_dict(),
+                }
 
         engine = self._ensure_paper_engine() if is_paper else self._ensure_live_engine()
         fill_handler = self._fill_handler if is_paper else self._live_fill_handler
@@ -900,9 +977,13 @@ class CCEASupervisor:
         if reduce_only:
             intent_type = IntentType.CLOSE_POSITION
         else:
-            intent_type = getattr(IntentType, self._INTENT_TYPE_MAP[(ot, "long" if side_long else "short")])
+            intent_type = getattr(
+                IntentType, self._INTENT_TYPE_MAP[(ot, "long" if side_long else "short")]
+            )
         intent = OrderIntent(
-            strategy_id=strategy_id, symbol=symbol, intent_type=intent_type,
+            strategy_id=strategy_id,
+            symbol=symbol,
+            intent_type=intent_type,
             side=IntentSide.LONG if side_long else IntentSide.SHORT,
             target_quantity=Decimal(str(qty)),
             limit_price=(Decimal(str(limit_price)) if limit_price else None),
@@ -914,9 +995,14 @@ class CCEASupervisor:
         if res.success and res.order is not None and self._books is not None:
             try:
                 self._books.on_order(
-                    symbol=symbol, side=str(res.order.side).upper(), action="NEW",
-                    quantity=float(res.order.quantity), price=float(mark),
-                    order_id=res.order.client_order_id, mid=float(mark))
+                    symbol=symbol,
+                    side=str(res.order.side).upper(),
+                    action="NEW",
+                    quantity=float(res.order.quantity),
+                    price=float(mark),
+                    order_id=res.order.client_order_id,
+                    mid=float(mark),
+                )
             except Exception:
                 pass
         filled = False
@@ -924,21 +1010,33 @@ class CCEASupervisor:
             try:
                 info = self._broker.get_order(client_order_id=res.order.client_order_id)
                 if info is not None and info.filled_quantity and info.filled_quantity > 0:
-                    fill_handler.handle_event(FillEvent(
-                        client_order_id=res.order.client_order_id, event_type="fill",
-                        filled_qty=info.filled_quantity, avg_fill_price=info.avg_fill_price,
-                        broker_order_id=info.broker_order_id, cumulative=True))
+                    fill_handler.handle_event(
+                        FillEvent(
+                            client_order_id=res.order.client_order_id,
+                            event_type="fill",
+                            filled_qty=info.filled_quantity,
+                            avg_fill_price=info.avg_fill_price,
+                            broker_order_id=info.broker_order_id,
+                            cumulative=True,
+                        )
+                    )
                     filled = True
             except Exception:
                 pass
         return {
             "ok": bool(res.success),
             "client_order_id": res.order.client_order_id if res.order is not None else None,
-            "broker_order_id": (getattr(res.order, "broker_order_id", None) if res.order is not None else None),
+            "broker_order_id": (
+                getattr(res.order, "broker_order_id", None) if res.order is not None else None
+            ),
             "error": None if res.success else (res.error_message or "rejected by OMS"),
-            "order_type": ot, "side": "long" if side_long else "short",
-            "quantity": qty, "limit_price": limit_price, "stop_price": stop_price,
-            "time_in_force": tif, "reduce_only": bool(reduce_only),
+            "order_type": ot,
+            "side": "long" if side_long else "short",
+            "quantity": qty,
+            "limit_price": limit_price,
+            "stop_price": stop_price,
+            "time_in_force": tif,
+            "reduce_only": bool(reduce_only),
             "state": "filled" if filled else ("submitted" if res.success else "rejected"),
             "simulated": is_paper,
         }
@@ -953,22 +1051,34 @@ class CCEASupervisor:
         out = []
         try:
             for o in getter(symbol) or []:
-                out.append({
-                    "client_order_id": getattr(o, "client_order_id", None),
-                    "broker_order_id": getattr(o, "broker_order_id", None),
-                    "symbol": getattr(o, "symbol", None),
-                    "side": str(getattr(o, "side", "")).replace("OrderSide.", "").lower(),
-                    "order_type": str(getattr(o, "order_type", "")).replace("OrderType.", "").lower(),
-                    "quantity": float(getattr(o, "quantity", 0) or 0),
-                    "filled_quantity": float(getattr(o, "filled_quantity", 0) or 0),
-                    "limit_price": (float(o.limit_price) if getattr(o, "limit_price", None) else None),
-                    "stop_price": (float(o.stop_price) if getattr(o, "stop_price", None) else None),
-                    "status": str(getattr(o, "status", "")).replace("OrderStatus.", "").lower(),
-                })
+                out.append(
+                    {
+                        "client_order_id": getattr(o, "client_order_id", None),
+                        "broker_order_id": getattr(o, "broker_order_id", None),
+                        "symbol": getattr(o, "symbol", None),
+                        "side": str(getattr(o, "side", "")).replace("OrderSide.", "").lower(),
+                        "order_type": str(getattr(o, "order_type", ""))
+                        .replace("OrderType.", "")
+                        .lower(),
+                        "quantity": float(getattr(o, "quantity", 0) or 0),
+                        "filled_quantity": float(getattr(o, "filled_quantity", 0) or 0),
+                        "limit_price": (
+                            float(o.limit_price) if getattr(o, "limit_price", None) else None
+                        ),
+                        "stop_price": (
+                            float(o.stop_price) if getattr(o, "stop_price", None) else None
+                        ),
+                        "status": str(getattr(o, "status", "")).replace("OrderStatus.", "").lower(),
+                    }
+                )
         except Exception as exc:
             return {"ok": False, "error": str(exc), "orders": []}
-        return {"ok": True, "orders": out, "broker": self._broker_name,
-                "simulated": self._broker_name == "sim_paper"}
+        return {
+            "ok": True,
+            "orders": out,
+            "broker": self._broker_name,
+            "simulated": self._broker_name == "sim_paper",
+        }
 
     def cancel_order(self, client_order_id: str) -> Dict[str, Any]:
         """Отменить рабочий ордер через активный брокер."""
@@ -982,8 +1092,12 @@ class CCEASupervisor:
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
         ok = bool(getattr(res, "success", res is True))
-        return {"ok": ok, "client_order_id": client_order_id, "broker": self._broker_name,
-                "error": None if ok else getattr(res, "error_message", "cancel failed")}
+        return {
+            "ok": ok,
+            "client_order_id": client_order_id,
+            "broker": self._broker_name,
+            "error": None if ok else getattr(res, "error_message", "cancel failed"),
+        }
 
     def _ensure_live_engine(self):
         """LiveExecutionEngine, привязанный к активному LIVE-брокеру.
@@ -998,19 +1112,23 @@ class CCEASupervisor:
         from packages.agent.execution.engine import LiveExecutionEngine, PriceCollarConfig
         from packages.agent.execution.fill_handler import FillHandler
         from packages.agent.execution.live_factory import (
-            make_broker_submit, make_broker_cancel, make_broker_replace)
+            make_broker_submit,
+            make_broker_cancel,
+            make_broker_replace,
+        )
         from packages.agent.reconciliation.journal import OrderJournal
 
         hmac_key = getattr(getattr(self._books, "blotter", None), "_key", None)
         journal = OrderJournal(
-            db_path=self.config.data_dir / "agent" / "live_orders.db", hmac_key=hmac_key)
+            db_path=self.config.data_dir / "agent" / "live_orders.db", hmac_key=hmac_key
+        )
         self._live_engine = LiveExecutionEngine(
             broker_submit=make_broker_submit(self._broker),
             broker_cancel=make_broker_cancel(self._broker),
             broker_replace=make_broker_replace(self._broker),
             broker_name=self._broker_name,
             order_journal=journal,
-            risk_checker=self._build_user_risk_checker(),   # P0-B: lite_limits enforced pre-trade
+            risk_checker=self._build_user_risk_checker(),  # P0-B: lite_limits enforced pre-trade
             price_collar=PriceCollarConfig(max_price_distance_pct=0.20, max_notional=5_000_000.0),
             deployment_id="desktop-live",
             run_id="desktop-live-rebalance",
@@ -1018,7 +1136,8 @@ class CCEASupervisor:
         on_fill = None
         if self._books is not None:
             on_fill = self._risk_wrapped_on_fill(
-                self._books.fill_handler_callback(strategy_id="xs-rebalance"))
+                self._books.fill_handler_callback(strategy_id="xs-rebalance")
+            )
         self._live_fill_handler = FillHandler(self._live_engine, on_fill=on_fill)
         return self._live_engine
 
@@ -1052,8 +1171,10 @@ class CCEASupervisor:
             return {"ok": False, "error": "broker not available"}
         is_paper = self._broker_name == "sim_paper"
         if not is_paper and not allow_live:
-            return {"ok": False,
-                    "error": "auto-rebalance on a live broker requires an operator authorization (CCEA approval)"}
+            return {
+                "ok": False,
+                "error": "auto-rebalance on a live broker requires an operator authorization (CCEA approval)",
+            }
         try:
             qty = float(qty)
             price = float(price)
@@ -1101,9 +1222,14 @@ class CCEASupervisor:
         if res.success and res.order is not None and self._books is not None:
             try:
                 self._books.on_order(
-                    symbol=symbol, side=str(res.order.side).upper(), action="NEW",
-                    quantity=float(res.order.quantity), price=price,
-                    order_id=res.order.client_order_id, mid=price)
+                    symbol=symbol,
+                    side=str(res.order.side).upper(),
+                    action="NEW",
+                    quantity=float(res.order.quantity),
+                    price=price,
+                    order_id=res.order.client_order_id,
+                    mid=price,
+                )
             except Exception:
                 pass
         # Провести fill в книги. Paper-брокер исполняет мгновенно; live-брокер
@@ -1114,13 +1240,16 @@ class CCEASupervisor:
             try:
                 info = self._broker.get_order(client_order_id=res.order.client_order_id)
                 if info is not None and info.filled_quantity and info.filled_quantity > 0:
-                    fill_handler.handle_event(FillEvent(
-                        client_order_id=res.order.client_order_id,
-                        event_type="fill", filled_qty=info.filled_quantity,
-                        avg_fill_price=info.avg_fill_price,
-                        broker_order_id=info.broker_order_id,
-                        cumulative=True,
-                    ))
+                    fill_handler.handle_event(
+                        FillEvent(
+                            client_order_id=res.order.client_order_id,
+                            event_type="fill",
+                            filled_qty=info.filled_quantity,
+                            avg_fill_price=info.avg_fill_price,
+                            broker_order_id=info.broker_order_id,
+                            cumulative=True,
+                        )
+                    )
                     filled = True
             except Exception:
                 pass
@@ -1128,7 +1257,9 @@ class CCEASupervisor:
         return {
             "ok": bool(res.success),
             "client_order_id": res.order.client_order_id if res.order is not None else None,
-            "broker_order_id": (getattr(res.order, "broker_order_id", None) if res.order is not None else None),
+            "broker_order_id": (
+                getattr(res.order, "broker_order_id", None) if res.order is not None else None
+            ),
             "error": None if res.success else (res.error_message or "rejected by OMS"),
             "intent_type": intent_type.value,
             "side": side.value,
@@ -1161,6 +1292,7 @@ class CCEASupervisor:
         if self._live_auth is None:
             return {"ok": False, "error": "live-authorization store недоступен"}
         from packages.agent.approval.live_trading_authorization import LimitCeiling
+
         return self._live_auth.grant(
             strategy_id=strategy_id,
             config=config,
@@ -1178,8 +1310,9 @@ class CCEASupervisor:
             note=note,
         )
 
-    def revoke_live_trading(self, auth_id: Optional[str] = None,
-                            *, reason: str = "operator revoke") -> Dict[str, Any]:
+    def revoke_live_trading(
+        self, auth_id: Optional[str] = None, *, reason: str = "operator revoke"
+    ) -> Dict[str, Any]:
         if self._live_auth is None:
             return {"ok": False, "error": "live-authorization store недоступен"}
         if auth_id:
@@ -1251,11 +1384,15 @@ class CCEASupervisor:
             "close_results": close_results,
             "positions_remaining": len(remaining),
             "remaining_holdings": remaining,
-            "error": None if ok else (
-                lifecycle.get("error")
-                or (failed_closes[0].get("error") if failed_closes else None)
-                or ("positions are awaiting broker confirmation" if remaining else None)
-                or cancel_report.get("error")
+            "error": (
+                None
+                if ok
+                else (
+                    lifecycle.get("error")
+                    or (failed_closes[0].get("error") if failed_closes else None)
+                    or ("positions are awaiting broker confirmation" if remaining else None)
+                    or cancel_report.get("error")
+                )
             ),
         }
 
@@ -1264,18 +1401,30 @@ class CCEASupervisor:
         if self._broker_name == "sim_paper":
             trades = self._books.recent_trades(limit=limit) if self._books is not None else []
             return {
-                "ok": True, "source": "agent_books", "broker": self._broker_name,
-                "synchronized": len(trades), "trades": trades, "simulated": True,
+                "ok": True,
+                "source": "agent_books",
+                "broker": self._broker_name,
+                "synchronized": len(trades),
+                "trades": trades,
+                "simulated": True,
             }
         fetch = getattr(self._broker, "get_trade_history", None)
         if not callable(fetch):
             return {
-                "ok": False, "supported": False, "broker": self._broker_name,
+                "ok": False,
+                "supported": False,
+                "broker": self._broker_name,
                 "error": "active broker connector does not expose trade-history synchronization",
             }
         trades = list(fetch(limit=limit) or [])
-        return {"ok": True, "source": "live_broker", "broker": self._broker_name,
-                "synchronized": len(trades), "trades": trades, "simulated": False}
+        return {
+            "ok": True,
+            "source": "live_broker",
+            "broker": self._broker_name,
+            "synchronized": len(trades),
+            "trades": trades,
+            "simulated": False,
+        }
 
     def request_lifecycle(self, action: str) -> Dict[str, Any]:
         """Apply a local operator lifecycle request to the CCEA Agent daemon."""
@@ -1290,9 +1439,12 @@ class CCEASupervisor:
             return {"ok": False, "error": f"unsupported lifecycle action: {action}"}
         status = self._daemon.get_status()
         return {
-            "ok": bool(ok), "error": error, "action": action,
+            "ok": bool(ok),
+            "error": error,
+            "action": action,
             "mode": "paper" if self._broker_name == "sim_paper" else "live",
-            "broker": self._broker_name, "agent": status,
+            "broker": self._broker_name,
+            "agent": status,
         }
 
     # --------------------------------------------------------- live broker
@@ -1354,8 +1506,11 @@ class CCEASupervisor:
         requested_broker = (broker or "").strip().lower()
         canonical_broker = "binance" if requested_broker == "binance_futures" else requested_broker
         if canonical_broker not in self._BROKER_CLASSES:
-            return {"ok": False, "error": f"unknown broker '{broker}'",
-                    "available": sorted([*self._BROKER_CLASSES, "binance_futures"])}
+            return {
+                "ok": False,
+                "error": f"unknown broker '{broker}'",
+                "available": sorted([*self._BROKER_CLASSES, "binance_futures"]),
+            }
         if self._vault is None:
             return {"ok": False, "error": "vault not available"}
         try:
@@ -1381,7 +1536,7 @@ class CCEASupervisor:
                     return default
 
             extra_from_vault: Dict[str, str] = {}
-            for key in (extra or {}):
+            for key in extra or {}:
                 value = _vault_value(key)
                 if value:
                     extra_from_vault[key] = value
@@ -1390,7 +1545,11 @@ class CCEASupervisor:
                 api_key=_vault_value("api_key"),
                 api_secret=_vault_value("api_secret"),
                 subaccount=vault_account or None,
-                extra={**extra_from_vault, "account_id": vault_account} if vault_account else extra_from_vault,
+                extra=(
+                    {**extra_from_vault, "account_id": vault_account}
+                    if vault_account
+                    else extra_from_vault
+                ),
             )
 
             # 3) Construct the real connector and attempt a connection.
@@ -1418,7 +1577,10 @@ class CCEASupervisor:
             except Exception as exc:
                 err = str(exc)
             if not connected and not err:
-                err = getattr(connector, "_connect_error", None) or "broker connection verification failed"
+                err = (
+                    getattr(connector, "_connect_error", None)
+                    or "broker connection verification failed"
+                )
 
             # 4) Replace the active execution connector only after a successful
             # connection.  Failed credentials must not take the paper broker down.
@@ -1442,7 +1604,11 @@ class CCEASupervisor:
                     self._daemon.status.broker_connected = True
                 except Exception:
                     pass
-                if previous is not None and previous is not connector and hasattr(previous, "disconnect"):
+                if (
+                    previous is not None
+                    and previous is not connector
+                    and hasattr(previous, "disconnect")
+                ):
                     try:
                         previous.disconnect()
                     except Exception:
@@ -1503,8 +1669,14 @@ class CCEASupervisor:
             return None
         try:
             integ = self._books.verify_integrity()
-            surv = self._books.surveillance.summary() if self._books.surveillance is not None else {}
-            n_alerts = len(self._books.surveillance.get_alerts()) if self._books.surveillance is not None else 0
+            surv = (
+                self._books.surveillance.summary() if self._books.surveillance is not None else {}
+            )
+            n_alerts = (
+                len(self._books.surveillance.get_alerts())
+                if self._books.surveillance is not None
+                else 0
+            )
             return {
                 "blotter_trades": self._books.blotter.summary()["n_trades"],
                 "blotter_valid": integ["blotter"]["valid"],
@@ -1523,15 +1695,19 @@ class CCEASupervisor:
     def books_blotter(self, limit: int = 100) -> Dict[str, Any]:
         if self._books is None:
             return {"trades": [], "integrity": None}
-        return {"trades": self._books.recent_trades(limit=limit),
-                "integrity": self._books.blotter.verify()}
+        return {
+            "trades": self._books.recent_trades(limit=limit),
+            "integrity": self._books.blotter.verify(),
+        }
 
     def books_cash(self, limit: int = 100) -> Dict[str, Any]:
         if self._books is None:
             return {"movements": [], "integrity": None}
-        return {"movements": self._books.recent_cash(limit=limit),
-                "integrity": self._books.cash.verify(),
-                "balance": round(self._books.cash.balance, 2)}
+        return {
+            "movements": self._books.recent_cash(limit=limit),
+            "integrity": self._books.cash.verify(),
+            "balance": round(self._books.cash.balance, 2),
+        }
 
     def surveillance_alerts(self, limit: int = 100) -> Dict[str, Any]:
         if self._books is None or self._books.surveillance is None:
@@ -1545,8 +1721,11 @@ class CCEASupervisor:
         j = getattr(self._paper_engine, "_journal", None)
         if j is None or not hasattr(j, "verify_audit_chain"):
             return {"available": False}
-        return {"available": True, "audit": j.verify_audit_chain(),
-                "events": j.get_audit_events(limit=50)}
+        return {
+            "available": True,
+            "audit": j.verify_audit_chain(),
+            "events": j.get_audit_events(limit=50),
+        }
 
     def stop(self) -> None:
         """Stop Agent, close durable stores, and shut down the local control plane."""
@@ -1581,7 +1760,9 @@ if __name__ == "__main__":
     import json
     import tempfile
 
-    sup = CCEASupervisor(SupervisorConfig(data_dir=Path(tempfile.mkdtemp(prefix="ccea_")), paper=True))
+    sup = CCEASupervisor(
+        SupervisorConfig(data_dir=Path(tempfile.mkdtemp(prefix="ccea_")), paper=True)
+    )
     sup.start()
     # Wait for enrollment AND the first heartbeat to land (cloud_connected).
     for _ in range(30):

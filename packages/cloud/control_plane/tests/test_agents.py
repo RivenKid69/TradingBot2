@@ -75,7 +75,9 @@ class TestCreateEnrollmentToken:
     ) -> None:
         """User with agent:enroll permission can create token."""
         # Create permission and role
-        perm = Permission(name="agent:enroll", description="Enroll agents", resource="agent", action="enroll")
+        perm = Permission(
+            name="agent:enroll", description="Enroll agents", resource="agent", action="enroll"
+        )
         db_session.add(perm)
         await db_session.commit()
         await db_session.refresh(perm)
@@ -896,7 +898,9 @@ class TestUpdateAgent:
     ) -> None:
         """User with agent:write can update agent."""
         # Create permission and role
-        perm = Permission(name="agent:write", description="Write agents", resource="agent", action="write")
+        perm = Permission(
+            name="agent:write", description="Write agents", resource="agent", action="write"
+        )
         db_session.add(perm)
         await db_session.commit()
         await db_session.refresh(perm)
@@ -986,7 +990,9 @@ class TestUpdateAgent:
     ) -> None:
         """Updating trust_state requires agent:trust permission."""
         # Create agent:write permission only
-        perm = Permission(name="agent:write", description="Write agents", resource="agent", action="write")
+        perm = Permission(
+            name="agent:write", description="Write agents", resource="agent", action="write"
+        )
         db_session.add(perm)
         await db_session.commit()
         await db_session.refresh(perm)
@@ -1047,8 +1053,12 @@ class TestUpdateAgent:
     ) -> None:
         """User with agent:trust can update trust_state."""
         # Create permissions
-        write_perm = Permission(name="agent:write", description="Write agents", resource="agent", action="write2")
-        trust_perm = Permission(name="agent:trust", description="Trust agents", resource="agent", action="trust")
+        write_perm = Permission(
+            name="agent:write", description="Write agents", resource="agent", action="write2"
+        )
+        trust_perm = Permission(
+            name="agent:trust", description="Trust agents", resource="agent", action="trust"
+        )
         db_session.add_all([write_perm, trust_perm])
         await db_session.commit()
 
@@ -1208,7 +1218,9 @@ class TestRevokeAgent:
     ) -> None:
         """User with agent:trust can revoke agent."""
         # Create permission
-        perm = Permission(name="agent:trust", description="Trust agents", resource="agent", action="trust")
+        perm = Permission(
+            name="agent:trust", description="Trust agents", resource="agent", action="trust"
+        )
         db_session.add(perm)
         await db_session.commit()
         await db_session.refresh(perm)
@@ -1464,7 +1476,9 @@ class TestReinstateAgent:
     ) -> None:
         """User with agent:trust can reinstate agent."""
         # Create permission
-        perm = Permission(name="agent:trust", description="Trust agents", resource="agent", action="trust")
+        perm = Permission(
+            name="agent:trust", description="Trust agents", resource="agent", action="trust"
+        )
         db_session.add(perm)
         await db_session.commit()
         await db_session.refresh(perm)

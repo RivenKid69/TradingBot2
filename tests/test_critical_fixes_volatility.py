@@ -31,6 +31,7 @@ from feature_pipe import FeaturePipe
 # CRITICAL FIX #2: Yang-Zhang Bessel's Correction
 # =============================================================================
 
+
 class TestYangZhangBesselCorrection:
     """Test that Yang-Zhang volatility uses Bessel's correction consistently."""
 
@@ -52,18 +53,20 @@ class TestYangZhangBesselCorrection:
         ohlc_bars = []
         for i in range(n):
             # Generate realistic OHLC
-            close_prev = base_price if i == 0 else ohlc_bars[i-1]["close"]
-            open_price = close_prev * (1 + np.random.normal(0, volatility/2))
+            close_prev = base_price if i == 0 else ohlc_bars[i - 1]["close"]
+            open_price = close_prev * (1 + np.random.normal(0, volatility / 2))
             close = open_price * (1 + np.random.normal(0, volatility))
-            high = max(open_price, close) * (1 + abs(np.random.normal(0, volatility/4)))
-            low = min(open_price, close) * (1 - abs(np.random.normal(0, volatility/4)))
+            high = max(open_price, close) * (1 + abs(np.random.normal(0, volatility / 4)))
+            low = min(open_price, close) * (1 - abs(np.random.normal(0, volatility / 4)))
 
-            ohlc_bars.append({
-                "open": open_price,
-                "high": high,
-                "low": low,
-                "close": close,
-            })
+            ohlc_bars.append(
+                {
+                    "open": open_price,
+                    "high": high,
+                    "low": low,
+                    "close": close,
+                }
+            )
 
         # Calculate Yang-Zhang volatility
         yz_vol = calculate_yang_zhang_volatility(ohlc_bars, n)
@@ -82,12 +85,14 @@ class TestYangZhangBesselCorrection:
         rs_count < 2 should return None (insufficient for unbiased estimation).
         """
         # Single OHLC bar (rs_count = 1)
-        ohlc_bars = [{
-            "open": 100.0,
-            "high": 101.0,
-            "low": 99.0,
-            "close": 100.5,
-        }]
+        ohlc_bars = [
+            {
+                "open": 100.0,
+                "high": 101.0,
+                "low": 99.0,
+                "close": 100.5,
+            }
+        ]
 
         result = calculate_yang_zhang_volatility(ohlc_bars, n=1)
 
@@ -108,7 +113,7 @@ class TestYangZhangBesselCorrection:
         close_prices = []
 
         for i in range(n):
-            close_prev = base_price if i == 0 else ohlc_bars[i-1]["close"]
+            close_prev = base_price if i == 0 else ohlc_bars[i - 1]["close"]
             return_pct = np.random.normal(0, 0.015)  # 1.5% daily vol
             close = close_prev * (1 + return_pct)
             open_price = close_prev * (1 + np.random.normal(0, 0.01))
@@ -133,6 +138,7 @@ class TestYangZhangBesselCorrection:
 # =============================================================================
 # CRITICAL FIX #3: Log vs Linear Returns Consistency
 # =============================================================================
+
 
 class TestLogLinearReturnsConsistency:
     """Test that features and targets use consistent return definitions."""
@@ -170,7 +176,9 @@ class TestLogLinearReturnsConsistency:
         error_log = abs(actual - expected_log)
         error_linear = abs(actual - expected_linear)
 
-        assert error_log < error_linear, f"Feature should be log return (got {actual:.4f}, expected log {expected_log:.4f}, linear {expected_linear:.4f})"
+        assert (
+            error_log < error_linear
+        ), f"Feature should be log return (got {actual:.4f}, expected log {expected_log:.4f}, linear {expected_linear:.4f})"
         assert abs(actual - expected_log) < 1e-6, f"Feature should match log return exactly"
 
     def test_targets_use_log_returns(self):
@@ -184,11 +192,13 @@ class TestLogLinearReturnsConsistency:
         pipe = FeaturePipe(spec=spec, price_col="price")
 
         # Create test data with known returns
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000, 3000],
-            "symbol": ["BTCUSDT", "BTCUSDT", "BTCUSDT"],
-            "price": [100.0, 110.0, 121.0],  # 10% returns each step
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000, 3000],
+                "symbol": ["BTCUSDT", "BTCUSDT", "BTCUSDT"],
+                "price": [100.0, 110.0, 121.0],  # 10% returns each step
+            }
+        )
 
         targets = pipe.make_targets(df)
 
@@ -202,8 +212,12 @@ class TestLogLinearReturnsConsistency:
         error_log = abs(actual_1 - expected_log_1)
         error_linear = abs(actual_1 - expected_linear_1)
 
-        assert error_log < error_linear, f"Target should be log return, not linear (got {actual_1:.6f})"
-        assert error_log < 1e-6, f"Target should match log return exactly (got {actual_1:.6f}, expected {expected_log_1:.6f})"
+        assert (
+            error_log < error_linear
+        ), f"Target should be log return, not linear (got {actual_1:.6f})"
+        assert (
+            error_log < 1e-6
+        ), f"Target should match log return exactly (got {actual_1:.6f}, expected {expected_log_1:.6f})"
 
     def test_large_returns_consistency(self):
         """
@@ -216,11 +230,13 @@ class TestLogLinearReturnsConsistency:
         pipe = FeaturePipe(spec=spec, price_col="price")
 
         # Large price movements
-        df = pd.DataFrame({
-            "ts_ms": [1000, 2000],
-            "symbol": ["BTCUSDT", "BTCUSDT"],
-            "price": [100.0, 150.0],  # 50% linear return
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": [1000, 2000],
+                "symbol": ["BTCUSDT", "BTCUSDT"],
+                "price": [100.0, 150.0],  # 50% linear return
+            }
+        )
 
         targets = pipe.make_targets(df)
         target_val = targets.iloc[0]
@@ -229,7 +245,9 @@ class TestLogLinearReturnsConsistency:
         expected_linear = 0.5
 
         # Target should be log
-        assert abs(target_val - expected_log) < 1e-6, f"Target should be log return (got {target_val:.6f}, expected log {expected_log:.6f})"
+        assert (
+            abs(target_val - expected_log) < 1e-6
+        ), f"Target should be log return (got {target_val:.6f}, expected log {expected_log:.6f})"
 
         # Verify it's NOT linear
         assert abs(target_val - expected_linear) > 0.05, "Target should NOT be linear return"
@@ -238,6 +256,7 @@ class TestLogLinearReturnsConsistency:
 # =============================================================================
 # CRITICAL FIX #4: EWMA Robust Initialization
 # =============================================================================
+
 
 class TestEWMARobustInitialization:
     """Test that EWMA uses robust initialization to prevent cold start bias."""
@@ -259,7 +278,7 @@ class TestEWMARobustInitialization:
 
         # Calculate expected initialization (median of squared returns)
         log_returns = np.log(np.array(prices[1:]) / np.array(prices[:-1]))
-        expected_init = float(np.median(log_returns ** 2))
+        expected_init = float(np.median(log_returns**2))
 
         # Volatility should be reasonable (not dominated by first spike)
         # With median init, spike doesn't dominate
@@ -282,7 +301,7 @@ class TestEWMARobustInitialization:
 
         # Should use mean of squared returns for init
         log_returns = np.log(np.array(prices[1:]) / np.array(prices[:-1]))
-        expected_init = float(np.mean(log_returns ** 2))
+        expected_init = float(np.mean(log_returns**2))
 
         # Volatility should be reasonable
         assert 0.02 < vol < 0.10, f"Volatility should be reasonable (got {vol:.4f})"
@@ -305,10 +324,12 @@ class TestEWMARobustInitialization:
         # Calculate what old approach would give
         log_returns = np.log(np.array(prices[1:]) / np.array(prices[:-1]))
         old_init = log_returns[0] ** 2
-        new_init = float(np.median(log_returns ** 2))
+        new_init = float(np.median(log_returns**2))
 
         # New initialization should be much smaller (spike is median-filtered)
-        assert new_init < old_init * 0.5, f"Median init should filter spike (old: {old_init:.6f}, new: {new_init:.6f})"
+        assert (
+            new_init < old_init * 0.5
+        ), f"Median init should filter spike (old: {old_init:.6f}, new: {new_init:.6f})"
 
         # Final volatility should be reasonable
         assert vol < 0.05, f"Final volatility should be reasonable (got {vol:.4f})"
@@ -341,6 +362,7 @@ class TestEWMARobustInitialization:
 # Integration Tests
 # =============================================================================
 
+
 class TestCriticalFixesIntegration:
     """Integration tests for all critical fixes working together."""
 
@@ -363,11 +385,13 @@ class TestCriticalFixesIntegration:
         for _ in range(n - 1):
             prices.append(prices[-1] * (1 + np.random.normal(0, 0.02)))
 
-        df = pd.DataFrame({
-            "ts_ms": range(1000, 1000 + n),
-            "symbol": ["BTCUSDT"] * n,
-            "price": prices,
-        })
+        df = pd.DataFrame(
+            {
+                "ts_ms": range(1000, 1000 + n),
+                "symbol": ["BTCUSDT"] * n,
+                "price": prices,
+            }
+        )
 
         # Generate features and targets
         features_df = pipe.transform_df(df)
@@ -378,7 +402,9 @@ class TestCriticalFixesIntegration:
         assert not targets.empty, "Targets should be generated"
 
         # Check that ret_1m exists and uses log returns (1 bar = 1 minute for 1m bars)
-        assert "ret_1m" in features_df.columns, f"Should have ret_1m feature, got: {features_df.columns.tolist()}"
+        assert (
+            "ret_1m" in features_df.columns
+        ), f"Should have ret_1m feature, got: {features_df.columns.tolist()}"
 
         # Verify consistency: both use log returns
         for i in range(10, n - 1):  # Skip warmup period
@@ -389,7 +415,9 @@ class TestCriticalFixesIntegration:
 
             if pd.notna(target_val):
                 expected_log = math.log(price_next / price_curr)
-                assert abs(target_val - expected_log) < 1e-4, f"Target at index {i} should be log return"
+                assert (
+                    abs(target_val - expected_log) < 1e-4
+                ), f"Target at index {i} should be log return"
 
     def test_volatility_features_robustness(self):
         """
@@ -431,7 +459,9 @@ class TestCriticalFixesIntegration:
 
             # Early should not be 2-5x different from late (after fix)
             ratio = early_mean / late_mean if late_mean > 0 else 1.0
-            assert 0.5 < ratio < 2.0, f"Early/late volatility ratio {ratio:.2f} should be stable after fix"
+            assert (
+                0.5 < ratio < 2.0
+            ), f"Early/late volatility ratio {ratio:.2f} should be stable after fix"
 
 
 if __name__ == "__main__":

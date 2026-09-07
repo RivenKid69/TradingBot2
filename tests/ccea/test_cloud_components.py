@@ -57,7 +57,7 @@ class TestCommandDispatcher:
                 agent_id="agent-001",
                 payload={
                     "quantity": 100,  # Prohibited field!
-                    "side": "buy",    # Prohibited field!
+                    "side": "buy",  # Prohibited field!
                 },
             )
 
@@ -96,10 +96,21 @@ class TestProhibitedPayloadFields:
         from packages.cloud.control_plane.commands import PROHIBITED_PAYLOAD_FIELDS
 
         order_fields = [
-            "side", "quantity", "qty", "price", "limit_price",
-            "stop_price", "order_type", "target_position",
-            "execute_order", "place_order", "submit_order",
-            "intent", "signal", "trade", "order",
+            "side",
+            "quantity",
+            "qty",
+            "price",
+            "limit_price",
+            "stop_price",
+            "order_type",
+            "target_position",
+            "execute_order",
+            "place_order",
+            "submit_order",
+            "intent",
+            "signal",
+            "trade",
+            "order",
         ]
 
         for field in order_fields:

@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # ============================================================================
 
+
 @dataclass
 class FundingTrackerConfig:
     """
@@ -66,6 +67,7 @@ class FundingTrackerConfig:
         prediction_method: Method for predictions (last, avg, ewma)
         cache_ttl_seconds: Cache TTL for statistics
     """
+
     data_dir: str = "data/futures"
     max_history_per_symbol: int = 10000
     auto_load: bool = True
@@ -91,6 +93,7 @@ class FundingTrackerConfig:
 # ============================================================================
 # SERVICE CLASS
 # ============================================================================
+
 
 class FundingTrackerService:
     """
@@ -168,10 +171,7 @@ class FundingTrackerService:
         symbol = symbol.upper()
 
         if file_path is None:
-            file_path = os.path.join(
-                self._config.data_dir,
-                f"{symbol}_funding.parquet"
-            )
+            file_path = os.path.join(self._config.data_dir, f"{symbol}_funding.parquet")
 
         if not os.path.exists(file_path):
             logger.warning(f"Funding data file not found: {file_path}")
@@ -193,8 +193,16 @@ class FundingTrackerService:
         count = 0
         for _, row in df.iterrows():
             try:
-                mark_price = Decimal(str(row.get("mark_price", "0"))) if "mark_price" in row else Decimal("0")
-                index_price = Decimal(str(row.get("index_price", "0"))) if "index_price" in row else Decimal("0")
+                mark_price = (
+                    Decimal(str(row.get("mark_price", "0")))
+                    if "mark_price" in row
+                    else Decimal("0")
+                )
+                index_price = (
+                    Decimal(str(row.get("index_price", "0")))
+                    if "index_price" in row
+                    else Decimal("0")
+                )
 
                 self._tracker.add_funding_rate(
                     symbol=symbol,
@@ -231,8 +239,16 @@ class FundingTrackerService:
 
         for _, row in df.iterrows():
             try:
-                mark_price = Decimal(str(row.get("mark_price", "0"))) if "mark_price" in row else Decimal("0")
-                index_price = Decimal(str(row.get("index_price", "0"))) if "index_price" in row else Decimal("0")
+                mark_price = (
+                    Decimal(str(row.get("mark_price", "0")))
+                    if "mark_price" in row
+                    else Decimal("0")
+                )
+                index_price = (
+                    Decimal(str(row.get("index_price", "0")))
+                    if "index_price" in row
+                    else Decimal("0")
+                )
 
                 self._tracker.add_funding_rate(
                     symbol=symbol,
@@ -332,9 +348,7 @@ class FundingTrackerService:
         Returns:
             Average funding rate
         """
-        return self._tracker.get_average_funding_rate(
-            symbol, lookback_hours, current_ts_ms
-        )
+        return self._tracker.get_average_funding_rate(symbol, lookback_hours, current_ts_ms)
 
     # ------------------------------------------------------------------------
     # FUNDING PAYMENT CALCULATION
@@ -445,9 +459,7 @@ class FundingTrackerService:
             Estimated daily cost
         """
         if use_recent_avg:
-            avg_rate = self._tracker.get_average_funding_rate(
-                position.symbol, lookback_hours
-            )
+            avg_rate = self._tracker.get_average_funding_rate(position.symbol, lookback_hours)
         else:
             avg_rate = DEFAULT_NEUTRAL_RATE
 
@@ -477,9 +489,7 @@ class FundingTrackerService:
             Estimated cost
         """
         if use_recent_avg:
-            avg_rate = self._tracker.get_average_funding_rate(
-                position.symbol, hours
-            )
+            avg_rate = self._tracker.get_average_funding_rate(position.symbol, hours)
         else:
             avg_rate = DEFAULT_NEUTRAL_RATE
 
@@ -514,6 +524,7 @@ class FundingTrackerService:
             FundingStatistics
         """
         import time
+
         now_ms = current_ts_ms or int(time.time() * 1000)
 
         cache_key = f"{symbol}_{lookback_hours}"
@@ -522,9 +533,7 @@ class FundingTrackerService:
             if (now_ms - cached_ts) < self._config.cache_ttl_seconds * 1000:
                 return cached_stats
 
-        stats = self._tracker.get_funding_statistics(
-            symbol, lookback_hours, current_ts_ms
-        )
+        stats = self._tracker.get_funding_statistics(symbol, lookback_hours, current_ts_ms)
         self._stats_cache[cache_key] = (now_ms, stats)
 
         return stats
@@ -654,6 +663,7 @@ class FundingTrackerService:
 # FACTORY FUNCTIONS
 # ============================================================================
 
+
 def create_funding_service(
     config: Optional[FundingTrackerConfig] = None,
     data_dir: Optional[str] = None,
@@ -690,6 +700,7 @@ def create_funding_service(
 # ============================================================================
 # INTEGRATION HELPERS
 # ============================================================================
+
 
 def apply_funding_to_position(
     position: FuturesPosition,

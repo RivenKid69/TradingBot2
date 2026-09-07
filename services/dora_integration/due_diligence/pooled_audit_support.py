@@ -40,8 +40,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class AuditReportType(Enum):
     """Types of audit reports available for pooled use."""
+
     SOC2_TYPE_I = "soc2_type_i"
     SOC2_TYPE_II = "soc2_type_ii"
     ISO27001 = "iso27001"
@@ -55,6 +57,7 @@ class AuditReportType(Enum):
 
 class PooledAuditStatus(Enum):
     """Status of a pooled audit engagement."""
+
     PLANNING = "planning"
     RECRUITING = "recruiting"  # Recruiting participants
     SCHEDULED = "scheduled"
@@ -66,6 +69,7 @@ class PooledAuditStatus(Enum):
 
 class ParticipationStatus(Enum):
     """Client participation status in pooled audit."""
+
     INVITED = "invited"
     INTERESTED = "interested"
     CONFIRMED = "confirmed"
@@ -76,6 +80,7 @@ class ParticipationStatus(Enum):
 
 class AuditScopeArea(Enum):
     """Audit scope areas per DORA requirements."""
+
     ICT_GOVERNANCE = "ict_governance"
     ICT_RISK_MANAGEMENT = "ict_risk_management"
     ICT_SECURITY = "ict_security"
@@ -90,6 +95,7 @@ class AuditScopeArea(Enum):
 
 class FindingSeverity(Enum):
     """Severity of audit findings."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -99,6 +105,7 @@ class FindingSeverity(Enum):
 
 class RemediationStatus(Enum):
     """Status of finding remediation."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     REMEDIATED = "remediated"
@@ -110,6 +117,7 @@ class RemediationStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class CertificationRecord:
     """
@@ -117,6 +125,7 @@ class CertificationRecord:
 
     Per Art. 30(4)(a), clients can rely on third-party certifications.
     """
+
     certification_id: str = ""
     certification_type: AuditReportType = AuditReportType.SOC2_TYPE_II
     certifying_body: str = ""
@@ -149,7 +158,7 @@ class CertificationRecord:
         """Check if certification is currently valid."""
         if not self.expiry_date:
             return False
-        expiry = datetime.fromisoformat(self.expiry_date.replace('Z', '+00:00'))
+        expiry = datetime.fromisoformat(self.expiry_date.replace("Z", "+00:00"))
         return datetime.now(timezone.utc) < expiry
 
 
@@ -158,6 +167,7 @@ class PooledAuditParticipant:
     """
     A client participating in a pooled audit.
     """
+
     participant_id: str = ""
     client_id: str = ""
     client_name: str = ""
@@ -189,6 +199,7 @@ class AuditFinding:
     """
     A finding from an audit engagement.
     """
+
     finding_id: str = ""
     audit_id: str = ""
 
@@ -230,6 +241,7 @@ class PooledAuditEngagement:
 
     Per Art. 30(4)(b), clients may jointly organize audits.
     """
+
     engagement_id: str = ""
     engagement_name: str = ""
     engagement_description: str = ""
@@ -291,6 +303,7 @@ class AuditReportAccess:
     """
     Record of client access to an audit report.
     """
+
     access_id: str = ""
     client_id: str = ""
     client_name: str = ""
@@ -357,6 +370,7 @@ class PooledAuditConfig:
 # Main Service Class
 # =============================================================================
 
+
 class PooledAuditSupport:
     """
     Pooled Audit Support service for DORA Article 30(4) compliance.
@@ -378,7 +392,7 @@ class PooledAuditSupport:
         self.findings: Dict[str, AuditFinding] = {}
         self.report_access: Dict[str, AuditReportAccess] = {}
 
-        self._lock = __import__('threading').Lock()
+        self._lock = __import__("threading").Lock()
 
         logger.info("Pooled Audit Support service initialized")
 
@@ -430,20 +444,14 @@ class PooledAuditSupport:
         )
 
         if self.config.notification_callback:
-            self.config.notification_callback(
-                "certification_registered",
-                asdict(cert)
-            )
+            self.config.notification_callback("certification_registered", asdict(cert))
 
         return cert
 
     def get_valid_certifications(self) -> List[CertificationRecord]:
         """Get all currently valid certifications."""
         with self._lock:
-            return [
-                cert for cert in self.certifications.values()
-                if cert.is_valid
-            ]
+            return [cert for cert in self.certifications.values() if cert.is_valid]
 
     def get_expiring_certifications(self, days: int = 30) -> List[CertificationRecord]:
         """Get certifications expiring within specified days."""
@@ -453,9 +461,7 @@ class PooledAuditSupport:
         with self._lock:
             for cert in self.certifications.values():
                 if cert.expiry_date:
-                    expiry = datetime.fromisoformat(
-                        cert.expiry_date.replace('Z', '+00:00')
-                    )
+                    expiry = datetime.fromisoformat(cert.expiry_date.replace("Z", "+00:00"))
                     if expiry <= threshold and cert.is_valid:
                         expiring.append(cert)
 
@@ -509,9 +515,7 @@ class PooledAuditSupport:
         with self._lock:
             self.engagements[engagement.engagement_id] = engagement
 
-        logger.info(
-            f"Pooled audit {engagement.engagement_id} created: {name}"
-        )
+        logger.info(f"Pooled audit {engagement.engagement_id} created: {name}")
 
         return engagement
 
@@ -554,9 +558,7 @@ class PooledAuditSupport:
             engagement.participant_ids.append(participant.participant_id)
             engagement.last_updated = datetime.now(timezone.utc).isoformat()
 
-        logger.info(
-            f"Client {client_name} invited to pooled audit {engagement_id}"
-        )
+        logger.info(f"Client {client_name} invited to pooled audit {engagement_id}")
 
         if self.config.notification_callback:
             self.config.notification_callback(
@@ -564,7 +566,7 @@ class PooledAuditSupport:
                 {
                     "engagement_id": engagement_id,
                     "participant": asdict(participant),
-                }
+                },
             )
 
         return participant
@@ -763,11 +765,9 @@ class PooledAuditSupport:
         """Get all open findings."""
         with self._lock:
             return [
-                f for f in self.findings.values()
-                if f.remediation_status in [
-                    RemediationStatus.OPEN,
-                    RemediationStatus.IN_PROGRESS
-                ]
+                f
+                for f in self.findings.values()
+                if f.remediation_status in [RemediationStatus.OPEN, RemediationStatus.IN_PROGRESS]
             ]
 
     # =========================================================================
@@ -809,23 +809,17 @@ class PooledAuditSupport:
             access_granted_date=datetime.now(timezone.utc).isoformat(),
             access_granted_by=granted_by,
             access_expiry_date=(
-                datetime.now(timezone.utc) +
-                timedelta(days=365)  # 1 year access
+                datetime.now(timezone.utc) + timedelta(days=365)  # 1 year access
             ).isoformat(),
         )
 
         with self._lock:
             self.report_access[access.access_id] = access
 
-        logger.info(
-            f"Report access granted: {client_name} -> {report_type}/{report_id}"
-        )
+        logger.info(f"Report access granted: {client_name} -> {report_type}/{report_id}")
 
         if self.config.notification_callback:
-            self.config.notification_callback(
-                "report_access_granted",
-                asdict(access)
-            )
+            self.config.notification_callback("report_access_granted", asdict(access))
 
         return access
 
@@ -855,10 +849,7 @@ class PooledAuditSupport:
     def get_client_report_access(self, client_id: str) -> List[AuditReportAccess]:
         """Get all report access records for a client."""
         with self._lock:
-            return [
-                a for a in self.report_access.values()
-                if a.client_id == client_id
-            ]
+            return [a for a in self.report_access.values() if a.client_id == client_id]
 
     # =========================================================================
     # Reporting
@@ -919,11 +910,9 @@ class PooledAuditSupport:
         open_findings = self.get_open_findings()
 
         active_engagements = [
-            e for e in self.engagements.values()
-            if e.status not in [
-                PooledAuditStatus.COMPLETED,
-                PooledAuditStatus.CANCELLED
-            ]
+            e
+            for e in self.engagements.values()
+            if e.status not in [PooledAuditStatus.COMPLETED, PooledAuditStatus.CANCELLED]
         ]
 
         return {
@@ -937,22 +926,21 @@ class PooledAuditSupport:
             "pooled_audits": {
                 "total": len(self.engagements),
                 "active": len(active_engagements),
-                "completed": len([
-                    e for e in self.engagements.values()
-                    if e.status == PooledAuditStatus.COMPLETED
-                ]),
+                "completed": len(
+                    [
+                        e
+                        for e in self.engagements.values()
+                        if e.status == PooledAuditStatus.COMPLETED
+                    ]
+                ),
             },
             "findings": {
                 "total": len(self.findings),
                 "open": len(open_findings),
-                "critical_open": len([
-                    f for f in open_findings
-                    if f.severity == FindingSeverity.CRITICAL
-                ]),
-                "high_open": len([
-                    f for f in open_findings
-                    if f.severity == FindingSeverity.HIGH
-                ]),
+                "critical_open": len(
+                    [f for f in open_findings if f.severity == FindingSeverity.CRITICAL]
+                ),
+                "high_open": len([f for f in open_findings if f.severity == FindingSeverity.HIGH]),
             },
             "report_access": {
                 "total_grants": len(self.report_access),
@@ -964,6 +952,7 @@ class PooledAuditSupport:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_pooled_audit_support(
     config: Optional[PooledAuditConfig] = None,

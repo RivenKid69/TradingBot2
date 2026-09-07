@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 # Enumerations
 # =============================================================================
 
+
 class CommunicationChannel(Enum):
     """Communication channel types."""
+
     EMAIL = "email"
     PHONE = "phone"
     SMS = "sms"
@@ -64,6 +66,7 @@ class CommunicationChannel(Enum):
 
 class StakeholderType(Enum):
     """Stakeholder types for communication."""
+
     INTERNAL_STAFF = "internal_staff"
     MANAGEMENT = "management"
     BOARD = "board"
@@ -78,6 +81,7 @@ class StakeholderType(Enum):
 
 class CommunicationPriority(Enum):
     """Communication priority levels."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
@@ -87,6 +91,7 @@ class CommunicationPriority(Enum):
 
 class CommunicationStatus(Enum):
     """Communication status."""
+
     DRAFT = "draft"
     APPROVED = "approved"
     SENT = "sent"
@@ -98,6 +103,7 @@ class CommunicationStatus(Enum):
 
 class CrisisPhase(Enum):
     """Crisis communication phases."""
+
     PRE_CRISIS = "pre_crisis"
     INITIAL_RESPONSE = "initial_response"
     ONGOING = "ongoing"
@@ -107,6 +113,7 @@ class CrisisPhase(Enum):
 
 class PolicyStatus(Enum):
     """Policy status."""
+
     DRAFT = "draft"
     UNDER_REVIEW = "under_review"
     APPROVED = "approved"
@@ -118,11 +125,13 @@ class PolicyStatus(Enum):
 # Data Structures
 # =============================================================================
 
+
 @dataclass
 class CommunicationContact:
     """
     Communication contact for stakeholder notification.
     """
+
     contact_id: str = ""
     name: str = ""
     role: str = ""
@@ -171,6 +180,7 @@ class CommunicationTemplate:
     """
     Communication template for standardized messaging.
     """
+
     template_id: str = ""
     name: str = ""
     description: str = ""
@@ -209,9 +219,14 @@ class CommunicationTemplate:
             self.created_at = datetime.now(timezone.utc).isoformat()
         if not self.available_variables:
             self.available_variables = [
-                "incident_id", "incident_title", "incident_severity",
-                "detection_time", "current_status", "next_update_time",
-                "contact_name", "organization_name",
+                "incident_id",
+                "incident_title",
+                "incident_severity",
+                "detection_time",
+                "current_status",
+                "next_update_time",
+                "contact_name",
+                "organization_name",
             ]
 
 
@@ -220,6 +235,7 @@ class CommunicationRecord:
     """
     Record of a communication sent or received.
     """
+
     communication_id: str = ""
     incident_id: str = ""
 
@@ -273,7 +289,9 @@ class CommunicationRecord:
 
     def __post_init__(self):
         if not self.communication_id:
-            self.communication_id = f"COMM-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            self.communication_id = (
+                f"COMM-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+            )
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -283,6 +301,7 @@ class CommunicationPolicy:
     """
     Crisis communication policy per Article 14.
     """
+
     policy_id: str = ""
     name: str = ""
     description: str = ""
@@ -366,6 +385,7 @@ class CrisisStatus:
     """
     Current crisis status for communication management.
     """
+
     status_id: str = ""
     incident_id: str = ""
 
@@ -405,9 +425,11 @@ class CrisisStatus:
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class CommunicationConfig:
     """Configuration for crisis communication system."""
+
     # Organization info
     organization_name: str = ""
     organization_lei: str = ""
@@ -440,6 +462,7 @@ class CommunicationConfig:
 # =============================================================================
 # Main Class Implementation
 # =============================================================================
+
 
 class DORACommunication:
     """
@@ -687,7 +710,8 @@ Best regards,
             notification_timeline_minutes=notification_timeline_minutes or {},
             update_frequency_minutes=update_frequency_minutes or {},
             requires_management_approval=requires_management_approval,
-            allowed_channels=allowed_channels or [
+            allowed_channels=allowed_channels
+            or [
                 CommunicationChannel.EMAIL,
                 CommunicationChannel.PHONE,
             ],
@@ -697,10 +721,13 @@ Best regards,
         with self._lock:
             self._policies[policy.policy_id] = policy
 
-        self._log_event("policy_created", {
-            "policy_id": policy.policy_id,
-            "name": name,
-        })
+        self._log_event(
+            "policy_created",
+            {
+                "policy_id": policy.policy_id,
+                "name": name,
+            },
+        )
 
         logger.info(f"Communication policy created: {policy.policy_id}")
         return policy
@@ -847,10 +874,7 @@ Best regards,
         """Get contacts by stakeholder type."""
         with self._lock:
             contact_ids = self._contacts_by_type.get(stakeholder_type, set())
-            contacts = [
-                self._contacts[cid] for cid in contact_ids
-                if cid in self._contacts
-            ]
+            contacts = [self._contacts[cid] for cid in contact_ids if cid in self._contacts]
             if active_only:
                 contacts = [c for c in contacts if c.is_active]
         return contacts
@@ -861,10 +885,7 @@ Best regards,
     ) -> List[CommunicationContact]:
         """Get primary contacts."""
         with self._lock:
-            contacts = [
-                c for c in self._contacts.values()
-                if c.is_primary_contact and c.is_active
-            ]
+            contacts = [c for c in self._contacts.values() if c.is_primary_contact and c.is_active]
             if stakeholder_type:
                 contacts = [c for c in contacts if c.stakeholder_type == stakeholder_type]
         return contacts
@@ -936,7 +957,8 @@ Best regards,
         """Get templates matching context."""
         with self._lock:
             return [
-                t for t in self._templates.values()
+                t
+                for t in self._templates.values()
                 if t.status == PolicyStatus.ACTIVE
                 and stakeholder_type in t.stakeholder_types
                 and crisis_phase in t.crisis_phases
@@ -1025,13 +1047,15 @@ Best regards,
             for contact_id in recipients:
                 if contact_id in self._contacts:
                     contact = self._contacts[contact_id]
-                    recipient_details.append({
-                        "contact_id": contact.contact_id,
-                        "name": contact.name,
-                        "email": contact.email,
-                        "phone": contact.phone,
-                        "channel": channel.value,
-                    })
+                    recipient_details.append(
+                        {
+                            "contact_id": contact.contact_id,
+                            "name": contact.name,
+                            "email": contact.email,
+                            "phone": contact.phone,
+                            "channel": channel.value,
+                        }
+                    )
 
             # Get sequence number for incident
             incident_comms = self._communications_by_incident.get(incident_id, set())
@@ -1120,12 +1144,15 @@ Best regards,
                     if contact_id in self._contacts:
                         self._contacts[contact_id].last_contacted_at = now
 
-                self._log_event("communication_sent", {
-                    "communication_id": communication_id,
-                    "incident_id": comm.incident_id,
-                    "recipients": len(comm.recipients),
-                    "channel": comm.channel.value,
-                })
+                self._log_event(
+                    "communication_sent",
+                    {
+                        "communication_id": communication_id,
+                        "incident_id": comm.incident_id,
+                        "recipients": len(comm.recipients),
+                        "channel": comm.channel.value,
+                    },
+                )
             else:
                 if comm.delivery_attempts >= self.config.max_delivery_attempts:
                     comm.status = CommunicationStatus.FAILED
@@ -1133,10 +1160,13 @@ Best regards,
         # Callback
         if success and self.config.on_communication_sent:
             try:
-                self.config.on_communication_sent(communication_id, {
-                    "incident_id": comm.incident_id,
-                    "recipients": len(comm.recipients),
-                })
+                self.config.on_communication_sent(
+                    communication_id,
+                    {
+                        "incident_id": comm.incident_id,
+                        "recipients": len(comm.recipients),
+                    },
+                )
             except Exception as e:
                 logger.error(f"Communication callback failed: {e}")
 
@@ -1201,10 +1231,13 @@ Best regards,
                 if contact_id in self._contacts:
                     self._contacts[contact_id].last_acknowledged_at = now
 
-        self._log_event("communication_acknowledged", {
-            "communication_id": communication_id,
-            "acknowledged_by": acknowledged_by,
-        })
+        self._log_event(
+            "communication_acknowledged",
+            {
+                "communication_id": communication_id,
+                "acknowledged_by": acknowledged_by,
+            },
+        )
 
         return comm
 
@@ -1223,10 +1256,7 @@ Best regards,
         """Get all communications for an incident."""
         with self._lock:
             comm_ids = self._communications_by_incident.get(incident_id, set())
-            return [
-                self._communications[cid] for cid in comm_ids
-                if cid in self._communications
-            ]
+            return [self._communications[cid] for cid in comm_ids if cid in self._communications]
 
     # =========================================================================
     # Crisis Status Management
@@ -1326,9 +1356,7 @@ Best regards,
 
                 if comm.status == CommunicationStatus.SENT:
                     # Check if sent long enough ago
-                    sent_time = datetime.fromisoformat(
-                        comm.sent_at.replace("Z", "+00:00")
-                    )
+                    sent_time = datetime.fromisoformat(comm.sent_at.replace("Z", "+00:00"))
                     now = datetime.now(timezone.utc)
                     elapsed_minutes = (now - sent_time).total_seconds() / 60
 
@@ -1366,20 +1394,26 @@ Best regards,
             status.escalation_level = next_level
             status.escalated_to = [c.contact_id for c in escalation_contacts]
 
-        self._log_event("escalation", {
-            "incident_id": incident_id,
-            "new_level": next_level,
-            "contacts": len(escalation_contacts),
-            "reason": reason,
-        })
+        self._log_event(
+            "escalation",
+            {
+                "incident_id": incident_id,
+                "new_level": next_level,
+                "contacts": len(escalation_contacts),
+                "reason": reason,
+            },
+        )
 
         # Callback
         if self.config.on_escalation:
             try:
-                self.config.on_escalation(incident_id, {
-                    "level": next_level,
-                    "contacts": [c.name for c in escalation_contacts],
-                })
+                self.config.on_escalation(
+                    incident_id,
+                    {
+                        "level": next_level,
+                        "contacts": [c.name for c in escalation_contacts],
+                    },
+                )
             except Exception as e:
                 logger.error(f"Escalation callback failed: {e}")
 
@@ -1398,9 +1432,7 @@ Best regards,
         if not period_end:
             period_end = datetime.now(timezone.utc).isoformat()
         if not period_start:
-            period_start = (
-                datetime.now(timezone.utc) - timedelta(days=30)
-            ).isoformat()
+            period_start = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         with self._lock:
             all_comms = list(self._communications.values())
@@ -1413,10 +1445,7 @@ Best regards,
         for st in CommunicationStatus:
             by_status[st.value] = sum(1 for c in all_comms if c.status == st)
 
-        acknowledged = sum(
-            1 for c in all_comms
-            if c.status == CommunicationStatus.ACKNOWLEDGED
-        )
+        acknowledged = sum(1 for c in all_comms if c.status == CommunicationStatus.ACKNOWLEDGED)
         sent = sum(1 for c in all_comms if c.sent_at)
 
         return {
@@ -1428,12 +1457,10 @@ Best regards,
             "acknowledgement_rate": acknowledged / sent if sent > 0 else 0,
             "total_contacts": len(self._contacts),
             "active_policies": sum(
-                1 for p in self._policies.values()
-                if p.status == PolicyStatus.ACTIVE
+                1 for p in self._policies.values() if p.status == PolicyStatus.ACTIVE
             ),
             "active_templates": sum(
-                1 for t in self._templates.values()
-                if t.status == PolicyStatus.ACTIVE
+                1 for t in self._templates.values() if t.status == PolicyStatus.ACTIVE
             ),
         }
 
@@ -1487,6 +1514,7 @@ Best regards,
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_communication_service(
     config: Optional[CommunicationConfig] = None,

@@ -9,6 +9,7 @@ This is the FINAL comprehensive validation that verifies:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import numpy as np
 from gymnasium import spaces
@@ -23,11 +24,13 @@ class TestDefaultEnablementValidation:
     def test_default_value_is_true(self):
         """CRITICAL: Verify default value is True in source code."""
         import inspect
+
         source = inspect.getsource(CustomActorCriticPolicy.__init__)
 
         # Check that default is True
-        assert 'get("use_twin_critics", True)' in source, \
-            "CRITICAL: Default value is not True in source code!"
+        assert (
+            'get("use_twin_critics", True)' in source
+        ), "CRITICAL: Default value is not True in source code!"
 
     def test_no_config_enables_twin(self):
         """Test: No config at all -> Twin Critics enabled."""
@@ -64,10 +67,7 @@ class TestDefaultEnablementValidation:
         obs = spaces.Box(-1.0, 1.0, (10,), np.float32)
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
-        policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': None}
-        )
+        policy = CustomActorCriticPolicy(obs, act, lambda x: 0.001, arch_params={"critic": None})
 
         assert policy._use_twin_critics is True, "FAIL: Default not enabled with critic=None"
         print("✓ critic=None → Twin Critics enabled")
@@ -77,10 +77,7 @@ class TestDefaultEnablementValidation:
         obs = spaces.Box(-1.0, 1.0, (10,), np.float32)
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
-        policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {}}
-        )
+        policy = CustomActorCriticPolicy(obs, act, lambda x: 0.001, arch_params={"critic": {}})
 
         assert policy._use_twin_critics is True, "FAIL: Default not enabled with critic={{}}"
         print("✓ critic={{}} → Twin Critics enabled")
@@ -91,8 +88,10 @@ class TestDefaultEnablementValidation:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         assert policy._use_twin_critics is True
@@ -105,8 +104,7 @@ class TestDefaultEnablementValidation:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {'distributional': False}}
+            obs, act, lambda x: 0.001, arch_params={"critic": {"distributional": False}}
         )
 
         assert policy._use_twin_critics is True
@@ -119,8 +117,12 @@ class TestDefaultEnablementValidation:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False}
+            },
         )
 
         assert policy._use_twin_critics is False
@@ -133,8 +135,12 @@ class TestDefaultEnablementValidation:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': True}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": True}
+            },
         )
 
         assert policy._use_twin_critics is True
@@ -152,8 +158,13 @@ class TestRegressionPrevention:
 
         # Old code that explicitly wants single critic
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'hidden_dim': 32, 'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={
+                "hidden_dim": 32,
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
+            },
         )
 
         # Should work as before
@@ -171,8 +182,13 @@ class TestRegressionPrevention:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'hidden_dim': 32, 'critic': {'distributional': True, 'num_quantiles': 16, 'use_twin_critics': False}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={
+                "hidden_dim": 32,
+                "critic": {"distributional": True, "num_quantiles": 16, "use_twin_critics": False},
+            },
         )
 
         latent = torch.randn(4, policy.hidden_dim)
@@ -195,8 +211,10 @@ class TestNewDefaultBehavior:
 
         # New code - minimal config
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'hidden_dim': 32, 'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={"hidden_dim": 32, "critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Should have Twin Critics
@@ -228,20 +246,22 @@ class TestCompleteness:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         # Core attributes
-        assert hasattr(policy, '_use_twin_critics')
-        assert hasattr(policy, 'quantile_head')
-        assert hasattr(policy, 'quantile_head_2')
-        assert hasattr(policy, '_value_head_module_2')
+        assert hasattr(policy, "_use_twin_critics")
+        assert hasattr(policy, "quantile_head")
+        assert hasattr(policy, "quantile_head_2")
+        assert hasattr(policy, "_value_head_module_2")
 
         # Methods
-        assert hasattr(policy, '_get_value_logits_2')
-        assert hasattr(policy, '_get_twin_value_logits')
-        assert hasattr(policy, '_get_min_twin_values')
+        assert hasattr(policy, "_get_value_logits_2")
+        assert hasattr(policy, "_get_twin_value_logits")
+        assert hasattr(policy, "_get_min_twin_values")
 
         print("✓ All necessary attributes/methods exist")
 
@@ -251,11 +271,13 @@ class TestCompleteness:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={"critic": {"distributional": True, "num_quantiles": 16}},
         )
 
-        opt_params = {id(p) for g in policy.optimizer.param_groups for p in g['params']}
+        opt_params = {id(p) for g in policy.optimizer.param_groups for p in g["params"]}
         critic1_params = {id(p) for p in policy.quantile_head.parameters()}
         critic2_params = {id(p) for p in policy.quantile_head_2.parameters()}
 
@@ -270,8 +292,10 @@ class TestCompleteness:
         act = spaces.Box(-1.0, 1.0, (1,), np.float32)
 
         policy = CustomActorCriticPolicy(
-            obs, act, lambda x: 0.001,
-            arch_params={'hidden_dim': 32, 'critic': {'distributional': True, 'num_quantiles': 16}}
+            obs,
+            act,
+            lambda x: 0.001,
+            arch_params={"hidden_dim": 32, "critic": {"distributional": True, "num_quantiles": 16}},
         )
 
         latent = torch.randn(4, policy.hidden_dim, requires_grad=True)
@@ -296,24 +320,26 @@ class TestDocumentationAccuracy:
 
     def test_documentation_claims_default_true(self):
         """Verify docs say default is True."""
-        with open('/home/user/ai-quant-platform/docs/twin_critics.md', 'r') as f:
+        with open("/home/user/ai-quant-platform/docs/twin_critics.md", "r") as f:
             docs = f.read()
 
         # Check for key phrases
-        assert 'enabled by default' in docs.lower() or 'default - enabled' in docs.lower(), \
-            "Documentation doesn't reflect default enablement"
+        assert (
+            "enabled by default" in docs.lower() or "default - enabled" in docs.lower()
+        ), "Documentation doesn't reflect default enablement"
 
-        assert 'defaults to True' in docs or 'defaults to true' in docs.lower(), \
-            "Documentation doesn't mention default True"
+        assert (
+            "defaults to True" in docs or "defaults to true" in docs.lower()
+        ), "Documentation doesn't mention default True"
 
         print("✓ Documentation matches implementation")
 
 
 def run_final_validation():
     """Run all final validation tests."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("FINAL VALIDATION: Twin Critics Default Enablement")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     test_classes = [
         TestDefaultEnablementValidation,
@@ -330,7 +356,7 @@ def run_final_validation():
         print("-" * 70)
 
         instance = test_class()
-        methods = [m for m in dir(instance) if m.startswith('test_')]
+        methods = [m for m in dir(instance) if m.startswith("test_")]
 
         for method_name in methods:
             try:
@@ -340,19 +366,20 @@ def run_final_validation():
                 print(f"  ✗ {method_name}: {e}")
                 all_passed = False
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     if all_passed:
         print("✅ ALL VALIDATION TESTS PASSED")
         print("Twin Critics is correctly enabled by default!")
     else:
         print("❌ SOME TESTS FAILED")
         print("Please review failures above")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     return all_passed
 
 
 if __name__ == "__main__":
     import sys
+
     success = run_final_validation()
     sys.exit(0 if success else 1)

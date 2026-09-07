@@ -151,8 +151,7 @@ class TestProhibitedImportDetection:
 
         # File with prohibited import
         (cloud_dir / "bad.py").write_text(
-            "from adapters.alpaca.order_execution import OrderExecutor\n",
-            encoding="utf-8"
+            "from adapters.alpaca.order_execution import OrderExecutor\n", encoding="utf-8"
         )
 
         result = validate_cloud_build(cloud_dir, check_transitive=False)
@@ -168,8 +167,7 @@ class TestProhibitedImportDetection:
 
         # File with allowed imports
         (cloud_dir / "good.py").write_text(
-            "import os\nimport json\nfrom pathlib import Path\n",
-            encoding="utf-8"
+            "import os\nimport json\nfrom pathlib import Path\n", encoding="utf-8"
         )
 
         result = validate_cloud_build(cloud_dir, check_transitive=False)

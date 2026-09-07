@@ -33,14 +33,16 @@ from packages.shared.contracts.manifest import ArtifactFormat, ArtifactManifest
 
 class RegistryType(str, Enum):
     """Supported registry types."""
-    LOCAL = "local"           # Local filesystem
-    S3 = "s3"                 # S3-compatible object store
-    OCI = "oci"               # OCI-compatible registry (e.g., Docker Hub)
-    DATABASE = "database"     # Database-backed (for metadata)
+
+    LOCAL = "local"  # Local filesystem
+    S3 = "s3"  # S3-compatible object store
+    OCI = "oci"  # OCI-compatible registry (e.g., Docker Hub)
+    DATABASE = "database"  # Database-backed (for metadata)
 
 
 class PublishStatus(str, Enum):
     """Artifact publish status."""
+
     PENDING = "pending"
     UPLOADING = "uploading"
     VERIFYING = "verifying"
@@ -51,6 +53,7 @@ class PublishStatus(str, Enum):
 @dataclass
 class RegistryConfig:
     """Registry configuration."""
+
     registry_type: RegistryType = RegistryType.LOCAL
     registry_url: str = ""
     registry_name: str = "ccea-registry"
@@ -88,6 +91,7 @@ class RegistryConfig:
 @dataclass
 class PublishResult:
     """Result of artifact publishing."""
+
     success: bool = False
     artifact_digest: str = ""
     manifest_digest: str = ""
@@ -124,6 +128,7 @@ class ArtifactReference:
 
     Always uses digest for immutable reference.
     """
+
     registry_name: str
     artifact_digest: str  # sha256:...
     manifest_digest: str  # sha256:...
@@ -201,6 +206,7 @@ class ArtifactPublisher:
             PublishResult with details
         """
         import time
+
         start_time = time.time()
 
         result = PublishResult()
@@ -264,7 +270,9 @@ class ArtifactPublisher:
             result.status = PublishStatus.PUBLISHED
             result.published_at = datetime.now(timezone.utc)
             result.registry_url = self._config.registry_url or str(self._config.local_path)
-            result.registry_ref = f"{self._config.registry_name}/{manifest.strategy_id}@{actual_digest}"
+            result.registry_ref = (
+                f"{self._config.registry_name}/{manifest.strategy_id}@{actual_digest}"
+            )
 
         except Exception as e:
             result.errors.append(f"Publish failed: {str(e)}")
@@ -320,14 +328,18 @@ class ArtifactPublisher:
                             try:
                                 with open(manifest_path) as f:
                                     manifest_data = json.load(f)
-                                refs.append(ArtifactReference(
-                                    registry_name=self._config.registry_name,
-                                    artifact_digest=manifest_data.get("artifact_digest", ""),
-                                    manifest_digest=self._compute_file_digest(manifest_path),
-                                    strategy_id=strategy_id,
-                                    version=manifest_data.get("version", ""),
-                                    format=ArtifactFormat(manifest_data.get("format", "zip_bundle")),
-                                ))
+                                refs.append(
+                                    ArtifactReference(
+                                        registry_name=self._config.registry_name,
+                                        artifact_digest=manifest_data.get("artifact_digest", ""),
+                                        manifest_digest=self._compute_file_digest(manifest_path),
+                                        strategy_id=strategy_id,
+                                        version=manifest_data.get("version", ""),
+                                        format=ArtifactFormat(
+                                            manifest_data.get("format", "zip_bundle")
+                                        ),
+                                    )
+                                )
                             except Exception:
                                 continue
 

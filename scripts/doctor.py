@@ -100,9 +100,11 @@ MIN_MEMORY_GB = 8  # Minimum system memory in GB
 # Check Result Types
 # =============================================================================
 
+
 @dataclass
 class CheckResult:
     """Result of a single check."""
+
     name: str
     passed: bool
     message: str
@@ -124,6 +126,7 @@ class CheckResult:
 @dataclass
 class DoctorReport:
     """Full report from doctor checks."""
+
     checks: List[CheckResult] = field(default_factory=list)
     passed: int = 0
     failed: int = 0
@@ -158,8 +161,10 @@ class DoctorReport:
 # Color Output
 # =============================================================================
 
+
 class Colors:
     """ANSI color codes."""
+
     RED = "\033[91m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
@@ -182,6 +187,7 @@ class Colors:
 # Check Functions
 # =============================================================================
 
+
 def check_python_version() -> CheckResult:
     """Check Python version is 3.12+."""
     version = sys.version_info[:2]
@@ -190,7 +196,8 @@ def check_python_version() -> CheckResult:
     return CheckResult(
         name="Python Version",
         passed=passed,
-        message=f"Python {version[0]}.{version[1]}" + (" ✓" if passed else f" (need {REQUIRED_PYTHON[0]}.{REQUIRED_PYTHON[1]}+)"),
+        message=f"Python {version[0]}.{version[1]}"
+        + (" ✓" if passed else f" (need {REQUIRED_PYTHON[0]}.{REQUIRED_PYTHON[1]}+)"),
         severity="error",
         details={
             "current": f"{version[0]}.{version[1]}",
@@ -200,7 +207,9 @@ def check_python_version() -> CheckResult:
     )
 
 
-def check_package_installed(package_name: str, import_name: Optional[str] = None) -> Tuple[bool, Optional[str]]:
+def check_package_installed(
+    package_name: str, import_name: Optional[str] = None
+) -> Tuple[bool, Optional[str]]:
     """
     Check if a package is installed.
 
@@ -240,7 +249,8 @@ def check_core_packages() -> CheckResult:
     return CheckResult(
         name="Core Packages",
         passed=passed,
-        message=f"{len(installed)}/{len(CORE_PACKAGES)} installed" + (f", missing: {', '.join(missing)}" if missing else ""),
+        message=f"{len(installed)}/{len(CORE_PACKAGES)} installed"
+        + (f", missing: {', '.join(missing)}" if missing else ""),
         severity="error",
         details={"installed": installed, "missing": missing},
         fix_command=f"pip install {' '.join(missing)}" if missing else None,
@@ -264,7 +274,8 @@ def check_ml_packages() -> CheckResult:
     return CheckResult(
         name="ML Packages",
         passed=passed,
-        message=f"{len(installed)}/{len(ML_PACKAGES)} installed" + (f", missing: {', '.join(missing)}" if missing else ""),
+        message=f"{len(installed)}/{len(ML_PACKAGES)} installed"
+        + (f", missing: {', '.join(missing)}" if missing else ""),
         severity="warning",  # Warning since training might not be needed
         details={"installed": installed, "missing": missing},
         fix_command='pip install -e ".[cpu]"' if missing else None,
@@ -387,7 +398,8 @@ def check_directories() -> CheckResult:
     return CheckResult(
         name="Directories",
         passed=passed,
-        message=f"{len(present)}/{len(REQUIRED_DIRS)} present" + (f", missing: {', '.join(missing)}" if missing else ""),
+        message=f"{len(present)}/{len(REQUIRED_DIRS)} present"
+        + (f", missing: {', '.join(missing)}" if missing else ""),
         severity="error",
         details={"present": present, "missing": missing},
         fix_command="; ".join([f"mkdir {d}" for d in missing]) if missing else None,
@@ -409,6 +421,7 @@ def check_config_files() -> CheckResult:
         # Try to parse YAML
         try:
             import yaml
+
             with open(full_path, "r", encoding="utf-8") as f:
                 yaml.safe_load(f)
             valid.append(config_path)
@@ -436,20 +449,21 @@ def check_disk_space() -> CheckResult:
     """Check available disk space."""
     try:
         total, used, free = shutil.disk_usage(PROJECT_ROOT)
-        free_gb = free / (1024 ** 3)
-        total_gb = total / (1024 ** 3)
+        free_gb = free / (1024**3)
+        total_gb = total / (1024**3)
 
         passed = free_gb >= MIN_DISK_GB
 
         return CheckResult(
             name="Disk Space",
             passed=passed,
-            message=f"{free_gb:.1f} GB free / {total_gb:.1f} GB total" + ("" if passed else f" (need {MIN_DISK_GB} GB)"),
+            message=f"{free_gb:.1f} GB free / {total_gb:.1f} GB total"
+            + ("" if passed else f" (need {MIN_DISK_GB} GB)"),
             severity="warning",
             details={
                 "free_gb": round(free_gb, 2),
                 "total_gb": round(total_gb, 2),
-                "used_gb": round((total - free) / (1024 ** 3), 2),
+                "used_gb": round((total - free) / (1024**3), 2),
                 "min_required_gb": MIN_DISK_GB,
             },
         )
@@ -466,16 +480,18 @@ def check_memory() -> CheckResult:
     """Check system memory."""
     try:
         import psutil
+
         mem = psutil.virtual_memory()
-        total_gb = mem.total / (1024 ** 3)
-        available_gb = mem.available / (1024 ** 3)
+        total_gb = mem.total / (1024**3)
+        available_gb = mem.available / (1024**3)
 
         passed = total_gb >= MIN_MEMORY_GB
 
         return CheckResult(
             name="System Memory",
             passed=passed,
-            message=f"{available_gb:.1f} GB available / {total_gb:.1f} GB total" + ("" if passed else f" (need {MIN_MEMORY_GB} GB)"),
+            message=f"{available_gb:.1f} GB available / {total_gb:.1f} GB total"
+            + ("" if passed else f" (need {MIN_MEMORY_GB} GB)"),
             severity="warning",
             details={
                 "total_gb": round(total_gb, 2),
@@ -505,11 +521,12 @@ def check_gpu() -> CheckResult:
     """Check GPU availability for ML training."""
     try:
         import torch
+
         cuda_available = torch.cuda.is_available()
 
         if cuda_available:
             gpu_name = torch.cuda.get_device_name(0)
-            gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)
             return CheckResult(
                 name="GPU",
                 passed=True,
@@ -584,6 +601,7 @@ def check_network_connectivity() -> CheckResult:
 # Main Doctor Function
 # =============================================================================
 
+
 def run_doctor(verbose: bool = False, skip_network: bool = False) -> DoctorReport:
     """
     Run all doctor checks.
@@ -629,12 +647,14 @@ def run_doctor(verbose: bool = False, skip_network: bool = False) -> DoctorRepor
             result = check_fn()
             report.add_check(result)
         except Exception as e:
-            report.add_check(CheckResult(
-                name=check_fn.__name__.replace("check_", "").replace("_", " ").title(),
-                passed=False,
-                message=f"Check failed: {e}",
-                severity="error",
-            ))
+            report.add_check(
+                CheckResult(
+                    name=check_fn.__name__.replace("check_", "").replace("_", " ").title(),
+                    passed=False,
+                    message=f"Check failed: {e}",
+                    severity="error",
+                )
+            )
 
     return report
 
@@ -671,12 +691,15 @@ def print_report(report: DoctorReport, verbose: bool = False) -> None:
     if report.is_healthy():
         print(f"\n{Colors.GREEN}{Colors.BOLD}✓ Environment is healthy!{Colors.RESET}")
     else:
-        print(f"\n{Colors.RED}{Colors.BOLD}✗ Environment has issues. Please fix before running.{Colors.RESET}")
+        print(
+            f"\n{Colors.RED}{Colors.BOLD}✗ Environment has issues. Please fix before running.{Colors.RESET}"
+        )
 
 
 # =============================================================================
 # Main Entry Point
 # =============================================================================
+
 
 def main() -> int:
     """Main entry point."""
@@ -692,7 +715,8 @@ Examples:
         """,
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show detailed output",
     )

@@ -10,6 +10,7 @@ These tests simulate realistic training scenarios to verify that:
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import torch.nn.functional as F
 import numpy as np
@@ -18,6 +19,7 @@ from typing import Optional, Tuple
 
 class MockPolicy:
     """Mock policy for testing."""
+
     def __init__(self, use_quantile=True, num_atoms=51):
         self.v_min = -10.0
         self.v_max = 10.0
@@ -57,12 +59,15 @@ class TestPPOTargetClippingDeepIntegration:
         # [5.0, -5.0, 5.0, -5.0] - CLIPPED
 
         # Simulate predictions
-        quantiles_pred = torch.tensor([
-            [7.0, 8.0, 9.0],  # Mean = 8.0
-            [-7.0, -8.0, -9.0],  # Mean = -8.0
-            [6.0, 7.0, 8.0],  # Mean = 7.0
-            [-6.0, -7.0, -8.0],  # Mean = -7.0
-        ], requires_grad=True)
+        quantiles_pred = torch.tensor(
+            [
+                [7.0, 8.0, 9.0],  # Mean = 8.0
+                [-7.0, -8.0, -9.0],  # Mean = -8.0
+                [6.0, 7.0, 8.0],  # Mean = 7.0
+                [-6.0, -7.0, -8.0],  # Mean = -7.0
+            ],
+            requires_grad=True,
+        )
 
         # CORRECT: Use unclipped targets
         targets_correct = target_returns_norm_raw.reshape(-1, 1)
@@ -137,7 +142,8 @@ class TestPPOTargetClippingDeepIntegration:
 
         # The difference is 50%!
         relative_error = torch.abs(
-            (targets_for_c51_wrong - targets_for_c51_correct) / targets_for_c51_correct.clamp(min=1e-6)
+            (targets_for_c51_wrong - targets_for_c51_correct)
+            / targets_for_c51_correct.clamp(min=1e-6)
         ).mean()
         assert relative_error.item() > 0.4  # More than 40% error!
 
@@ -218,8 +224,7 @@ class TestPPOTargetClippingDeepIntegration:
         targets_for_loss = target_returns_norm_raw.reshape(-1, 1)
 
         # Verify values
-        assert torch.allclose(targets_for_loss.squeeze(),
-                            torch.tensor([2.5, -2.5, 1.5, -1.5]))
+        assert torch.allclose(targets_for_loss.squeeze(), torch.tensor([2.5, -2.5, 1.5, -1.5]))
 
     def test_normalize_returns_false_path(self):
         """Test with normalize_returns=False (uses value_clip_limit_scaled)."""
@@ -233,9 +238,7 @@ class TestPPOTargetClippingDeepIntegration:
 
         value_clip_limit_scaled = 5.0
         target_returns_norm = torch.clamp(
-            target_returns_norm_raw,
-            min=-value_clip_limit_scaled,
-            max=value_clip_limit_scaled
+            target_returns_norm_raw, min=-value_clip_limit_scaled, max=value_clip_limit_scaled
         )
         # [5.0, -5.0, 5.0, -5.0] - CLIPPED
 
@@ -431,9 +434,7 @@ class TestPPOTargetClippingRealWorldScenarios:
         Returns can vary from -100 to +100, causing extreme normalized values.
         """
         # Realistic financial trading returns
-        returns_raw = torch.tensor([
-            50.0, -80.0, 120.0, -50.0, 90.0, -120.0, 60.0, -90.0
-        ])
+        returns_raw = torch.tensor([50.0, -80.0, 120.0, -50.0, 90.0, -120.0, 60.0, -90.0])
         ret_mu = returns_raw.mean()  # ~0
         ret_std = returns_raw.std(unbiased=False)  # ~80
 
@@ -483,7 +484,9 @@ class TestPPOTargetClippingRealWorldScenarios:
         assert targets_for_loss[0, 0].item() == pytest.approx(-100.0)
 
         # Bug would clip to -5.0, causing 95% error!
-        error = abs((target_returns_norm[0] - target_returns_norm_raw[0]) / target_returns_norm_raw[0])
+        error = abs(
+            (target_returns_norm[0] - target_returns_norm_raw[0]) / target_returns_norm_raw[0]
+        )
         assert error.item() > 0.9  # >90% error from clipping
 
     def test_rare_success_scenario(self):
@@ -515,7 +518,9 @@ class TestPPOTargetClippingRealWorldScenarios:
         assert targets_for_loss[0, 0].item() == pytest.approx(100.0)
 
         # Bug would clip to 5.0, causing 95% error!
-        error = abs((target_returns_norm[0] - target_returns_norm_raw[0]) / target_returns_norm_raw[0])
+        error = abs(
+            (target_returns_norm[0] - target_returns_norm_raw[0]) / target_returns_norm_raw[0]
+        )
         assert error.item() > 0.9  # >90% error from clipping
 
 

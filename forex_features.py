@@ -55,37 +55,37 @@ import pandas as pd
 # FRED series IDs for central bank policy rates
 # Source: Federal Reserve Economic Data (FRED)
 RATE_SERIES: Dict[str, str] = {
-    "USD": "FEDFUNDS",       # Federal Funds Rate
-    "EUR": "ECBDFR",         # ECB Deposit Facility Rate
-    "GBP": "IUDSOIA",        # BOE Official Bank Rate
+    "USD": "FEDFUNDS",  # Federal Funds Rate
+    "EUR": "ECBDFR",  # ECB Deposit Facility Rate
+    "GBP": "IUDSOIA",  # BOE Official Bank Rate
     "JPY": "IRSTCI01JPM156N",  # BOJ Policy Rate
     "CHF": "IRSTCI01CHM156N",  # SNB Policy Rate
-    "AUD": "RBATCTR",        # RBA Cash Rate
+    "AUD": "RBATCTR",  # RBA Cash Rate
     "CAD": "IRSTCB01CAM156N",  # BOC Policy Rate
-    "NZD": "RBNZCTR",        # RBNZ Official Cash Rate
+    "NZD": "RBNZCTR",  # RBNZ Official Cash Rate
 }
 
 # Interest rate normalization parameters
 # Based on historical rate ranges (1990-2024)
 RATE_NORMALIZATION = {
-    "historical_min": -1.0,    # SNB went negative
-    "historical_max": 8.0,     # Fed in early 1990s
-    "typical_range": 5.0,      # Most rates are 0-5%
+    "historical_min": -1.0,  # SNB went negative
+    "historical_max": 8.0,  # Fed in early 1990s
+    "typical_range": 5.0,  # Most rates are 0-5%
 }
 
 # Trading session times (UTC)
 # Source: Major forex market open/close times
 FOREX_SESSIONS = {
-    "sydney": (time(21, 0), time(6, 0)),    # 21:00-06:00 UTC
-    "tokyo": (time(0, 0), time(9, 0)),      # 00:00-09:00 UTC
-    "london": (time(7, 0), time(16, 0)),    # 07:00-16:00 UTC
-    "new_york": (time(12, 0), time(21, 0)), # 12:00-21:00 UTC
+    "sydney": (time(21, 0), time(6, 0)),  # 21:00-06:00 UTC
+    "tokyo": (time(0, 0), time(9, 0)),  # 00:00-09:00 UTC
+    "london": (time(7, 0), time(16, 0)),  # 07:00-16:00 UTC
+    "new_york": (time(12, 0), time(21, 0)),  # 12:00-21:00 UTC
 }
 
 # Session overlaps (highest liquidity)
 SESSION_OVERLAPS = {
-    "tokyo_london": (time(7, 0), time(9, 0)),    # 07:00-09:00 UTC
-    "london_ny": (time(12, 0), time(16, 0)),     # 12:00-16:00 UTC
+    "tokyo_london": (time(7, 0), time(9, 0)),  # 07:00-09:00 UTC
+    "london_ny": (time(12, 0), time(16, 0)),  # 12:00-16:00 UTC
 }
 
 # Session liquidity multipliers (relative to average)
@@ -103,14 +103,14 @@ SESSION_LIQUIDITY = {
 # Spread regime thresholds (relative to average spread)
 # Source: OANDA typical spreads analysis
 SPREAD_REGIME_THRESHOLDS = {
-    "tight": 0.7,   # Spread < 70% of average
+    "tight": 0.7,  # Spread < 70% of average
     "normal_high": 1.3,  # Spread < 130% of average
-    "wide": 2.0,    # Spread > 200% of average (news, low liquidity)
+    "wide": 2.0,  # Spread > 200% of average (news, low liquidity)
 }
 
 # COT normalization bounds
 COT_NORMALIZATION = {
-    "extreme_short": -2.0,   # 2 standard deviations
+    "extreme_short": -2.0,  # 2 standard deviations
     "extreme_long": 2.0,
 }
 
@@ -120,16 +120,28 @@ DXY_REFERENCE = 100.0  # DXY is centered around 100
 # Typical forex volatility (annualized)
 # Source: Historical major pair volatility
 TYPICAL_FX_VOL = {
-    "major": 0.08,     # EUR/USD, GBP/USD typically 6-10%
-    "cross": 0.10,     # EUR/GBP, etc. typically 8-12%
-    "exotic": 0.15,    # Emerging market pairs 12-20%
+    "major": 0.08,  # EUR/USD, GBP/USD typically 6-10%
+    "cross": 0.10,  # EUR/GBP, etc. typically 8-12%
+    "exotic": 0.15,  # Emerging market pairs 12-20%
 }
 
 # High-impact economic events
 HIGH_IMPACT_EVENTS = [
-    "NFP", "FOMC", "CPI", "GDP", "ISM",  # USD
-    "ECB", "BOE", "BOJ", "RBA", "RBNZ", "SNB", "BOC",  # Central banks
-    "Employment", "Inflation", "Retail Sales",  # Major data
+    "NFP",
+    "FOMC",
+    "CPI",
+    "GDP",
+    "ISM",  # USD
+    "ECB",
+    "BOE",
+    "BOJ",
+    "RBA",
+    "RBNZ",
+    "SNB",
+    "BOC",  # Central banks
+    "Employment",
+    "Inflation",
+    "Retail Sales",  # Major data
 ]
 
 # Default values
@@ -144,30 +156,30 @@ DEFAULT_IMPLIED_VOL = 0.0
 # Source: CBOE Global Markets - Currency Volatility Indices
 # These track 30-day implied volatility from currency options
 FX_VOL_INDICES = {
-    "EUR": "^EVZ",      # CBOE EuroCurrency ETF Volatility Index (EUR/USD implied vol)
-    "GBP": "^BPVIX",    # CBOE British Pound Volatility Index (not always available)
-    "JPY": "^JYVIX",    # CBOE Japanese Yen Volatility Index (not always available)
+    "EUR": "^EVZ",  # CBOE EuroCurrency ETF Volatility Index (EUR/USD implied vol)
+    "GBP": "^BPVIX",  # CBOE British Pound Volatility Index (not always available)
+    "JPY": "^JYVIX",  # CBOE Japanese Yen Volatility Index (not always available)
     "DEFAULT": "^EVZ",  # Use EUR vol as proxy for other pairs
 }
 
 # FX VIX regime thresholds (similar to equity VIX)
 # Based on historical EVZ distribution
 FX_VOL_REGIMES = {
-    "low": 6.0,         # Below 6% = low vol environment
-    "normal": 10.0,     # 6-10% = normal
-    "elevated": 15.0,   # 10-15% = elevated
-    "high": 20.0,       # Above 15% = high vol (risk-off)
+    "low": 6.0,  # Below 6% = low vol environment
+    "normal": 10.0,  # 6-10% = normal
+    "elevated": 15.0,  # 10-15% = elevated
+    "high": 20.0,  # Above 15% = high vol (risk-off)
 }
 
 # Typical implied vol levels for reference
 TYPICAL_IMPLIED_VOL = {
-    "EUR_USD": 8.0,     # EUR/USD typically 6-10%
-    "GBP_USD": 10.0,    # GBP/USD typically 8-12%
-    "USD_JPY": 9.0,     # USD/JPY typically 7-11%
-    "USD_CHF": 8.0,     # Similar to EUR/USD
-    "AUD_USD": 11.0,    # Higher vol commodity currency
-    "USD_CAD": 7.0,     # Lower vol, correlated to oil
-    "NZD_USD": 12.0,    # Highest vol among majors
+    "EUR_USD": 8.0,  # EUR/USD typically 6-10%
+    "GBP_USD": 10.0,  # GBP/USD typically 8-12%
+    "USD_JPY": 9.0,  # USD/JPY typically 7-11%
+    "USD_CHF": 8.0,  # Similar to EUR/USD
+    "AUD_USD": 11.0,  # Higher vol commodity currency
+    "USD_CAD": 7.0,  # Lower vol, correlated to oil
+    "NZD_USD": 12.0,  # Highest vol among majors
 }
 
 
@@ -175,8 +187,10 @@ TYPICAL_IMPLIED_VOL = {
 # ENUMS
 # =============================================================================
 
+
 class ForexSession(Enum):
     """Forex trading session classification."""
+
     SYDNEY = "sydney"
     TOKYO = "tokyo"
     LONDON = "london"
@@ -188,6 +202,7 @@ class ForexSession(Enum):
 
 class SpreadRegime(Enum):
     """Spread regime classification."""
+
     TIGHT = "tight"
     NORMAL = "normal"
     WIDE = "wide"
@@ -196,14 +211,16 @@ class SpreadRegime(Enum):
 
 class CarryRegime(Enum):
     """Carry trade regime classification."""
-    NEGATIVE = -1      # Short carry (pay to hold)
-    NEUTRAL = 0        # Near-zero carry
-    POSITIVE = 1       # Positive carry (receive)
-    HIGH_CARRY = 2     # High positive carry (>3%)
+
+    NEGATIVE = -1  # Short carry (pay to hold)
+    NEUTRAL = 0  # Near-zero carry
+    POSITIVE = 1  # Positive carry (receive)
+    HIGH_CARRY = 2  # High positive carry (>3%)
 
 
 class COTPositioning(Enum):
     """COT speculator positioning classification."""
+
     EXTREME_SHORT = -2
     SHORT = -1
     NEUTRAL = 0
@@ -215,6 +232,7 @@ class COTPositioning(Enum):
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class ForexFeatures:
     """
@@ -223,6 +241,7 @@ class ForexFeatures:
     All features include validity flags to distinguish missing data from zero values,
     following the pattern established by Fear & Greed in crypto and VIX in equities.
     """
+
     # Interest rate differential (carry)
     base_rate: float = 0.0
     quote_rate: float = 0.0
@@ -284,6 +303,7 @@ class BenchmarkForexData:
 
     Used to pass benchmark data to feature calculators.
     """
+
     dxy_prices: List[float] = field(default_factory=list)
     interest_rates: Dict[str, float] = field(default_factory=dict)  # Currency -> rate
     historical_rates: Optional[pd.DataFrame] = None
@@ -322,6 +342,7 @@ class ForexFeatureConfig:
 # =============================================================================
 # CARRY / INTEREST RATE FEATURES
 # =============================================================================
+
 
 def calculate_carry_features(
     base_currency: str,
@@ -389,13 +410,13 @@ def calculate_carry_features(
 
         if timestamp_ms is not None:
             # Get most recent rate before timestamp
-            ts_dt = pd.Timestamp(timestamp_ms, unit='ms', tz='UTC')
+            ts_dt = pd.Timestamp(timestamp_ms, unit="ms", tz="UTC")
 
             # Handle index type
             if isinstance(rates_data.index, pd.DatetimeIndex):
                 mask = rates_data.index <= ts_dt
-            elif 'timestamp' in rates_data.columns:
-                mask = rates_data['timestamp'] <= timestamp_ms
+            elif "timestamp" in rates_data.columns:
+                mask = rates_data["timestamp"] <= timestamp_ms
             else:
                 # Fall back to last row
                 mask = pd.Series([True] * len(rates_data))
@@ -410,8 +431,10 @@ def calculate_carry_features(
                 return (0.0, 0.0, 0.0, 0.0, False)
             latest = rates_data.iloc[-1]
 
-        base_rate = float(latest.get(base_col, 0.0) if hasattr(latest, 'get') else latest[base_col])
-        quote_rate = float(latest.get(quote_col, 0.0) if hasattr(latest, 'get') else latest[quote_col])
+        base_rate = float(latest.get(base_col, 0.0) if hasattr(latest, "get") else latest[base_col])
+        quote_rate = float(
+            latest.get(quote_col, 0.0) if hasattr(latest, "get") else latest[quote_col]
+        )
     else:
         return (0.0, 0.0, 0.0, 0.0, False)
 
@@ -454,6 +477,7 @@ def classify_carry_regime(differential: float) -> Tuple[CarryRegime, float]:
 # =============================================================================
 # SESSION FEATURES
 # =============================================================================
+
 
 def detect_forex_session(timestamp: Union[int, datetime, pd.Timestamp]) -> ForexSession:
     """
@@ -536,16 +560,15 @@ def get_session_features(
     is_tokyo = session == ForexSession.TOKYO
     is_london = session == ForexSession.LONDON
     is_new_york = session == ForexSession.NEW_YORK
-    is_overlap = session in (ForexSession.LONDON_NY_OVERLAP,
-                             ForexSession.TOKYO_LONDON_OVERLAP)
+    is_overlap = session in (ForexSession.LONDON_NY_OVERLAP, ForexSession.TOKYO_LONDON_OVERLAP)
 
-    return (is_sydney, is_tokyo, is_london, is_new_york,
-            is_overlap, liquidity, session)
+    return (is_sydney, is_tokyo, is_london, is_new_york, is_overlap, liquidity, session)
 
 
 # =============================================================================
 # DXY RELATIVE STRENGTH FEATURES
 # =============================================================================
+
 
 def calculate_dxy_features(
     pair_prices: List[float],
@@ -599,8 +622,7 @@ def calculate_dxy_features(
         dxy_past = float(dxy_prices[-(window + 1)])
 
         # Validate prices
-        if not all(math.isfinite(p) and p > 0 for p in
-                   [pair_now, pair_past, dxy_now, dxy_past]):
+        if not all(math.isfinite(p) and p > 0 for p in [pair_now, pair_past, dxy_now, dxy_past]):
             return (dxy_return_5d, 0.0, dxy_now, False)
 
         # Calculate returns
@@ -651,6 +673,7 @@ def normalize_dxy_value(dxy_value: float) -> float:
 # =============================================================================
 # SPREAD FEATURES
 # =============================================================================
+
 
 def calculate_spread_features(
     current_spread_pips: float,
@@ -728,6 +751,7 @@ def calculate_spread_features(
 # COT (COMMITMENTS OF TRADERS) FEATURES
 # =============================================================================
 
+
 def calculate_cot_features(
     currency: str,
     cot_data: pd.DataFrame,
@@ -779,8 +803,12 @@ def calculate_cot_features(
     try:
         # Get relevant data
         if timestamp_ms is not None:
-            ts_dt = pd.Timestamp(timestamp_ms, unit='ms', tz='UTC')
-            mask = cot_data.index <= ts_dt if isinstance(cot_data.index, pd.DatetimeIndex) else pd.Series([True] * len(cot_data))
+            ts_dt = pd.Timestamp(timestamp_ms, unit="ms", tz="UTC")
+            mask = (
+                cot_data.index <= ts_dt
+                if isinstance(cot_data.index, pd.DatetimeIndex)
+                else pd.Series([True] * len(cot_data))
+            )
             data = cot_data.loc[mask][net_col]
         else:
             data = cot_data[net_col]
@@ -848,6 +876,7 @@ def calculate_cot_features(
 # VOLATILITY FEATURES
 # =============================================================================
 
+
 def calculate_volatility_features(
     prices: List[float],
     config: Optional[ForexFeatureConfig] = None,
@@ -886,8 +915,10 @@ def calculate_volatility_features(
             return (0.0, 0.0, 1.0, False)
 
         # Realized volatility (annualized)
-        vol_short = np.std(returns[-config.vol_window_short:]) * np.sqrt(config.annualization_factor)
-        vol_long = np.std(returns[-config.vol_window_long:]) * np.sqrt(config.annualization_factor)
+        vol_short = np.std(returns[-config.vol_window_short :]) * np.sqrt(
+            config.annualization_factor
+        )
+        vol_long = np.std(returns[-config.vol_window_long :]) * np.sqrt(config.annualization_factor)
 
         if not (math.isfinite(vol_short) and math.isfinite(vol_long)):
             return (0.0, 0.0, 1.0, False)
@@ -912,6 +943,7 @@ def calculate_volatility_features(
 # =============================================================================
 # IMPLIED VOLATILITY FEATURES
 # =============================================================================
+
 
 def calculate_implied_vol_features(
     implied_vol_prices: List[float],
@@ -985,8 +1017,7 @@ def calculate_implied_vol_features(
         # Typical FX vol range: 4-25%, use 20 as saturation point
         # Reference: TYPICAL_IMPLIED_VOL values around 7-12%
         typical_vol = TYPICAL_IMPLIED_VOL.get(
-            symbol.upper().replace("/", "_"),
-            10.0  # Default typical vol
+            symbol.upper().replace("/", "_"), 10.0  # Default typical vol
         )
         # Normalize: 0 at 0%, 0.5 at typical, 1.0 at 2x typical
         normalized_vol = min(1.0, current_vol / (typical_vol * 2.0))
@@ -1012,10 +1043,10 @@ def get_fx_vol_regime_multiplier(regime: str) -> float:
         Multiplier for spread/slippage adjustment (0.8 - 1.5)
     """
     regime_multipliers = {
-        "low": 0.8,       # Low vol = tighter spreads
-        "normal": 1.0,    # Baseline
+        "low": 0.8,  # Low vol = tighter spreads
+        "normal": 1.0,  # Baseline
         "elevated": 1.2,  # Slightly wider
-        "high": 1.5,      # Much wider during stress
+        "high": 1.5,  # Much wider during stress
     }
     return regime_multipliers.get(regime, 1.0)
 
@@ -1023,6 +1054,7 @@ def get_fx_vol_regime_multiplier(regime: str) -> float:
 # =============================================================================
 # CROSS-CURRENCY MOMENTUM FEATURES
 # =============================================================================
+
 
 def calculate_cross_momentum(
     pair_returns: Dict[str, float],
@@ -1074,6 +1106,7 @@ def calculate_cross_momentum(
 # =============================================================================
 # MAIN FEATURE EXTRACTION
 # =============================================================================
+
 
 def extract_forex_features(
     row: Any,
@@ -1149,8 +1182,9 @@ def extract_forex_features(
     # SESSION FEATURES
     # ===================
     if timestamp is not None and config.session_check_enabled:
-        (is_sydney, is_tokyo, is_london, is_new_york,
-         is_overlap, liquidity, session) = get_session_features(timestamp)
+        (is_sydney, is_tokyo, is_london, is_new_york, is_overlap, liquidity, session) = (
+            get_session_features(timestamp)
+        )
 
         features.is_sydney = is_sydney
         features.is_tokyo = is_tokyo
@@ -1236,8 +1270,7 @@ def extract_forex_features(
     # ===================
     if timestamp and benchmark_data and benchmark_data.calendar_events:
         hours_to_next, impact, is_news = _check_calendar_proximity(
-            timestamp, benchmark_data.calendar_events,
-            [base_currency, quote_currency], config
+            timestamp, benchmark_data.calendar_events, [base_currency, quote_currency], config
         )
 
         features.hours_to_next_event = hours_to_next
@@ -1251,6 +1284,7 @@ def extract_forex_features(
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
+
 
 def _parse_currency_pair(symbol: str) -> Optional[Tuple[str, str]]:
     """Parse currency pair into base and quote currencies."""
@@ -1408,6 +1442,7 @@ def _check_calendar_proximity(
 # DATAFRAME UTILITIES
 # =============================================================================
 
+
 def add_forex_features_to_dataframe(
     df: pd.DataFrame,
     symbol: str,
@@ -1490,8 +1525,14 @@ def add_forex_features_to_dataframe(
     pair_prices = df[close_col].tolist()
 
     # Align benchmark data using timestamp-based merge
-    dxy_aligned = _align_forex_benchmark(df, dxy_df, "close") if dxy_df is not None else [None] * n_rows
-    implied_vol_aligned = _align_forex_benchmark(df, implied_vol_df, "close") if implied_vol_df is not None else [None] * n_rows
+    dxy_aligned = (
+        _align_forex_benchmark(df, dxy_df, "close") if dxy_df is not None else [None] * n_rows
+    )
+    implied_vol_aligned = (
+        _align_forex_benchmark(df, implied_vol_df, "close")
+        if implied_vol_df is not None
+        else [None] * n_rows
+    )
 
     # Get spread history
     spread_col = None
@@ -1520,8 +1561,8 @@ def add_forex_features_to_dataframe(
 
     # Calculate rolling features
     for i in range(n_rows):
-        current_prices = pair_prices[:i+1]
-        current_spread_history = spread_history_all[:i+1] if spread_history_all else []
+        current_prices = pair_prices[: i + 1]
+        current_spread_history = spread_history_all[: i + 1] if spread_history_all else []
 
         # Build DXY cumulative
         if dxy_aligned[i] is not None:
@@ -1552,25 +1593,53 @@ def add_forex_features_to_dataframe(
         )
 
         # Update DataFrame
-        df.iloc[i, df.columns.get_loc("carry_diff")] = features.rate_differential_norm if features.carry_valid else 0.0
-        df.iloc[i, df.columns.get_loc("carry_regime")] = features.carry_regime if features.carry_valid else 0.0
-        df.iloc[i, df.columns.get_loc("dxy_value")] = features.dxy_value if features.dxy_valid else 0.0
-        df.iloc[i, df.columns.get_loc("dxy_rs")] = features.rs_vs_dxy_20d if features.dxy_valid else 0.0
+        df.iloc[i, df.columns.get_loc("carry_diff")] = (
+            features.rate_differential_norm if features.carry_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("carry_regime")] = (
+            features.carry_regime if features.carry_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("dxy_value")] = (
+            features.dxy_value if features.dxy_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("dxy_rs")] = (
+            features.rs_vs_dxy_20d if features.dxy_valid else 0.0
+        )
         df.iloc[i, df.columns.get_loc("session_sydney")] = 1.0 if features.is_sydney else 0.0
         df.iloc[i, df.columns.get_loc("session_tokyo")] = 1.0 if features.is_tokyo else 0.0
         df.iloc[i, df.columns.get_loc("session_london")] = 1.0 if features.is_london else 0.0
         df.iloc[i, df.columns.get_loc("session_new_york")] = 1.0 if features.is_new_york else 0.0
         df.iloc[i, df.columns.get_loc("session_overlap")] = 1.0 if features.is_overlap else 0.0
-        df.iloc[i, df.columns.get_loc("session_liquidity")] = features.session_liquidity if features.session_valid else 1.0
-        df.iloc[i, df.columns.get_loc("spread_zscore")] = features.spread_zscore if features.spread_valid else 0.0
-        df.iloc[i, df.columns.get_loc("spread_regime")] = features.spread_regime if features.spread_valid else 0.5
-        df.iloc[i, df.columns.get_loc("cot_net")] = features.cot_net_long_pct if features.cot_valid else 0.5
-        df.iloc[i, df.columns.get_loc("cot_zscore")] = features.cot_zscore if features.cot_valid else 0.0
-        df.iloc[i, df.columns.get_loc("vol_5d")] = features.realized_vol_5d if features.vol_valid else 0.0
-        df.iloc[i, df.columns.get_loc("vol_20d")] = features.realized_vol_20d if features.vol_valid else 0.0
-        df.iloc[i, df.columns.get_loc("vol_ratio")] = features.vol_ratio if features.vol_valid else 1.0
-        df.iloc[i, df.columns.get_loc("implied_vol")] = features.implied_vol if features.vol_valid else 0.0
-        df.iloc[i, df.columns.get_loc("hours_to_event")] = min(features.hours_to_next_event, 999.0) if features.calendar_valid else 999.0
+        df.iloc[i, df.columns.get_loc("session_liquidity")] = (
+            features.session_liquidity if features.session_valid else 1.0
+        )
+        df.iloc[i, df.columns.get_loc("spread_zscore")] = (
+            features.spread_zscore if features.spread_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("spread_regime")] = (
+            features.spread_regime if features.spread_valid else 0.5
+        )
+        df.iloc[i, df.columns.get_loc("cot_net")] = (
+            features.cot_net_long_pct if features.cot_valid else 0.5
+        )
+        df.iloc[i, df.columns.get_loc("cot_zscore")] = (
+            features.cot_zscore if features.cot_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("vol_5d")] = (
+            features.realized_vol_5d if features.vol_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("vol_20d")] = (
+            features.realized_vol_20d if features.vol_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("vol_ratio")] = (
+            features.vol_ratio if features.vol_valid else 1.0
+        )
+        df.iloc[i, df.columns.get_loc("implied_vol")] = (
+            features.implied_vol if features.vol_valid else 0.0
+        )
+        df.iloc[i, df.columns.get_loc("hours_to_event")] = (
+            min(features.hours_to_next_event, 999.0) if features.calendar_valid else 999.0
+        )
         df.iloc[i, df.columns.get_loc("is_news_window")] = 1.0 if features.is_news_window else 0.0
 
     return df

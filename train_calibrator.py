@@ -32,15 +32,29 @@ def _write_csv(df: pd.DataFrame, path: str) -> None:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Обучить калибратор вероятностей (Platt/Isotonic) на валидационных предсказаниях.")
-    ap.add_argument("--data", required=True, help="Файл с предсказаниями и метками (CSV/Parquet). Нужны колонки: score, y (0/1).")
+    ap = argparse.ArgumentParser(
+        description="Обучить калибратор вероятностей (Platt/Isotonic) на валидационных предсказаниях."
+    )
+    ap.add_argument(
+        "--data",
+        required=True,
+        help="Файл с предсказаниями и метками (CSV/Parquet). Нужны колонки: score, y (0/1).",
+    )
     ap.add_argument("--score_col", default="score", help="Колонка со скором/вероятностью модели.")
     ap.add_argument("--y_col", default="y", help="Колонка бинарной метки (0/1).")
-    ap.add_argument("--filter_val", action="store_true", help="Оставить только строки wf_role=='val'.")
+    ap.add_argument(
+        "--filter_val", action="store_true", help="Оставить только строки wf_role=='val'."
+    )
     ap.add_argument("--wf_role_col", default="wf_role", help="Имя колонки роли (если фильтруем).")
-    ap.add_argument("--method", choices=["platt", "isotonic"], default="platt", help="Метод калибровки.")
-    ap.add_argument("--out_model", default="models/calibrator.json", help="Куда сохранить JSON калибратора.")
-    ap.add_argument("--report_csv", default="", help="Куда сохранить calibration-table (.csv). Опционально.")
+    ap.add_argument(
+        "--method", choices=["platt", "isotonic"], default="platt", help="Метод калибровки."
+    )
+    ap.add_argument(
+        "--out_model", default="models/calibrator.json", help="Куда сохранить JSON калибратора."
+    )
+    ap.add_argument(
+        "--report_csv", default="", help="Куда сохранить calibration-table (.csv). Опционально."
+    )
     args = ap.parse_args()
 
     df = _read_table(args.data)

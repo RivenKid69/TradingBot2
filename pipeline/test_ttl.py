@@ -36,9 +36,7 @@ def test_check_ttl_window(offset: int, expected_valid: bool) -> None:
     now_ms = close_ms + offset
 
     expires_at_ms = compute_expires_at(close_ms, timeframe_ms)
-    ok, observed_expires_at_ms, reason = check_ttl(
-        close_ms, now_ms, timeframe_ms
-    )
+    ok, observed_expires_at_ms, reason = check_ttl(close_ms, now_ms, timeframe_ms)
 
     assert observed_expires_at_ms == expires_at_ms
     assert ok is expected_valid

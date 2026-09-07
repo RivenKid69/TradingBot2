@@ -126,8 +126,7 @@ class Signal(Protocol):
 class AlphaModel(Protocol):
     """Комбинирует набор сигналов в ожидаемую доходность μ по юниверсу."""
 
-    def fit(self, signals: Panel, forward_returns: Panel) -> None:
-        ...
+    def fit(self, signals: Panel, forward_returns: Panel) -> None: ...
 
     def predict(self, signals_t: pd.DataFrame) -> pd.Series:
         """μ: Series (index=symbol) ожидаемых доходностей на дату t."""
@@ -138,8 +137,7 @@ class AlphaModel(Protocol):
 class RiskModel(Protocol):
     """Факторная риск-модель → ковариация активов Σ = B F Bᵀ + diag(D)."""
 
-    def fit(self, returns: Panel) -> None:
-        ...
+    def fit(self, returns: Panel) -> None: ...
 
     def exposures(self, asof_ms: int) -> pd.DataFrame:
         """B: factor exposures, index=symbol, columns=factors."""
@@ -169,16 +167,14 @@ class PortfolioConstructor(Protocol):
         current_w: pd.Series,
         constraints: Any = None,
         tcost_model: Any = None,
-    ) -> pd.Series:
-        ...
+    ) -> pd.Series: ...
 
 
 @runtime_checkable
 class CrossSectionalStrategy(Protocol):
     """Полная cross-sectional стратегия: на дату t отдаёт целевые веса."""
 
-    def target_weights(self, asof_ms: int) -> pd.Series:
-        ...
+    def target_weights(self, asof_ms: int) -> pd.Series: ...
 
 
 # ---------------------------------------------------------------------------
@@ -202,9 +198,7 @@ def validate_panel(panel: Any, *, allow_empty: bool = True) -> None:
     if not isinstance(idx, pd.MultiIndex) or idx.nlevels != 2:
         raise ValueError("panel must have a 2-level MultiIndex")
     if tuple(idx.names) != PANEL_INDEX_NAMES:
-        raise ValueError(
-            f"panel index names must be {PANEL_INDEX_NAMES}, got {tuple(idx.names)!r}"
-        )
+        raise ValueError(f"panel index names must be {PANEL_INDEX_NAMES}, got {tuple(idx.names)!r}")
     if len(panel) == 0:
         if allow_empty:
             return

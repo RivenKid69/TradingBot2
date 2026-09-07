@@ -22,6 +22,7 @@ from unittest.mock import patch, MagicMock
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def sample_crypto_df():
     """Create sample crypto DataFrame (no stock features)."""
@@ -34,43 +35,45 @@ def sample_crypto_df():
     # Use int64 for timestamp conversion (Pandas compatibility)
     timestamps = pd.date_range("2024-01-01", periods=n_rows, freq="4h").astype("int64") // 10**9
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "BTCUSDT",
-        "open": prices * 0.999,
-        "high": prices * 1.01,
-        "low": prices * 0.99,
-        "close": prices,
-        "volume": np.random.uniform(100, 1000, n_rows),
-        "quote_asset_volume": np.random.uniform(5e6, 5e7, n_rows),
-        "number_of_trades": np.random.randint(1000, 5000, n_rows),
-        "taker_buy_base_asset_volume": np.random.uniform(50, 500, n_rows),
-        "taker_buy_quote_asset_volume": np.random.uniform(2.5e6, 2.5e7, n_rows),
-        # Crypto-specific features
-        "cvd_24h": np.random.randn(n_rows),
-        "cvd_7d": np.random.randn(n_rows),
-        "yang_zhang_48h": np.random.uniform(0.01, 0.05, n_rows),
-        "yang_zhang_7d": np.random.uniform(0.01, 0.05, n_rows),
-        "garch_200h": np.random.uniform(0.01, 0.05, n_rows),
-        "garch_14d": np.random.uniform(0.01, 0.05, n_rows),
-        "ret_12h": np.random.randn(n_rows) * 0.01,
-        "ret_24h": np.random.randn(n_rows) * 0.02,
-        "ret_4h": np.random.randn(n_rows) * 0.005,
-        "sma_5040": prices * (1 + np.random.randn(n_rows) * 0.01),  # SMA 21 bars
-        "yang_zhang_30d": np.random.uniform(0.01, 0.05, n_rows),
-        "parkinson_48h": np.random.uniform(0.01, 0.05, n_rows),
-        "parkinson_7d": np.random.uniform(0.01, 0.05, n_rows),
-        "garch_30d": np.random.uniform(0.01, 0.05, n_rows),
-        "taker_buy_ratio": np.random.uniform(0.4, 0.6, n_rows),
-        "taker_buy_ratio_sma_24h": np.random.uniform(0.4, 0.6, n_rows),
-        "taker_buy_ratio_sma_8h": np.random.uniform(0.4, 0.6, n_rows),
-        "taker_buy_ratio_sma_16h": np.random.uniform(0.4, 0.6, n_rows),
-        "taker_buy_ratio_momentum_4h": np.random.randn(n_rows) * 0.01,
-        "taker_buy_ratio_momentum_8h": np.random.randn(n_rows) * 0.01,
-        "taker_buy_ratio_momentum_12h": np.random.randn(n_rows) * 0.01,
-        # Fear & Greed for crypto
-        "fear_greed_value": np.random.uniform(20, 80, n_rows),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "BTCUSDT",
+            "open": prices * 0.999,
+            "high": prices * 1.01,
+            "low": prices * 0.99,
+            "close": prices,
+            "volume": np.random.uniform(100, 1000, n_rows),
+            "quote_asset_volume": np.random.uniform(5e6, 5e7, n_rows),
+            "number_of_trades": np.random.randint(1000, 5000, n_rows),
+            "taker_buy_base_asset_volume": np.random.uniform(50, 500, n_rows),
+            "taker_buy_quote_asset_volume": np.random.uniform(2.5e6, 2.5e7, n_rows),
+            # Crypto-specific features
+            "cvd_24h": np.random.randn(n_rows),
+            "cvd_7d": np.random.randn(n_rows),
+            "yang_zhang_48h": np.random.uniform(0.01, 0.05, n_rows),
+            "yang_zhang_7d": np.random.uniform(0.01, 0.05, n_rows),
+            "garch_200h": np.random.uniform(0.01, 0.05, n_rows),
+            "garch_14d": np.random.uniform(0.01, 0.05, n_rows),
+            "ret_12h": np.random.randn(n_rows) * 0.01,
+            "ret_24h": np.random.randn(n_rows) * 0.02,
+            "ret_4h": np.random.randn(n_rows) * 0.005,
+            "sma_5040": prices * (1 + np.random.randn(n_rows) * 0.01),  # SMA 21 bars
+            "yang_zhang_30d": np.random.uniform(0.01, 0.05, n_rows),
+            "parkinson_48h": np.random.uniform(0.01, 0.05, n_rows),
+            "parkinson_7d": np.random.uniform(0.01, 0.05, n_rows),
+            "garch_30d": np.random.uniform(0.01, 0.05, n_rows),
+            "taker_buy_ratio": np.random.uniform(0.4, 0.6, n_rows),
+            "taker_buy_ratio_sma_24h": np.random.uniform(0.4, 0.6, n_rows),
+            "taker_buy_ratio_sma_8h": np.random.uniform(0.4, 0.6, n_rows),
+            "taker_buy_ratio_sma_16h": np.random.uniform(0.4, 0.6, n_rows),
+            "taker_buy_ratio_momentum_4h": np.random.randn(n_rows) * 0.01,
+            "taker_buy_ratio_momentum_8h": np.random.randn(n_rows) * 0.01,
+            "taker_buy_ratio_momentum_12h": np.random.randn(n_rows) * 0.01,
+            # Fear & Greed for crypto
+            "fear_greed_value": np.random.uniform(20, 80, n_rows),
+        }
+    )
 
     # NOTE: Stock features (vix_normalized, market_regime, etc.) are NOT present
     # This simulates pure crypto data
@@ -89,49 +92,51 @@ def sample_stock_df():
     # Use int64 for timestamp conversion (Pandas compatibility)
     timestamps = pd.date_range("2024-01-01", periods=n_rows, freq="4h").astype("int64") // 10**9
 
-    df = pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "AAPL",
-        "open": prices * 0.999,
-        "high": prices * 1.01,
-        "low": prices * 0.99,
-        "close": prices,
-        "volume": np.random.uniform(1e6, 1e7, n_rows),
-        "quote_asset_volume": np.random.uniform(1.5e8, 1.5e9, n_rows),
-        "number_of_trades": np.random.randint(10000, 50000, n_rows),
-        "taker_buy_base_asset_volume": np.random.uniform(5e5, 5e6, n_rows),
-        "taker_buy_quote_asset_volume": np.random.uniform(7.5e7, 7.5e8, n_rows),
-        # Standard features (same as crypto for technical indicators)
-        "cvd_24h": 0.0,  # Not applicable for stocks
-        "cvd_7d": 0.0,
-        "yang_zhang_48h": np.random.uniform(0.01, 0.03, n_rows),
-        "yang_zhang_7d": np.random.uniform(0.01, 0.03, n_rows),
-        "garch_200h": np.random.uniform(0.01, 0.03, n_rows),
-        "garch_14d": np.random.uniform(0.01, 0.03, n_rows),
-        "ret_12h": np.random.randn(n_rows) * 0.005,
-        "ret_24h": np.random.randn(n_rows) * 0.01,
-        "ret_4h": np.random.randn(n_rows) * 0.002,
-        "sma_5040": prices * (1 + np.random.randn(n_rows) * 0.01),
-        "yang_zhang_30d": np.random.uniform(0.01, 0.03, n_rows),
-        "parkinson_48h": np.random.uniform(0.01, 0.03, n_rows),
-        "parkinson_7d": np.random.uniform(0.01, 0.03, n_rows),
-        "garch_30d": np.random.uniform(0.01, 0.03, n_rows),
-        "taker_buy_ratio": 0.5,  # Not applicable for stocks
-        "taker_buy_ratio_sma_24h": 0.5,
-        "taker_buy_ratio_sma_8h": 0.5,
-        "taker_buy_ratio_sma_16h": 0.5,
-        "taker_buy_ratio_momentum_4h": 0.0,
-        "taker_buy_ratio_momentum_8h": 0.0,
-        "taker_buy_ratio_momentum_12h": 0.0,
-        # STOCK-SPECIFIC FEATURES (indices 21-27)
-        "vix_normalized": np.random.uniform(-0.5, 0.5, n_rows),  # [21]
-        "vix_regime": np.random.uniform(0.3, 0.7, n_rows),  # [22]
-        "market_regime": np.random.uniform(-0.5, 0.5, n_rows),  # [23]
-        "rs_spy_20d": np.random.uniform(-0.3, 0.3, n_rows),  # [24]
-        "rs_spy_50d": np.random.uniform(-0.2, 0.2, n_rows),  # [25]
-        "rs_qqq_20d": np.random.uniform(-0.3, 0.3, n_rows),  # [26]
-        "sector_momentum": np.random.uniform(-0.2, 0.2, n_rows),  # [27]
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "AAPL",
+            "open": prices * 0.999,
+            "high": prices * 1.01,
+            "low": prices * 0.99,
+            "close": prices,
+            "volume": np.random.uniform(1e6, 1e7, n_rows),
+            "quote_asset_volume": np.random.uniform(1.5e8, 1.5e9, n_rows),
+            "number_of_trades": np.random.randint(10000, 50000, n_rows),
+            "taker_buy_base_asset_volume": np.random.uniform(5e5, 5e6, n_rows),
+            "taker_buy_quote_asset_volume": np.random.uniform(7.5e7, 7.5e8, n_rows),
+            # Standard features (same as crypto for technical indicators)
+            "cvd_24h": 0.0,  # Not applicable for stocks
+            "cvd_7d": 0.0,
+            "yang_zhang_48h": np.random.uniform(0.01, 0.03, n_rows),
+            "yang_zhang_7d": np.random.uniform(0.01, 0.03, n_rows),
+            "garch_200h": np.random.uniform(0.01, 0.03, n_rows),
+            "garch_14d": np.random.uniform(0.01, 0.03, n_rows),
+            "ret_12h": np.random.randn(n_rows) * 0.005,
+            "ret_24h": np.random.randn(n_rows) * 0.01,
+            "ret_4h": np.random.randn(n_rows) * 0.002,
+            "sma_5040": prices * (1 + np.random.randn(n_rows) * 0.01),
+            "yang_zhang_30d": np.random.uniform(0.01, 0.03, n_rows),
+            "parkinson_48h": np.random.uniform(0.01, 0.03, n_rows),
+            "parkinson_7d": np.random.uniform(0.01, 0.03, n_rows),
+            "garch_30d": np.random.uniform(0.01, 0.03, n_rows),
+            "taker_buy_ratio": 0.5,  # Not applicable for stocks
+            "taker_buy_ratio_sma_24h": 0.5,
+            "taker_buy_ratio_sma_8h": 0.5,
+            "taker_buy_ratio_sma_16h": 0.5,
+            "taker_buy_ratio_momentum_4h": 0.0,
+            "taker_buy_ratio_momentum_8h": 0.0,
+            "taker_buy_ratio_momentum_12h": 0.0,
+            # STOCK-SPECIFIC FEATURES (indices 21-27)
+            "vix_normalized": np.random.uniform(-0.5, 0.5, n_rows),  # [21]
+            "vix_regime": np.random.uniform(0.3, 0.7, n_rows),  # [22]
+            "market_regime": np.random.uniform(-0.5, 0.5, n_rows),  # [23]
+            "rs_spy_20d": np.random.uniform(-0.3, 0.3, n_rows),  # [24]
+            "rs_spy_50d": np.random.uniform(-0.2, 0.2, n_rows),  # [25]
+            "rs_qqq_20d": np.random.uniform(-0.3, 0.3, n_rows),  # [26]
+            "sector_momentum": np.random.uniform(-0.2, 0.2, n_rows),  # [27]
+        }
+    )
 
     return df
 
@@ -140,22 +145,26 @@ def sample_stock_df():
 # TEST: FEATURE CONFIG
 # =============================================================================
 
+
 class TestFeatureConfigIntegration:
     """Test feature_config.py has correct dimensions for stock features."""
 
     def test_ext_norm_dim_includes_stock_features(self):
         """EXT_NORM_DIM should be 28 (21 crypto + 7 stock)."""
         from feature_config import EXT_NORM_DIM
+
         assert EXT_NORM_DIM == 28, f"Expected 28, got {EXT_NORM_DIM}"
 
     def test_n_features_with_external(self):
         """N_FEATURES should include external features and validity flags."""
         from feature_config import make_layout, N_FEATURES
+
         make_layout({})
         # Total should be consistent
         assert N_FEATURES > 0
         # Verify external block is included
         from feature_config import FEATURES_LAYOUT
+
         external_blocks = [b for b in FEATURES_LAYOUT if b["name"] == "external"]
         assert len(external_blocks) == 1
         assert external_blocks[0]["size"] == 28
@@ -164,6 +173,7 @@ class TestFeatureConfigIntegration:
 # =============================================================================
 # TEST: MEDIATOR EXTRACTION (uses _get_safe_float_with_validity directly)
 # =============================================================================
+
 
 class TestMediatorStockFeaturesExtraction:
     """Test mediator properly extracts stock features from DataFrame rows."""
@@ -177,8 +187,15 @@ class TestMediatorStockFeaturesExtraction:
         row = sample_stock_df.iloc[50]
 
         # Verify stock columns exist
-        stock_cols = ["vix_normalized", "vix_regime", "market_regime",
-                      "rs_spy_20d", "rs_spy_50d", "rs_qqq_20d", "sector_momentum"]
+        stock_cols = [
+            "vix_normalized",
+            "vix_regime",
+            "market_regime",
+            "rs_spy_20d",
+            "rs_spy_50d",
+            "rs_qqq_20d",
+            "sector_momentum",
+        ]
         for col in stock_cols:
             assert col in sample_stock_df.columns, f"Missing column: {col}"
 
@@ -190,7 +207,7 @@ class TestMediatorStockFeaturesExtraction:
         # Test extraction helper pattern (same as Mediator._get_safe_float_with_validity)
         def get_safe_float_with_validity(row, col, default, min_value=None, max_value=None):
             try:
-                val = float(row.get(col, default) if hasattr(row, 'get') else row[col])
+                val = float(row.get(col, default) if hasattr(row, "get") else row[col])
                 if not np.isfinite(val):
                     return default, False
                 if min_value is not None and val < min_value:
@@ -209,8 +226,15 @@ class TestMediatorStockFeaturesExtraction:
     def test_crypto_data_missing_stock_columns(self, sample_crypto_df):
         """For crypto data, stock feature columns should not exist."""
         # Stock features should NOT be present in crypto data
-        stock_cols = ["vix_normalized", "vix_regime", "market_regime",
-                      "rs_spy_20d", "rs_spy_50d", "rs_qqq_20d", "sector_momentum"]
+        stock_cols = [
+            "vix_normalized",
+            "vix_regime",
+            "market_regime",
+            "rs_spy_20d",
+            "rs_spy_50d",
+            "rs_qqq_20d",
+            "sector_momentum",
+        ]
 
         for col in stock_cols:
             assert col not in sample_crypto_df.columns, f"Crypto df should not have {col}"
@@ -225,6 +249,7 @@ class TestMediatorStockFeaturesExtraction:
 # TEST: OBS BUILDER INTEGRATION
 # =============================================================================
 
+
 class TestObsBuilderStockFeatures:
     """Test obs_builder.pyx correctly processes stock features."""
 
@@ -237,6 +262,7 @@ class TestObsBuilderStockFeatures:
 
         # Check compute_n_features works with 28 external features
         from feature_config import FEATURES_LAYOUT, make_layout
+
         make_layout({"ext_norm_dim": 28})
         n_features = compute_n_features(FEATURES_LAYOUT)
         assert n_features == 99, f"Expected 99 features, got {n_features}"
@@ -250,6 +276,7 @@ class TestObsBuilderStockFeatures:
 
         # Create observation array
         from feature_config import N_FEATURES
+
         out_features = np.zeros(N_FEATURES, dtype=np.float32)
 
         # Prepare inputs
@@ -313,14 +340,22 @@ class TestObsBuilderStockFeatures:
 # TEST: BACKWARD COMPATIBILITY
 # =============================================================================
 
+
 class TestBackwardCompatibility:
     """Ensure crypto data path is not broken by stock features integration."""
 
     def test_crypto_df_loads_without_stock_columns(self, sample_crypto_df):
         """Crypto DataFrames without stock columns should still work."""
         # Verify crypto df doesn't have stock columns
-        stock_cols = ["vix_normalized", "vix_regime", "market_regime",
-                      "rs_spy_20d", "rs_spy_50d", "rs_qqq_20d", "sector_momentum"]
+        stock_cols = [
+            "vix_normalized",
+            "vix_regime",
+            "market_regime",
+            "rs_spy_20d",
+            "rs_spy_50d",
+            "rs_qqq_20d",
+            "sector_momentum",
+        ]
         for col in stock_cols:
             assert col not in sample_crypto_df.columns
 
@@ -365,6 +400,7 @@ class TestBackwardCompatibility:
 
     def test_crypto_and_stock_extraction_coexist(self, sample_crypto_df, sample_stock_df):
         """Should be able to extract from both crypto and stock data."""
+
         # Helper mimicking Mediator._get_safe_float_with_validity
         def get_safe_float_with_validity(row, col, default, min_value=None, max_value=None):
             try:
@@ -388,20 +424,25 @@ class TestBackwardCompatibility:
         crypto_cvd, crypto_cvd_valid = get_safe_float_with_validity(crypto_row, "cvd_24h", 0.0)
         assert crypto_cvd_valid, "Crypto CVD should be valid"
 
-        crypto_vix, crypto_vix_valid = get_safe_float_with_validity(crypto_row, "vix_normalized", 0.0)
+        crypto_vix, crypto_vix_valid = get_safe_float_with_validity(
+            crypto_row, "vix_normalized", 0.0
+        )
         assert not crypto_vix_valid, "Crypto should not have VIX"
 
         # Stock: stock features valid
         stock_vix, stock_vix_valid = get_safe_float_with_validity(stock_row, "vix_normalized", 0.0)
         assert stock_vix_valid, "Stock VIX should be valid"
 
-        stock_sector, stock_sector_valid = get_safe_float_with_validity(stock_row, "sector_momentum", 0.0)
+        stock_sector, stock_sector_valid = get_safe_float_with_validity(
+            stock_row, "sector_momentum", 0.0
+        )
         assert stock_sector_valid, "Stock sector_momentum should be valid"
 
 
 # =============================================================================
 # TEST: STOCK FEATURES MODULE
 # =============================================================================
+
 
 class TestStockFeaturesModule:
     """Test stock_features.py functions used by mediator."""
@@ -423,7 +464,7 @@ class TestStockFeaturesModule:
         assert normalize_vix_value(80.0) > 0.9
 
         # NaN handling
-        assert normalize_vix_value(float('nan')) == 0.0
+        assert normalize_vix_value(float("nan")) == 0.0
 
     def test_calculate_vix_regime(self):
         """VIX regime calculation should categorize correctly."""
@@ -476,6 +517,7 @@ class TestStockFeaturesModule:
 # TEST: DATA LOADER INTEGRATION
 # =============================================================================
 
+
 class TestDataLoaderStockFeaturesIntegration:
     """Test data_loader_multi_asset.py properly adds stock features."""
 
@@ -499,6 +541,7 @@ class TestDataLoaderStockFeaturesIntegration:
 # TEST: FEATURE INDICES
 # =============================================================================
 
+
 class TestFeatureIndices:
     """Test that stock features are at correct indices in norm_cols."""
 
@@ -517,6 +560,7 @@ class TestFeatureIndices:
 
         # Verify these indices are within EXT_NORM_DIM
         from feature_config import EXT_NORM_DIM
+
         for idx in expected.keys():
             assert idx < EXT_NORM_DIM, f"Index {idx} should be < {EXT_NORM_DIM}"
 
@@ -532,6 +576,7 @@ class TestFeatureIndices:
 
         # These indices should be valid
         from feature_config import EXT_NORM_DIM
+
         for idx in crypto_features.keys():
             assert idx < 21, f"Crypto feature index {idx} should be < 21"
 
@@ -539,6 +584,7 @@ class TestFeatureIndices:
 # =============================================================================
 # TEST: EDGE CASES
 # =============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases in stock features integration."""

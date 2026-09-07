@@ -129,6 +129,7 @@ def test_cvar_dual_update_consistency():
 def _bounded_dual_update(lambda_value: float, lr: float, gap_unit: float) -> float:
     """Standalone implementation of bounded dual update for testing."""
     import math
+
     lambda_float = float(lambda_value)
     lr_float = float(lr)
     gap_float = float(gap_unit)
@@ -151,17 +152,18 @@ def test_bounded_dual_update():
     # Test various scenarios
     test_cases = [
         # (lambda_current, lr, gap, expected_range)
-        (0.5, 0.01, 0.2, (0.0, 1.0)),    # Normal update
-        (0.0, 0.01, -1.0, (0.0, 0.0)),   # At lower bound, negative gap
-        (1.0, 0.01, 1.0, (1.0, 1.0)),    # At upper bound, positive gap
+        (0.5, 0.01, 0.2, (0.0, 1.0)),  # Normal update
+        (0.0, 0.01, -1.0, (0.0, 0.0)),  # At lower bound, negative gap
+        (1.0, 0.01, 1.0, (1.0, 1.0)),  # At upper bound, positive gap
         (0.5, 0.01, 100.0, (1.0, 1.0)),  # Large positive gap -> clamp to 1.0
-        (0.5, 0.01, -100.0, (0.0, 0.0)), # Large negative gap -> clamp to 0.0
+        (0.5, 0.01, -100.0, (0.0, 0.0)),  # Large negative gap -> clamp to 0.0
     ]
 
     for lambda_val, lr, gap, (min_expected, max_expected) in test_cases:
         result = _bounded_dual_update(lambda_val, lr, gap)
-        assert min_expected <= result <= max_expected, \
-            f"Failed for λ={lambda_val}, lr={lr}, gap={gap}: got {result}"
+        assert (
+            min_expected <= result <= max_expected
+        ), f"Failed for λ={lambda_val}, lr={lr}, gap={gap}: got {result}"
 
     print("✓ Bounded dual update works correctly")
 
@@ -296,13 +298,15 @@ def test_integration_multi_iteration():
         # Save for next iteration
         cvar_predicted_last = data["cvar_predicted"]
 
-        history.append({
-            "iteration": i,
-            "lambda": lambda_val,
-            "cvar_for_dual": cvar_for_dual,
-            "gap": gap,
-            "source": source,
-        })
+        history.append(
+            {
+                "iteration": i,
+                "lambda": lambda_val,
+                "cvar_for_dual": cvar_for_dual,
+                "gap": gap,
+                "source": source,
+            }
+        )
 
     # Verify progression
     assert history[0]["source"] == "empirical_fallback", "First iteration should use empirical"
@@ -314,7 +318,9 @@ def test_integration_multi_iteration():
 
     print("✓ Multi-iteration integration test passed")
     for h in history:
-        print(f"  Iter {h['iteration']}: λ={h['lambda']:.3f}, gap={h['gap']:.3f}, source={h['source']}")
+        print(
+            f"  Iter {h['iteration']}: λ={h['lambda']:.3f}, gap={h['gap']:.3f}, source={h['source']}"
+        )
 
 
 if __name__ == "__main__":

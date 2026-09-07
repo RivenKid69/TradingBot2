@@ -263,12 +263,16 @@ class Quantizer:
         if required > f.qty_max:
             # невозможно удовлетворить — вернём 0 (или исключение в strict)
             if self.strict:
-                raise ValueError(f"MIN_NOTIONAL cannot be met for {symbol}: price={price}, "
-                                 f"qty_max={f.qty_max}, min_notional={f.min_notional}")
+                raise ValueError(
+                    f"MIN_NOTIONAL cannot be met for {symbol}: price={price}, "
+                    f"qty_max={f.qty_max}, min_notional={f.min_notional}"
+                )
             return 0.0
         return float(required)
 
-    def check_percent_price_by_side(self, symbol: str, side: str, price: Number, ref_price: Number) -> bool:
+    def check_percent_price_by_side(
+        self, symbol: str, side: str, price: Number, ref_price: Number
+    ) -> bool:
         """
         Проверка PERCENT_PRICE_BY_SIDE (для spot) или PERCENT_PRICE (для futures).
         :param side: "BUY" или "SELL"
@@ -354,7 +358,9 @@ class Quantizer:
 
         quantized_qty = clamped_qty
 
-        if enforce_ppbs and not self.check_percent_price_by_side(symbol, side, quantized_price, ref_price):
+        if enforce_ppbs and not self.check_percent_price_by_side(
+            symbol, side, quantized_price, ref_price
+        ):
             return OrderCheckResult(
                 price=quantized_price,
                 qty=0.0,
@@ -435,7 +441,9 @@ class Quantizer:
                 ts = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
                 age_days = (datetime.now(timezone.utc) - ts).days
                 if age_days > int(max_age_days):
-                    field_label = f"metadata.{timestamp_field}" if timestamp_field else "metadata timestamp"
+                    field_label = (
+                        f"metadata.{timestamp_field}" if timestamp_field else "metadata timestamp"
+                    )
                     msg = (
                         f"{path} {field_label} is {age_days} days old (>={max_age_days}d); "
                         f"refresh via python scripts/fetch_binance_filters.py"

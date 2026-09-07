@@ -139,4 +139,3 @@ def test_bnb_fee_conversion_extreme_conversion_precision():
     expected_fee_quote = trade.price * trade.qty * (taker_bps * discount_mult) / 1e4
     fees_delta = sim.fees_cum - fees_before
     assert math.isclose(fees_delta, expected_fee_quote, rel_tol=1e-12)
-

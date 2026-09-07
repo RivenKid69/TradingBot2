@@ -78,30 +78,30 @@ OANDA_STREAM_LIVE_URL = "https://stream-fxtrade.oanda.com"
 
 # Swap rate cache TTL (seconds)
 DEFAULT_CACHE_TTL_SEC = 3600  # 1 hour
-STALE_THRESHOLD_SEC = 7200    # 2 hours = stale warning
+STALE_THRESHOLD_SEC = 7200  # 2 hours = stale warning
 
 # Interbank rates for interpolation (annual %, as of late 2024)
 # Source: Central bank policy rates
 DEFAULT_INTERBANK_RATES: Dict[str, float] = {
-    "USD": 5.25,   # Fed Funds Rate
-    "EUR": 4.50,   # ECB Main Refinancing Rate
-    "GBP": 5.25,   # Bank of England Rate
-    "JPY": 0.10,   # Bank of Japan Rate
-    "CHF": 1.75,   # Swiss National Bank Rate
-    "AUD": 4.35,   # Reserve Bank of Australia Rate
-    "CAD": 5.00,   # Bank of Canada Rate
-    "NZD": 5.50,   # Reserve Bank of New Zealand Rate
-    "SEK": 4.00,   # Sveriges Riksbank Rate
-    "NOK": 4.50,   # Norges Bank Rate
-    "DKK": 3.60,   # Danmarks Nationalbank Rate
-    "PLN": 5.75,   # National Bank of Poland Rate
-    "HUF": 6.50,   # Magyar Nemzeti Bank Rate
-    "CZK": 4.75,   # Czech National Bank Rate
+    "USD": 5.25,  # Fed Funds Rate
+    "EUR": 4.50,  # ECB Main Refinancing Rate
+    "GBP": 5.25,  # Bank of England Rate
+    "JPY": 0.10,  # Bank of Japan Rate
+    "CHF": 1.75,  # Swiss National Bank Rate
+    "AUD": 4.35,  # Reserve Bank of Australia Rate
+    "CAD": 5.00,  # Bank of Canada Rate
+    "NZD": 5.50,  # Reserve Bank of New Zealand Rate
+    "SEK": 4.00,  # Sveriges Riksbank Rate
+    "NOK": 4.50,  # Norges Bank Rate
+    "DKK": 3.60,  # Danmarks Nationalbank Rate
+    "PLN": 5.75,  # National Bank of Poland Rate
+    "HUF": 6.50,  # Magyar Nemzeti Bank Rate
+    "CZK": 4.75,  # Czech National Bank Rate
     "TRY": 50.00,  # Central Bank of Turkey Rate
-    "ZAR": 8.25,   # South African Reserve Bank Rate
+    "ZAR": 8.25,  # South African Reserve Bank Rate
     "MXN": 11.00,  # Banco de México Rate
-    "SGD": 3.50,   # Monetary Authority of Singapore
-    "HKD": 5.75,   # Hong Kong Monetary Authority
+    "SGD": 3.50,  # Monetary Authority of Singapore
+    "HKD": 5.75,  # Hong Kong Monetary Authority
 }
 
 # Broker markup ranges (annual %)
@@ -116,8 +116,10 @@ BROKER_MARKUP_RANGES: Dict[str, Tuple[float, float]] = {
 # Enums
 # =============================================================================
 
+
 class SwapRateSource(str, Enum):
     """Source of swap rate data."""
+
     OANDA_REALTIME = "oanda_realtime"
     OANDA_CACHED = "oanda_cached"
     CALCULATED = "calculated"
@@ -127,21 +129,24 @@ class SwapRateSource(str, Enum):
 
 class SwapDirection(str, Enum):
     """Position direction for swap calculation."""
+
     LONG = "long"
     SHORT = "short"
 
 
 class SwapRateQuality(str, Enum):
     """Quality indicator for swap rate."""
-    FRESH = "fresh"       # < 1 hour old
-    RECENT = "recent"     # 1-2 hours old
-    STALE = "stale"       # 2-6 hours old
-    EXPIRED = "expired"   # > 6 hours old
+
+    FRESH = "fresh"  # < 1 hour old
+    RECENT = "recent"  # 1-2 hours old
+    STALE = "stale"  # 2-6 hours old
+    EXPIRED = "expired"  # > 6 hours old
 
 
 # =============================================================================
 # Data Classes
 # =============================================================================
+
 
 @dataclass
 class RealtimeSwapRate:
@@ -161,6 +166,7 @@ class RealtimeSwapRate:
         interbank_long: Raw interbank rate for long (before markup)
         interbank_short: Raw interbank rate for short (before markup)
     """
+
     pair: str
     long_swap_pips: float
     short_swap_pips: float
@@ -250,6 +256,7 @@ class SwapRateUpdate:
 
     Used for real-time streaming updates from OANDA.
     """
+
     pair: str
     long_financing: float  # Daily financing rate for long
     short_financing: float  # Daily financing rate for short
@@ -278,6 +285,7 @@ class SwapRateUpdate:
 @dataclass
 class SwapRateCacheConfig:
     """Configuration for swap rate caching."""
+
     cache_ttl_sec: float = DEFAULT_CACHE_TTL_SEC
     stale_threshold_sec: float = STALE_THRESHOLD_SEC
     max_cache_size: int = 200
@@ -292,6 +300,7 @@ class SwapRateCacheConfig:
 # =============================================================================
 # Protocols
 # =============================================================================
+
 
 class SwapRateCallback(Protocol):
     """Callback for swap rate updates."""
@@ -312,6 +321,7 @@ class InterestRateProvider(Protocol):
 # =============================================================================
 # Swap Rate Calculator
 # =============================================================================
+
 
 class SwapRateCalculator:
     """
@@ -348,9 +358,7 @@ class SwapRateCalculator:
         self._custom_markups = custom_markups or {}
 
         # Get markup range for tier
-        self._markup_range = BROKER_MARKUP_RANGES.get(
-            broker_tier, BROKER_MARKUP_RANGES["retail"]
-        )
+        self._markup_range = BROKER_MARKUP_RANGES.get(broker_tier, BROKER_MARKUP_RANGES["retail"])
 
     def update_rate(self, currency: str, rate: float) -> None:
         """Update interest rate for a currency."""
@@ -393,8 +401,7 @@ class SwapRateCalculator:
 
         if base_rate is None or quote_rate is None:
             logger.warning(
-                f"Missing interest rate for {pair}: "
-                f"base={base_rate}, quote={quote_rate}"
+                f"Missing interest rate for {pair}: " f"base={base_rate}, quote={quote_rate}"
             )
             return (0.0, 0.0)
 
@@ -454,12 +461,8 @@ class SwapRateCalculator:
         Returns:
             RealtimeSwapRate with calculated values
         """
-        long_pips, long_pct = self.calculate_swap_rate(
-            pair, SwapDirection.LONG, mid_price
-        )
-        short_pips, short_pct = self.calculate_swap_rate(
-            pair, SwapDirection.SHORT, mid_price
-        )
+        long_pips, long_pct = self.calculate_swap_rate(pair, SwapDirection.LONG, mid_price)
+        short_pips, short_pct = self.calculate_swap_rate(pair, SwapDirection.SHORT, mid_price)
 
         # Also calculate interbank rates (without markup)
         interbank_long, _ = self.calculate_swap_rate(
@@ -487,6 +490,7 @@ class SwapRateCalculator:
 # =============================================================================
 # OANDA API Client
 # =============================================================================
+
 
 class OandaSwapRateClient:
     """
@@ -741,6 +745,7 @@ class OandaSwapRateClient:
 # Real-time Swap Rate Provider
 # =============================================================================
 
+
 class RealtimeSwapRateProvider:
     """
     Production-grade real-time swap rate provider.
@@ -781,11 +786,22 @@ class RealtimeSwapRateProvider:
 
     # Default instruments to track
     DEFAULT_INSTRUMENTS: List[str] = [
-        "EUR_USD", "GBP_USD", "USD_JPY", "USD_CHF",
-        "AUD_USD", "USD_CAD", "NZD_USD",
-        "EUR_GBP", "EUR_JPY", "GBP_JPY",
-        "EUR_CHF", "EUR_AUD", "EUR_CAD",
-        "AUD_JPY", "AUD_NZD", "CAD_JPY",
+        "EUR_USD",
+        "GBP_USD",
+        "USD_JPY",
+        "USD_CHF",
+        "AUD_USD",
+        "USD_CAD",
+        "NZD_USD",
+        "EUR_GBP",
+        "EUR_JPY",
+        "GBP_JPY",
+        "EUR_CHF",
+        "EUR_AUD",
+        "EUR_CAD",
+        "AUD_JPY",
+        "AUD_NZD",
+        "CAD_JPY",
     ]
 
     def __init__(
@@ -804,9 +820,7 @@ class RealtimeSwapRateProvider:
         """
         self.config = config or SwapRateCacheConfig()
         self._oanda = oanda_client or OandaSwapRateClient()
-        self._calculator = calculator or SwapRateCalculator(
-            broker_tier=self.config.broker_tier
-        )
+        self._calculator = calculator or SwapRateCalculator(broker_tier=self.config.broker_tier)
 
         # Cache storage
         self._cache: Dict[str, RealtimeSwapRate] = {}
@@ -883,9 +897,7 @@ class RealtimeSwapRateProvider:
         # Fall back to calculation
         if self.config.fallback_to_calculated:
             self._stats["calculated_rates"] += 1
-            rate = self._calculator.calculate_full_swap_rate(
-                pair, mid_price=mid_price or 1.0
-            )
+            rate = self._calculator.calculate_full_swap_rate(pair, mid_price=mid_price or 1.0)
             self._update_cache(pair, rate)
             return rate
 
@@ -1051,7 +1063,7 @@ class RealtimeSwapRateProvider:
                     self._cache.keys(),
                     key=lambda p: self._cache[p].timestamp_ms,
                 )
-                for old_pair in sorted_pairs[:len(self._cache) - self.config.max_cache_size]:
+                for old_pair in sorted_pairs[: len(self._cache) - self.config.max_cache_size]:
                     del self._cache[old_pair]
 
     def _update_quality(self, rate: RealtimeSwapRate) -> RealtimeSwapRate:
@@ -1112,10 +1124,7 @@ class RealtimeSwapRateProvider:
 
         try:
             with self._cache_lock:
-                data = {
-                    pair: rate.to_dict()
-                    for pair, rate in self._cache.items()
-                }
+                data = {pair: rate.to_dict() for pair, rate in self._cache.items()}
 
             with open(cache_path, "w") as f:
                 json.dump(data, f, indent=2)
@@ -1127,10 +1136,7 @@ class RealtimeSwapRateProvider:
         """Get provider statistics."""
         with self._cache_lock:
             cache_size = len(self._cache)
-            fresh_count = sum(
-                1 for r in self._cache.values()
-                if r.quality == SwapRateQuality.FRESH
-            )
+            fresh_count = sum(1 for r in self._cache.values() if r.quality == SwapRateQuality.FRESH)
 
         return {
             **self._stats,
@@ -1138,8 +1144,7 @@ class RealtimeSwapRateProvider:
             "fresh_rates": fresh_count,
             "oanda_configured": self._oanda.is_configured,
             "background_running": (
-                self._refresh_thread is not None
-                and self._refresh_thread.is_alive()
+                self._refresh_thread is not None and self._refresh_thread.is_alive()
             ),
         }
 
@@ -1152,6 +1157,7 @@ class RealtimeSwapRateProvider:
 # =============================================================================
 # Factory Functions
 # =============================================================================
+
 
 def create_realtime_swap_provider(
     oanda_api_key: Optional[str] = None,

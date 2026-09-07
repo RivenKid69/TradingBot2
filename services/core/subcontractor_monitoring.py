@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class SubcontractorHealthStatus(Enum):
     """Subcontractor health status."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -39,6 +40,7 @@ class SubcontractorHealthStatus(Enum):
 
 class MonitoringFrequency(Enum):
     """Monitoring frequency."""
+
     REAL_TIME = "real_time"
     MINUTE = "minute"
     FIVE_MINUTES = "five_minutes"
@@ -48,6 +50,7 @@ class MonitoringFrequency(Enum):
 
 class AlertThreshold(Enum):
     """Alert threshold levels."""
+
     WARNING = "warning"
     CRITICAL = "critical"
 
@@ -55,6 +58,7 @@ class AlertThreshold(Enum):
 @dataclass
 class SubcontractorStatus:
     """Subcontractor status record."""
+
     subcontractor_id: str = ""
     name: str = ""
     service_type: str = ""
@@ -89,6 +93,7 @@ class SubcontractorStatus:
 @dataclass
 class HealthCheckResult:
     """Health check result."""
+
     check_id: str = ""
     subcontractor_id: str = ""
     timestamp: str = ""
@@ -113,6 +118,7 @@ class HealthCheckResult:
 @dataclass
 class StatusReport:
     """Subcontractor status report."""
+
     report_id: str = ""
     generated_at: str = ""
     reporting_period: str = ""
@@ -141,6 +147,7 @@ class StatusReport:
 @dataclass
 class SubcontractorMonitoringConfig:
     """Configuration for SubcontractorMonitor."""
+
     default_check_frequency: MonitoringFrequency = MonitoringFrequency.FIVE_MINUTES
     warning_threshold_uptime: float = 99.5
     critical_threshold_uptime: float = 99.0
@@ -196,7 +203,8 @@ class SubcontractorMonitor:
             subcontractor_id=subcontractor_id,
             status=status,
             response_time_ms=response_time_ms,
-            success=status in (SubcontractorHealthStatus.HEALTHY, SubcontractorHealthStatus.DEGRADED),
+            success=status
+            in (SubcontractorHealthStatus.HEALTHY, SubcontractorHealthStatus.DEGRADED),
             check_type=check_type,
             error_message=error_message,
         )
@@ -228,7 +236,8 @@ class SubcontractorMonitor:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
         recent_checks = [
-            c for c in self._health_checks
+            c
+            for c in self._health_checks
             if c.subcontractor_id == subcontractor_id and c.timestamp > cutoff
         ]
 
@@ -244,30 +253,36 @@ class SubcontractorMonitor:
 
         # Unhealthy status
         if check.status == SubcontractorHealthStatus.UNHEALTHY:
-            alerts_to_send.append({
-                "type": "subcontractor_unhealthy",
-                "severity": "critical" if sub.is_critical_provider else "high",
-                "subcontractor": sub.name,
-                "message": f"Subcontractor {sub.name} is unhealthy: {check.error_message}",
-            })
+            alerts_to_send.append(
+                {
+                    "type": "subcontractor_unhealthy",
+                    "severity": "critical" if sub.is_critical_provider else "high",
+                    "subcontractor": sub.name,
+                    "message": f"Subcontractor {sub.name} is unhealthy: {check.error_message}",
+                }
+            )
 
         # SLA breach
         if not sub.sla_compliant:
-            alerts_to_send.append({
-                "type": "sla_breach",
-                "severity": "critical",
-                "subcontractor": sub.name,
-                "message": f"SLA breach: {sub.name} uptime {sub.uptime_percent_30d}% < target {sub.sla_target_uptime}%",
-            })
+            alerts_to_send.append(
+                {
+                    "type": "sla_breach",
+                    "severity": "critical",
+                    "subcontractor": sub.name,
+                    "message": f"SLA breach: {sub.name} uptime {sub.uptime_percent_30d}% < target {sub.sla_target_uptime}%",
+                }
+            )
 
         # Response time
         if check.response_time_ms > self.config.response_time_critical_ms:
-            alerts_to_send.append({
-                "type": "high_latency",
-                "severity": "warning",
-                "subcontractor": sub.name,
-                "message": f"High latency for {sub.name}: {check.response_time_ms}ms",
-            })
+            alerts_to_send.append(
+                {
+                    "type": "high_latency",
+                    "severity": "warning",
+                    "subcontractor": sub.name,
+                    "message": f"High latency for {sub.name}: {check.response_time_ms}ms",
+                }
+            )
 
         for alert in alerts_to_send:
             alert["timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -290,8 +305,10 @@ class SubcontractorMonitor:
         """Get unhealthy subcontractors."""
         with self._lock:
             return [
-                s for s in self._subcontractors.values()
-                if s.health_status in (SubcontractorHealthStatus.UNHEALTHY, SubcontractorHealthStatus.DEGRADED)
+                s
+                for s in self._subcontractors.values()
+                if s.health_status
+                in (SubcontractorHealthStatus.UNHEALTHY, SubcontractorHealthStatus.DEGRADED)
             ]
 
     def generate_report(self, period: str = "last_30_days") -> StatusReport:
@@ -306,7 +323,8 @@ class SubcontractorMonitor:
 
         sla_breaches = [
             {"subcontractor": s.name, "uptime": s.uptime_percent_30d, "target": s.sla_target_uptime}
-            for s in subs if not s.sla_compliant
+            for s in subs
+            if not s.sla_compliant
         ]
 
         return StatusReport(
@@ -335,10 +353,14 @@ class SubcontractorMonitor:
                 "compliant": report.sla_compliant_count,
                 "breaches": len(report.sla_breaches),
             },
-            "alerts_24h": len([
-                a for a in self._alerts
-                if a["timestamp"] > (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-            ]),
+            "alerts_24h": len(
+                [
+                    a
+                    for a in self._alerts
+                    if a["timestamp"]
+                    > (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+                ]
+            ),
             "dora_compliance": {
                 "article_28": "monitored",
                 "article_30": "compliant" if report.unhealthy_count == 0 else "attention_required",
