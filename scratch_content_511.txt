@@ -1,1 +1,0 @@
-﻿I will replace `rivenquant_workflow_progress` with `rivenquant_workflow_progress_v3` to perform the storage migration and clear any corrupted browser state. I will also append the `resetWorkflowProgress` function to the codebase.

@@ -25,8 +25,17 @@ if sys.platform == 'win32':
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
 import numpy as np
 import pandas as pd
+
+# The bundled equity data was removed from the repository: it came from Yahoo
+# Finance, whose terms do not allow redistribution. Recreate it locally with
+#     python scripts/download_stock_data.py
+pytestmark = pytest.mark.skipif(
+    not Path("data/raw_stocks").exists(),
+    reason="requires data/raw_stocks — run scripts/download_stock_data.py first",
+)
 
 
 def print_section(title: str) -> None:
