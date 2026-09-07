@@ -1,4 +1,4 @@
-# CustodiaCloud Terms of Service Guidelines (CCEA‑Safe)
+# CustodiaCloud Terms of Service Guidelines (CCEA-Safe)
 
 ## Legal Framework for CustodiaCloud Services
 
@@ -13,7 +13,7 @@
 
 This document establishes the **required provisions and language** for CustodiaCloud Terms of Service. These guidelines ensure:
 
-1. **Regulatory‑safe posture** - Clear positioning as software / ICT provider
+1. **Regulatory-safe posture** - Clear positioning as software / ICT provider
 2. **Liability Protection** - Appropriate limitation of liability
 3. **Customer Clarity** - Clear understanding of responsibilities
 4. **Architectural Alignment** - ToS reflects Cloud/Agent separation
@@ -353,7 +353,7 @@ Users grant CustodiaCloud a limited license to process such content
 solely for providing the services.
 ```
 
-### 6.3 Agent Software (Customer‑Deployed)
+### 6.3 Agent Software (Customer-Deployed)
 
 ```legal
 The Agent is customer-deployed software that runs in the customer's own

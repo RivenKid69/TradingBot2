@@ -14,12 +14,14 @@ from typing import List, Dict, Tuple
 
 
 # Characters to check
+# Em-dash and en-dash are ordinary punctuation and are used throughout the
+# Russian-language documentation; they render correctly everywhere, so they are
+# not listed here. What remains are the characters that look like something they
+# are not, or that break parsers and diffs.
 PROBLEMATIC_CHARS = {
-    "\u2014": "em-dash (should use --)",
-    "\u2013": "en-dash (should use -)",
-    "\u2011": "non-breaking hyphen (should use -)",
-    "\u00a0": "non-breaking space",
-    "\u200b": "zero-width space",
+    "\u2011": "non-breaking hyphen (looks like -, breaks search; use -)",
+    "\u00a0": "non-breaking space (looks like a space; use a space)",
+    "\u200b": "zero-width space (invisible)",
     "\ufeff": "BOM (should be removed)",
 }
 

@@ -496,16 +496,16 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 | **18 months** | Causal inference for regime detection | Macro strategies |
 | **24 months** | Federated learning for privacy | Hedge fund clients |
 
-### 5.2 Addressable Market Expansion (Committee‑Safe Framing)
+### 5.2 Addressable Market Expansion (Committee-Safe Framing)
 
 Market sizing varies materially by source and definition; any numeric TAM figures should be treated as illustrative and are not the basis of committee claims.
 
 **Expansion vectors**:
 
-1. **Geographic**: EU/UK‑focused (Estonia‑first establishment) → additional EU countries → other jurisdictions (case‑by‑case, with legal review)
+1. **Geographic**: EU/UK-focused (Estonia-first establishment) → additional EU countries → other jurisdictions (case-by-case, with legal review)
 2. **Client type**: systematic prop firms → small funds → larger institutional teams (B2B only)
-3. **Asset class**: expand beyond equities‑first based on validated customer demand (digital assets are optional)
-4. **Functionality**: research/simulation → deploy‑to‑Agent workflows → governance/evidence exports → enterprise operations features
+3. **Asset class**: expand beyond equities-first based on validated customer demand (digital assets are optional)
+4. **Functionality**: research/simulation → deploy-to-Agent workflows → governance/evidence exports → enterprise operations features
 
 ### 5.3 Defensible Moats
 

@@ -905,6 +905,7 @@ async def list_version_pins(
 @router.delete(
     "/version-pins/{pin_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete Version Pin",
 )
 async def delete_version_pin(pin_id: UUID) -> None:

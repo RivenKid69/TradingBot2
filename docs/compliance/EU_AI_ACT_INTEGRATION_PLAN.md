@@ -40,16 +40,16 @@
 
 ## 📋 Executive Summary
 
-Данный план описывает поэтапную реализацию **tooling и документационных артефактов**, которые могут поддерживать EU AI Act‑ориентированные проверки и procurement‑процессы у клиентов CustodiaCloud.
+Данный план описывает поэтапную реализацию **tooling и документационных артефактов**, которые могут поддерживать EU AI Act-ориентированные проверки и procurement-процессы у клиентов CustodiaCloud.
 
-### Risk classification (no self‑classification)
+### Risk classification (no self-classification)
 
-CustodiaCloud **не** делает self‑classification (например, “high‑risk AI” или “GPAI”) в документах. Применимость статей и процедур зависит от конкретного deployment‑контекста, ролей сторон и юрисдикции и должна подтверждаться квалифицированным counsel.
+CustodiaCloud **не** делает self-classification (например, “high-risk AI” или “GPAI”) в документах. Применимость статей и процедур зависит от конкретного deployment-контекста, ролей сторон и юрисдикции и должна подтверждаться квалифицированным counsel.
 
 Этот документ описывает:
 
-- модули прозрачности/документации (Article 50/53 — deployment‑dependent)
-- опциональный набор модулей, покрывающих Articles 9–17 как “risk‑first over‑engineering” (не юридическое утверждение)
+- модули прозрачности/документации (Article 50/53 — deployment-dependent)
+- опциональный набор модулей, покрывающих Articles 9–17 как “risk-first over-engineering” (не юридическое утверждение)
 
 ### Связь с существующим регулированием
 

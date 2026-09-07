@@ -304,6 +304,7 @@ async def list_enrollment_tokens(
 @router.delete(
     "/enrollment-tokens/{token_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete enrollment token",
     description="Delete an unused enrollment token.",
 )
@@ -541,6 +542,7 @@ async def update_agent(
 @router.post(
     "/{agent_id}/revoke",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Revoke agent",
     description="Revoke agent trust, preventing it from operating.",
 )

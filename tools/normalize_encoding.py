@@ -3,7 +3,6 @@
 Normalize encoding in markdown and YAML files.
 
 This script fixes common encoding issues:
-- Replaces em-dash (—) with double hyphen (--)
 - Replaces non-breaking hyphen (‑) with regular hyphen (-)
 - Replaces non-breaking space with regular space
 - Removes zero-width spaces
@@ -24,8 +23,8 @@ from typing import List, Tuple
 
 # Normalization rules
 REPLACEMENTS = {
-    "\u2014": "--",  # Em-dash → double hyphen
-    "\u2013": "-",  # En-dash → single hyphen
+    # Em-dash and en-dash are valid punctuation and are left alone;
+    # see tools/check_encoding.py.
     "\u2011": "-",  # Non-breaking hyphen → regular hyphen
     "\u00a0": " ",  # Non-breaking space → regular space
     "\u200b": "",  # Zero-width space → removed

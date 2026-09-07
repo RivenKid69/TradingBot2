@@ -433,6 +433,9 @@ def main() -> None:
             "--kpi-thresholds",
             args.rc_thresholds,
         ]
+        # cmd is an argument list run without a shell, so the paths cannot be
+        # interpreted as shell syntax.
+        # nosemgrep: dangerous-subprocess-use-tainted-env-args
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.stdout:
             print(proc.stdout)

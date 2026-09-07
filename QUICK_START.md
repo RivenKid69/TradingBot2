@@ -353,7 +353,7 @@ SPAN Margin Avg: $12,400
 | Режим | Описание | Cloud | Agent |
 |-------|----------|-------|-------|
 | **Cloud + BYO Agent (B2B)** | Research/sim/monitoring + customer-controlled execution via Agent | Research, Sim, Monitoring | Опционально (для live execution) |
-| **Enterprise on‑prem/VPC** | Размещение в инфраструктуре клиента | Self-hosted | HSM/KMS, air-gapped |
+| **Enterprise on-prem/VPC** | Размещение в инфраструктуре клиента | Self-hosted | HSM/KMS, air-gapped |
 
 ### Шаг 1: Установка Agent
 

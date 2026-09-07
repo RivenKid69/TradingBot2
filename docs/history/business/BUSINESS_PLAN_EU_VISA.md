@@ -32,9 +32,9 @@
 This plan is designed to match how startup visa committees typically evaluate applications:
 
 - **Innovation**: CCEA architecture enforces a strict Cloud/Agent boundary (Cloud does not hold secrets and does not send orders; execution remains client-controlled), plus risk-first ML (CVaR constraints) and governance/evidence exports by design.
-- **Business viability**: equities-first beachhead, B2B subscription model, and a structured 3‑month pilot program (3–5 firms) with measurable onboarding and conversion criteria.
+- **Business viability**: equities-first beachhead, B2B subscription model, and a structured 3-month pilot program (3–5 firms) with measurable onboarding and conversion criteria.
 - **EU establishment plan**: establish an EU legal entity, operate primarily in the EU market, and engage an approved facilitator/incubator where required (see Section 12.3/12.4).
-- **Economic contribution**: high-skilled job creation plan with explicit roles and a realistic 12‑month roadmap (see Sections 9 and 12.1).
+- **Economic contribution**: high-skilled job creation plan with explicit roles and a realistic 12-month roadmap (see Sections 9 and 12.1).
 - **Funding**: seed funding to support customer validation, EU go-to-market, and hiring (see Sections 1.6–1.7 and Section 8).
 
 ## Table of Contents
@@ -1430,7 +1430,7 @@ We present a conservative “base case” for the first 24 months (the visa/comm
 
 | Period | Total FTEs (range) | New hires (range) | Example roles | Primary trigger |
 |--------|---------------------|-------------------|--------------|-----------------|
-| 0–12 months | 3–4 | 2–3 | Platform/DevOps, Product Full‑Stack, (optional) Solutions | Pilot-ready MVP + active pilots |
+| 0–12 months | 3–4 | 2–3 | Platform/DevOps, Product Full-Stack, (optional) Solutions | Pilot-ready MVP + active pilots |
 | 12–24 months | 4–8 | 1–4 | Backend/Cloud, part-time Security/Ops, Sales Lead (post-PMF signal) | Repeatable onboarding + pilot→paid conversion |
 
 **Illustrative growth scenario (years 3–5; post follow-on funding)**

@@ -2644,7 +2644,7 @@ Phase 7: Testing & Internal Conformance ✅ COMPLETED (2025-12-07)
 
 > **Note**: Test counts are approximate and subject to change. "Tooling complete" means internal implementation is done; verify current test pass rates via CI. This is internal tooling, not an independent audit or certification.
 
-Система включает alignment/evidence toolkit, спроектированный для поддержки клиентских оценок и внутренних compliance‑workflow (не является сертификацией и не заменяет юридическую/комплаенс‑оценку клиента):
+Система включает alignment/evidence toolkit, спроектированный для поддержки клиентских оценок и внутренних compliance-workflow (не является сертификацией и не заменяет юридическую/комплаенс-оценку клиента):
 
 - MiFID II (Directive 2014/65/EU)
 - MiFIR (Regulation 600/2014)

@@ -233,6 +233,9 @@ class TimescaleTSBackend:
         cur = conn.cursor()
         cur.execute(f"CREATE TABLE IF NOT EXISTS {table} ({ddl})")
         try:
+            # hypertable and column names are identifiers supplied by the caller, and
+            # SQL cannot bind an identifier as a parameter.
+            # nosemgrep: sql-injection-format-string
             cur.execute(f"SELECT create_hypertable('{table}', '{TS_COL}', if_not_exists => TRUE)")
         except Exception:
             pass

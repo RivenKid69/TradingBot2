@@ -66,11 +66,12 @@ class TestTenantContext:
         # Verify execute was called
         mock_session.execute.assert_called_once()
 
-        # Check the SQL contains the workspace_id
+        # The id is bound, not interpolated into the statement
         call_args = mock_session.execute.call_args
         sql_text = str(call_args[0][0])
         assert "app.current_workspace_id" in sql_text
-        assert str(workspace_id) in sql_text
+        assert str(workspace_id) not in sql_text
+        assert call_args[0][1] == {"workspace_id": str(workspace_id)}
 
     @pytest.mark.asyncio
     async def test_set_tenant_without_workspace_id(self):
@@ -87,7 +88,7 @@ class TestTenantContext:
         call_args = mock_session.execute.call_args
         sql_text = str(call_args[0][0])
         assert "app.current_workspace_id" in sql_text
-        assert "''" in sql_text  # Empty string
+        assert call_args[0][1] == {"workspace_id": ""}
 
 
 # ============================================================================

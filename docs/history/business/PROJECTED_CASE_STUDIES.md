@@ -22,7 +22,7 @@ When real pilots complete, replace templates with verified, customer-approved ca
 
 - Organization type: professional systematic equities team (B2B)
 - Team size: [TBD]
-- Deployment mode: Cloud + BYO Agent / enterprise on‑prem/VPC
+- Deployment mode: Cloud + BYO Agent / enterprise on-prem/VPC
 - Primary goal: reduce time-to-production and improve governance posture
 
 ### Problem statement (operational)

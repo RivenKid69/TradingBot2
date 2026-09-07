@@ -6,7 +6,7 @@
 
 **Canon (committee-safe wording):** `docs/DOCUMENTATION_CANON_DESIGN.md`.
 
-**Non‑legal notice:** This document is informational and does not constitute legal advice. Any IP strategy should be reviewed with qualified counsel before external claims.
+**Non-legal notice:** This document is informational and does not constitute legal advice. Any IP strategy should be reviewed with qualified counsel before external claims.
 
 ---
 

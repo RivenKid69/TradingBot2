@@ -21,7 +21,7 @@ CustodiaCloud (built on Cloud-Controlled Execution Architecture, CCEA) is seekin
 
 - Technical foundation: large automated test suite and implemented CCEA Cloud/Agent separation
 - Unique Cloud/Agent architecture (CCEA): customer-controlled execution; Cloud does not store secrets or execute orders
-- Equities-first MVP and beachhead (Europe); additional asset classes are optional future expansion (non‑MVP)
+- Equities-first MVP and beachhead (Europe); additional asset classes are optional future expansion (non-MVP)
 - Regulatory posture: software / ICT provider (not investment advice/portfolio management; Cloud does not execute orders)
 - Capital efficiency: seed funding focused on customer validation and repeatable GTM (targets are illustrative; not guaranteed)
 

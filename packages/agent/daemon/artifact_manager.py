@@ -567,15 +567,21 @@ class ArtifactManager:
                 for member in tar.getmembers():
                     if member.name.startswith("/") or ".." in member.name:
                         raise ValueError(f"Unsafe path in archive: {member.name}")
-                tar.extractall(extracted_path)
+                # filter="data" also rejects symlinks, device nodes and absolute
+                # members, which the name check above does not catch
+                tar.extractall(extracted_path, filter="data")
 
         elif archive_str.endswith(".zip") or archive_str.endswith(".whl"):
             with zipfile.ZipFile(artifact.archive_path, "r") as zf:
-                # Security: check for path traversal
+                # Security: every member must resolve inside the destination.
+                # A name check alone misses absolute Windows paths ("C:\...") and
+                # anything that only escapes once the path is normalised.
+                destination = extracted_path.resolve()
                 for name in zf.namelist():
-                    if name.startswith("/") or ".." in name:
+                    target = (destination / name).resolve()
+                    if target != destination and destination not in target.parents:
                         raise ValueError(f"Unsafe path in archive: {name}")
-                zf.extractall(extracted_path)
+                zf.extractall(extracted_path)  # nosec B202 - members validated above
 
         else:
             # Unknown format - copy as-is

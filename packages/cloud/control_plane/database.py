@@ -224,11 +224,15 @@ class TenantContext:
         Args:
             session: Database session
         """
-        if self.workspace_id is not None:
-            await session.execute(text(f"SET app.current_workspace_id = '{self.workspace_id}'"))
-        else:
-            # Reset to empty string for superuser/admin operations
-            await session.execute(text("SET app.current_workspace_id = ''"))
+        # set_config() takes a bind parameter; `SET` does not, and interpolating the
+        # workspace id into the statement put the tenant-isolation key into raw SQL.
+        # The RLS policies read it through current_setting(), which set_config() feeds
+        # identically, and `false` keeps it session-scoped exactly as `SET` was.
+        value = str(self.workspace_id) if self.workspace_id is not None else ""
+        await session.execute(
+            text("SELECT set_config('app.current_workspace_id', :workspace_id, false)"),
+            {"workspace_id": value},
+        )
 
 
 @asynccontextmanager

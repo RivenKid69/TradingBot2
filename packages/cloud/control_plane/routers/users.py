@@ -482,6 +482,7 @@ async def update_user(
 @router.delete(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete user",
     description="Soft delete user.",
 )

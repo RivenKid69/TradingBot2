@@ -203,13 +203,13 @@ class TestDatabaseHelperFunctions:
 
         await context.set_tenant(mock_session)
 
-        # Verify SET command was executed
+        # The id travels as a bind parameter, not inside the statement text
         mock_session.execute.assert_called_once()
-        # Get the actual TextClause and check its text
         call_args = mock_session.execute.call_args[0][0]
         sql_text = str(call_args.text) if hasattr(call_args, "text") else str(call_args)
         assert "app.current_workspace_id" in sql_text
-        assert str(workspace_id) in sql_text
+        assert str(workspace_id) not in sql_text
+        assert mock_session.execute.call_args[0][1] == {"workspace_id": str(workspace_id)}
 
     @pytest.mark.asyncio
     async def test_tenant_context_resets_when_none(self):
@@ -222,11 +222,10 @@ class TestDatabaseHelperFunctions:
         await context.set_tenant(mock_session)
 
         mock_session.execute.assert_called_once()
-        # Get the actual TextClause and check its text
         call_args = mock_session.execute.call_args[0][0]
         sql_text = str(call_args.text) if hasattr(call_args, "text") else str(call_args)
         assert "app.current_workspace_id" in sql_text
-        assert "''" in sql_text  # Empty string
+        assert mock_session.execute.call_args[0][1] == {"workspace_id": ""}
 
 
 class TestMigrationRevisionChain:

@@ -502,6 +502,7 @@ class SQLiteBackend:
         try:
             con.execute("PRAGMA journal_mode=WAL;")
             self._ensure_schema(con)
+            # nosemgrep: sql-injection-format-string -- TABLE is a class constant
             cur = con.execute(f"SELECT * FROM {self.TABLE} WHERE id = 1")
             row = cur.fetchone()
         finally:

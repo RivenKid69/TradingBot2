@@ -41,7 +41,7 @@ These ranges must remain consistent with `docs/DOCUMENTATION_CANON_DESIGN.md`:
 - Monitoring/telemetry (redacted by design) + governance/evidence exports
 - Deploy-to-Agent lifecycle tooling (non-orders)
 
-### 3.3 Enterprise (on‑prem/VPC options)
+### 3.3 Enterprise (on-prem/VPC options)
 
 - Customer-hosted deployments where required
 - Extended retention/controls and enterprise operations support (customer- and deployment-dependent)
@@ -51,7 +51,7 @@ These ranges must remain consistent with `docs/DOCUMENTATION_CANON_DESIGN.md`:
 ## 4) Pricing drivers (what increases/decreases price)
 
 - **Workspaces / environments** (dev/stage/prod separation)
-- **Number of Agents** and deployment topology (VPS/on‑prem/VPC)
+- **Number of Agents** and deployment topology (VPS/on-prem/VPC)
 - **Telemetry retention and sensitivity level** (redacted by default; higher sensitivity requires explicit opt-in)
 - **Support tier** (response windows, onboarding intensity)
 - **Procurement/security requirements** (evidence pack scope, review cycles, contractual addenda)

@@ -1000,7 +1000,8 @@ class RBACService:
             f"{context.scope}:"
             f"{context.principal.break_glass_id or ''}"
         )
-        return hashlib.md5(key_data.encode()).hexdigest()
+        # cache key only, never a security digest
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
     def _get_cached_decision(self, cache_key: str) -> Optional[AccessDecision]:
         """Get cached decision if valid."""

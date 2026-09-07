@@ -634,6 +634,7 @@ async def update_strategy(
 @router.delete(
     "/{strategy_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete strategy",
     description="Soft delete strategy.",
 )

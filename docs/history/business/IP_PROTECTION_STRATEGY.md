@@ -6,7 +6,7 @@
 
 **Canon (committee-safe language / what we must not claim):** `docs/DOCUMENTATION_CANON_DESIGN.md`.
 
-**Non‑legal notice:** This document is informational and must be reviewed with qualified counsel before external-facing use.
+**Non-legal notice:** This document is informational and must be reviewed with qualified counsel before external-facing use.
 
 ---
 

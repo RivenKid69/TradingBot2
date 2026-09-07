@@ -751,6 +751,9 @@ class SQLiteAuditStorage(AuditStorageBackend):
             conn.commit()
 
             # Get last hash
+            # _table_name is the configured audit table identifier, and SQL cannot
+            # bind an identifier as a parameter.
+            # nosemgrep: sql-injection-format-string
             cursor.execute(
                 f"""
                 SELECT record_hash FROM {self._table_name}
@@ -1183,6 +1186,7 @@ class SQLiteAuditStorage(AuditStorageBackend):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
+            # nosemgrep: sql-injection-format-string -- table identifier, not bindable
             cursor.execute(f"SELECT * FROM {self._table_name} ORDER BY id DESC LIMIT 1")
             row = cursor.fetchone()
             return self._row_to_record(row) if row else None

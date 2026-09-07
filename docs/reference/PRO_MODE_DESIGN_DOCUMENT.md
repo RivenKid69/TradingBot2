@@ -861,7 +861,7 @@ ight)  imes Base_{bps}$$
   - [execution_sim.py](../../execution_sim.py) — движок симуляции исполнения ордеров (ExecutionSimulator v2), эмулирующий LOB (Limit Order Book), задержки и фильтры.
   - [impl_sim_executor.py](../../impl_sim_executor.py) — обертка SimExecutor с интерфейсом TradeExecutor для интеграции с PPO/агентом.
   - [impl_bar_executor.py](../../impl_bar_executor.py), [service_backtest.py](../../service_backtest.py) (класс BarBacktestSimBridge) — движок быстрой симуляции баров (Bar Mode).
-  - [fast_lob.cpp](../../fast_lob.cpp), [fast_market.cpp](../../fast_market.cpp), [micro_sim.cpp](../../micro_sim.cpp) — Cython/C++ модули микроструктуры и эмуляции книги лимитных ордеров.
+  - [fast_lob.pyx](../../fast_lob.pyx), [fast_market.pyx](../../fast_market.pyx), [micro_sim.pyx](../../micro_sim.pyx) — Cython/C++ модули микроструктуры и эмуляции книги лимитных ордеров.
 - **Технические особенности и валидация:**
   - **Режимы симуляции (Execution Modes):**
     - *Bar Mode (bar):* Симуляция на уровне закрытия баров по цене, заданной в bar_price (open/high/low/close).

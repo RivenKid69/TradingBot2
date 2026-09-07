@@ -5306,7 +5306,8 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
     try:
         if platform.system() == "Windows":
             creationflags = 0x00000200  # CREATE_NEW_PROCESS_GROUP
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec B602 - operator terminal: running the
+                # typed command is the feature; the route is behind _global_auth_middleware
                 cmd,
                 shell=True,
                 stdout=logf,
@@ -5316,7 +5317,7 @@ def api_terminal_start(payload: TerminalCommand, request: Request):
                 env=env,
             )
         else:
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec B602 - see above
                 cmd, shell=True, stdout=logf, stderr=logf, cwd=cwd, preexec_fn=os.setsid, env=env
             )
 
@@ -5393,7 +5394,7 @@ def api_terminal_run(payload: TerminalCommand, request: Request):
         cmd = " ".join(f'"{p}"' if " " in p else p for p in cmd_parts)
 
     try:
-        res = subprocess.run(
+        res = subprocess.run(  # nosec B602 - operator terminal, authenticated route
             cmd,
             shell=True,
             capture_output=True,

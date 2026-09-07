@@ -1,4 +1,4 @@
-# CustodiaCloud Marketing Guidelines (CCEA‑Safe)
+# CustodiaCloud Marketing Guidelines (CCEA-Safe)
 
 ## Communication Standards for CustodiaCloud
 
@@ -12,7 +12,7 @@
 
 This document establishes **mandatory communication standards** for all CustodiaCloud marketing, sales, and public communications. These guidelines ensure:
 
-1. **Regulatory‑safe messaging** - Avoid language that implies investment advice, brokerage, or execution‑as‑a‑service
+1. **Regulatory-safe messaging** - Avoid language that implies investment advice, brokerage, or execution-as-a-service
 2. **Accurate Positioning** - Clearly communicate our role as a software provider
 3. **Customer Clarity** - Help customers understand our Cloud/Agent architecture
 4. **Legal Protection** - Minimize liability exposure through precise language
