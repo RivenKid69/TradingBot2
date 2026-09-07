@@ -221,3 +221,4 @@ state/last_bar_seen.json
 state/live_risk_peak.json
 state/no_trade_state.json
 state/dora/
+state/tmp*
