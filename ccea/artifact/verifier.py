@@ -15,6 +15,11 @@ Security:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ccea.crypto.key_manager import KeyManager
+
 import json
 import re
 from dataclasses import dataclass, field
@@ -31,6 +36,7 @@ from ccea.artifact.signer import SignatureInfo
 
 class VerificationResult(str, Enum):
     """Verification result status."""
+
     VERIFIED = "verified"
     FAILED = "failed"
     REJECTED = "rejected"
@@ -38,6 +44,7 @@ class VerificationResult(str, Enum):
 
 class RejectionReason(str, Enum):
     """Reasons for artifact rejection."""
+
     UNSIGNED = "unsigned"
     INVALID_SIGNATURE = "invalid_signature"
     DIGEST_MISMATCH = "digest_mismatch"
@@ -54,6 +61,7 @@ class RejectionReason(str, Enum):
 @dataclass
 class VerificationReport:
     """Detailed verification report."""
+
     result: VerificationResult
     artifact_digest: str
     manifest_digest: Optional[str] = None
@@ -90,6 +98,7 @@ class VerificationReport:
 @dataclass
 class SchemaVersionPolicy:
     """Schema version compatibility policy."""
+
     min_supported: str = "1.0.0"
     max_supported: str = "1.99.99"
     deprecated_versions: Set[str] = field(default_factory=set)
@@ -144,11 +153,22 @@ class ArtifactVerifier:
     """
 
     # Prohibited fields in manifest (order-like content)
-    PROHIBITED_FIELDS = frozenset({
-        "side", "quantity", "qty", "price", "order_type",
-        "target_position", "execute_order", "place_order",
-        "submit_order", "intent", "signal", "order"
-    })
+    PROHIBITED_FIELDS = frozenset(
+        {
+            "side",
+            "quantity",
+            "qty",
+            "price",
+            "order_type",
+            "target_position",
+            "execute_order",
+            "place_order",
+            "submit_order",
+            "intent",
+            "signal",
+            "order",
+        }
+    )
 
     def __init__(
         self,
@@ -446,17 +466,10 @@ class ArtifactVerifier:
                 key_lower = key.lower()
                 if key_lower in self.PROHIBITED_FIELDS:
                     found.append(f"{path}.{key}" if path else key)
-                found.extend(
-                    self._find_prohibited_fields(
-                        value,
-                        f"{path}.{key}" if path else key
-                    )
-                )
+                found.extend(self._find_prohibited_fields(value, f"{path}.{key}" if path else key))
         elif isinstance(data, list):
             for i, item in enumerate(data):
-                found.extend(
-                    self._find_prohibited_fields(item, f"{path}[{i}]")
-                )
+                found.extend(self._find_prohibited_fields(item, f"{path}[{i}]"))
 
         return found
 

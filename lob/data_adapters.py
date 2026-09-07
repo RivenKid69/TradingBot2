@@ -22,6 +22,11 @@ Note:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lob.state_manager import LOBSnapshot
+
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -376,14 +381,8 @@ class LOBSTERAdapter(BaseLOBAdapter):
         return DepthSnapshot(
             timestamp_ns=timestamp_ns,
             symbol=self._symbol,
-            bids=[
-                DepthLevel(price=b[0], qty=float(b[1]), order_count=1)
-                for b in bids
-            ],
-            asks=[
-                DepthLevel(price=a[0], qty=float(a[1]), order_count=1)
-                for a in asks
-            ],
+            bids=[DepthLevel(price=b[0], qty=float(b[1]), order_count=1) for b in bids],
+            asks=[DepthLevel(price=a[0], qty=float(a[1]), order_count=1) for a in asks],
         )
 
     def load_snapshot(
@@ -755,6 +754,7 @@ class BinanceL2Adapter(BaseLOBAdapter):
 
         if isinstance(source, str):
             import json
+
             with open(source, "r") as f:
                 data = json.load(f)
         else:
@@ -938,10 +938,7 @@ class AlpacaL2Adapter(BaseLOBAdapter):
         self._api_secret = self._config.get("api_secret", "")
         self._feed = self._config.get("feed", "iex")
         self._paper = self._config.get("paper", True)
-        self._base_url = self._config.get(
-            "base_url",
-            "https://data.alpaca.markets/v2"
-        )
+        self._base_url = self._config.get("base_url", "https://data.alpaca.markets/v2")
 
         # Cache for historical data
         self._quotes_cache: Dict[str, List[Dict[str, Any]]] = {}
@@ -964,6 +961,7 @@ class AlpacaL2Adapter(BaseLOBAdapter):
 
         if isinstance(source, str):
             import json
+
             with open(source, "r") as f:
                 data = json.load(f)
         else:
@@ -982,18 +980,22 @@ class AlpacaL2Adapter(BaseLOBAdapter):
         ask_size = data.get("ask_size") or data.get("as", 100)
 
         if bid_price:
-            bids.append(DepthLevel(
-                price=float(bid_price),
-                qty=float(bid_size),
-                order_count=1,
-            ))
+            bids.append(
+                DepthLevel(
+                    price=float(bid_price),
+                    qty=float(bid_size),
+                    order_count=1,
+                )
+            )
 
         if ask_price:
-            asks.append(DepthLevel(
-                price=float(ask_price),
-                qty=float(ask_size),
-                order_count=1,
-            ))
+            asks.append(
+                DepthLevel(
+                    price=float(ask_price),
+                    qty=float(ask_size),
+                    order_count=1,
+                )
+            )
 
         return DepthSnapshot(
             timestamp_ns=timestamp_ns,
@@ -1029,6 +1031,7 @@ class AlpacaL2Adapter(BaseLOBAdapter):
                     timestamp_ns = int(dt.timestamp() * 1e9)
                 except Exception:
                     import time
+
                     timestamp_ns = int(time.time() * 1e9)
             else:
                 timestamp_ns = int(ts * 1e9) if ts else 0
@@ -1365,14 +1368,16 @@ class AlpacaL2Adapter(BaseLOBAdapter):
             if pre_mid is not None:
                 side = 1 if trade_price >= pre_mid else -1
 
-            trade_observations.append({
-                "timestamp": trade_time,
-                "price": trade_price,
-                "qty": trade_size,
-                "side": side,
-                "pre_trade_mid": pre_mid,
-                "post_trade_mid": post_mid,
-            })
+            trade_observations.append(
+                {
+                    "timestamp": trade_time,
+                    "price": trade_price,
+                    "qty": trade_size,
+                    "side": side,
+                    "pre_trade_mid": pre_mid,
+                    "post_trade_mid": post_mid,
+                }
+            )
 
         # Estimate ADV
         total_volume = sum(t.get("qty", 0) or 0 for t in trade_observations)
@@ -1417,14 +1422,16 @@ class AlpacaL2Adapter(BaseLOBAdapter):
         trades = []
         for t in obs.get("trade_observations", []):
             if t.get("pre_trade_mid") and t.get("post_trade_mid"):
-                trades.append({
-                    "timestamp_ms": 0,  # Would need parsing
-                    "price": t["price"],
-                    "qty": t["qty"],
-                    "side": t["side"],
-                    "pre_mid": t["pre_trade_mid"],
-                    "post_mid": t["post_trade_mid"],
-                })
+                trades.append(
+                    {
+                        "timestamp_ms": 0,  # Would need parsing
+                        "price": t["price"],
+                        "qty": t["qty"],
+                        "side": t["side"],
+                        "pre_mid": t["pre_trade_mid"],
+                        "post_mid": t["post_trade_mid"],
+                    }
+                )
 
         return {
             "symbol": obs["symbol"],

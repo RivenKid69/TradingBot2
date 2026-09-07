@@ -15,6 +15,11 @@ Scientific References:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
+
 from dataclasses import dataclass, field
 from typing import Protocol, Optional, Tuple, Literal, Dict, Any, List, runtime_checkable
 from enum import Enum, auto
@@ -25,36 +30,42 @@ import math
 # Enumerations
 # =========================
 
+
 class ConformalMethod(Enum):
     """Supported conformal prediction methods."""
-    CQR = auto()      # Conformalized Quantile Regression (Romano et al., 2019)
-    ENBPI = auto()    # Ensemble batch Prediction Intervals (Xu & Xie, ICML 2021)
-    ACI = auto()      # Adaptive Conformal Inference (Gibbs & Candes, 2021)
-    NAIVE = auto()    # Simple percentile-based (baseline, no guarantees)
+
+    CQR = auto()  # Conformalized Quantile Regression (Romano et al., 2019)
+    ENBPI = auto()  # Ensemble batch Prediction Intervals (Xu & Xie, ICML 2021)
+    ACI = auto()  # Adaptive Conformal Inference (Gibbs & Candes, 2021)
+    NAIVE = auto()  # Simple percentile-based (baseline, no guarantees)
 
 
 class EscalationLevel(Enum):
     """Uncertainty escalation levels for risk management."""
-    NORMAL = auto()     # Within normal bounds
-    WARNING = auto()    # Elevated uncertainty, consider reducing exposure
-    CRITICAL = auto()   # Very high uncertainty, take defensive action
+
+    NORMAL = auto()  # Within normal bounds
+    WARNING = auto()  # Elevated uncertainty, consider reducing exposure
+    CRITICAL = auto()  # Very high uncertainty, take defensive action
 
 
 class EscalationAction(Enum):
     """Actions to take on escalation."""
-    LOG = auto()             # Log the escalation only
+
+    LOG = auto()  # Log the escalation only
     REDUCE_POSITION = auto()  # Reduce position size
-    HALT = auto()            # Halt trading
-    HUMAN_REVIEW = auto()    # Flag for human review
+    HALT = auto()  # Halt trading
+    HUMAN_REVIEW = auto()  # Flag for human review
 
 
 # =========================
 # Configuration
 # =========================
 
+
 @dataclass(frozen=True)
 class CalibrationConfig:
     """Calibration-specific configuration."""
+
     method: ConformalMethod = ConformalMethod.CQR
     coverage_target: float = 0.90
     calibration_fraction: float = 0.15
@@ -63,9 +74,7 @@ class CalibrationConfig:
 
     def __post_init__(self):
         if not 0 < self.coverage_target < 1:
-            raise ValueError(
-                f"coverage_target must be in (0, 1), got {self.coverage_target}"
-            )
+            raise ValueError(f"coverage_target must be in (0, 1), got {self.coverage_target}")
         if not 0 < self.calibration_fraction < 1:
             raise ValueError(
                 f"calibration_fraction must be in (0, 1), got {self.calibration_fraction}"
@@ -79,6 +88,7 @@ class CalibrationConfig:
 @dataclass(frozen=True)
 class TimeSeriesConfig:
     """Time series specific configuration (for EnbPI/ACI)."""
+
     enabled: bool = True
     enbpi_agg_func: Literal["mean", "median"] = "mean"
     aci_gamma: float = 0.01  # ACI adaptation rate
@@ -88,14 +98,13 @@ class TimeSeriesConfig:
         if not 0 < self.aci_gamma < 1:
             raise ValueError(f"aci_gamma must be in (0, 1), got {self.aci_gamma}")
         if self.lookback_window < 10:
-            raise ValueError(
-                f"lookback_window must be >= 10, got {self.lookback_window}"
-            )
+            raise ValueError(f"lookback_window must be >= 10, got {self.lookback_window}")
 
 
 @dataclass(frozen=True)
 class CVaRBoundsConfig:
     """CVaR bounds configuration."""
+
     enabled: bool = True
     use_for_gae: bool = False  # Experimental: use bounds in GAE computation
     log_interval: int = 100  # Log bounds statistics every N steps
@@ -104,6 +113,7 @@ class CVaRBoundsConfig:
 @dataclass(frozen=True)
 class RiskIntegrationConfig:
     """Risk management integration configuration."""
+
     enabled: bool = True
     uncertainty_position_scaling: bool = True
     baseline_interval_width: float = 0.1
@@ -123,6 +133,7 @@ class RiskIntegrationConfig:
 @dataclass(frozen=True)
 class EscalationConfig:
     """Escalation configuration."""
+
     enabled: bool = True
     warning_percentile: float = 90.0
     critical_percentile: float = 99.0
@@ -148,6 +159,7 @@ class EscalationConfig:
 @dataclass(frozen=True)
 class TradingSignalsConfig:
     """Trading signals configuration (option pricing style)."""
+
     enabled: bool = False
     undervalued_threshold: float = 0.0
     overvalued_threshold: float = 0.0
@@ -156,6 +168,7 @@ class TradingSignalsConfig:
 @dataclass(frozen=True)
 class PerformanceConfig:
     """Performance optimization configuration."""
+
     cache_calibration: bool = True
     async_recalibration: bool = True
 
@@ -163,6 +176,7 @@ class PerformanceConfig:
 @dataclass(frozen=True)
 class DebugConfig:
     """Debug configuration."""
+
     log_residuals: bool = False
     save_calibration_data: bool = False
     validate_coverage: bool = True
@@ -175,6 +189,7 @@ class ConformalConfig:
 
     Master configuration that aggregates all sub-configurations.
     """
+
     enabled: bool = True
 
     # Sub-configurations
@@ -249,6 +264,7 @@ class ConformalConfig:
 # Data Types
 # =========================
 
+
 @dataclass(frozen=True)
 class PredictionInterval:
     """
@@ -258,6 +274,7 @@ class PredictionInterval:
     that provide coverage guarantees under the assumptions of the
     conformal prediction method used.
     """
+
     point_estimate: float
     lower_bound: float
     upper_bound: float
@@ -276,17 +293,17 @@ class PredictionInterval:
     def relative_uncertainty(self) -> float:
         """Relative uncertainty (width / |point_estimate|)."""
         if abs(self.point_estimate) < 1e-8:
-            return float('inf') if self.interval_width > 0 else 0.0
+            return float("inf") if self.interval_width > 0 else 0.0
         return self.interval_width / abs(self.point_estimate)
 
     @property
     def is_valid(self) -> bool:
         """Check if interval is valid (non-NaN, proper ordering)."""
         return (
-            math.isfinite(self.point_estimate) and
-            math.isfinite(self.lower_bound) and
-            math.isfinite(self.upper_bound) and
-            self.lower_bound <= self.upper_bound
+            math.isfinite(self.point_estimate)
+            and math.isfinite(self.lower_bound)
+            and math.isfinite(self.upper_bound)
+            and self.lower_bound <= self.upper_bound
         )
 
     def contains(self, value: float) -> bool:
@@ -317,13 +334,14 @@ class CVaRBounds:
     Provides both CVaR and VaR estimates with calibrated bounds,
     enabling risk-aware decision making under uncertainty.
     """
-    cvar_point: float           # Original CVaR estimate
-    cvar_lower: float           # Conservative bound (more negative)
-    cvar_upper: float           # Optimistic bound (less negative)
-    var_point: float            # VaR estimate
+
+    cvar_point: float  # Original CVaR estimate
+    cvar_lower: float  # Conservative bound (more negative)
+    cvar_upper: float  # Optimistic bound (less negative)
+    var_point: float  # VaR estimate
     var_lower: float
     var_upper: float
-    alpha: float                # CVaR alpha level
+    alpha: float  # CVaR alpha level
     interval: PredictionInterval
 
     @property
@@ -365,8 +383,9 @@ class UncertaintyState:
     Provides a snapshot of the uncertainty level and recommended
     actions for risk management.
     """
+
     current_interval_width: float
-    historical_percentile: float    # Where current width falls in history
+    historical_percentile: float  # Where current width falls in history
     escalation_level: EscalationLevel
     recommended_action: EscalationAction
     recommended_position_scale: float  # 0.0 to 1.0
@@ -391,6 +410,7 @@ class UncertaintyState:
 @dataclass
 class CalibrationResult:
     """Result of a calibration run."""
+
     success: bool
     samples_used: int
     calibration_quantile: Optional[float] = None
@@ -416,6 +436,7 @@ class CalibrationResult:
 # Protocols
 # =========================
 
+
 @runtime_checkable
 class ConformalPredictor(Protocol):
     """Protocol for conformal predictors."""
@@ -424,16 +445,13 @@ class ConformalPredictor(Protocol):
         self,
         predictions: "np.ndarray",  # type: ignore
         true_values: "np.ndarray",  # type: ignore
-        **kwargs: Any
+        **kwargs: Any,
     ) -> CalibrationResult:
         """Calibrate using residuals from validation set."""
         ...
 
     def predict_interval(
-        self,
-        point_prediction: float,
-        coverage: Optional[float] = None,
-        **kwargs: Any
+        self, point_prediction: float, coverage: Optional[float] = None, **kwargs: Any
     ) -> PredictionInterval:
         """Get prediction interval for a point prediction."""
         ...
@@ -454,10 +472,7 @@ class OnlineConformalPredictor(ConformalPredictor, Protocol):
     """Protocol for online conformal predictors (EnbPI, ACI)."""
 
     def partial_fit(
-        self,
-        predicted: float,
-        true_value: float,
-        timestamp_ms: Optional[int] = None
+        self, predicted: float, true_value: float, timestamp_ms: Optional[int] = None
     ) -> None:
         """Update with new observation (online learning)."""
         ...
@@ -468,9 +483,7 @@ class ConformalCVaRProvider(Protocol):
     """Protocol for CVaR with conformal bounds."""
 
     def compute_cvar_with_bounds(
-        self,
-        quantiles: "np.ndarray",  # type: ignore
-        alpha: float = 0.05
+        self, quantiles: "np.ndarray", alpha: float = 0.05  # type: ignore
     ) -> CVaRBounds:
         """Compute CVaR with conformal prediction bounds."""
         ...
@@ -481,9 +494,7 @@ class UncertaintyTracker(Protocol):
     """Protocol for tracking uncertainty over time."""
 
     def record_interval(
-        self,
-        interval: PredictionInterval,
-        timestamp_ms: Optional[int] = None
+        self, interval: PredictionInterval, timestamp_ms: Optional[int] = None
     ) -> UncertaintyState:
         """Record new interval and return current uncertainty state."""
         ...
@@ -496,6 +507,7 @@ class UncertaintyTracker(Protocol):
 # =========================
 # Factory Functions
 # =========================
+
 
 def create_conformal_config(config_dict: Dict[str, Any]) -> ConformalConfig:
     """
@@ -627,6 +639,7 @@ def create_disabled_config() -> ConformalConfig:
 # Utility Functions
 # =========================
 
+
 def validate_config(config: ConformalConfig) -> List[str]:
     """
     Validate conformal config and return list of warnings.
@@ -648,12 +661,8 @@ def validate_config(config: ConformalConfig) -> List[str]:
                 "lead to unstable calibration"
             )
         if config.method == ConformalMethod.NAIVE:
-            warnings.append(
-                "NAIVE method provides no theoretical coverage guarantees"
-            )
+            warnings.append("NAIVE method provides no theoretical coverage guarantees")
         if config.cvar_bounds.use_for_gae:
-            warnings.append(
-                "use_for_gae is experimental and may affect training stability"
-            )
+            warnings.append("use_for_gae is experimental and may affect training stability")
 
     return warnings

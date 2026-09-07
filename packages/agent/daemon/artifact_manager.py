@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, List, Optional, Set
+from typing import Any, Callable, Dict, Final, List, Optional, Set, Tuple
 from uuid import uuid4
 
 import yaml
@@ -51,6 +51,7 @@ try:
         VerificationReport,
     )
     from ccea.artifact.signer import SignatureInfo
+
     VERIFIER_AVAILABLE = True
 except ImportError:
     VERIFIER_AVAILABLE = False
@@ -59,6 +60,7 @@ except ImportError:
 
 class ArtifactType(Enum):
     """Types of artifacts."""
+
     STRATEGY = auto()
     MODEL = auto()
     CONFIG = auto()
@@ -67,6 +69,7 @@ class ArtifactType(Enum):
 
 class ArtifactState(Enum):
     """Artifact lifecycle state."""
+
     DOWNLOADING = auto()
     VERIFYING = auto()
     EXTRACTING = auto()
@@ -84,6 +87,7 @@ class ArtifactManifest:
 
     Contains permissions and metadata from manifest.yaml.
     """
+
     name: str = ""
     version: str = ""
     artifact_type: ArtifactType = ArtifactType.STRATEGY
@@ -160,7 +164,9 @@ class ArtifactManifest:
                 "max_execution_time_seconds", 3600
             ),
             dependencies=data.get("dependencies", []),
-            python_version=data.get("python_version", data.get("runtime", {}).get("python_version", ">=3.10")),
+            python_version=data.get(
+                "python_version", data.get("runtime", {}).get("python_version", ">=3.10")
+            ),
             author=data.get("author", data.get("provenance", {}).get("author", "")),
             description=data.get("description", ""),
         )
@@ -219,6 +225,7 @@ class Artifact:
     """
     Represents a downloaded and verified artifact.
     """
+
     artifact_id: str = field(default_factory=lambda: str(uuid4()))
     deployment_id: Optional[str] = None
     name: str = ""
@@ -274,11 +281,13 @@ class Artifact:
 
 class ArtifactVerificationError(Exception):
     """Artifact verification failed."""
+
     pass
 
 
 class ArtifactDownloadError(Exception):
     """Artifact download failed."""
+
     pass
 
 
@@ -743,10 +752,7 @@ class ArtifactManager:
             Number of artifacts deleted
         """
         # Sort by activation time, keep recent
-        inactive = [
-            a for a in self._artifacts.values()
-            if a.state == ArtifactState.INACTIVE
-        ]
+        inactive = [a for a in self._artifacts.values() if a.state == ArtifactState.INACTIVE]
         inactive.sort(key=lambda a: a.activated_at or datetime.min, reverse=True)
 
         deleted = 0
@@ -849,17 +855,27 @@ class ArtifactManager:
 
             # Perform cryptographic verification
             verification_report = verifier.verify(
-                artifact_path=artifact.extracted_path / (artifact.manifest.entrypoint.split(".")[0] + ".py")
+                artifact_path=(
+                    artifact.extracted_path / (artifact.manifest.entrypoint.split(".")[0] + ".py")
                     if artifact.manifest and artifact.manifest.entrypoint
-                    else manifest_path,  # Verify manifest if no entrypoint
+                    else manifest_path
+                ),  # Verify manifest if no entrypoint
                 manifest_path=manifest_path,
                 signature_info=sig_info,
-                expected_digest=expected_digest.replace("sha256:", "") if expected_digest.startswith("sha256:") else expected_digest,
+                expected_digest=(
+                    expected_digest.replace("sha256:", "")
+                    if expected_digest.startswith("sha256:")
+                    else expected_digest
+                ),
             )
 
             if verification_report.result != VerificationResult.VERIFIED:
                 artifact.state = ArtifactState.FAILED
-                reason = verification_report.rejection_reason.value if verification_report.rejection_reason else "unknown"
+                reason = (
+                    verification_report.rejection_reason.value
+                    if verification_report.rejection_reason
+                    else "unknown"
+                )
                 artifact.error = f"Cryptographic verification failed: {reason} - {verification_report.rejection_details}"
                 self._save_index()
                 raise ArtifactVerificationError(artifact.error)

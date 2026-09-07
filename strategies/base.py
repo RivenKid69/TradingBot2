@@ -1,6 +1,11 @@
 # strategies/base.py
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core_strategy import Decision
+
 from collections import deque
 from decimal import Decimal
 from enum import Enum
@@ -66,7 +71,7 @@ class BaseSignalPolicy(SignalPolicy):
         self._signal_state: dict[str, SignalPosition] = {}
         self._dirty_signal_state: set[str] = set()
         self._pending_transitions: dict[str, Dict[str, Any]] = {}
-        
+
         # History Manager state
         self._history_len = int(self.params.get("history_len", 200))
         self._candles: dict[str, deque] = {}
@@ -76,9 +81,13 @@ class BaseSignalPolicy(SignalPolicy):
         if "decide" in cls.__dict__:
             orig_decide = cls.decide
             if not getattr(orig_decide, "_is_wrapped", False):
-                def wrapped_decide(self, features: Mapping[str, Any], ctx: PolicyCtx) -> List[Order]:
+
+                def wrapped_decide(
+                    self, features: Mapping[str, Any], ctx: PolicyCtx
+                ) -> List[Order]:
                     self.update_history(features, ctx)
                     return orig_decide(self, features, ctx)
+
                 wrapped_decide._is_wrapped = True
                 cls.decide = wrapped_decide
 
@@ -108,24 +117,26 @@ class BaseSignalPolicy(SignalPolicy):
             return
         if symbol not in self._candles:
             self._candles[symbol] = deque(maxlen=self._history_len)
-            
+
         candles = self._candles[symbol]
         # Avoid duplicate entries for same timestamp
         if candles and candles[-1].get("ts") == ctx.ts:
             return
-            
+
         ref_price = features.get("close")
         if ref_price is None:
             ref_price = features.get("ref_price")
         if ref_price is None:
             ref_price = ctx.ref_price
-            
-        candles.append({
-            "ts": ctx.ts,
-            "price": float(ref_price) if ref_price is not None else None,
-            "volume": float(features.get("volume", 0.0)),
-            "features": dict(features)
-        })
+
+        candles.append(
+            {
+                "ts": ctx.ts,
+                "price": float(ref_price) if ref_price is not None else None,
+                "volume": float(features.get("volume", 0.0)),
+                "features": dict(features),
+            }
+        )
 
     def get_history(self, symbol: str, n: int = 10) -> List[Dict[str, Any]]:
         """Get the last n candles for a given symbol."""
@@ -139,7 +150,7 @@ class BaseSignalPolicy(SignalPolicy):
         candles = self._candles.get(symbol)
         if not candles:
             return []
-        
+
         slice_data = list(candles)[-n:]
         res = []
         for c in slice_data:
@@ -163,9 +174,7 @@ class BaseSignalPolicy(SignalPolicy):
     def get_signal_state(self, symbol: str) -> SignalPosition:
         return self._signal_state.get(symbol, SignalPosition.FLAT)
 
-    def update_signal_state(
-        self, symbol: str, state: SignalPosition | str | int
-    ) -> SignalPosition:
+    def update_signal_state(self, symbol: str, state: SignalPosition | str | int) -> SignalPosition:
         normalized = self._normalize_signal_state(state)
         previous = self.get_signal_state(symbol)
         if previous == normalized:
@@ -205,10 +214,7 @@ class BaseSignalPolicy(SignalPolicy):
     def consume_dirty_signal_state(self) -> dict[str, str]:
         dirty_symbols = self._dirty_signal_state.copy()
         self._dirty_signal_state.clear()
-        return {
-            symbol: self.get_signal_state(symbol).value
-            for symbol in dirty_symbols
-        }
+        return {symbol: self.get_signal_state(symbol).value for symbol in dirty_symbols}
 
     def consume_signal_transitions(self) -> List[Dict[str, Any]]:
         ready: List[Dict[str, Any]] = []
@@ -267,9 +273,7 @@ class BaseSignalPolicy(SignalPolicy):
         self._pending_transitions.pop(symbol, None)
         return normalized
 
-    def _build_transition_steps(
-        self, previous: SignalPosition, new: SignalPosition
-    ) -> List[str]:
+    def _build_transition_steps(self, previous: SignalPosition, new: SignalPosition) -> List[str]:
         steps: List[str] = []
         if previous is not SignalPosition.FLAT:
             steps.append("exit")

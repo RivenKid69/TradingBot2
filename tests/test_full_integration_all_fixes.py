@@ -12,7 +12,9 @@ This test verifies that all components work together without conflicts.
 
 import pytest
 import sys
+
 gym = pytest.importorskip("gymnasium")
+import torch
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from custom_policy_patch1 import CustomActorCriticPolicy
@@ -52,9 +54,9 @@ def test_full_integration():
             CustomActorCriticPolicy,
             env,
             # Bug #2: Custom learning rate
-            optimizer_kwargs={'lr': 0.002},
+            optimizer_kwargs={"lr": 0.002},
             # Bug #5: UPGD optimizer
-            optimizer_class='upgd',
+            optimizer_class="upgd",
             # Bug #4: VGS enabled
             variance_gradient_scaling=True,
             vgs_beta=0.99,
@@ -70,6 +72,7 @@ def test_full_integration():
     except Exception as e:
         print(f"   [FAIL] Failed to create model: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -79,13 +82,13 @@ def test_full_integration():
     print("3. Verifying component configuration...")
 
     # Check Twin Critics
-    has_twin_critics = getattr(model.policy, '_use_twin_critics', False)
+    has_twin_critics = getattr(model.policy, "_use_twin_critics", False)
     print(f"   Twin Critics: {'ON' if has_twin_critics else 'OFF'}")
     if not has_twin_critics:
         print("   [WARNING] Twin Critics not enabled (expected ON)")
 
     # Check custom LR (Bug #2)
-    actual_lr = model.policy.optimizer.param_groups[0]['lr']
+    actual_lr = model.policy.optimizer.param_groups[0]["lr"]
     expected_lr = 0.002
     lr_correct = abs(actual_lr - expected_lr) < 1e-9
     print(f"   Learning rate: {actual_lr} (expected {expected_lr})")
@@ -112,6 +115,7 @@ def test_full_integration():
 
     # Check UPGD optimizer (Bug #5)
     from optimizers.upgd import UPGD
+
     is_upgd = isinstance(model.policy.optimizer, UPGD)
     print(f"   UPGD optimizer: {'ON' if is_upgd else 'OFF'}")
     if not is_upgd:
@@ -131,6 +135,7 @@ def test_full_integration():
     except Exception as e:
         print(f"   [FAIL] Training failed: {e}")
         import traceback
+
         traceback.print_exc()
         env.close()
         return False

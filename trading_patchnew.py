@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 try:
     import infra_shim  # noqa: F401
 except Exception:
@@ -16,7 +17,7 @@ import heapq
 from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple
 import types
 from core_constants import PRICE_SCALE
 
@@ -28,6 +29,7 @@ except ModuleNotFoundError:  # pragma: no cover - depends on optional dependency
         import gym  # type: ignore[no-redef]
         from gym import spaces as spaces  # type: ignore[assignment]
     except ModuleNotFoundError:  # pragma: no cover - fallback stub for tests
+
         class _BaseSpace:
             def sample(self) -> Any:
                 raise NotImplementedError
@@ -37,7 +39,13 @@ except ModuleNotFoundError:  # pragma: no cover - depends on optional dependency
                 self.n = int(n)
 
         class _Box(_BaseSpace):
-            def __init__(self, low: Any, high: Any, shape: Tuple[int, ...] | None = None, dtype: Any | None = None):
+            def __init__(
+                self,
+                low: Any,
+                high: Any,
+                shape: Tuple[int, ...] | None = None,
+                dtype: Any | None = None,
+            ):
                 self.low = low
                 self.high = high
                 self.shape = shape
@@ -84,18 +92,23 @@ from utils_time import load_hourly_seasonality
 try:  # existing dynamic-spread config (pydantic model)
     from trainingtcost import DynSpreadCfg
 except Exception:  # pragma: no cover - fallback to simple dataclass
+
     @dataclass
     class DynSpreadCfg:
         base_bps: float = 3.0
         alpha_vol: float = 0.5
         beta_illiquidity: float = 1.0
-        liq_ref: float = 240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
+        liq_ref: float = (
+            240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
+        )
         min_bps: float = 1.0
         max_bps: float = 25.0
+
 
 # --- auto‑import compiled C++ simulator ---
 try:
     from fast_market import MarketSimulatorWrapper, CyMicrostructureGenerator
+
     _HAVE_FAST_MARKET = True
 except ImportError:
     _HAVE_FAST_MARKET = False
@@ -104,8 +117,10 @@ try:
     from runtime_flags import USE_MINI_CORE  # project-local
 except Exception:
     import os as _os
+
     def _to_bool(v: object) -> bool:
         return str(v).strip().lower() in {"1", "true", "yes", "on"}
+
     USE_MINI_CORE = _to_bool(_os.environ.get("USE_MINI_CORE", "0"))
 
 if USE_MINI_CORE:
@@ -125,20 +140,22 @@ except ImportError:
         try:
             from core_constants import MarketRegime  # старый путь, если cy_constants не собран
         except Exception:
+
             class MarketRegime(int):
-                NORMAL        = 0
-                CHOPPY_FLAT   = 1
-                STRONG_TREND  = 2
-                ILLIQUID      = 3
+                NORMAL = 0
+                CHOPPY_FLAT = 1
+                STRONG_TREND = 2
+                ILLIQUID = 3
                 # aliases for backward compatibility
-                FLAT          = CHOPPY_FLAT
-                TREND         = STRONG_TREND
-                _COUNT        = 4
+                FLAT = CHOPPY_FLAT
+                TREND = STRONG_TREND
+                _COUNT = 4
 
                 def __new__(cls, value: int):
                     if not 0 <= value < cls._COUNT:
                         raise ValueError("invalid MarketRegime")
                     return int.__new__(cls, int(value))
+
     # PATCH‑ID:P15_TENV_enum
 from action_proto import ActionProto, ActionType
 from mediator import Mediator
@@ -199,6 +216,7 @@ class _EnvState:
     max_position_risk_on: float
     is_bankrupt: bool = False
 
+
 # ------------------------------- Environment -------------------------------
 class TradingEnv(gym.Env):
     # -----------------------------------------------------------------
@@ -210,13 +228,13 @@ class TradingEnv(gym.Env):
             print("⚠️  fast_market not available – regime control ignored")
             return
         mapping = {
-            "normal":       MarketRegime.NORMAL,
-            "choppy_flat":  MarketRegime.FLAT,
-            "flat":         MarketRegime.FLAT,
+            "normal": MarketRegime.NORMAL,
+            "choppy_flat": MarketRegime.FLAT,
+            "flat": MarketRegime.FLAT,
             "strong_trend": MarketRegime.TREND,
-            "trend":        MarketRegime.TREND,
+            "trend": MarketRegime.TREND,
             "liquidity_shock": MarketRegime.ILLIQUID,
-            "illiquid":     MarketRegime.ILLIQUID,
+            "illiquid": MarketRegime.ILLIQUID,
         }
         # duration=0 → действовать до конца эпизода
         self.market_sim.force_market_regime(
@@ -224,8 +242,8 @@ class TradingEnv(gym.Env):
             self.state.step_idx if self.state else 0,
             duration,
         )
-    metadata = {"render.modes": []}
 
+    metadata = {"render.modes": []}
 
     # ------------------------------------------------ ctor
     def __init__(
@@ -274,17 +292,14 @@ class TradingEnv(gym.Env):
         _asset_class_raw = asset_class or kwargs.get("asset_class", "crypto")
         self._asset_class: str = str(_asset_class_raw).lower().strip()
         if self._asset_class not in ("crypto", "equity", "crypto_futures", "forex"):
-            logger.warning(
-                f"Unknown asset_class '{self._asset_class}', defaulting to 'crypto'"
-            )
+            logger.warning(f"Unknown asset_class '{self._asset_class}', defaulting to 'crypto'")
             self._asset_class = "crypto"
 
         # Dividend adjustment for equities (Phase 4.5)
         # When enabled, reward calculation adds back dividends on ex-dates
         # to compute total return instead of price return only.
-        self._dividend_adjust_enabled = (
-            self._asset_class == "equity"
-            and kwargs.get("dividend_adjust_reward", True)
+        self._dividend_adjust_enabled = self._asset_class == "equity" and kwargs.get(
+            "dividend_adjust_reward", True
         )
         # Dividend column name in DataFrame (if present)
         self._dividend_col: str | None = None
@@ -294,9 +309,8 @@ class TradingEnv(gym.Env):
                 break
 
         # Trading halts for equities (LULD circuit breakers)
-        self._trading_halts_enabled = (
-            self._asset_class == "equity"
-            and kwargs.get("trading_halts_enabled", True)
+        self._trading_halts_enabled = self._asset_class == "equity" and kwargs.get(
+            "trading_halts_enabled", True
         )
 
         # store seed and initialize per-instance RNG
@@ -338,7 +352,9 @@ class TradingEnv(gym.Env):
         # action scheduled for next bar when using delayed decisions
         self._pending_action: ActionProto | None = None
         self._action_queue: deque[ActionProto] = deque()
-        self._leak_guard = leak_guard or LeakGuard(LeakConfig(decision_delay_ms=int(decision_delay_ms)))
+        self._leak_guard = leak_guard or LeakGuard(
+            LeakConfig(decision_delay_ms=int(decision_delay_ms))
+        )
         # price data
         self.df = df.reset_index(drop=True).copy()
         if "ts_ms" in self.df.columns and "decision_ts" not in self.df.columns:
@@ -380,15 +396,15 @@ class TradingEnv(gym.Env):
             # be shifted together to maintain temporal consistency.
 
             _indicators_to_shift = [
-                "rsi",           # RSI (from transformers.py:1050-1060)
-                "macd",          # MACD line
-                "macd_signal",   # MACD signal line
-                "momentum",      # Momentum indicator
-                "atr",           # Average True Range
-                "cci",           # Commodity Channel Index
-                "obv",           # On-Balance Volume
-                "bb_lower",      # Bollinger Band lower (optional)
-                "bb_upper",      # Bollinger Band upper (optional)
+                "rsi",  # RSI (from transformers.py:1050-1060)
+                "macd",  # MACD line
+                "macd_signal",  # MACD signal line
+                "momentum",  # Momentum indicator
+                "atr",  # Average True Range
+                "cci",  # Commodity Channel Index
+                "obv",  # On-Balance Volume
+                "bb_lower",  # Bollinger Band lower (optional)
+                "bb_upper",  # Bollinger Band upper (optional)
                 "taker_buy_ratio",  # Taker Buy Ratio base value
             ]
 
@@ -401,12 +417,12 @@ class TradingEnv(gym.Env):
             # must be shifted to maintain temporal consistency with shifted close prices.
             # Without this fix, these indicators contain look-ahead information.
             _pattern_prefixes = [
-                "yang_zhang_",      # Yang-Zhang volatility (computed from OHLC)
-                "parkinson_",       # Parkinson volatility (computed from High-Low)
-                "garch_",           # GARCH volatility (computed from returns)
-                "ret_",             # Returns (computed from close prices)
-                "cvd_",             # Cumulative Volume Delta
-                "taker_buy_ratio_", # Taker Buy Ratio derivatives (SMA, momentum)
+                "yang_zhang_",  # Yang-Zhang volatility (computed from OHLC)
+                "parkinson_",  # Parkinson volatility (computed from High-Low)
+                "garch_",  # GARCH volatility (computed from returns)
+                "ret_",  # Returns (computed from close prices)
+                "cvd_",  # Cumulative Volume Delta
+                "taker_buy_ratio_",  # Taker Buy Ratio derivatives (SMA, momentum)
             ]
             for _prefix in _pattern_prefixes:
                 _prefix_cols = [col for col in self.df.columns if col.startswith(_prefix)]
@@ -489,7 +505,9 @@ class TradingEnv(gym.Env):
         self._reward_clip_atr_fraction_last = 0.0
 
         # capture signal-mode defaults for reset without relying on transient kwargs
-        self._signal_long_only_default = bool(kwargs.get("signal_long_only", kwargs.get("long_only", False)))
+        self._signal_long_only_default = bool(
+            kwargs.get("signal_long_only", kwargs.get("long_only", False))
+        )
         self._reward_signal_only_default = bool(kwargs.get("reward_signal_only", True))
 
         # --- precompute ATR-based volatility and rolling liquidity ---
@@ -498,11 +516,14 @@ class TradingEnv(gym.Env):
         low = self.df.get("low")
         if high is not None and low is not None and close_col in self.df.columns:
             prev_close = self.df[close_col]
-            tr = pd.concat([
-                high - low,
-                (high - prev_close).abs(),
-                (low - prev_close).abs(),
-            ], axis=1).max(axis=1)
+            tr = pd.concat(
+                [
+                    high - low,
+                    (high - prev_close).abs(),
+                    (low - prev_close).abs(),
+                ],
+                axis=1,
+            ).max(axis=1)
             self.df["tr"] = tr
             atr_window = max(1, int(kwargs.get("atr_window", self.reward_clip_atr_window)))
             atr_alpha = 1 / max(1, atr_window)
@@ -540,11 +561,7 @@ class TradingEnv(gym.Env):
                 bars_per_hour = 0.25
             win = max(1, int(self._liq_window_h * bars_per_hour))
             self.df["liq_roll"] = (
-                self.df[self._liq_col]
-                .rolling(win, min_periods=1)
-                .sum()
-                .ffill()
-                .fillna(0.0)
+                self.df[self._liq_col].rolling(win, min_periods=1).sum().ffill().fillna(0.0)
             )
         else:
             self.df["liq_roll"] = 0.0
@@ -594,7 +611,9 @@ class TradingEnv(gym.Env):
         self.no_trade_hits = 0
         self.trading_hours_blocked_count = 0  # Phase 4.2: Trading hours enforcement
         self.total_steps = 0
-        self.no_trade_block_ratio = float(self._no_trade_mask.mean()) if len(self._no_trade_mask) else 0.0
+        self.no_trade_block_ratio = (
+            float(self._no_trade_mask.mean()) if len(self._no_trade_mask) else 0.0
+        )
 
         self.last_bid: float | None = None
         self.last_ask: float | None = None
@@ -635,7 +654,11 @@ class TradingEnv(gym.Env):
                 robust_clip_fraction = float(robust_override_raw)
             except (TypeError, ValueError):
                 robust_clip_fraction = None
-        if robust_clip_fraction is None or not math.isfinite(robust_clip_fraction) or robust_clip_fraction <= 0.0:
+        if (
+            robust_clip_fraction is None
+            or not math.isfinite(robust_clip_fraction)
+            or robust_clip_fraction <= 0.0
+        ):
             robust_clip_fraction = self._estimate_reward_robust_clip_fraction()
         self.reward_robust_clip_fraction = float(max(robust_clip_fraction, 0.0))
 
@@ -653,23 +676,32 @@ class TradingEnv(gym.Env):
         if validate_data or os.getenv("DATA_VALIDATE") == "1":
             try:
                 from data_validation import DataValidator
+
                 DataValidator().validate(self.df)
                 import time as _time
-                self._publish(Topics.RISK, {
-                    "step": 0,
-                    "ts": int(_time.time()),
-                    "reason": "data_validation_ok",
-                    "details": {"rows": int(len(self.df))},
-                })
+
+                self._publish(
+                    Topics.RISK,
+                    {
+                        "step": 0,
+                        "ts": int(_time.time()),
+                        "reason": "data_validation_ok",
+                        "details": {"rows": int(len(self.df))},
+                    },
+                )
             except Exception as e:
                 # лог + немедленный fail: некондиционные данные нам не нужны
                 import time as _time
-                self._publish(Topics.RISK, {
-                    "step": 0,
-                    "ts": int(_time.time()),
-                    "reason": "data_validation_fail",
-                    "details": {"error": str(e)},
-                })
+
+                self._publish(
+                    Topics.RISK,
+                    {
+                        "step": 0,
+                        "ts": int(_time.time()),
+                        "reason": "data_validation_fail",
+                        "details": {"error": str(e)},
+                    },
+                )
                 raise
 
         self.initial_cash = float(initial_cash)
@@ -719,12 +751,14 @@ class TradingEnv(gym.Env):
             try:
                 import obs_builder as _ob
                 from feature_config import FEATURES_LAYOUT as _OBS_LAYOUT
+
                 N_FEATURES = int(_ob.compute_n_features(_OBS_LAYOUT))
             except Exception:
                 # Fallback 2: use feature_config.N_FEATURES directly (pure Python)
                 try:
                     import feature_config as _fc
-                    if hasattr(_fc, 'N_FEATURES') and _fc.N_FEATURES > 0:
+
+                    if hasattr(_fc, "N_FEATURES") and _fc.N_FEATURES > 0:
                         N_FEATURES = int(_fc.N_FEATURES)
                     else:
                         # Ensure layout is built
@@ -749,10 +783,10 @@ class TradingEnv(gym.Env):
         # attach minimal market simulator stub
         if _HAVE_FAST_MARKET:
             # --- allocate contiguous arrays (C‑contiguous float32) ---
-            price_arr   = self.df["price"].to_numpy(dtype="float32", copy=True)
-            open_arr    = self.df["open" ].to_numpy(dtype="float32", copy=True)
-            high_arr    = self.df["high" ].to_numpy(dtype="float32", copy=True)
-            low_arr     = self.df["low"  ].to_numpy(dtype="float32", copy=True)
+            price_arr = self.df["price"].to_numpy(dtype="float32", copy=True)
+            open_arr = self.df["open"].to_numpy(dtype="float32", copy=True)
+            high_arr = self.df["high"].to_numpy(dtype="float32", copy=True)
+            low_arr = self.df["low"].to_numpy(dtype="float32", copy=True)
             vol_usd_arr = self.df["quote_asset_volume"].to_numpy(dtype="float32", copy=True)
 
             pid = 0
@@ -773,8 +807,7 @@ class TradingEnv(gym.Env):
             )
             # создаём генератор микроструктурных событий
             self.flow_gen = CyMicrostructureGenerator(
-                momentum_factor=0.3, mean_reversion_factor=0.5,
-                adversarial_factor=0.6
+                momentum_factor=0.3, mean_reversion_factor=0.5, adversarial_factor=0.6
             )
             try:
                 # уникальный seed: исходный seed XOR PID
@@ -784,10 +817,10 @@ class TradingEnv(gym.Env):
         else:
             # fallback: используем Python‑stub для совместимости
             from trading_patchnew import _SimpleMarketSim as SMS  # self‑import safe
+
             self.market_sim = SMS(self._rng)
             self.flow_gen = None
         from trading_patchnew import MarketRegime  # self‑import safe
-
 
         # runtime state / orchestrator
         self.state: _EnvState | None = None
@@ -819,14 +852,14 @@ class TradingEnv(gym.Env):
         self._turnover_total = 0.0
 
         # Clear diagnostic heaps to prevent state leakage between episodes
-        if hasattr(self, '_diag_metric_heaps'):
+        if hasattr(self, "_diag_metric_heaps"):
             for heap in self._diag_metric_heaps.values():
                 heap.clear()
 
         # Clear action queue to prevent state leakage
-        if hasattr(self, '_pending_action'):
+        if hasattr(self, "_pending_action"):
             self._pending_action = None
-        if hasattr(self, '_action_queue'):
+        if hasattr(self, "_action_queue"):
             self._action_queue.clear()
 
         # Reset fallback logging counter per episode (added 2025-11-25)
@@ -881,10 +914,14 @@ class TradingEnv(gym.Env):
                         logger.warning(
                             "TradingEnv._init_state: First %d rows had invalid prices. "
                             "Using price %.6f from row %d. Check data pipeline.",
-                            scan_idx, first_price, scan_idx,
+                            scan_idx,
+                            first_price,
+                            scan_idx,
                         )
                         break
-        self._last_reward_price = first_price if math.isfinite(first_price) and first_price > 0.0 else 0.0
+        self._last_reward_price = (
+            first_price if math.isfinite(first_price) and first_price > 0.0 else 0.0
+        )
 
         # FIX (2025-11-25 Issue #1): Build actual observation from row 0 instead of zeros
         # Problem: reset() returned np.zeros(...), violating Gymnasium semantics.
@@ -986,13 +1023,9 @@ class TradingEnv(gym.Env):
                 self.turnover_penalty_coef = float(self._base_turnover_penalty_coef)
                 self.trade_frequency_penalty = float(self._base_trade_frequency_penalty)
                 self.reward_clip_adaptive = bool(self._base_reward_clip_adaptive)
-                self.reward_clip_hard_cap_fraction = float(
-                    self._base_reward_clip_hard_cap_fraction
-                )
+                self.reward_clip_hard_cap_fraction = float(self._base_reward_clip_hard_cap_fraction)
                 self.reward_clip_multiplier = float(self._base_reward_clip_multiplier)
-                self.reward_robust_clip_fraction = float(
-                    self._base_reward_robust_clip_fraction
-                )
+                self.reward_robust_clip_fraction = float(self._base_reward_robust_clip_fraction)
                 self.reward_return_clip = float(self._base_reward_return_clip)
                 self._signal_only_overrides_applied = False
             return
@@ -1093,7 +1126,9 @@ class TradingEnv(gym.Env):
         next_mark_price = self._resolve_reward_price(obs_row_idx, next_row)
         if not (math.isfinite(next_mark_price) and next_mark_price > 0.0):
             next_mark_price = mark_price  # fallback to current mark_price
-        obs = self._mediator._build_observation(row=next_row, state=state, mark_price=next_mark_price)
+        obs = self._mediator._build_observation(
+            row=next_row, state=state, mark_price=next_mark_price
+        )
         info: dict[str, Any] = {
             "trades": [],
             "cancelled_ids": [],
@@ -1110,12 +1145,8 @@ class TradingEnv(gym.Env):
             "net_worth": net_worth,
             "step_idx": current_idx,
         }
-        info["log_ret_prev"] = float(
-            getattr(self._mediator, "_latest_log_ret_prev", 0.0)
-        )
-        info["signal_pos"] = float(
-            getattr(self._mediator, "_last_signal_position", prev_signal)
-        )
+        info["log_ret_prev"] = float(getattr(self._mediator, "_latest_log_ret_prev", 0.0))
+        info["signal_pos"] = float(getattr(self._mediator, "_last_signal_position", prev_signal))
         info["signal_pos_next"] = float(signal_pos)
         # ═══════════════════════════════════════════════════════════════════════
         # ВАЖНО (НЕ БАГ - BY DESIGN): В signal_only режиме terminated всегда False
@@ -1272,7 +1303,6 @@ class TradingEnv(gym.Env):
                 val = row[col]
                 if pd.notna(val) and int(val) > dec_ts:
                     raise AssertionError(f"{col}={int(val)} > decision_ts={dec_ts}")
-
 
     def _infer_bar_interval_from_dataframe(self) -> int | None:
         """Infer bar interval in milliseconds using explicit columns or timestamp diffs."""
@@ -1624,7 +1654,9 @@ class TradingEnv(gym.Env):
             method(path_payload)
         except Exception:
             logger.debug(
-                "Failed to forward intrabar path via %s", self._exec_intrabar_path_method, exc_info=True
+                "Failed to forward intrabar path via %s",
+                self._exec_intrabar_path_method,
+                exc_info=True,
             )
             self._exec_intrabar_path_method = False
 
@@ -1682,8 +1714,6 @@ class TradingEnv(gym.Env):
             if val is not None:
                 return val
         return None
-
-
 
     # ------------------------------------------------ Gym API
     def reset(self, *args, **kwargs):
@@ -1801,7 +1831,11 @@ class TradingEnv(gym.Env):
             mid = (bid + ask) / 2.0
         else:
             mid = float(row.get(price_key, row.get("price", 0.0)))
-            if price_key == "close" and hasattr(self, "_close_actual") and len(self._close_actual) > row_idx:
+            if (
+                price_key == "close"
+                and hasattr(self, "_close_actual")
+                and len(self._close_actual) > row_idx
+            ):
                 mid = float(self._close_actual.iloc[row_idx])
 
         # FIX (2025-11-25): Handle NaN mid price from shifted close without close_orig
@@ -1814,7 +1848,7 @@ class TradingEnv(gym.Env):
             if "open" in row.index:
                 fallback_mid = self._safe_float(row.get("open"))
             # Fallback to last known price
-            if (fallback_mid is None or not math.isfinite(fallback_mid) or fallback_mid <= 0.0):
+            if fallback_mid is None or not math.isfinite(fallback_mid) or fallback_mid <= 0.0:
                 fallback_mid = getattr(self, "last_mtm_price", None)
             if fallback_mid is not None and math.isfinite(fallback_mid) and fallback_mid > 0.0:
                 logger.warning(
@@ -1840,7 +1874,9 @@ class TradingEnv(gym.Env):
         if bid_col and ask_col:
             spread_bps = (ask - bid) / mid * 10000 if mid else 0.0
         else:
-            spread_bps = _dynamic_spread_bps(vol_factor=vol_factor, liquidity=liquidity, cfg=self._dyn_cfg)
+            spread_bps = _dynamic_spread_bps(
+                vol_factor=vol_factor, liquidity=liquidity, cfg=self._dyn_cfg
+            )
             half = mid * spread_bps / 20000.0
             bid = mid - half
             ask = mid + half
@@ -1948,9 +1984,7 @@ class TradingEnv(gym.Env):
             # In CLOSE_TO_OPEN mode, always respect the 1-bar delay for signal position
             next_signal_pos = executed_signal_pos
         else:
-            next_signal_pos = (
-                agent_signal_pos if self._reward_signal_only else executed_signal_pos
-            )
+            next_signal_pos = agent_signal_pos if self._reward_signal_only else executed_signal_pos
         # FIX (2025-11-26): Set signal_pos for observation to NEW position (next_signal_pos)
         # ═══════════════════════════════════════════════════════════════════════
         # PROBLEM:
@@ -2113,9 +2147,7 @@ class TradingEnv(gym.Env):
         if not math.isfinite(prev_equity_safe):
             prev_equity_safe = 0.0
         prev_equity = max(prev_equity_safe, self._equity_floor_norm)
-        prev_equity_issue = (not math.isfinite(prev_equity_raw)) or (
-            prev_equity_raw <= 0.0
-        )
+        prev_equity_issue = (not math.isfinite(prev_equity_raw)) or (prev_equity_raw <= 0.0)
 
         equity = new_net_worth
         if not math.isfinite(equity):
@@ -2192,7 +2224,7 @@ class TradingEnv(gym.Env):
             reward_raw_fraction = 0.0
         else:
             # Protect against overflow/underflow in log calculation
-            with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+            with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
                 ratio = reward_price_curr / reward_price_prev
 
             # Clip ratio BEFORE log to avoid extreme values
@@ -2322,9 +2354,7 @@ class TradingEnv(gym.Env):
             self._reward_clip_bound_last = 0.0
             self._reward_clip_atr_fraction_last = float(atr_fraction_logged)
         else:
-            fees_fraction_raw = (
-                fees / max(prev_equity_safe, self._equity_floor_norm)
-            )
+            fees_fraction_raw = fees / max(prev_equity_safe, self._equity_floor_norm)
             if not math.isfinite(fees_fraction_raw):
                 fees_fraction_raw = 0.0
 
@@ -2355,7 +2385,9 @@ class TradingEnv(gym.Env):
             if not math.isfinite(ratio_price) or ratio_price <= 0.0:
                 ratio_price = 1.0
             log_return_price = math.log(ratio_price)
-            log_return_clipped = float(np.clip(log_return_price, -self.reward_return_clip, self.reward_return_clip))
+            log_return_clipped = float(
+                np.clip(log_return_price, -self.reward_return_clip, self.reward_return_clip)
+            )
             ratio_clip_floor = math.exp(-self.reward_return_clip)
             ratio_clip_ceiling = math.exp(self.reward_return_clip)
             ratio_clipped = float(np.clip(ratio_price, ratio_clip_floor, ratio_clip_ceiling))
@@ -2388,9 +2420,7 @@ class TradingEnv(gym.Env):
         info["reward"] = float(reward)
         info["reward_raw_fraction"] = float(reward_raw_fraction)
         info["reward_used_fraction"] = float(reward_used_fraction)
-        info["reward_used_fraction_before_costs"] = float(
-            reward_used_fraction_before_costs
-        )
+        info["reward_used_fraction_before_costs"] = float(reward_used_fraction_before_costs)
         # Dividend adjustment info (Phase 4.5 - equity total return)
         info["dividend_adjustment"] = float(dividend_adjustment)
         info["asset_class"] = str(self._asset_class)
@@ -2436,13 +2466,9 @@ class TradingEnv(gym.Env):
                 max(0.0, fees_fraction_logged + turnover_penalty_fraction_logged)
             )
 
-        self._diag_track_metric(
-            "reward_costs_fraction", reward_costs_fraction_logged
-        )
+        self._diag_track_metric("reward_costs_fraction", reward_costs_fraction_logged)
         self._diag_track_metric("fees_fraction", fees_fraction_logged)
-        self._diag_track_metric(
-            "turnover_penalty_fraction", turnover_penalty_fraction_logged
-        )
+        self._diag_track_metric("turnover_penalty_fraction", turnover_penalty_fraction_logged)
         self._diag_track_metric("equity", equity)
         self._diag_track_metric("executed_notional", step_turnover_notional)
 
@@ -2569,7 +2595,6 @@ class TradingEnv(gym.Env):
         except Exception:
             pass
 
-
     # ------------------------------------------------ util
     def seed(self, seed: int) -> None:  # noqa: D401
         """Seed the environment's RNG and propagate to sub-components."""
@@ -2642,7 +2667,9 @@ class _SimpleMarketSim:
         try:
             with open(cfg_path, "r") as f:
                 cfg = _json.load(f)
-            self._regime_distribution = _np.array(cfg.get("regime_probs", self._regime_distribution), dtype=float)
+            self._regime_distribution = _np.array(
+                cfg.get("regime_probs", self._regime_distribution), dtype=float
+            )
             flash_cfg = cfg.get("flash_shock", {})
             self._flash_prob = float(flash_cfg.get("probability", self._flash_prob))
         except Exception:

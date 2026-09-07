@@ -7,9 +7,11 @@ population members exploit from better performers.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
 import tempfile
 import os
+import gymnasium as gym
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
@@ -18,7 +20,12 @@ from typing import Dict, Any
 try:
     from distributional_ppo import DistributionalPPO
     from variance_gradient_scaler import VarianceGradientScaler
-    from adversarial.pbt_scheduler import PBTScheduler, PBTConfig, HyperparamConfig, PopulationMember
+    from adversarial.pbt_scheduler import (
+        PBTScheduler,
+        PBTConfig,
+        HyperparamConfig,
+        PopulationMember,
+    )
     from custom_policy_patch1 import CustomActorCriticPolicy
     from stable_baselines3.common.vec_env import DummyVecEnv
 except ImportError as e:
@@ -27,11 +34,13 @@ except ImportError as e:
 
 def make_test_env(seed=None):
     """Create a Pendulum environment for testing."""
+
     def _make():
         env = gym.make("Pendulum-v1")
         if seed is not None:
             env.reset(seed=seed)
         return env
+
     return DummyVecEnv([_make])
 
 
@@ -76,8 +85,12 @@ def get_vgs_state(model: DistributionalPPO) -> Dict[str, Any]:
 def print_vgs_comparison(name_a: str, state_a: Dict, name_b: str, state_b: Dict):
     """Print VGS state comparison."""
     print(f"\nVGS State Comparison:")
-    grad_var_a_str = f"{state_a['grad_var_ema']:.6e}" if state_a['grad_var_ema'] is not None else 'None'
-    grad_var_b_str = f"{state_b['grad_var_ema']:.6e}" if state_b['grad_var_ema'] is not None else 'None'
+    grad_var_a_str = (
+        f"{state_a['grad_var_ema']:.6e}" if state_a["grad_var_ema"] is not None else "None"
+    )
+    grad_var_b_str = (
+        f"{state_b['grad_var_ema']:.6e}" if state_b["grad_var_ema"] is not None else "None"
+    )
     print(f"  {name_a}: step_count={state_a['step_count']}, grad_var_ema={grad_var_a_str}")
     print(f"  {name_b}: step_count={state_b['step_count']}, grad_var_ema={grad_var_b_str}")
 
@@ -188,7 +201,7 @@ class TestVGS_PBT_Fix:
                 member_a,
                 performance=0.3,
                 step=50,
-                model_parameters=model_a.get_parameters()  # Full parameters (includes VGS!)
+                model_parameters=model_a.get_parameters(),  # Full parameters (includes VGS!)
             )
 
             # Member B has BEST performance (will be source)
@@ -197,7 +210,7 @@ class TestVGS_PBT_Fix:
                 member_b,
                 performance=0.9,
                 step=150,
-                model_parameters=model_b.get_parameters()  # Full parameters (includes VGS!)
+                model_parameters=model_b.get_parameters(),  # Full parameters (includes VGS!)
             )
 
             # Set member_a step to trigger perturbation
@@ -207,14 +220,18 @@ class TestVGS_PBT_Fix:
             print(f"   Member A (perf=0.3) exploiting from Member B (perf=0.9)")
 
             # Exploit
-            new_parameters, new_hyperparams, checkpoint_format = scheduler.exploit_and_explore(member_a)
+            new_parameters, new_hyperparams, checkpoint_format = scheduler.exploit_and_explore(
+                member_a
+            )
 
             print(f"\n5. Exploitation result:")
             print(f"   Exploitation occurred: {new_parameters is not None}")
             print(f"   Checkpoint format: {checkpoint_format}")
 
             if new_parameters is not None:
-                assert checkpoint_format == "v2_full_parameters", f"Expected v2 format, got {checkpoint_format}"
+                assert (
+                    checkpoint_format == "v2_full_parameters"
+                ), f"Expected v2 format, got {checkpoint_format}"
 
                 # Check VGS state is included
                 assert "vgs_state" in new_parameters, "VGS state should be in new_parameters!"
@@ -228,16 +245,22 @@ class TestVGS_PBT_Fix:
 
                 vgs_a_after = get_vgs_state(model_a)
 
-                print_vgs_comparison("Member A (after exploit)", vgs_a_after, "Member B (expected)", vgs_b)
+                print_vgs_comparison(
+                    "Member A (after exploit)", vgs_a_after, "Member B (expected)", vgs_b
+                )
 
                 # Verification
                 print(f"\n7. Verification:")
-                step_match = (vgs_a_after['step_count'] == vgs_b['step_count'])
+                step_match = vgs_a_after["step_count"] == vgs_b["step_count"]
 
                 if step_match:
-                    print(f"   [OK] VGS step_count matches: {vgs_a_after['step_count']} == {vgs_b['step_count']}")
+                    print(
+                        f"   [OK] VGS step_count matches: {vgs_a_after['step_count']} == {vgs_b['step_count']}"
+                    )
                 else:
-                    print(f"   [FAIL] VGS step_count mismatch: {vgs_a_after['step_count']} != {vgs_b['step_count']}")
+                    print(
+                        f"   [FAIL] VGS step_count mismatch: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
+                    )
 
                 # Test training
                 print(f"\n8. Testing training after exploitation...")
@@ -257,7 +280,9 @@ class TestVGS_PBT_Fix:
                     print("[FAIL] TEST 2 FAILED: VGS state not properly transferred")
                 print("=" * 70)
 
-                assert step_match, f"VGS step_count should match: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
+                assert (
+                    step_match
+                ), f"VGS step_count should match: {vgs_a_after['step_count']} != {vgs_b['step_count']}"
                 assert training_ok, "Training should work after exploitation"
             else:
                 print("\n[WARN] No exploitation occurred (members too similar)")
@@ -289,7 +314,9 @@ class TestVGS_PBT_Fix:
                 population_size=2,
                 perturbation_interval=50,
                 truncation_ratio=0.5,  # 50% - ensures exploitation with 2 members
-                hyperparams=[HyperparamConfig(name="learning_rate", min_value=1e-5, max_value=1e-3)],
+                hyperparams=[
+                    HyperparamConfig(name="learning_rate", min_value=1e-5, max_value=1e-3)
+                ],
                 checkpoint_dir=tmpdir,
                 metric_name="mean_reward",
                 metric_mode="max",
@@ -305,21 +332,29 @@ class TestVGS_PBT_Fix:
             member_a.performance = 0.2  # Worst
             member_a.step = pbt_config.perturbation_interval  # Trigger perturbation
 
-            member_b.checkpoint_path = str(checkpoint_path)  # Source (same legacy checkpoint for test)
+            member_b.checkpoint_path = str(
+                checkpoint_path
+            )  # Source (same legacy checkpoint for test)
             member_b.performance = 0.9  # Best
 
             print(f"3. Loading legacy checkpoint via PBT exploit...")
-            new_parameters, new_hyperparams, checkpoint_format = scheduler.exploit_and_explore(member_a)
+            new_parameters, new_hyperparams, checkpoint_format = scheduler.exploit_and_explore(
+                member_a
+            )
 
             print(f"\n4. Results:")
             print(f"   Checkpoint format detected: {checkpoint_format}")
             print(f"   Parameters loaded: {new_parameters is not None}")
 
             if new_parameters is not None:
-                assert checkpoint_format == "v1_policy_only", f"Expected v1 format, got {checkpoint_format}"
+                assert (
+                    checkpoint_format == "v1_policy_only"
+                ), f"Expected v1 format, got {checkpoint_format}"
 
                 # V1 format should NOT include VGS state
-                has_vgs = "vgs_state" in new_parameters if isinstance(new_parameters, dict) else False
+                has_vgs = (
+                    "vgs_state" in new_parameters if isinstance(new_parameters, dict) else False
+                )
                 print(f"   VGS state included: {has_vgs}")
 
                 if not has_vgs:
@@ -356,8 +391,10 @@ if __name__ == "__main__":
     except AssertionError as e:
         print(f"\nX TEST FAILED: {e}")
         import traceback
+
         traceback.print_exc()
     except Exception as e:
         print(f"\nX UNEXPECTED ERROR: {e}")
         import traceback
+
         traceback.print_exc()

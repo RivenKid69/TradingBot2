@@ -5,7 +5,9 @@ Verifies that autograd gradients match numerical gradients.
 """
 
 import pytest
+
 torch = pytest.importorskip("torch")
+from conftest import TORCH_AVAILABLE
 import sys
 
 from distributional_ppo import DistributionalPPO
@@ -48,9 +50,9 @@ def test_projection_gradient_numerical():
     Test that autograd gradients match numerical gradients.
     This is the GOLD STANDARD test for gradient correctness.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("NUMERICAL GRADIENT TEST")
-    print("="*80)
+    print("=" * 80)
     print("Comparing autograd vs finite differences")
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
@@ -137,9 +139,9 @@ def test_projection_gradient_numerical():
     # ================================================================
     # Verdict
     # ================================================================
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("VERDICT")
-    print("="*80)
+    print("=" * 80)
 
     # Thresholds
     abs_tol = 1e-3  # Absolute tolerance
@@ -173,9 +175,9 @@ def test_projection_gradient_same_bounds_specific():
     """
     Specific test for same_bounds case (the bug location).
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SAME_BOUNDS SPECIFIC TEST")
-    print("="*80)
+    print("=" * 80)
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
@@ -212,12 +214,15 @@ def test_projection_gradient_same_bounds_specific():
 
     # Check gradients exist and are non-zero
     assert logits.grad is not None, "Gradient should exist"
-    assert not torch.allclose(logits.grad, torch.zeros_like(logits.grad)), \
-        "Gradient should not be all zeros"
+    assert not torch.allclose(
+        logits.grad, torch.zeros_like(logits.grad)
+    ), "Gradient should not be all zeros"
 
     print(f"✅ Gradients exist and are non-zero")
     print(f"   Gradient norm: {logits.grad.norm().item():.6f}")
-    print(f"   All batch items have gradients: {(logits.grad.abs().sum(dim=1) > 1e-6).all().item()}")
+    print(
+        f"   All batch items have gradients: {(logits.grad.abs().sum(dim=1) > 1e-6).all().item()}"
+    )
 
     return True
 
@@ -226,9 +231,9 @@ def main():
     if not TORCH_AVAILABLE:
         return 0
 
-    print("="*80)
+    print("=" * 80)
     print("COMPREHENSIVE GRADIENT FLOW VALIDATION")
-    print("="*80)
+    print("=" * 80)
 
     tests = []
 
@@ -249,9 +254,9 @@ def main():
         tests.append(("Numerical gradient test", False))
 
     # Summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("FINAL SUMMARY")
-    print("="*80)
+    print("=" * 80)
 
     for name, passed in tests:
         status = "✅ PASSED" if passed else "❌ FAILED"
@@ -260,14 +265,14 @@ def main():
     all_passed = all(passed for _, passed in tests)
 
     if all_passed:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("🎉 ALL TESTS PASSED - Gradient flow is CORRECT!")
-        print("="*80)
+        print("=" * 80)
         return 0
     else:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("⚠️  SOME TESTS FAILED - Review implementation!")
-        print("="*80)
+        print("=" * 80)
         return 1
 
 

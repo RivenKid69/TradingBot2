@@ -52,6 +52,8 @@ Tech Debt Reference: docs/reports/TECH_DEBT_REGISTRY.md#security-lob-cache-pickl
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import gzip
 import hashlib
 import hmac
@@ -91,8 +93,7 @@ logger = logging.getLogger(__name__)
 # Production: Set LOB_CACHE_HMAC_KEY environment variable to a strong secret
 # Research: Default key is acceptable for local-only, single-user caches
 _LOB_CACHE_HMAC_KEY: bytes = os.environ.get(
-    "LOB_CACHE_HMAC_KEY",
-    "lob-cache-research-default-key-v1"  # Default for research use only
+    "LOB_CACHE_HMAC_KEY", "lob-cache-research-default-key-v1"  # Default for research use only
 ).encode("utf-8")
 
 # HMAC signature length (SHA-256 = 32 bytes)
@@ -175,9 +176,7 @@ class SeriesKey:
         underlying, expiry, option_type, strike_str = parts
 
         if option_type not in ("C", "P"):
-            raise ValueError(
-                f"Invalid option type: {option_type}. Must be 'C' or 'P'"
-            )
+            raise ValueError(f"Invalid option type: {option_type}. Must be 'C' or 'P'")
 
         try:
             strike = Dec(strike_str)
@@ -675,8 +674,8 @@ class LazyMultiSeriesLOBManager:
             if key in self._active_lobs:
                 metadata = self._active_lobs[key].metadata
                 # Add last_access alias for API compatibility
-                if not hasattr(metadata, 'last_access'):
-                    object.__setattr__(metadata, 'last_access', metadata.last_accessed)
+                if not hasattr(metadata, "last_access"):
+                    object.__setattr__(metadata, "last_access", metadata.last_accessed)
                 return metadata
             return None
 
@@ -940,10 +939,7 @@ class LazyMultiSeriesLOBManager:
     def get_memory_usage(self) -> int:
         """Get estimated current memory usage in bytes."""
         with self._lock:
-            return sum(
-                state.get_memory_estimate_bytes()
-                for state in self._active_lobs.values()
-            )
+            return sum(state.get_memory_estimate_bytes() for state in self._active_lobs.values())
 
     def preload_series(
         self,
@@ -1008,7 +1004,7 @@ class LazyMultiSeriesLOBManager:
             key, state = next(iter(self._active_lobs.items()))
         elif self._eviction_policy == EvictionPolicy.LFU:
             # Evict least frequently used
-            min_count = float('inf')
+            min_count = float("inf")
             key = None
             for k, s in self._active_lobs.items():
                 if s.metadata.access_count < min_count:
@@ -1019,7 +1015,7 @@ class LazyMultiSeriesLOBManager:
             state = self._active_lobs[key]
         elif self._eviction_policy == EvictionPolicy.TTL:
             # Evict oldest by creation time
-            oldest_time = float('inf')
+            oldest_time = float("inf")
             key = None
             for k, s in self._active_lobs.items():
                 if s.metadata.created_at < oldest_time:
@@ -1064,14 +1060,16 @@ class LazyMultiSeriesLOBManager:
 
         try:
             # Serialize state with version for compatibility checking
-            data = pickle.dumps({
-                'version': 1,  # Persistence format version
-                'metadata': state.metadata,
-                'orders_by_id': state.orders_by_id,
-                # OrderBook state reconstruction info
-                'bid_levels': self._extract_levels(state.order_book, Side.BUY),
-                'ask_levels': self._extract_levels(state.order_book, Side.SELL),
-            })
+            data = pickle.dumps(
+                {
+                    "version": 1,  # Persistence format version
+                    "metadata": state.metadata,
+                    "orders_by_id": state.orders_by_id,
+                    # OrderBook state reconstruction info
+                    "bid_levels": self._extract_levels(state.order_book, Side.BUY),
+                    "ask_levels": self._extract_levels(state.order_book, Side.SELL),
+                }
+            )
 
             # Optionally compress
             if self._enable_compression:
@@ -1083,7 +1081,7 @@ class LazyMultiSeriesLOBManager:
             # Atomic write (write to temp then replace)
             # Format: [data][32-byte HMAC signature]
             # Note: Using replace() instead of rename() for Windows compatibility
-            temp_file = cache_file.with_suffix('.tmp')
+            temp_file = cache_file.with_suffix(".tmp")
             temp_file.write_bytes(data + signature)
             temp_file.replace(cache_file)
 
@@ -1144,17 +1142,17 @@ class LazyMultiSeriesLOBManager:
 
             # Reconstruct OrderBook
             order_book = OrderBook(symbol=key)
-            for order in state_dict.get('orders_by_id', {}).values():
+            for order in state_dict.get("orders_by_id", {}).values():
                 order_book.add_limit_order(order)
 
             # Create state
-            metadata = state_dict.get('metadata', LOBMetadata(series_key=key))
+            metadata = state_dict.get("metadata", LOBMetadata(series_key=key))
             metadata.touch()  # Update access time
 
             state = SeriesLOBState(
                 order_book=order_book,
                 metadata=metadata,
-                orders_by_id=state_dict.get('orders_by_id', {}),
+                orders_by_id=state_dict.get("orders_by_id", {}),
             )
 
             self._stats.disk_reads += 1
@@ -1196,11 +1194,13 @@ class LazyMultiSeriesLOBManager:
             price_levels = order_book.get_ask_levels(limit=self._max_depth)
 
         for level in price_levels:
-            levels.append({
-                'price': level.price,
-                'total_qty': level.total_qty,
-                'order_count': level.order_count,
-            })
+            levels.append(
+                {
+                    "price": level.price,
+                    "total_qty": level.total_qty,
+                    "order_count": level.order_count,
+                }
+            )
 
         return levels
 
@@ -1288,7 +1288,9 @@ def create_lazy_lob_manager(
             )
         policy = policy_map[eviction_policy.lower()]
     else:
-        raise ValueError(f"eviction_policy must be str or EvictionPolicy, got {type(eviction_policy)}")
+        raise ValueError(
+            f"eviction_policy must be str or EvictionPolicy, got {type(eviction_policy)}"
+        )
 
     # Use persist_dir if provided, otherwise disk_cache_path
     cache_path = persist_dir if persist_dir is not None else disk_cache_path
@@ -1335,7 +1337,11 @@ def create_options_lob_manager(
         Configured LazyMultiSeriesLOBManager
     """
     # Use max_series if provided, otherwise expected_series, default to 960
-    series_count = max_series if max_series is not None else (expected_series if expected_series is not None else 960)
+    series_count = (
+        max_series
+        if max_series is not None
+        else (expected_series if expected_series is not None else 960)
+    )
 
     # Use persist_dir if provided, otherwise disk_cache_path
     cache_path = persist_dir if persist_dir is not None else disk_cache_path

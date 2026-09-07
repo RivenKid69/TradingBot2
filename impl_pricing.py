@@ -37,6 +37,8 @@ References:
 
 from __future__ import annotations
 
+from datetime import date
+
 import math
 import time
 from dataclasses import dataclass
@@ -81,6 +83,7 @@ _JUMP_DIFFUSION_MAX_TERMS = 50  # Poisson truncation
 # Normal Distribution Functions
 # =============================================================================
 
+
 def _norm_cdf(x: float) -> float:
     """Standard normal CDF using error function."""
     return 0.5 * (1.0 + math.erf(x * _INV_SQRT_2))
@@ -94,6 +97,7 @@ def _norm_pdf(x: float) -> float:
 # =============================================================================
 # Black-Scholes-Merton Model (European Options)
 # =============================================================================
+
 
 def black_scholes_price(
     spot: float,
@@ -159,7 +163,10 @@ def black_scholes_price(
     sqrt_t = math.sqrt(time_to_expiry)
     vol_sqrt_t = volatility * sqrt_t
 
-    d1 = (math.log(spot / strike) + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry) / vol_sqrt_t
+    d1 = (
+        math.log(spot / strike)
+        + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry
+    ) / vol_sqrt_t
     d2 = d1 - vol_sqrt_t
 
     # Discount factors
@@ -202,7 +209,10 @@ def black_scholes_price_vec(
     sqrt_t = np.sqrt(time_to_expiry)
     vol_sqrt_t = volatility * sqrt_t
 
-    d1 = (np.log(spot / strike) + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry) / vol_sqrt_t
+    d1 = (
+        np.log(spot / strike)
+        + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry
+    ) / vol_sqrt_t
     d2 = d1 - vol_sqrt_t
 
     # Normal CDF vectorized
@@ -224,6 +234,7 @@ def black_scholes_price_vec(
 # =============================================================================
 # Leisen-Reimer Binomial Tree (American Options)
 # =============================================================================
+
 
 def _leisen_reimer_inversion(z: float, n: int) -> float:
     """
@@ -328,7 +339,10 @@ def leisen_reimer_price(
     sqrt_t = math.sqrt(time_to_expiry)
     vol_sqrt_t = volatility * sqrt_t
 
-    d1 = (math.log(spot / strike) + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry) / vol_sqrt_t
+    d1 = (
+        math.log(spot / strike)
+        + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry
+    ) / vol_sqrt_t
     d2 = d1 - vol_sqrt_t
 
     # Leisen-Reimer probabilities
@@ -376,7 +390,7 @@ def leisen_reimer_price(
     # Build terminal payoffs
     option_values = np.zeros(n_steps + 1)
     for j in range(n_steps + 1):
-        final_spot = spot * (u ** (n_steps - j)) * (d ** j)
+        final_spot = spot * (u ** (n_steps - j)) * (d**j)
         if is_call:
             option_values[j] = max(final_spot - strike, 0.0)
         else:
@@ -388,7 +402,7 @@ def leisen_reimer_price(
             continuation = discount * (p * option_values[j] + (1.0 - p) * option_values[j + 1])
 
             if is_american:
-                current_spot = spot * (u ** (i - j)) * (d ** j)
+                current_spot = spot * (u ** (i - j)) * (d**j)
                 if is_call:
                     intrinsic = max(current_spot - strike, 0.0)
                 else:
@@ -491,7 +505,7 @@ def crr_binomial_price(
     # Build terminal payoffs
     option_values = np.zeros(n_steps + 1)
     for j in range(n_steps + 1):
-        final_spot = spot * (u ** (n_steps - j)) * (d ** j)
+        final_spot = spot * (u ** (n_steps - j)) * (d**j)
         if is_call:
             option_values[j] = max(final_spot - strike, 0.0)
         else:
@@ -503,7 +517,7 @@ def crr_binomial_price(
             continuation = discount * (p * option_values[j] + (1.0 - p) * option_values[j + 1])
 
             if is_american:
-                current_spot = spot * (u ** (i - j)) * (d ** j)
+                current_spot = spot * (u ** (i - j)) * (d**j)
                 if is_call:
                     intrinsic = max(current_spot - strike, 0.0)
                 else:
@@ -518,6 +532,7 @@ def crr_binomial_price(
 # =============================================================================
 # Merton Jump-Diffusion Model
 # =============================================================================
+
 
 def merton_jump_diffusion_price(
     spot: float,
@@ -625,7 +640,9 @@ def merton_jump_diffusion_price(
         if n == 0:
             poisson_weight = math.exp(-lambda_prime * time_to_expiry)
         else:
-            log_weight = -lambda_prime * time_to_expiry + n * math.log(max(lambda_prime * time_to_expiry, 1e-300))
+            log_weight = -lambda_prime * time_to_expiry + n * math.log(
+                max(lambda_prime * time_to_expiry, 1e-300)
+            )
             # Use log of factorial for numerical stability
             log_factorial = sum(math.log(i) for i in range(1, n + 1))
             log_weight -= log_factorial
@@ -692,7 +709,9 @@ def merton_jump_diffusion_price_vec(
         if n == 0:
             poisson_weight = np.exp(-lambda_prime * time_to_expiry)
         else:
-            log_weight = -lambda_prime * time_to_expiry + n * np.log(np.maximum(lambda_prime * time_to_expiry, 1e-300))
+            log_weight = -lambda_prime * time_to_expiry + n * np.log(
+                np.maximum(lambda_prime * time_to_expiry, 1e-300)
+            )
             log_factorial = sum(math.log(i) for i in range(1, n + 1))
             log_weight -= log_factorial
             poisson_weight = np.exp(log_weight)
@@ -725,6 +744,7 @@ def merton_jump_diffusion_price_vec(
 # =============================================================================
 # Variance Swap Pricing
 # =============================================================================
+
 
 def variance_swap_strike(
     call_prices: np.ndarray,
@@ -880,6 +900,7 @@ def compute_variance_swap_value(
 # Unified Pricing Function
 # =============================================================================
 
+
 def price_option(
     spot: float,
     strike: float,
@@ -929,36 +950,60 @@ def price_option(
     if model == "black_scholes":
         if exercise_style == ExerciseStyle.AMERICAN and is_call and dividend_yield == 0:
             # American call without dividends = European call
-            price = black_scholes_price(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call)
+            price = black_scholes_price(
+                spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call
+            )
         elif exercise_style == ExerciseStyle.AMERICAN:
             # Use Leisen-Reimer for American options
             price = leisen_reimer_price(
-                spot, strike, time_to_expiry, rate, dividend_yield, volatility,
-                is_call, is_american=True, n_steps=n_steps
+                spot,
+                strike,
+                time_to_expiry,
+                rate,
+                dividend_yield,
+                volatility,
+                is_call,
+                is_american=True,
+                n_steps=n_steps,
             )
         else:
-            price = black_scholes_price(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call)
+            price = black_scholes_price(
+                spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call
+            )
 
     elif model == "leisen_reimer":
         is_american = exercise_style == ExerciseStyle.AMERICAN
         price = leisen_reimer_price(
-            spot, strike, time_to_expiry, rate, dividend_yield, volatility,
-            is_call, is_american=is_american, n_steps=n_steps
+            spot,
+            strike,
+            time_to_expiry,
+            rate,
+            dividend_yield,
+            volatility,
+            is_call,
+            is_american=is_american,
+            n_steps=n_steps,
         )
 
     elif model == "crr":
         is_american = exercise_style == ExerciseStyle.AMERICAN
         price = crr_binomial_price(
-            spot, strike, time_to_expiry, rate, dividend_yield, volatility,
-            is_call, is_american=is_american, n_steps=n_steps
+            spot,
+            strike,
+            time_to_expiry,
+            rate,
+            dividend_yield,
+            volatility,
+            is_call,
+            is_american=is_american,
+            n_steps=n_steps,
         )
 
     elif model == "merton_jd":
         if jump_params is None:
             jump_params = JumpParams()  # Use defaults
         price = merton_jump_diffusion_price(
-            spot, strike, time_to_expiry, rate, dividend_yield, volatility,
-            is_call, jump_params
+            spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, jump_params
         )
 
     else:
@@ -1001,7 +1046,7 @@ def price_contract(
     volatility: float,
     rate: float,
     dividend_yield: float = 0.0,
-    valuation_date: Optional['date'] = None,
+    valuation_date: Optional["date"] = None,
     model: str = "auto",
     jump_params: Optional[JumpParams] = None,
     n_steps: int = _DEFAULT_BINOMIAL_STEPS,
@@ -1058,19 +1103,15 @@ __all__ = [
     # Black-Scholes
     "black_scholes_price",
     "black_scholes_price_vec",
-
     # Binomial Trees
     "leisen_reimer_price",
     "crr_binomial_price",
-
     # Jump-Diffusion
     "merton_jump_diffusion_price",
     "merton_jump_diffusion_price_vec",
-
     # Variance Swaps
     "variance_swap_strike",
     "variance_swap_value",
-
     # Unified Interface
     "price_option",
     "price_contract",

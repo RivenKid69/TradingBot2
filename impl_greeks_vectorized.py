@@ -29,6 +29,8 @@ References:
 
 from __future__ import annotations
 
+from datetime import date
+
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -49,6 +51,7 @@ _JAX_AVAILABLE = False
 
 try:
     import cupy as cp
+
     _CUPY_AVAILABLE = True
 except ImportError:
     cp = None
@@ -56,6 +59,7 @@ except ImportError:
 try:
     import jax.numpy as jnp
     from jax import jit, vmap
+
     _JAX_AVAILABLE = True
 except ImportError:
     jnp = None
@@ -102,6 +106,7 @@ _MIN_STRIKE = 1e-10
 # Vectorized Normal Distribution Functions
 # =============================================================================
 
+
 def _norm_cdf_vec(x: np.ndarray, xp=np) -> np.ndarray:
     """
     Vectorized standard normal CDF.
@@ -138,6 +143,7 @@ def _norm_pdf_vec(x: np.ndarray, xp=np) -> np.ndarray:
 # Vectorized d1, d2 Calculation
 # =============================================================================
 
+
 def _compute_d1_d2_vec(
     spot: np.ndarray,
     strike: np.ndarray,
@@ -173,7 +179,10 @@ def _compute_d1_d2_vec(
     sqrt_t = xp.sqrt(time_to_expiry)
     vol_sqrt_t = volatility * sqrt_t
 
-    d1 = (xp.log(spot / strike) + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry) / vol_sqrt_t
+    d1 = (
+        xp.log(spot / strike)
+        + (rate - dividend_yield + 0.5 * volatility * volatility) * time_to_expiry
+    ) / vol_sqrt_t
     d2 = d1 - vol_sqrt_t
 
     return d1, d2
@@ -182,6 +191,7 @@ def _compute_d1_d2_vec(
 # =============================================================================
 # Vectorized First-Order Greeks
 # =============================================================================
+
 
 def compute_delta_vec(
     spot: np.ndarray,
@@ -379,6 +389,7 @@ def compute_rho_vec(
 # Vectorized Second-Order Greeks
 # =============================================================================
 
+
 def compute_vanna_vec(
     spot: np.ndarray,
     strike: np.ndarray,
@@ -466,7 +477,9 @@ def compute_charm_vec(
     n_d1 = _norm_pdf_vec(d1, xp)
 
     term = 2.0 * (rate - dividend_yield) * time_to_expiry - d2 * volatility * sqrt_t
-    charm_base = -exp_div * n_d1 * (dividend_yield + term / (2.0 * time_to_expiry * volatility * sqrt_t))
+    charm_base = (
+        -exp_div * n_d1 * (dividend_yield + term / (2.0 * time_to_expiry * volatility * sqrt_t))
+    )
 
     # Adjustment for puts
     put_adj = dividend_yield * exp_div * _norm_cdf_vec(-d1, xp)
@@ -486,6 +499,7 @@ def compute_charm_vec(
 # =============================================================================
 # Vectorized Third-Order Greeks
 # =============================================================================
+
 
 def compute_speed_vec(
     spot: np.ndarray,
@@ -628,6 +642,7 @@ def compute_ultima_vec(
 # Batch Greeks Result
 # =============================================================================
 
+
 @dataclass
 class BatchGreeksResult:
     """
@@ -635,6 +650,7 @@ class BatchGreeksResult:
 
     All fields are NumPy arrays of shape (n_options,).
     """
+
     # First-order
     delta: np.ndarray
     gamma: np.ndarray
@@ -684,33 +700,36 @@ class BatchGreeksResult:
         """
         results = []
         for i in range(self.n_options):
-            results.append(GreeksResult(
-                delta=float(self.delta[i]),
-                gamma=float(self.gamma[i]),
-                theta=float(self.theta[i]),
-                vega=float(self.vega[i]),
-                rho=float(self.rho[i]),
-                vanna=float(self.vanna[i]),
-                volga=float(self.volga[i]),
-                charm=float(self.charm[i]),
-                speed=float(self.speed[i]),
-                color=float(self.color[i]),
-                zomma=float(self.zomma[i]),
-                ultima=float(self.ultima[i]),
-                timestamp_ns=self.timestamp_ns,
-                spot=float(spots[i]),
-                strike=float(strikes[i]),
-                time_to_expiry=float(times[i]),
-                volatility=float(vols[i]),
-                rate=float(rates[i]),
-                dividend_yield=float(divs[i]),
-            ))
+            results.append(
+                GreeksResult(
+                    delta=float(self.delta[i]),
+                    gamma=float(self.gamma[i]),
+                    theta=float(self.theta[i]),
+                    vega=float(self.vega[i]),
+                    rho=float(self.rho[i]),
+                    vanna=float(self.vanna[i]),
+                    volga=float(self.volga[i]),
+                    charm=float(self.charm[i]),
+                    speed=float(self.speed[i]),
+                    color=float(self.color[i]),
+                    zomma=float(self.zomma[i]),
+                    ultima=float(self.ultima[i]),
+                    timestamp_ns=self.timestamp_ns,
+                    spot=float(spots[i]),
+                    strike=float(strikes[i]),
+                    time_to_expiry=float(times[i]),
+                    volatility=float(vols[i]),
+                    rate=float(rates[i]),
+                    dividend_yield=float(divs[i]),
+                )
+            )
         return results
 
 
 # =============================================================================
 # Main Batch Greeks Function
 # =============================================================================
+
 
 def compute_all_greeks_batch(
     spot: np.ndarray,
@@ -761,7 +780,10 @@ def compute_all_greeks_batch(
 
     # Validate shapes
     n_options = spot.shape[0]
-    if not all(arr.shape[0] == n_options for arr in [strike, time_to_expiry, rate, dividend_yield, volatility, is_call]):
+    if not all(
+        arr.shape[0] == n_options
+        for arr in [strike, time_to_expiry, rate, dividend_yield, volatility, is_call]
+    ):
         raise GreeksCalculationError("All input arrays must have the same length")
 
     # Validate values
@@ -775,18 +797,28 @@ def compute_all_greeks_batch(
         raise GreeksCalculationError("Volatility cannot be negative")
 
     # Compute all Greeks
-    delta = compute_delta_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, xp)
+    delta = compute_delta_vec(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, xp
+    )
     gamma = compute_gamma_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
-    theta = compute_theta_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, True, xp)
+    theta = compute_theta_vec(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, True, xp
+    )
     vega = compute_vega_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
-    rho = compute_rho_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, xp)
+    rho = compute_rho_vec(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, xp
+    )
 
     vanna = compute_vanna_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
     volga = compute_volga_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
-    charm = compute_charm_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, True, xp)
+    charm = compute_charm_vec(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, is_call, True, xp
+    )
 
     speed = compute_speed_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
-    color = compute_color_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, True, xp)
+    color = compute_color_vec(
+        spot, strike, time_to_expiry, rate, dividend_yield, volatility, True, xp
+    )
     zomma = compute_zomma_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
     ultima = compute_ultima_vec(spot, strike, time_to_expiry, rate, dividend_yield, volatility, xp)
 
@@ -846,7 +878,7 @@ def compute_greeks_for_chain(
     volatility: Union[float, np.ndarray],
     rate: float,
     dividend_yield: float = 0.0,
-    valuation_date: Optional['date'] = None,
+    valuation_date: Optional["date"] = None,
     backend: str = "numpy",
 ) -> BatchGreeksResult:
     """
@@ -895,6 +927,7 @@ def compute_greeks_for_chain(
 # =============================================================================
 # Chunked Processing for Large Datasets
 # =============================================================================
+
 
 def compute_greeks_chunked(
     spot: np.ndarray,
@@ -1000,6 +1033,7 @@ def compute_greeks_chunked(
 # Validation Against Scalar Implementation
 # =============================================================================
 
+
 def validate_vectorized_vs_scalar(
     n_samples: int = 100,
     tolerance: float = 1e-10,
@@ -1048,7 +1082,20 @@ def validate_vectorized_vs_scalar(
         "all_passed": True,
     }
 
-    greek_names = ["delta", "gamma", "theta", "vega", "rho", "vanna", "volga", "charm", "speed", "color", "zomma", "ultima"]
+    greek_names = [
+        "delta",
+        "gamma",
+        "theta",
+        "vega",
+        "rho",
+        "vanna",
+        "volga",
+        "charm",
+        "speed",
+        "color",
+        "zomma",
+        "ultima",
+    ]
 
     for greek_name in greek_names:
         max_diff = 0.0
@@ -1087,31 +1134,26 @@ __all__ = [
     # Backend utilities
     "get_available_backends",
     "get_array_module",
-
     # Vectorized first-order Greeks
     "compute_delta_vec",
     "compute_gamma_vec",
     "compute_theta_vec",
     "compute_vega_vec",
     "compute_rho_vec",
-
     # Vectorized second-order Greeks
     "compute_vanna_vec",
     "compute_volga_vec",
     "compute_charm_vec",
-
     # Vectorized third-order Greeks
     "compute_speed_vec",
     "compute_color_vec",
     "compute_zomma_vec",
     "compute_ultima_vec",
-
     # Batch computation
     "BatchGreeksResult",
     "compute_all_greeks_batch",
     "compute_greeks_for_chain",
     "compute_greeks_chunked",
-
     # Validation
     "validate_vectorized_vs_scalar",
 ]

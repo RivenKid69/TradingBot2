@@ -20,6 +20,7 @@ impl_panel.py
 from __future__ import annotations
 
 from typing import Any, Mapping, Optional, Sequence, Union
+import os
 
 import numpy as np
 import pandas as pd
@@ -33,9 +34,9 @@ from core_portfolio import (
 )
 
 # Магнитудные пороги для определения единицы измерения времени.
-_SEC_MAX = 1e11      # < 1e11  → секунды
-_MS_MAX = 1e14       # < 1e14  → миллисекунды
-_US_MAX = 1e17       # < 1e17  → микросекунды; иначе наносекунды
+_SEC_MAX = 1e11  # < 1e11  → секунды
+_MS_MAX = 1e14  # < 1e14  → миллисекунды
+_US_MAX = 1e17  # < 1e17  → микросекунды; иначе наносекунды
 
 
 def normalize_ts_ms(values: Any) -> np.ndarray:
@@ -64,13 +65,13 @@ def normalize_ts_ms(values: Any) -> np.ndarray:
     if finite.size:
         ref = float(np.nanmax(np.abs(finite)))
         if ref < _SEC_MAX:
-            scale = 1000          # seconds → ms
+            scale = 1000  # seconds → ms
         elif ref < _MS_MAX:
-            scale = 1             # already ms
+            scale = 1  # already ms
         elif ref < _US_MAX:
-            scale = -1000         # microseconds → ms (divide)
+            scale = -1000  # microseconds → ms (divide)
         else:
-            scale = -1_000_000    # nanoseconds → ms (divide)
+            scale = -1_000_000  # nanoseconds → ms (divide)
     if scale >= 1:
         out = arr * scale
     else:
@@ -102,8 +103,8 @@ class PanelBuilder:
         columns: Optional[Sequence[str]] = None,
         ts_col: Optional[str] = None,
         symbol_col: str = "symbol",
-        align: str = "union",            # 'union' | 'intersection' | 'none'
-        fill: str = "ffill",             # 'ffill' | 'none'
+        align: str = "union",  # 'union' | 'intersection' | 'none'
+        fill: str = "ffill",  # 'ffill' | 'none'
         dropna_all_rows: bool = True,
     ) -> Panel:
         """Собрать Panel из словаря ``{symbol -> DataFrame}``.
@@ -126,6 +127,7 @@ class PanelBuilder:
 
         if not long_parts:
             from core_portfolio import empty_panel
+
             return empty_panel(columns)
 
         long = pd.concat(long_parts, axis=0)
@@ -233,10 +235,7 @@ class PanelBuilder:
 
         oth["__pub_ms"] = normalize_ts_ms(oth[pub_col]) + int(publish_lag_ms)
         if value_cols is None:
-            value_cols = [
-                c for c in oth.columns
-                if c not in (pub_col, symbol_col, "__pub_ms")
-            ]
+            value_cols = [c for c in oth.columns if c not in (pub_col, symbol_col, "__pub_ms")]
         value_cols = list(value_cols)
         if suffix:
             rename = {c: f"{c}{suffix}" for c in value_cols}
@@ -372,9 +371,7 @@ class PanelBuilder:
         else:
             raise ValueError(f"unknown align mode: {align!r}")
 
-        full_index = pd.MultiIndex.from_product(
-            [grid_ts, symbols], names=PANEL_INDEX_NAMES
-        )
+        full_index = pd.MultiIndex.from_product([grid_ts, symbols], names=PANEL_INDEX_NAMES)
         aligned = long.reindex(full_index)
 
         if fill == "ffill":
