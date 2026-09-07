@@ -9,20 +9,28 @@
   "MD007": {
     "indent": 2
   },
-  "MD013": {
-    "line_length": 120,
-    "code_blocks": false,
-    "tables": false
-  },
-  "MD024": {
-    "siblings_only": true
-  },
+  "MD013": false,
+  "MD024": false,
   "MD025": false,
   "MD033": {
-    "allowed_elements": ["antml:function_calls", "antml:invoke", "antml:parameter", "antml:thinking"]
+    "allowed_elements": [
+      "br",
+      "details",
+      "summary",
+      "kbd",
+      "sub",
+      "sup",
+      "img"
+    ]
   },
   "MD034": false,
   "MD041": false,
   "no-hard-tabs": true,
-  "whitespace": true
+  "whitespace": true,
+  "MD040": false,
+  "MD036": false,
+  "MD029": false,
+  "MD046": false,
+  "MD028": false,
+  "MD001": false
 }

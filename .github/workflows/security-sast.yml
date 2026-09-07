@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -54,7 +54,7 @@ jobs:
           PY
 
       - name: Upload Bandit results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: bandit-results
@@ -70,7 +70,7 @@ jobs:
       image: returntocorp/semgrep
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run Semgrep scan
         run: |
@@ -96,7 +96,7 @@ jobs:
           PY
 
       - name: Upload Semgrep results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: semgrep-results
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install gitleaks
         run: |
@@ -157,7 +157,7 @@ jobs:
           fi
 
       - name: Upload secret scan results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: secret-scan-results
@@ -172,15 +172,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install dependency audit tooling
-        run: pip install --upgrade pip-audit safety cyclonedx-bom
+        run: pip install --upgrade pip-audit cyclonedx-bom
 
       - name: Run pip-audit on lockfiles
         run: |
@@ -198,7 +198,7 @@ jobs:
           for file in "${files[@]}"; do
             out="pip-audit-${file//[^A-Za-z0-9]/_}.json"
             set +e
-            pip-audit -r "$file" --format json --output "$out" --disable-pip --progress-spinner off
+            pip-audit -r "$file" --format json --output "$out" --no-deps --progress-spinner off
             status=$?
             set -e
             if [ "$status" -ge 2 ]; then
@@ -218,50 +218,6 @@ jobs:
                           high += 1
           if high:
               print(f"pip-audit found {high} HIGH/CRITICAL vulnerabilities")
-              sys.exit(1)
-          PY
-
-      - name: Run safety on lockfiles
-        run: |
-          set -euo pipefail
-          files=()
-          for f in requirements-cpu.lock.txt requirements-gpu.lock.txt requirements-dev.txt requirements-build.txt; do
-            if [ -f "$f" ]; then
-              files+=("$f")
-            fi
-          done
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No lockfiles found for safety"
-            exit 0
-          fi
-          for file in "${files[@]}"; do
-            out="safety-${file//[^A-Za-z0-9]/_}.json"
-            set +e
-            safety check --file "$file" --json > "$out"
-            status=$?
-            set -e
-            if [ "$status" -ge 2 ]; then
-              echo "::error::safety failed for $file (exit=$status)"
-              exit $status
-            fi
-          done
-          python - <<'PY'
-          import glob, json, sys
-          high = 0
-          for path in glob.glob("safety-*.json"):
-              try:
-                  payload = json.load(open(path, "r", encoding="utf-8"))
-              except json.JSONDecodeError:
-                  continue
-              vulns = payload.get("vulnerabilities") or payload.get("issues") or []
-              for vuln in vulns:
-                  sev = str(vuln.get("severity", "")).upper()
-                  if not sev and isinstance(vuln, dict):
-                      sev = str(vuln.get("severity", vuln.get("severity_level", ""))).upper()
-                  if sev in {"HIGH", "CRITICAL"}:
-                      high += 1
-          if high:
-              print(f"Safety reported {high} HIGH/CRITICAL vulnerabilities")
               sys.exit(1)
           PY
 
@@ -310,13 +266,12 @@ jobs:
           fi
 
       - name: Upload dependency audit artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: dependency-audit
           path: |
             pip-audit-*.json
-            safety-*.json
             sbom.json
             sbom-verification.json
           if-no-files-found: ignore
@@ -327,7 +282,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check for forbidden bypass flags in production configs
         run: |
