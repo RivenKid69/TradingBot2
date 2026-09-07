@@ -30,14 +30,14 @@ name = "ai-quant-platform"
 version = "2.6.0"
 description = "AI-Powered Quantitative Research Platform for algorithmic trading with reinforcement learning"
 readme = "README.md"
-license = {text = "Proprietary"}
-authors = [{name = "TradingBot2 Team"}]
-maintainers = [{name = "TradingBot2 Team"}]
+license = {text = "Apache-2.0"}
+authors = [{name = "Sultan Suyunbayev", email = "sulastomatolog@gmail.com"}]
+maintainers = [{name = "Sultan Suyunbayev", email = "sulastomatolog@gmail.com"}]
 keywords = ["trading", "reinforcement-learning", "quantitative-finance", "algorithmic-trading", "ppo"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Cython",
@@ -364,6 +364,7 @@ markers = [
     "phase8: forex regression phase 8 config checks",
     "phase9: forex regression phase 9 training checks",
     "full: forex regression full-suite gate",
+    "documentation: marks tests that validate documentation guardrails",
 ]
 asyncio_mode = "auto"
 filterwarnings = [

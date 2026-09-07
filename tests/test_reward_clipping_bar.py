@@ -11,7 +11,9 @@ import pytest
 sys.path.append(os.getcwd())
 
 
-if "lob_state_cython" not in sys.modules:
+try:  # prefer the compiled extension so later tests still see the real module
+    import lob_state_cython  # noqa: F401
+except ImportError:
     lob_state_stub = types.ModuleType("lob_state_cython")
     lob_state_stub.N_FEATURES = 1
     sys.modules["lob_state_cython"] = lob_state_stub

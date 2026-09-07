@@ -6,9 +6,12 @@ import pandas as pd
 
 sys.path.append(os.getcwd())
 # stub minimal optional modules required for import
-lob_state_stub = types.ModuleType("lob_state_cython")
-lob_state_stub.N_FEATURES = 1
-sys.modules["lob_state_cython"] = lob_state_stub
+try:  # prefer the compiled extension so later tests still see the real module
+    import lob_state_cython  # noqa: F401
+except ImportError:
+    lob_state_stub = types.ModuleType("lob_state_cython")
+    lob_state_stub.N_FEATURES = 1
+    sys.modules["lob_state_cython"] = lob_state_stub
 mediator_stub = types.ModuleType("mediator")
 class _Mediator:
     def __init__(self, env):

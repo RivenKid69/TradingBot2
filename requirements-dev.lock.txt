@@ -82,13 +82,15 @@ ib_insync==0.9.86
 # Web API (for API testing)
 # -----------------------------------------------------------------------------
 fastapi==0.115.6
+pydantic==2.9.2
+pydantic_core==2.23.4
 uvicorn[standard]==0.32.1
 
 # -----------------------------------------------------------------------------
 # CCEA Dependencies (WI-DEPS-01)
 # Required for testing CCEA agent and cloud components
 # -----------------------------------------------------------------------------
-cryptography==43.0.3
+cryptography==42.0.8
 asyncpg==0.30.0
 PyJWT==2.10.1
 argon2-cffi==23.1.0

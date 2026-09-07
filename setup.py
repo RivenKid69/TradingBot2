@@ -260,8 +260,8 @@ ext_modules = [
         include_dirs=include_dirs,
         libraries=libraries,
         library_dirs=library_dirs,
-        language="c",
-        extra_compile_args=c_args,
+        language="c++",
+        extra_compile_args=cxx_args,
     ),
     Extension(
         name="environment",
@@ -269,8 +269,8 @@ ext_modules = [
         include_dirs=include_dirs,
         libraries=libraries,
         library_dirs=library_dirs,
-        language="c",
-        extra_compile_args=c_args,
+        language="c++",
+        extra_compile_args=cxx_args,
     ),
     Extension(
         name="coreworkspace",
@@ -332,8 +332,8 @@ ext_modules = [
         include_dirs=include_dirs,
         libraries=libraries,
         library_dirs=library_dirs,
-        language="c",
-        extra_compile_args=c_args,
+        language="c++",
+        extra_compile_args=cxx_args,
     ),
     Extension(
         name="micromicrogen",
@@ -421,7 +421,9 @@ setup(
     name="ai-quant-platform-extensions",
     version="1.0.0",
     description="Cython/C++ extensions for AI-Powered Quantitative Research Platform",
-    author="TradingBot2 Team",
+    author="Sultan Suyunbayev",
+    author_email="sulastomatolog@gmail.com",
+    license="Apache-2.0",
     python_requires=">=3.12",
     py_modules=["apply_no_trade_mask", "no_trade"],
     entry_points={

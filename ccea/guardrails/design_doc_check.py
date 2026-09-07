@@ -25,7 +25,7 @@ from typing import Optional, Tuple
 # ============================================================================
 
 # Primary path (root location) - actual location of Design Doc
-PRIMARY_SNAPSHOT_PATH = Path("Design Doc CCEA Cloud.txt")
+PRIMARY_SNAPSHOT_PATH = Path("docs/history/design-doc-ccea-cloud.txt")
 
 # Legacy paths (for backwards compatibility)
 LEGACY_SNAPSHOT_PATH = Path("docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt")
@@ -97,6 +97,7 @@ def find_design_doc_path() -> Optional[Path]:
         LEGACY_SNAPSHOT_PATH,
         Path("Design Doc CCEA Cloud.txt"),
         Path("docs/Design Doc CCEA Cloud.txt"),
+        Path("archive/root_files/Design Doc CCEA Cloud.txt"),
         Path("design_doc.txt"),
     ]
 
