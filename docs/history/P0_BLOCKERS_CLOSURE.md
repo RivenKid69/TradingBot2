@@ -15,9 +15,9 @@
 
 | Артефакт | Назначение |
 |---|---|
-| [configs/config_xs_crypto_real.yaml](configs/config_xs_crypto_real.yaml) | `source: free, vendor: binance`, 14 символов USDT |
-| [tools/xs_crypto_real_sweep.py](tools/xs_crypto_real_sweep.py) | Pre-registered sweep (8 вариантов), все репортятся |
-| [reports/XS_CRYPTO_REAL_TRUST_REPORT.md](reports/XS_CRYPTO_REAL_TRUST_REPORT.md) | Опубликованный Trust-Report |
+| [configs/config_xs_crypto_real.yaml](../../configs/config_xs_crypto_real.yaml) | `source: free, vendor: binance`, 14 символов USDT |
+| [tools/xs_crypto_real_sweep.py](../../tools/xs_crypto_real_sweep.py) | Pre-registered sweep (8 вариантов), все репортятся |
+| [reports/XS_CRYPTO_REAL_TRUST_REPORT.md](XS_CRYPTO_REAL_TRUST_REPORT.md) | Опубликованный Trust-Report |
 
 - **Данные:** 14 символов × 1000 баров, период **2023-09-19 → 2026-06-14** (~2.7 года).
 - **Честный итог:** лучший вариант (mom-only, monthly, risk-parity) — сырой Sharpe 3.17,
@@ -39,10 +39,10 @@ EDGAR уже даёт **подлинный PIT** (та же `fundamentals_path`-
 
 | Артефакт | Назначение |
 |---|---|
-| [services/edgar_fundamentals.py](services/edgar_fundamentals.py) | PIT-загрузчик: `publish_ts = дата подачи (filed)` → честный as-of |
-| [scripts/download_edgar_fundamentals.py](scripts/download_edgar_fundamentals.py) | Скачивание в parquet-кэш |
-| [loaders/equity_enrich.py](loaders/equity_enrich.py) | enricher `edgar_fundamentals` (pit=true) в реестре |
-| [tests/test_edgar_fundamentals.py](tests/test_edgar_fundamentals.py) | 5 тестов (включая **as-of no-look-ahead**) |
+| [services/edgar_fundamentals.py](../../services/edgar_fundamentals.py) | PIT-загрузчик: `publish_ts = дата подачи (filed)` → честный as-of |
+| [scripts/download_edgar_fundamentals.py](../../scripts/download_edgar_fundamentals.py) | Скачивание в parquet-кэш |
+| [loaders/equity_enrich.py](../../loaders/equity_enrich.py) | enricher `edgar_fundamentals` (pit=true) в реестре |
+| [tests/test_edgar_fundamentals.py](../../tests/test_edgar_fundamentals.py) | 5 тестов (включая **as-of no-look-ahead**) |
 
 - **Скачано реально:** 659 записей, 10 имён (AAPL…PG), **2009-07-22 → 2026-05-20**.
 - **EPS/BVPS/FCF/ROE** на дату подачи каждого 10-K/10-Q (per-share деривации).
@@ -51,9 +51,9 @@ EDGAR уже даёт **подлинный PIT** (та же `fundamentals_path`-
 
 | Артефакт | Назначение |
 |---|---|
-| [services/index_membership_loader.py](services/index_membership_loader.py) | Загрузчик changes-файла → PIT `IndexMembershipUniverse` |
-| [data/universe/sp500_membership_demo.csv](data/universe/sp500_membership_demo.csv) | Demo-bootstrap (реальный якорь: TSLA добавлен 2020-12-21) |
-| [tests/test_index_membership.py](tests/test_index_membership.py) | 5 тестов (PIT add/remove, survivorship-free, wiring) |
+| [services/index_membership_loader.py](../../services/index_membership_loader.py) | Загрузчик changes-файла → PIT `IndexMembershipUniverse` |
+| [data/universe/sp500_membership_demo.csv](../../data/universe/sp500_membership_demo.csv) | Demo-bootstrap (реальный якорь: TSLA добавлен 2020-12-21) |
+| [tests/test_index_membership.py](../../tests/test_index_membership.py) | 5 тестов (PIT add/remove, survivorship-free, wiring) |
 
 `build_universe` теперь использует `universe.type: index_membership` + `membership_path`.
 
@@ -61,8 +61,8 @@ EDGAR уже даёт **подлинный PIT** (та же `fundamentals_path`-
 
 | Артефакт | Назначение |
 |---|---|
-| [configs/config_xs_equity_real.yaml](configs/config_xs_equity_real.yaml) | Yahoo цены + EDGAR фундаментал, value/quality **включены** |
-| [reports/XS_EQUITY_REAL_TRUST_REPORT.md](reports/XS_EQUITY_REAL_TRUST_REPORT.md) | Опубликованный Trust-Report |
+| [configs/config_xs_equity_real.yaml](../../configs/config_xs_equity_real.yaml) | Yahoo цены + EDGAR фундаментал, value/quality **включены** |
+| [reports/XS_EQUITY_REAL_TRUST_REPORT.md](XS_EQUITY_REAL_TRUST_REPORT.md) | Опубликованный Trust-Report |
 
 - **Data-Trust вердикт: `ok`** — ВСЕ колонки сигналов (earnings/book_value/fcf/roe)
   имеют **`pit_quality=true, vendor=sec_edgar`**. Бэктест backtest-safe.
@@ -86,8 +86,8 @@ EDGAR уже даёт **подлинный PIT** (та же `fundamentals_path`-
 | `/api/portfolio/holdings` | флаг `simulated` (нет брокерских ключей) |
 | `/api/copilot` | помечен `engine: rule_based_advisory` (не агент) |
 
-- **Фронт:** [index.html](index.html) — `showSimBadge`/`flagFromPayload`, бейдж на trades/holdings.
-- **Проверка:** [tools/check_mvp_honesty.py](tools/check_mvp_honesty.py) — **9/9 проверок PASS**
+- **Фронт:** index.html — `showSimBadge`/`flagFromPayload`, бейдж на trades/holdings.
+- **Проверка:** [tools/check_mvp_honesty.py](../../tools/check_mvp_honesty.py) — **9/9 проверок PASS**
   (через FastAPI TestClient).
 
 ---
@@ -101,10 +101,10 @@ EDGAR уже даёт **подлинный PIT** (та же `fundamentals_path`-
 
 | Артефакт | Назначение |
 |---|---|
-| [core_experiment.py](core_experiment.py) | Контракты (RunRecord, ModelVersion, Lineage, ArtifactRef) |
-| [service_experiment_tracking.py](service_experiment_tracking.py) | Tracker + Registry + ArtifactSigner (Ed25519/HMAC) |
-| [tools/experiment_cli.py](tools/experiment_cli.py) | CLI (experiments/runs/models/promote/rollback/verify) |
-| [tests/test_experiment_tracking.py](tests/test_experiment_tracking.py) | **14 тестов** (подпись, tamper, rollback, lineage) |
+| [core_experiment.py](../../core_experiment.py) | Контракты (RunRecord, ModelVersion, Lineage, ArtifactRef) |
+| [service_experiment_tracking.py](../../service_experiment_tracking.py) | Tracker + Registry + ArtifactSigner (Ed25519/HMAC) |
+| [tools/experiment_cli.py](../../tools/experiment_cli.py) | CLI (experiments/runs/models/promote/rollback/verify) |
+| [tests/test_experiment_tracking.py](../../tests/test_experiment_tracking.py) | **14 тестов** (подпись, tamper, rollback, lineage) |
 | app.py | 11 REST-эндпойнтов `/api/experiments/*`, `/api/models/*` |
 
 - **Интеграция с реальными бэктестами:** sweep'ы P0-1/P0-2 логируют прогон с lineage

@@ -101,7 +101,7 @@ Coverage regressions could go unnoticed; report could become outdated.
 
 ### Control Artifact
 
-- **File**: [tests/COMPREHENSIVE_TEST_REPORT.md](../../tests/COMPREHENSIVE_TEST_REPORT.md)
+- **File**: tests/COMPREHENSIVE_TEST_REPORT.md
 - **Verification**: Documentation now accurately reflects actual verification method
 - **Future work**: Adding pytest-cov to CI tracked in TECH_DEBT_REGISTRY.md
 

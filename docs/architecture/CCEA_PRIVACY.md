@@ -561,7 +561,7 @@ privacy:
 
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [Data Model](./CCEA_DATA_MODEL.md)
-- [Terms of Service Guidelines](../business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md)
+- [Terms of Service Guidelines](../history/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md)
 - [GDPR Compliance Summary](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
 - [GDPR Implementation Plan](../compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md)
 - [Privacy Policy](../legal/PRIVACY_POLICY.md)

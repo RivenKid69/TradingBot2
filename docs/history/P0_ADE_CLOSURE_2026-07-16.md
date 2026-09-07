@@ -1,7 +1,7 @@
 # P0-A / P0-D / P0-E closure (2026-07-16)
 
 > Closes the remaining P0 blockers from
-> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](../PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md):
+> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md):
 > broken imports (P0-A), missing agent config (P0-D), and full model-signature
 > coverage on the daemon load path (P0-E).
 > Tests: `tests/test_agent_config.py` (6), `tests/test_agent_model_signature.py`
@@ -29,7 +29,7 @@ had **no config file**, and the config builder passed **stale field names** to
 `DegradedModeConfig` (`cloud_unreachable_threshold_seconds` /
 `data_feed_stale_threshold_seconds`) → it crashed on any real config.
 
-- Created [configs/agent.yaml](../configs/agent.yaml): a documented reference
+- Created configs/agent.yaml: a documented reference
   config covering every section the builder reads (`agent`, `cloud`,
   `components.{kill_switch,time_sync,degraded_mode,telemetry,sandbox,keychain}`),
   with safe defaults and CCEA notes (secrets stay in Agent zone, standalone by

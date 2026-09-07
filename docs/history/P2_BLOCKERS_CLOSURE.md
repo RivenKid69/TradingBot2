@@ -13,9 +13,9 @@ Python + `PYTHONPATH=.venv/Lib/site-packages`.
 
 | Артефакт | Содержимое |
 |---|---|
-| [signals/common_signals.py](signals/common_signals.py) | ResidualMomentum, Seasonality (month-of-year, PIT), Sentiment (alt-data BYO), Week52High, IdiosyncraticVol, COTPositioning |
-| [loaders/altdata_enrich.py](loaders/altdata_enrich.py) | `COTEnricher` (as-of + publish-lag → PIT), `EconCalendarEnricher` (high-impact-soon флаг; использует `data/forex/calendar/economic_calendar.parquet`) |
-| тесты | [test_common_signals.py](tests/test_common_signals.py) (8), [test_altdata_enrich.py](tests/test_altdata_enrich.py) (4) |
+| [signals/common_signals.py](../../signals/common_signals.py) | ResidualMomentum, Seasonality (month-of-year, PIT), Sentiment (alt-data BYO), Week52High, IdiosyncraticVol, COTPositioning |
+| [loaders/altdata_enrich.py](../../loaders/altdata_enrich.py) | `COTEnricher` (as-of + publish-lag → PIT), `EconCalendarEnricher` (high-impact-soon флаг; использует `data/forex/calendar/economic_calendar.parquet`) |
+| тесты | [test_common_signals.py](../../tests/test_common_signals.py) (8), [test_altdata_enrich.py](../../tests/test_altdata_enrich.py) (4) |
 
 Вплетено: `build_signal_library` (COMMON_SIGNAL_KINDS) + `build_enrichers` (ALTDATA_ENRICHERS).
 
@@ -27,7 +27,7 @@ as-of чтение (PIT); online-кэш с TTL для inference; materialize н�
 
 | Артефакт | Тесты |
 |---|---|
-| [service_feature_store.py](service_feature_store.py) | [test_feature_store.py](tests/test_feature_store.py) (7) |
+| [service_feature_store.py](../../service_feature_store.py) | [test_feature_store.py](../../tests/test_feature_store.py) (7) |
 
 ## P2-3 — FIX-протокол + Smart Order Routing ✅
 
@@ -36,8 +36,8 @@ as-of чтение (PIT); online-кэш с TTL для inference; materialize н�
 
 | Артефакт | Содержимое | Тесты |
 |---|---|---|
-| [fix_protocol.py](packages/agent/execution/fix_protocol.py) | encode/parse/verify, NewOrderSingle/Cancel/ExecutionReport, FixSession | [test_fix_and_sor.py](tests/test_fix_and_sor.py) (8) |
-| [smart_order_router.py](packages/agent/execution/smart_order_router.py) | Venue (fee/latency/liquidity/impact), мульти-venue split по маржинальной стоимости | |
+| [fix_protocol.py](../../packages/agent/execution/fix_protocol.py) | encode/parse/verify, NewOrderSingle/Cancel/ExecutionReport, FixSession | [test_fix_and_sor.py](../../tests/test_fix_and_sor.py) (8) |
+| [smart_order_router.py](../../packages/agent/execution/smart_order_router.py) | Venue (fee/latency/liquidity/impact), мульти-venue split по маржинальной стоимости | |
 
 ## P2-4 — Cross-asset единый портфель (уже построено: Stage C1) ✅
 
@@ -52,15 +52,15 @@ API `POST /api/xs/cross_asset`, UI «Unified Cross-Asset». Тесты `test_xs_
 
 | Артефакт | Содержимое | Тесты |
 |---|---|---|
-| [services/tsdb.py](services/tsdb.py) | `ParquetTSBackend` (partition-by-symbol, time-range/column pushdown), `ClickHouseTSBackend`, `TimescaleTSBackend` (DI-драйвер, graceful fallback), `TimeSeriesStore` фасад, `make_backend` | [test_tsdb.py](tests/test_tsdb.py) (6) |
+| [services/tsdb.py](../../services/tsdb.py) | `ParquetTSBackend` (partition-by-symbol, time-range/column pushdown), `ClickHouseTSBackend`, `TimescaleTSBackend` (DI-драйвер, graceful fallback), `TimeSeriesStore` фасад, `make_backend` | [test_tsdb.py](../../tests/test_tsdb.py) (6) |
 
 ## P2-6 — Автоматизация (drift-ретрейн, авто-TCA, e2e CI GDPR/DORA) ✅
 
 | Артефакт | Содержимое | Тесты |
 |---|---|---|
-| [services/automation/drift_retrain.py](services/automation/drift_retrain.py) | `DriftRetrainScheduler` (PSI-порог + cooldown → триггер ретрейна) | [test_automation.py](tests/test_automation.py) (6) |
-| [services/automation/tca_reporter.py](services/automation/tca_reporter.py) | `TCAReporter` (implementation shortfall, slippage, by-venue/symbol/side, markdown) | |
-| [tests/test_gdpr_dora_e2e.py](tests/test_gdpr_dora_e2e.py) | end-to-end: GDPR export/delete + DORA concentration/incident | (4) |
+| [services/automation/drift_retrain.py](../../services/automation/drift_retrain.py) | `DriftRetrainScheduler` (PSI-порог + cooldown → триггер ретрейна) | [test_automation.py](../../tests/test_automation.py) (6) |
+| [services/automation/tca_reporter.py](../../services/automation/tca_reporter.py) | `TCAReporter` (implementation shortfall, slippage, by-venue/symbol/side, markdown) | |
+| [tests/test_gdpr_dora_e2e.py](../../tests/test_gdpr_dora_e2e.py) | end-to-end: GDPR export/delete + DORA concentration/incident | (4) |
 
 ## P2-7 — Options как отдельный greeks-оптимизатор (уже построено: Stage B5) ✅
 

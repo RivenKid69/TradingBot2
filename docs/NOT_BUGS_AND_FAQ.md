@@ -8,7 +8,7 @@
 
 ## ✅ FAQ: Закрытые вопросы (НЕ ПЕРЕОТКРЫВАТЬ!)
 
-Эти вопросы были тщательно проанализированы. Подробности: [archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md)
+Эти вопросы были тщательно проанализированы. Подробности: archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md
 
 | Вопрос | Ответ |
 |--------|-------|

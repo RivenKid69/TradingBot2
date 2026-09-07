@@ -1,7 +1,7 @@
 # Квант-гэпы: DAG-пайплайн, GPU, сравнение экспериментов, интрадей-фиды
 
 > **Статус:** ✅ ЗАКРЫТО 2026-07-16 · закрывает §5.21+/22/24/25 (P2-H/I/M) из
-> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](../PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md).
+> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md).
 > Тесты: `tests/test_quant_gaps_p2him.py` (25) + регрессия (scheduler/tracking/audit —
 > 105 passed) + live smoke + **реальный сетевой смоук** (Binance: 120 минуток,
 > 1834 тика скачаны в parquet).

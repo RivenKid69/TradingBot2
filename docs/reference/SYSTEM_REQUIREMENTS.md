@@ -115,7 +115,7 @@ pip --version
 
 ## C++ Toolchain
 
-Required for building Cython/C++ extensions. See [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) for details.
+Required for building Cython/C++ extensions. See [BUILD_INSTRUCTIONS.md](../../BUILD_INSTRUCTIONS.md) for details.
 
 ### Windows
 
@@ -353,7 +353,7 @@ make check-clean  # fails if generated artifacts remain
 
 - Secrets **must** be injected via environment variables or a secret manager; never commit credentials to the repo.
 - Use `.env.example` as the template and keep your real `.env` file untracked (gitignored).
-- CI enforces gitleaks + TruffleHog scans on every PR and weekly schedule (see [.github/workflows/security-sast.yml](.github/workflows/security-sast.yml), job: `secrets-scan`).
+- CI enforces gitleaks + TruffleHog scans on every PR and weekly schedule (see [.github/workflows/security-sast.yml](../../.github/workflows/security-sast.yml), job: `secrets-scan`).
 
 ### Required for Live Trading
 

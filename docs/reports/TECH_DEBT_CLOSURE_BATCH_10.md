@@ -142,7 +142,7 @@ This batch verified 6 pre-existing tech debt items that were reported as requiri
 
 **Control Artifacts**:
 
-- [docs/ENTERPRISE_ADOPTION_RISK_MITIGATION.md](../ENTERPRISE_ADOPTION_RISK_MITIGATION.md) - Honest disclosure
+- [docs/ENTERPRISE_ADOPTION_RISK_MITIGATION.md](../history/business/ENTERPRISE_ADOPTION_RISK_MITIGATION.md) - Honest disclosure
 - Tech Debt Registry reference in document
 - SLO/SLI dashboard framework designed (pending deployment)
 

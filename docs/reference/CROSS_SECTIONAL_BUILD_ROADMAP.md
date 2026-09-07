@@ -543,8 +543,8 @@ RL остаётся одним сигналом `RLAlphaSignal`).
 > вместо синтетики; честность MVP (бейджи simulated/demo, 404 вместо фейк-evidence); MLOps tracking+registry
 > (lineage, Ed25519); глобальная API-auth (P0). Live pre-trade VaR/CVaR/стресс; execution TWAP/VWAP/POV (нарезка
 > w*−w₀); tcost-в-objective + Kelly/vol-target; авто-recovery (retry/circuit-breaker/reconcile); RL-as-signal
-> завершён (P1). Всё в коде + MVP-UI. Записи: **[P0_BLOCKERS_CLOSURE.md](P0_BLOCKERS_CLOSURE.md)**,
-> **[P1_BLOCKERS_CLOSURE.md](P1_BLOCKERS_CLOSURE.md)**, эндпойнты — **[MVP_DOCUMENTATION.md](MVP_DOCUMENTATION.md) §7**.
+> завершён (P1). Всё в коде + MVP-UI. Записи: **[P0_BLOCKERS_CLOSURE.md](../history/P0_BLOCKERS_CLOSURE.md)**,
+> **[P1_BLOCKERS_CLOSURE.md](../history/P1_BLOCKERS_CLOSURE.md)**, эндпойнты — **MVP_DOCUMENTATION.md §7**.
 
 ---
 

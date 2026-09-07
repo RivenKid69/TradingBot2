@@ -1,6 +1,6 @@
 # Ручной ордер-тикет трейдера + частичное закрытие
 
-Закрывает §5.27–28 из [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](../PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md):
+Закрывает §5.27–28 из [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](history/PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md):
 трейдеру не хватало ручного ордер-тикета (limit/stop из UI) и частичного закрытия позиции.
 
 **Файлы:** `ccea/desktop_supervisor.py` (`submit_manual_order`, `close_position(quantity)`,

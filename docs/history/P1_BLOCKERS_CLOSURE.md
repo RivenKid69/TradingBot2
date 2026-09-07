@@ -15,8 +15,8 @@ live-путь. Окружение: системный Python + `PYTHONPATH=.venv
 
 | Артефакт | Содержимое |
 |---|---|
-| [service_pretrade_risk.py](service_pretrade_risk.py) | `PreTradeRiskAnalyzer` (Gaussian + historical VaR/CVaR), `scenario_grid` (шок −10%, vol×1.5, сдвиг корреляций, кризис-combo), `factor_exposures`, `pretrade_check` (gate); `FactorExposureMonitor` (внутридневной) |
-| [tests/test_pretrade_risk.py](tests/test_pretrade_risk.py) | 6 тестов |
+| [service_pretrade_risk.py](../../service_pretrade_risk.py) | `PreTradeRiskAnalyzer` (Gaussian + historical VaR/CVaR), `scenario_grid` (шок −10%, vol×1.5, сдвиг корреляций, кризис-combo), `factor_exposures`, `pretrade_check` (gate); `FactorExposureMonitor` (внутридневной) |
+| [tests/test_pretrade_risk.py](../../tests/test_pretrade_risk.py) | 6 тестов |
 
 Вплетено в `CrossSectionalLiveRunner.rebalance`: VaR/сценарии считаются и **блокируют**
 ребаланс при нарушении лимитов; отчёт идёт в `RebalanceResult.risk_report`.
@@ -29,8 +29,8 @@ live-путь. Окружение: системный Python + `PYTHONPATH=.venv
 
 | Артефакт | Содержимое |
 |---|---|
-| [service_optimizer.py](service_optimizer.py) | `TCostModel`, `SizingConfig`, `kelly_weights`, `_solve_scipy` (tcost+constraints в objective), `_apply_sizing` |
-| [tests/test_optimizer_tcost.py](tests/test_optimizer_tcost.py) | 5 тестов (tcost↓turnover, factor-cap в solve, vol-target попадает в цель, Kelly) |
+| [service_optimizer.py](../../service_optimizer.py) | `TCostModel`, `SizingConfig`, `kelly_weights`, `_solve_scipy` (tcost+constraints в objective), `_apply_sizing` |
+| [tests/test_optimizer_tcost.py](../../tests/test_optimizer_tcost.py) | 5 тестов (tcost↓turnover, factor-cap в solve, vol-target попадает в цель, Kelly) |
 
 Конфиг: `optimizer.tcost_aware/tcost_linear/tcost_quad`, `sizing/target_vol/kelly_fraction`.
 **Дефолт `tcost_aware=False` → аналитический путь без изменений** (sharpe −2.3726, регрессии нет).
@@ -43,8 +43,8 @@ child-slices (TWAP/VWAP/POV) поверх AC √participation. Нарезка с
 
 | Артефакт | Содержимое |
 |---|---|
-| [service_xs_execution.py](service_xs_execution.py) | `RebalanceScheduler.build_plan` → `RebalancePlan` (slices + оценка импакта) |
-| [tests/test_xs_execution.py](tests/test_xs_execution.py) | 6 тестов (нарезка↓cost, POV, VWAP U-профиль, trade-list) |
+| [service_xs_execution.py](../../service_xs_execution.py) | `RebalanceScheduler.build_plan` → `RebalancePlan` (slices + оценка импакта) |
+| [tests/test_xs_execution.py](../../tests/test_xs_execution.py) | 6 тестов (нарезка↓cost, POV, VWAP U-профиль, trade-list) |
 
 Single-order алго уже были в `execution_algos.py`; здесь — портфельный слой. Вплетено в
 `rebalance` → `RebalanceResult.execution_plan`.
@@ -56,8 +56,8 @@ Single-order алго уже были в `execution_algos.py`; здесь — п
 
 | Артефакт | Содержимое |
 |---|---|
-| [packages/agent/execution/resilience.py](packages/agent/execution/resilience.py) | `RetryPolicy` (exp backoff+jitter), `CircuitBreaker` (CLOSED/OPEN/HALF_OPEN), `ResilientExecutor` (retry под breaker), `OrderStatusPoller` (авто-poll статусов/филлов), `StartupReconciler` (сверка ордеров+позиций при старте) |
-| [tests/test_execution_resilience.py](tests/test_execution_resilience.py) | 10 тестов (время инъектируется → детерминизм без реального сна) |
+| [packages/agent/execution/resilience.py](../../packages/agent/execution/resilience.py) | `RetryPolicy` (exp backoff+jitter), `CircuitBreaker` (CLOSED/OPEN/HALF_OPEN), `ResilientExecutor` (retry под breaker), `OrderStatusPoller` (авто-poll статусов/филлов), `StartupReconciler` (сверка ордеров+позиций при старте) |
+| [tests/test_execution_resilience.py](../../tests/test_execution_resilience.py) | 10 тестов (время инъектируется → детерминизм без реального сна) |
 
 ## P1-5 — RL-as-signal (завершение) ✅
 
@@ -68,8 +68,8 @@ SB3-загрузчик чекпоинта; **в cross-sectional пути `volume
 
 | Артефакт | Содержимое |
 |---|---|
-| [impl_rl_signal.py](impl_rl_signal.py), [service_rl_inference.py](service_rl_inference.py) | `RLAlphaSignal`, `RLInferenceAdapter`, `make_sb3_distributional_loader` |
-| [tests/test_xs_rl_signal.py](tests/test_xs_rl_signal.py), [tests/test_xs_rl_inference_e2e.py](tests/test_xs_rl_inference_e2e.py) | 15 тестов (проходят) |
+| [impl_rl_signal.py](../../impl_rl_signal.py), [service_rl_inference.py](../../service_rl_inference.py) | `RLAlphaSignal`, `RLInferenceAdapter`, `make_sb3_distributional_loader` |
+| [tests/test_xs_rl_signal.py](../../tests/test_xs_rl_signal.py), [tests/test_xs_rl_inference_e2e.py](../../tests/test_xs_rl_inference_e2e.py) | 15 тестов (проходят) |
 
 Подключено в пайплайн: `signals: [{kind: rl_alpha}]` + `rl:` конфиг. Без чекпоинта — нейтрально (NaN).
 

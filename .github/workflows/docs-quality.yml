@@ -66,6 +66,21 @@ jobs:
             __pycache__/
             venv/
 
+  markdown-links:
+    name: Markdown Link Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Check relative links resolve
+        run: python tools/check_markdown_links.py
+
   markdown-render-check:
     name: Markdown Render Check (Pandoc)
     runs-on: ubuntu-latest
@@ -160,7 +175,7 @@ jobs:
 
   summary:
     name: Quality Summary
-    needs: [encoding-check, markdown-lint, markdown-render-check, yaml-lint, tech-debt-registry-sync]
+    needs: [encoding-check, markdown-lint, markdown-links, markdown-render-check, yaml-lint, tech-debt-registry-sync]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -169,12 +184,14 @@ jobs:
           echo "Documentation Quality Check Summary:"
           echo "  - Encoding Check: ${{ needs.encoding-check.result }}"
           echo "  - Markdown Lint: ${{ needs.markdown-lint.result }}"
+          echo "  - Markdown Links: ${{ needs.markdown-links.result }}"
           echo "  - Render Check: ${{ needs.markdown-render-check.result }}"
           echo "  - YAML Lint: ${{ needs.yaml-lint.result }}"
           echo "  - Tech Debt Registry: ${{ needs.tech-debt-registry-sync.result }}"
 
           if [ "${{ needs.encoding-check.result }}" != "success" ] || \
              [ "${{ needs.markdown-lint.result }}" != "success" ] || \
+             [ "${{ needs.markdown-links.result }}" != "success" ] || \
              [ "${{ needs.markdown-render-check.result }}" != "success" ] || \
              [ "${{ needs.yaml-lint.result }}" != "success" ] || \
              [ "${{ needs.tech-debt-registry-sync.result }}" != "success" ]; then

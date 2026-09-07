@@ -321,5 +321,5 @@ journalctl -u ccea-control-plane -f
 
 - [ARCHITECTURE.md](../../ARCHITECTURE.md) - System architecture
 - [LEGACY_STACKS.md](../archive/LEGACY_STACKS.md) - Deprecated modules
-- [Design Doc CCEA Cloud.txt](../../archive/root_files/Design Doc CCEA Cloud.txt) - CCEA technical boundary reference
+- [Design Doc CCEA Cloud.txt](../history/design-doc-ccea-cloud.txt) - CCEA technical boundary reference
 - [protocol_messages.schema.json](../schemas/protocol_messages.schema.json) - Protocol schema

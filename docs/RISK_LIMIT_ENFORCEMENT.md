@@ -1,7 +1,7 @@
 # Enforcement риск-лимитов в live-контуре (P0-B)
 
 > **Статус:** ✅ ЗАКРЫТО 2026-07-16 · закрывает P0-B / §3.6 из
-> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](../PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md).
+> [PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md](history/PLATFORM_FULL_GAP_ANALYSIS_2026-07-15.md).
 > Тесты: `tests/test_live_risk_enforcement.py` (16) + live smoke на CCEA-сервере.
 
 ## Проблема (что было)

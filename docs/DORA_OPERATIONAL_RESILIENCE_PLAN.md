@@ -980,7 +980,7 @@ DORA contractual requirements (Art. 30) — это не "Enterprise feature", а
 | Recovery Procedures | [RECOVERY_PROCEDURES.md](RECOVERY_PROCEDURES.md) | KEEP | 10 scenarios |
 | Operations Runbook | [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) | KEEP | Comprehensive |
 | Service Dependency Map | [SERVICE_DEPENDENCY_MAP.md](SERVICE_DEPENDENCY_MAP.md) | KEEP | Architecture |
-| CI/CD Pipeline | [.github/workflows/](/.github/workflows/) | ENHANCE | Security gates |
+| CI/CD Pipeline | .github/workflows/ | ENHANCE | Security gates |
 | Audit Trail | [services/core/risk_controls/audit_trail_writer.py](../services/core/risk_controls/audit_trail_writer.py) | KEEP | Core continuity |
 | BCP Module | [services/core/risk_controls/bcp.py](../services/core/risk_controls/bcp.py) | KEEP | Core continuity |
 
