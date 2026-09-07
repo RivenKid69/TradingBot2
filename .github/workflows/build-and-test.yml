@@ -98,7 +98,9 @@ jobs:
         continue-on-error: true
         env:
           PYTHONUTF8: "1"
-        run: python -m detect_secrets scan --baseline .secrets.baseline --all-files --json > detect-secrets-scan.json
+        # `scan` already emits JSON on stdout; there is no --json flag, and passing
+        # one made the command exit 2 on argument parsing rather than on findings
+        run: python -m detect_secrets scan --baseline .secrets.baseline --all-files > detect-secrets-scan.json
 
       - name: Detect secrets (enforced)
         env:
@@ -115,7 +117,6 @@ jobs:
               "--baseline",
               ".secrets.baseline",
               "--all-files",
-              "--json",
           ]
           result = subprocess.run(cmd, capture_output=True, text=True)
           pathlib.Path("detect-secrets-scan.json").write_text(result.stdout, encoding="utf-8")
