@@ -129,7 +129,7 @@ jobs:
         id: gitleaks
         run: |
           set +e
-          gitleaks detect --no-git --report-format json --report-path gitleaks-report.json
+          gitleaks detect --no-git --config .gitleaks.toml --report-format json --report-path gitleaks-report.json
           status=$?
           set -e
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
@@ -167,7 +167,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependency audit tooling
-        run: pip install --upgrade pip-audit cyclonedx-bom
+        run: pip install --upgrade pip-audit
 
       - name: Run pip-audit on lockfiles
         run: |
@@ -217,6 +217,9 @@ jobs:
       - name: Generate SBOM (CycloneDX)
         run: |
           set -euo pipefail
+          # installed here rather than beside pip-audit: the two pin incompatible
+          # ranges of cyclonedx-python-lib
+          pip install --upgrade cyclonedx-bom
           files=()
           for f in requirements-cpu.lock.txt requirements-gpu.lock.txt requirements-dev.txt requirements-build.txt; do
             if [ -f "$f" ]; then
@@ -227,11 +230,38 @@ jobs:
             echo "No lockfiles found for SBOM generation"
             exit 0
           fi
-          args=""
-          for file in "${files[@]}"; do
-            args="$args --requirements $file"
-          done
-          cyclonedx-py --format json --output sbom.json $args
+          # cyclonedx-py takes an input-source subcommand now; `--format json
+          # --output ... --requirements <file>` is the pre-4.x form and exits 2 with
+          # "invalid choice: 'json'". One SBOM per lockfile, merged into sbom.json.
+          python - "${files[@]}" <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          components = {}
+          metadata = None
+          for path in sys.argv[1:]:
+              out = subprocess.run(
+                  ["cyclonedx-py", "requirements", path, "--of", "JSON", "--no-validate"],
+                  capture_output=True, text=True, check=True,
+              ).stdout
+              doc = json.loads(out)
+              metadata = metadata or doc.get("metadata")
+              for component in doc.get("components", []):
+                  key = (component.get("name"), component.get("version"))
+                  components.setdefault(key, component)
+
+          sbom = {
+              "bomFormat": "CycloneDX",
+              "specVersion": "1.5",
+              "version": 1,
+              "metadata": metadata or {},
+              "components": list(components.values()),
+          }
+          with open("sbom.json", "w", encoding="utf-8") as handle:
+              json.dump(sbom, handle, indent=2, sort_keys=True)
+          print(f"SBOM: {len(sbom['components'])} components from {len(sys.argv) - 1} lockfiles")
+          PY
 
       # Tech Debt: repro-sbom-hash-pinning (TECH_DEBT_REGISTRY.md)
       - name: Generate SBOM hash for verification
